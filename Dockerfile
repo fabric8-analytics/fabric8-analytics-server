@@ -14,7 +14,7 @@ RUN pushd /coreapi && \
     pip3 install -r requirements.txt && \
     rm requirements.txt && \
     popd && \
-    GIT_SSL_NO_VERIFY=true pip3 install git+https://gitlab.cee.redhat.com/bayesian/worker.git
+    GIT_SSL_NO_VERIFY=true pip3 install git+https://github.com/baytemp/worker.git
 
 # Apply not-yet-upstream-released patches
 RUN mkdir -p /tmp/install_deps/patches/
