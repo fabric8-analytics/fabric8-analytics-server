@@ -1,0 +1,315 @@
+{
+  "_release": "npm:serve-static:1.7.1",
+  "analyses": {
+    "binary_data": {
+      "_release": "npm:serve-static:1.7.1",
+      "details": [
+        {
+          "output": [
+            "gzip compressed data, from Unix, NULL date: Thu Jan  1 00:00:00 1970"
+          ],
+          "path": "package.tgz"
+        },
+        {
+          "output": [],
+          "path": "package/package.json"
+        },
+        {
+          "output": [],
+          "path": "package/HISTORY.md"
+        },
+        {
+          "output": [],
+          "path": "package/README.md"
+        },
+        {
+          "output": [
+            "Copyright string: \"(c) 2010 Sencha Inc.ht(c) 2011 TJ Holowaychuk\"",
+            "Copyright string: \"(c) 2011 TJ Holowaychukright(c) 2014 Douglas Christopher Wilson\"",
+            "Copyright string: \"(c) 2014 Douglas Christopher Wilsonlson\""
+          ],
+          "path": "package/index.js"
+        },
+        {
+          "output": [
+            "Copyright string: \" (c) 2010 Sencha Inc. (c) 2011 LearnBoost\"",
+            "Copyright string: \" (c) 2011 LearnBoost(c) 2011 TJ Holowaychuk\"",
+            "Copyright string: \" (c) 2011 TJ Holowaychukght (c) 2014 Douglas Christopher Wilson\"",
+            "Copyright string: \" (c) 2014 Douglas Christopher Wilsonilson\""
+          ],
+          "path": "package/LICENSE"
+        }
+      ],
+      "status": "success",
+      "summary": []
+    },
+    "crypto_algorithms": {
+      "_release": "npm:serve-static:1.7.1",
+      "details": [],
+      "status": "success",
+      "summary": {
+        "content": [],
+        "filename": []
+      }
+    },
+    "dependencies": {
+      "_release": "npm:serve-static:1.7.1",
+      "author": "Douglas Christopher Wilson <doug@somethingdoug.com>",
+      "bug_reporting": null,
+      "code_repository": {
+        "type": "git",
+        "url": "https://github.com/expressjs/serve-static.git"
+      },
+      "declared_license": "MIT",
+      "dependencies": [
+        "parseurl ~1.3.0",
+        "escape-html 1.0.1",
+        "send 0.10.1",
+        "utils-merge 1.0.0"
+      ],
+      "description": "Serve static files",
+      "homepage": null,
+      "name": "serve-static",
+      "version": "1.7.1"
+    },
+    "digests": {
+      "_release": "npm:serve-static:1.7.1",
+      "details": [
+        {
+          "artifact": true,
+          "md5": "0e59c851dac5c759012a1998c0d94c0b",
+          "path": "package.tgz",
+          "sha1": "fa4cb83872618011b252af1868a88f6461919b52",
+          "sha256": "9e6af4cb881f7ddb75e07b6b1978705b72877b5736edcb8a78a2a0d06d3574e2",
+          "ssdeep": "96:dmiaOMeeNwZOV8S0pgKLvZpiv2iOj0Wve0Xvm/t95W6bkl0LP3kKzm5:l/Zi6742iS0qe0Xy95NLc5"
+        },
+        {
+          "md5": "a8b00e182898ca392c3bfd34f44424e6",
+          "path": "package/package.json",
+          "sha1": "dc4dcefdefca246ab8d9c275738f345a08baeb31",
+          "sha256": "920636ac6283670405e615611ff38c876d7e5a0c77aefbd19862ab400a648a11",
+          "ssdeep": "24:KI3rH1ulI6fHQhio/W7P9plZSHbyJHAy8e1vHa:KAxQVfiD+7P3lYc4gPa"
+        },
+        {
+          "md5": "e65e515ae2a2dd25bac41d552e120757",
+          "path": "package/HISTORY.md",
+          "sha1": "a67b745870a635bd055706f1436214f9954fb175",
+          "sha256": "84d3aa9629afcf13a73988a51832f3c066215dd92e254abb353342b44deab974",
+          "ssdeep": "96:4u0/SIdTdDDEdudwR+5t73buE1q8OwzKy4/y/6dGsF/DF:4J7xD2ann7LHqaX40gF"
+        },
+        {
+          "md5": "587a081bb5576be3c58acc948659386a",
+          "path": "package/README.md",
+          "sha1": "3e52a79b51274622b87b511a0706049186d40d2e",
+          "sha256": "5ddc3e5ab3baebd6b3075955f45b8f90d099db9cb915c570038c14812301debf",
+          "ssdeep": "96:FXhLxwnIRX0Fcbf21gd+MHk/ZmVAFPPM61jTI:FHQHFUfcgd+j/O8O"
+        },
+        {
+          "md5": "7d7f14831f268c7d0de09f9e18aab64a",
+          "path": "package/index.js",
+          "sha1": "ccb2a18b6103bff8208bac75e250cb2b2ce7faf2",
+          "sha256": "ab434de1e4aa7ab6c06c5342ab39433aefd2286757df7f7ba483d1bf147087a1",
+          "ssdeep": "48:SNflkIBi+lwsZjGkgyg1UO1NHCpH4O9Gzwhzxdo5MaGpdv:UTBi+lwbk7ipNipYO9GJ0dv"
+        },
+        {
+          "md5": "1d148c632a89e780d1c62889d7b2042a",
+          "path": "package/LICENSE",
+          "sha1": "ac98e5a8d139b68e3d26fb7f14ff18dd98578407",
+          "sha256": "2f17617f32088c90cec0d191e8d3eaa8ebadc445daa33ac26298bb7fd26e49db",
+          "ssdeep": "24:PsiJH/ZHHuyPP3GtIHw1Gg9MPH+sUW8Ok4odZo3U/qldFD:0iJfxfPvGt7ICMPH+sfINi3OMFD"
+        }
+      ],
+      "status": "success",
+      "summary": []
+    },
+    "languages": {
+      "_release": "npm:serve-static:1.7.1",
+      "details": [
+        {
+          "output": null,
+          "path": "package.tgz",
+          "type": [
+            "gzip compressed data, from Unix"
+          ]
+        },
+        {
+          "output": {
+            "language": "Markdown",
+            "lines": "160",
+            "mime": "text/plain",
+            "sloc": "160",
+            "type": "Text"
+          },
+          "path": "package/README.md",
+          "type": [
+            "ASCII text"
+          ]
+        },
+        {
+          "output": {
+            "language": "Text",
+            "lines": "26",
+            "mime": "text/plain",
+            "sloc": "26",
+            "type": "Text"
+          },
+          "path": "package/LICENSE",
+          "type": [
+            "ASCII text"
+          ]
+        },
+        {
+          "output": {
+            "language": "Markdown",
+            "lines": "202",
+            "mime": "text/plain",
+            "sloc": "202",
+            "type": "Text"
+          },
+          "path": "package/HISTORY.md",
+          "type": [
+            "ASCII text"
+          ]
+        },
+        {
+          "output": {
+            "language": "JavaScript",
+            "lines": "119",
+            "mime": "application/javascript",
+            "sloc": "119",
+            "type": "Text"
+          },
+          "path": "package/index.js",
+          "type": [
+            "HTML document, ASCII text"
+          ]
+        },
+        {
+          "output": {
+            "language": "JSON",
+            "lines": "34",
+            "mime": "application/json",
+            "sloc": "34",
+            "type": "Text"
+          },
+          "path": "package/package.json",
+          "type": [
+            "ASCII text"
+          ]
+        }
+      ],
+      "status": "success",
+      "summary": []
+    },
+    "security_issues": {
+      "_release": "npm:serve-static:1.7.1",
+      "details": [
+        {
+          "access": {
+            "authentication": "NONE",
+            "complexity": "MEDIUM",
+            "vector": "NETWORK"
+          },
+          "cvss": 4.3,
+          "id": "CVE-2015-1164",
+          "impact": {
+            "availability": "NONE",
+            "confidentiality": "NONE",
+            "integrity": "PARTIAL"
+          },
+          "references": [
+            "https://github.com/expressjs/serve-static/issues/26",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=1181917",
+            "http://xforce.iss.net/xforce/xfdb/99936",
+            "http://www.securityfocus.com/bid/72064",
+            "http://nodesecurity.io/advisories/serve-static-open-redirect"
+          ],
+          "summary": "Open redirect vulnerability in the serve-static plugin before 1.7.2 for Node.js, when mounted at the root, allows remote attackers to redirect users to arbitrary web sites and conduct phishing attacks via a // (slash slash) followed by a domain in the PATH_INFO to the default URI."
+        }
+      ],
+      "status": "success",
+      "summary": [
+        "CVE-2015-1164"
+      ]
+    },
+    "source_licenses": {
+      "_release": "npm:serve-static:1.7.1",
+      "details": {
+        "files": [
+          {
+            "path": "package/LICENSE",
+            "result": [
+              {
+                "license_name": "MITNFA",
+                "match": 35,
+                "variant_id": "mitnfa"
+              }
+            ]
+          }
+        ],
+        "license_stats": [
+          {
+            "count": "1",
+            "license_name": "MITNFA",
+            "variant_id": "mitnfa"
+          }
+        ],
+        "oslc_stats": {
+          "All files": 33,
+          "Conflicts (global)": 0,
+          "Conflicts (ref)": 0,
+          "Distinct licenses": 1,
+          "License files": 1,
+          "Source files": 1
+        }
+      },
+      "schema": {
+        "name": "license-worker",
+        "version": "2-0-0"
+      },
+      "status": "success",
+      "summary": {
+        "all_files": 33,
+        "distinct_licenses": [
+          {
+            "count": 1,
+            "license_name": "MITNFA"
+          }
+        ],
+        "license_files": 1,
+        "licensed_files": 1,
+        "source_files": 1,
+        "sure_licenses": [
+          "MITNFA"
+        ]
+      }
+    },
+    "static_analysis": {
+      "_release": "npm:serve-static:1.7.1",
+      "details": {
+        "defects": "",
+        "scan": {
+          "analyzer-version-clang": "3.7.0",
+          "analyzer-version-cppcheck": "1.73",
+          "analyzer-version-gcc": "5.3.1",
+          "analyzer-version-pylint": "1.4.3",
+          "analyzer-version-shellcheck": "0.3.7",
+          "exit-code": 0,
+          "host": "518afd18190f",
+          "mock-config": "default",
+          "store-results-to": "/scan",
+          "time-created": "2016-05-24 05:43:36",
+          "time-finished": "2016-05-24 05:49:29",
+          "tool": "csmock",
+          "tool-args": "'/usr/bin/csmock' '-a' '-c' 'true' '-o' 'scan' '--force' '/var/lib/cucos-lib/worker_data/tmpO9_8yY/package_data/package.tgz'",
+          "tool-version": "csmock-1.9.2.20160517.153500.g692a90e-1.fc23"
+        }
+      },
+      "status": "success",
+      "summary": {}
+    }
+  },
+  "ecosystem": "npm",
+  "package": "serve-static",
+  "version": "1.7.1"
+}

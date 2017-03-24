@@ -1,0 +1,648 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions": {
+        "component_blackduck_info": {
+            "type": "object",
+            "description": "Blackduck information for a single component",
+            "properties": {
+                "license": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/component_blackduck_license_info"
+                    }
+                },
+                "security": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/component_blackduck_security_info"
+                    }
+                }
+            },
+            "additionalProperties": false
+        },
+        "component_blackduck_license_info": {
+            "type": "object",
+            "description": "Blackduck information about one license for a single component",
+            "properties": {
+                "codeSharing": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "codeSharing",
+                "name"
+            ],
+            "additionalProperties": false
+        },
+        "component_blackduck_security_info": {
+            "type": "object",
+            "description": "Blackduck information about one vulnerability for a single component",
+            "properties": {
+                "baseScore": {
+                    "type": "number"
+                },
+                "exploitabilitySubscore": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "severity": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "baseScore",
+                "exploitabilitySubscore",
+                "id",
+                "severity",
+                "source"
+            ],
+            "additionalProperties": false
+        },
+        "component_cve_info": {
+            "type": "object",
+            "description": "Information about one CVE for a single component",
+            "properties": {
+                "cvss": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "cvss",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "component_github_info": {
+            "type": "object",
+            "description": "Github information for a single component",
+            "properties": {
+                "forks_count": {
+                    "type": "number"
+                },
+                "stargazers_count": {
+                    "type": "number"
+                },
+                "issues": {
+                    "$ref": "#/definitions/github_metrics"
+                },
+                "pull_requests": {
+                    "$ref": "#/definitions/github_metrics"
+                }
+            },
+            "required": [
+                "forks_count",
+                "stargazers_count",
+                "issues",
+                "pull_requests"
+            ],
+            "additionalProperties": false
+        },
+        "component_info": {
+            "type": "object",
+            "description": "Information about a single component",
+            "properties": {
+                "blackduck_details": {
+                    "$ref": "#/definitions/component_blackduck_info"
+                },
+                "cve_details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/component_cve_info"
+                    }
+                },
+                "ecosystem": {
+                    "type": "string"
+                },
+                "github_details": {
+                    "$ref": "#/definitions/component_github_info"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "latest_version": {
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "licenses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "package_dependents_count": {
+                    "type": "number"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "dependents_count": {
+                    "type": "number"
+                },
+                "relative_usage": {
+                    "type": "string"
+                },
+                "redhat_usage": {
+                    "$ref": "#/definitions/component_redhat_usage"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/component_metadata"
+                }
+            },
+            "required": [
+                "blackduck_details",
+                "cve_details",
+                "ecosystem",
+                "github_details",
+                "id",
+                "latest_version",
+                "licenses",
+                "name",
+                "package_dependents_count",
+                "version",
+                "dependents_count",
+                "relative_usage",
+                "redhat_usage",
+                "metadata"
+            ],
+            "additionalProperties": false
+        },
+        "component_metadata": {
+            "type": "object",
+            "description": "Data from metadata file",
+            "properties": {
+                "tests_implemented": {
+                    "type": "boolean"
+                },
+                "required_engines": {
+                    "$ref": "#/definitions/component_metadata_engines"
+                },
+                "dependency_lock_file": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "required_engines"
+            ],
+            "additionalProperties": false
+        },
+        "component_metadata_engines": {
+            "type": "object",
+            "description": "Version of engine/interpreter/package manager",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "component_redhat_registered_srpms": {
+            "type": "object",
+            "description": "Red Hat internally registered SRPM details a single component",
+            "properties": {
+                "patch_count": {
+                    "type": "number"
+                },
+                "epoch": {
+                    "type": "number"
+                },
+                "published_in": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "modified_line_count": {
+                    "type": "number"
+                },
+                "package_name": {
+                    "type": "string"
+                },
+                "modified_file_count": {
+                    "type": "number"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "release": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "patch_count",
+                "epoch",
+                "published_in",
+                "modified_line_count",
+                "package_name",
+                "modified_file_count",
+                "version",
+                "release"
+            ],
+            "additionalProperties": false
+        },
+        "component_redhat_usage": {
+            "type": "object",
+            "description": "Red Hat internal usage information for a single component",
+            "properties": {
+                "package_names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "published_in": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "registered_srpms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/component_redhat_registered_srpms"
+                    }
+                }
+            },
+            "required": [
+                "package_names",
+                "published_in",
+                "registered_srpms"
+            ],
+            "additionalProperties": false
+        },
+        "github_last_month_metrics": {
+            "type": "object",
+            "description": "GitHub Last Month Metrics",
+            "properties": {
+                "opened": {
+                    "type": "number"
+                },
+                "closed": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "opened",
+                "closed"
+            ],
+            "additionalProperties": false
+        },
+        "github_last_year_metrics": {
+            "type": "object",
+            "description": "GitHub Last Year Metrics",
+            "properties": {
+                "opened": {
+                    "type": "number"
+                },
+                "closed": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "opened",
+                "closed"
+            ],
+            "additionalProperties": false
+        },
+        "github_metrics": {
+            "type": "object",
+            "description": "GitHub Metrics",
+            "properties": {
+                "month": {
+                    "$ref": "#/definitions/github_last_month_metrics"
+                },
+                "year": {
+                    "$ref": "#/definitions/github_last_year_metrics"
+                }
+            },
+            "required": [
+                "month",
+                "year"
+            ],
+            "additionalProperties": false
+        },
+        "input_stack": {
+            "type": "object",
+            "description": "Input stack for generating recommendations",
+            "properties": {
+                "appstack_id": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "appstack_id",
+                "uri"
+            ],
+            "additionalProperties": false
+        },
+        "metadata": {
+            "type": "object",
+            "description": "Data from metadata file",
+            "properties": {
+                "components_with_dependency_lock_file": {
+                    "type": "number"
+                },
+                "components_with_tests": {
+                    "type": "number"
+                },
+                "required_engines": {
+                    "$ref": "#/definitions/component_metadata_engines"
+                }
+            },
+            "required": [
+                "components_with_dependency_lock_file",
+                "components_with_tests",
+                "required_engines"
+            ],
+            "additionalProperties": false
+        },
+        "recommended_stacks": {
+            "type": "object",
+            "description": "Bayesian recommended stacks",
+            "properties": {
+                "input_stack": {
+                    "$ref": "#/definitions/input_stack"
+                },
+                "recommendations": {
+                    "$ref": "#/definitions/stack_recommendations"
+                }
+            },
+            "additionalProperties": false
+        },
+        "stack_analysis_report": {
+            "type": "object",
+            "description": "Stack analysis report with aggregated data",
+            "properties": {
+                "manifest_name": {
+                    "type": "string"
+                },
+                "ecosystem": {
+                    "type": "string"
+                },
+                "cvss": {
+                    "type": "number"
+                },
+                "popularity": {
+                    "$ref": "#/definitions/stack_popularity"
+                },
+                "usage": {
+                    "$ref": "#/definitions/stack_usage"
+                },
+                "recommendation": {
+                    "$ref": "#/definitions/recommended_stacks"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/metadata"
+                },
+                "analyzed_components": {
+                    "type": "number"
+                },
+                "total_security_issues": {
+                    "type": "number"
+                },
+                "total_licenses": {
+                    "type": "number"
+                },
+                "components_with_security_issues": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "distinct_licenses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "components": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/component_info"
+                    }
+                }
+            },
+            "required": [
+                "manifest_name",
+                "ecosystem",
+                "cvss",
+                "metadata",
+                "analyzed_components",
+                "total_security_issues",
+                "total_licenses",
+                "components_with_security_issues",
+                "distinct_licenses",
+                "components"
+            ],
+            "additionalProperties": false
+        },
+        "stack_popularity": {
+            "type": "object",
+            "description": "Stack popularity",
+            "properties": {
+                "average_forks": {
+                    "type": "string"
+                },
+                "average_stars": {
+                    "type": "string"
+                },
+                "low_popularity_components": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "average_forks",
+                "average_stars",
+                "low_popularity_components"
+            ],
+            "additionalProperties": false
+        },
+        "stack_recommendations": {
+            "type": "object",
+            "description": "Stack Recommendations",
+            "properties": {
+                "component_level": {
+                    "type": "null"
+                },
+                "similar_stacks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/stack_similarity_information"
+                    }
+                }
+            },
+            "required": [
+                "component_level",
+                "similar_stacks"
+            ],
+            "additionalProperties": false
+        },
+        "stack_similarity_analysis": {
+            "type": "object",
+            "description": "Stack Similarity Analysis Result",
+            "properties": {
+                "missing_packages": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "version_mismatch": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "missing_packages",
+                "version_mismatch"
+            ],
+            "additionalProperties": false
+        },
+        "stack_similarity_information": {
+            "type": "object",
+            "description": "Stack Similarity Information",
+            "properties": {
+                "analysis": {
+                    "$ref": "#/definitions/stack_similarity_analysis"
+                },
+                "similarity": {
+                    "type": "number"
+                },
+                "stack_id": {
+                    "type": "number"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "analysis",
+                "similarity",
+                "stack_id",
+                "uri"
+            ],
+            "additionalProperties": false
+        },
+        "stack_usage": {
+            "type": "object",
+            "description": "Stack usage",
+            "properties": {
+                "average_usage": {
+                    "type": "string"
+                },
+                "low_public_usage_components": {
+                    "type": "number"
+                },
+                "redhat_distributed_components": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "average_usage",
+                "low_public_usage_components",
+                "redhat_distributed_components"
+            ],
+            "additionalProperties": false
+        }
+    },
+    "type": "object",
+    "description": "Stack analysis",
+    "properties": {
+        "schema": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the schema",
+                    "pattern": "^[a-zA-Z0-9_]+$"
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version of the schema",
+                    "pattern": "^[0-9]+-[0-9]+-[0-9]+$"
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Full URL of the schema",
+                    "format": "uri"
+                }
+            },
+            "required": [
+                "name",
+                "version"
+            ],
+            "additionalProperties": false
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "success"
+            ]
+        },
+        "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "started_at": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "finished_at": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "request_id": {
+            "type": "string"
+        },
+        "analyses_result": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "result": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/stack_analysis_report"
+            }
+        }
+    },
+    "required": [
+        "status",
+        "submitted_at",
+        "started_at",
+        "finished_at",
+        "request_id",
+        "analyses_result",
+        "result"
+    ],
+    "additionalProperties": false,
+    "title": "stack_analysis-v2_0_3"
+}

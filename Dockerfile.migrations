@@ -1,0 +1,10 @@
+FROM docker-registry.usersys.redhat.com/bayesian/bayesian-api
+MAINTAINER Slavek Kabrda <slavek@redhat.com>
+
+RUN pip3 install alembic
+
+RUN mkdir -p /bayesian/server
+WORKDIR /bayesian/server
+VOLUME /bayesian
+
+ENTRYPOINT ["bash", "-c"]

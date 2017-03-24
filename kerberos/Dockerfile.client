@@ -1,0 +1,10 @@
+FROM fedora:25
+
+RUN dnf install -y --best --allowerasing krb5-workstation firefox libcanberra-gtk3 dbus nodejs
+
+COPY krb5.conf /etc/
+
+RUN mkdir -p /root/.mozilla/firefox/uyqobtru.default/
+
+COPY firefox/profiles.ini /root/.mozilla/firefox
+COPY firefox/prefs.js /root/.mozilla/firefox/uyqobtru.default/

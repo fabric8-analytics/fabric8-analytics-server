@@ -1,0 +1,92 @@
+{
+   "$schema": "http://json-schema.org/draft-04/schema#",
+   "type": "object",
+   "description": "Version range resolver",
+   "properties": {
+      "schema": {
+         "type": "object",
+         "properties": {
+            "name": {
+               "type": "string",
+               "description": "Name of the schema",
+               "pattern": "^[a-zA-Z0-9_]+$"
+            },
+            "version": {
+               "type": "string",
+               "description": "Version of the schema",
+               "pattern": "^[0-9]+-[0-9]+-[0-9]+$"
+            },
+            "url": {
+               "type": "string",
+               "description": "Full URL of the schema",
+               "format": "uri"
+            }
+         },
+         "required": [
+            "name",
+            "version"
+         ],
+         "additionalProperties": false
+      },
+      "resolved_at": {
+         "type": "string",
+         "format": "date-time"
+      },
+      "query": {
+         "type": "string"
+      },
+      "detail": {
+         "type": "object",
+         "description": "Version range resolver_detail",
+         "properties": {
+            "schema": {
+               "type": "object",
+               "properties": {
+                  "name": {
+                     "type": "string",
+                     "description": "Name of the schema",
+                     "pattern": "^[a-zA-Z0-9_]+$"
+                  },
+                  "version": {
+                     "type": "string",
+                     "description": "Version of the schema",
+                     "pattern": "^[0-9]+-[0-9]+-[0-9]+$"
+                  },
+                  "url": {
+                     "type": "string",
+                     "description": "Full URL of the schema",
+                     "format": "uri"
+                  }
+               },
+               "required": [
+                  "name",
+                  "version"
+               ],
+               "additionalProperties": false
+            },
+            "difference": {
+               "type": "array"
+            },
+            "analysed": {
+               "type": "object"
+            },
+            "upstream": {
+               "type": "object"
+            }
+         },
+         "required": [
+            "difference",
+            "analysed",
+            "upstream"
+         ],
+         "additionalProperties": false
+      }
+   },
+   "required": [
+      "resolved_at",
+      "query",
+      "detail"
+   ],
+   "additionalProperties": false,
+   "title": "version_range_resolver-v1_0_0"
+}

@@ -1,0 +1,15 @@
+include docker-compose.yml
+include Dockerfile
+include Dockerfile.tests
+include coreapi-httpd.conf
+recursive-include hack *
+recursive-include kerberos *
+recursive-include kubernetes *
+include LICENSE
+include README.md
+include requirements.txt
+include runtest.sh
+include Vagrantfile
+
+recursive-include tests *.py
+include tests/requirements.txt

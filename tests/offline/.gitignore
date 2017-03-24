@@ -1,0 +1,8 @@
+# Only commit cached analyses used by tests
+data/go/*
+data/maven/*
+data/npm/*
+!data/npm/serve-static
+data/pypi/*
+data/rubygems/*
+!data/rubygems/nokogiri

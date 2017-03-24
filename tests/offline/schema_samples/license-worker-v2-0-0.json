@@ -1,0 +1,51 @@
+{
+  "details": {
+    "files": [
+      {
+        "path": "license.py",
+        "result": [
+          {
+            "license_name": "LGPLv2",
+            "match": 98,
+            "variant_id": "lgpl-2.1-s"
+          }
+        ]
+      }
+    ],
+    "license_stats": [
+      {
+        "count": "1",
+        "license_name": "LGPLv2",
+        "variant_id": "lgpl-2.1-s"
+      }
+    ],
+    "oslc_stats": {
+      "All files": 1,
+      "Conflicts (global)": 0,
+      "Conflicts (ref)": 0,
+      "Distinct licenses": 1,
+      "License files": 0,
+      "Source files": 1
+    }
+  },
+  "schema": {
+    "name": "license-worker",
+    "version": "2-0-0"
+  },
+  "status": "success",
+  "summary": {
+    "all_files": 1,
+    "distinct_licenses": [
+      {
+        "count": 1,
+        "license_name": "LGPLv2"
+      }
+    ],
+    "license_files": 0,
+    "licensed_files": 1,
+    "source_files": 1,
+    "sure_licenses": [
+      "LGPLv2"
+    ]
+  }
+}
