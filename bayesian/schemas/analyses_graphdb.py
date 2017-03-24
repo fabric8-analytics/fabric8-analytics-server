@@ -5,6 +5,7 @@ from cucoslib.schemas import JSLSchemaBase, added_in, removed_in
 
 ROLE_v1_0_0 = "v1-0-0"
 ROLE_v1_1_0 = "v1-1-0"
+ROLE_v1_2_0 = "v1-2-0"
 
 class ResultData(JSLSchemaBase):
     class Options(object):
@@ -17,7 +18,12 @@ class ResultInner(JSLSchemaBase):
     class Options(object):
         definition_id = "result_inner"
         description = "Set of Result inner"
-    data = jsl.ArrayField(jsl.DocumentField(ResultData, as_ref=True), required=True)
+    with removed_in(ROLE_v1_2_0) as removed_in_v1_2_0:
+        removed_in_v1_2_0.data = jsl.ArrayField(jsl.DocumentField(ResultData, as_ref=True), required=True)
+    with added_in(ROLE_v1_2_0) as added_in_v1_2_0:
+        added_in_v1_2_0.data = jsl.DocumentField(ResultData, as_ref=True, required=True)
+    with added_in(ROLE_v1_2_0) as added_in_v1_2_0:
+        added_in_v1_2_0.recommendation = jsl.DictField(additional_properties=True)
     meta = jsl.DictField(additional_properties=True)
 
 class Status(JSLSchemaBase):

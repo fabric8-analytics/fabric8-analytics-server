@@ -1,0 +1,136 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions": {
+        "result_inner": {
+            "type": "object",
+            "description": "Set of Result inner",
+            "properties": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Name of the schema",
+                            "pattern": "^[a-zA-Z0-9_]+$"
+                        },
+                        "version": {
+                            "type": "string",
+                            "description": "Version of the schema",
+                            "pattern": "^[0-9]+-[0-9]+-[0-9]+$"
+                        },
+                        "url": {
+                            "type": "string",
+                            "description": "Full URL of the schema",
+                            "format": "uri"
+                        }
+                    },
+                    "required": [
+                        "name",
+                        "version"
+                    ],
+                    "additionalProperties": false
+                },
+                "recommendation": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "meta": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": false
+        },
+        "status": {
+            "type": "object",
+            "description": "Component analyses response status",
+            "properties": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Name of the schema",
+                            "pattern": "^[a-zA-Z0-9_]+$"
+                        },
+                        "version": {
+                            "type": "string",
+                            "description": "Version of the schema",
+                            "pattern": "^[0-9]+-[0-9]+-[0-9]+$"
+                        },
+                        "url": {
+                            "type": "string",
+                            "description": "Full URL of the schema",
+                            "format": "uri"
+                        }
+                    },
+                    "required": [
+                        "name",
+                        "version"
+                    ],
+                    "additionalProperties": false
+                },
+                "attributes": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "code": {
+                    "type": "number"
+                },
+                "message": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "code",
+                "message"
+            ],
+            "additionalProperties": false
+        }
+    },
+    "type": "object",
+    "description": "Component Analysis from GraphDB",
+    "properties": {
+        "schema": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the schema",
+                    "pattern": "^[a-zA-Z0-9_]+$"
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version of the schema",
+                    "pattern": "^[0-9]+-[0-9]+-[0-9]+$"
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Full URL of the schema",
+                    "format": "uri"
+                }
+            },
+            "required": [
+                "name",
+                "version"
+            ],
+            "additionalProperties": false
+        },
+        "request_id": {
+            "type": "string"
+        },
+        "result": {
+            "$ref": "#/definitions/result_inner"
+        },
+        "status": {
+            "$ref": "#/definitions/status"
+        }
+    },
+    "required": [
+        "request_id",
+        "result",
+        "status"
+    ],
+    "additionalProperties": false,
+    "title": "analyses_graphdb-v1-2-0"
+}

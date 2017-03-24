@@ -369,7 +369,7 @@ class AnalysisBase(ResourceWithSchema):
 
 
 class AnalysesEPVByGraph(ResourceWithSchema):
-    schema_ref = SchemaRef('analyses_graphdb', '1-0-0')
+    schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
 
     def get(self, ecosystem, package, version):
         if ecosystem == 'maven':
