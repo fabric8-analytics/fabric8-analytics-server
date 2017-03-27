@@ -13,8 +13,8 @@ COPY ./requirements.txt /coreapi
 RUN pushd /coreapi && \
     pip3 install -r requirements.txt && \
     rm requirements.txt && \
-    popd && \
-    GIT_SSL_NO_VERIFY=true pip3 install git+https://github.com/baytemp/worker.git
+    popd
+
 
 # Apply not-yet-upstream-released patches
 RUN mkdir -p /tmp/install_deps/patches/
@@ -31,6 +31,11 @@ RUN pushd /coreapi && \
     popd && \
     # needed for DB migrations
     find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
+
+# workaround for private GH repositories
+# run ./get-worker.sh first
+COPY ./worker/ /worker
+RUN pip3 install /worker
 
 COPY .git/ /tmp/.git
 # date and hash of last commit

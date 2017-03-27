@@ -67,3 +67,6 @@ target/
 # Vim
 *.swo
 *.swp
+
+# workaround for private GH repositories
+worker/
