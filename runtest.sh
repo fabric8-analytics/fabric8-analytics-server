@@ -8,11 +8,14 @@ set -e
 # unable to prepare context: The Dockerfile (Dockerfile.tests) must be within the build context (.)
 set -x
 
+here=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
+
 TIMESTAMP="$(date +%F-%H-%M-%S)"
 DB_CONTAINER_NAME="db-server-tests-${TIMESTAMP}"
 CONTAINER_NAME="server-tests-${TIMESTAMP}"
 IMAGE_NAME="docker-registry.usersys.redhat.com/bayesian/bayesian-api"
 TEST_IMAGE_NAME="coreapi-server-tests"
+POSTGRES_IMAGE_NAME="registry.centos.org/sclo/postgresql-94-centos7:latest"
 
 gc() {
   retval=$?
@@ -31,18 +34,18 @@ trap gc EXIT SIGINT
 if [ "$REBUILD" == "1" ] || \
      !(docker inspect $IMAGE_NAME > /dev/null 2>&1); then
   echo "Building $IMAGE_NAME for testing"
-  docker build --pull --tag=$IMAGE_NAME -f ../Dockerfile.server ..
+  docker build --pull --tag=$IMAGE_NAME .
 fi
 
 if [ "$REBUILD" == "1" ] || \
      !(docker inspect $TEST_IMAGE_NAME > /dev/null 2>&1); then
   echo "Building $TEST_IMAGE_NAME test image"
-  docker build -f ./Dockerfile.tests --tag=$TEST_IMAGE_NAME .
+  docker build -f Dockerfile.tests --tag=$TEST_IMAGE_NAME .
 fi
 
 echo "Starting/creating containers:"
 # NOTE: we omit pgbouncer while running tests
-docker-compose run -d --name ${DB_CONTAINER_NAME} postgres
+docker run -d --env-file tests/postgres.env --name ${DB_CONTAINER_NAME} ${POSTGRES_IMAGE_NAME}
 # find out some network the container is connected to
 NETWORK=`docker inspect --format '{{.NetworkSettings.Networks}}' ${DB_CONTAINER_NAME} | awk -F '[:[]' '{print $2}'`
 DB_CONTAINER_IP=`docker inspect --format '{{.NetworkSettings.IPAddress}}' ${DB_CONTAINER_NAME}`
@@ -58,19 +61,22 @@ for i in {1..10}; do
 done;
 set -x
 
-rm -f ../logs/pylint_server.log
+
+# mount cucoslib, if available (won't be in CI)
+cucoslib_path="${here}/../worker/cucoslib"
+if [ -d ${cucoslib_path} ]; then
+    cucoslib_vol="${cucoslib_path}:/usr/lib/python3.4/site-packages/cucoslib:ro,Z"
+fi
 
 echo "Starting test suite"
 docker run -t \
-  -v "${PWD}:/bayesian:Z" \
-  -v "${PWD}/../lib/cucoslib:/usr/lib/python3.4/site-packages/cucoslib:Z" \
+  -v "${here}:/bayesian:ro,Z" \
+  ${cucoslib_vol:+-v} ${cucoslib_vol:-} \
   --link=${DB_CONTAINER_NAME} \
   --net=${NETWORK} \
   --name=${CONTAINER_NAME} \
   -e PGBOUNCER_SERVICE_HOST=${DB_CONTAINER_NAME} \
-  $TEST_IMAGE_NAME ./hack/exec_tests.sh $@ tests/
-
-docker cp ${CONTAINER_NAME}:/tmp/pylint_server.log ../logs
+  $TEST_IMAGE_NAME $@ tests/
 
 echo "Test suite passed \\o/"
 
