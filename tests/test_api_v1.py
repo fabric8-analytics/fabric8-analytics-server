@@ -192,6 +192,7 @@ class TestApiV1Root(object):
             "/api/v1/stack-analyses/by-origin/<origin>",
             "/api/v1/system/version",
             "/api/v1/user",
+            "/api/v1/user-feedback",
             "/api/v1/versions/<ecosystem>/<package>",
             "/api/v1/versions/in-range/<ecosystem>"
         ]
