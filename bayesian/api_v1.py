@@ -9,7 +9,7 @@ from requests_futures.sessions import FuturesSession
 
 from io import StringIO
 
-from flask import Blueprint, current_app, request, url_for
+from flask import Blueprint, current_app, request, url_for, Response
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
 from flask_security import current_user, login_required
@@ -375,7 +375,23 @@ class AnalysesEPVByGraph(ResourceWithSchema):
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
         result = get_analyses_from_graph(ecosystem, package, version)
-        return result
+
+        if  len(result.get('result',{}).get('result',{}).get('data', [])) > 0:
+            # Known component for Bayesian
+            return result
+
+        # Enter the unknown path
+        result = get_latest_analysis_for(ecosystem, package, version)
+        if result == None:
+            args = {'ecosystem': ecosystem, 'name': package, 'version': version}
+            server_run_flow('graphSyncFlow', args)
+            msg = "Package {ecosystem}:{package}:{version} is unavailable. The package will be available shortly,"\
+                    " please rety after some time.".format(ecosystem=ecosystem, package=package, version=version)
+            raise HTTPError(202, msg)
+
+        # analyses is in-progress: data not available on graphdb yet
+        return {'status': 'in-progress'}
+
 
 class Analyses(AnalysisBase):
     def add_schema(self, response, status_code, method):
