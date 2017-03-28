@@ -33,7 +33,7 @@ def server_run_flow(flow_name, flow_args):
 
 
 def server_create_analysis(ecosystem, package, version, force=False):
-    """Create bayesianFlow handling analyses for specified EPV
+    """Create bayesianApiFlow handling analyses for specified EPV
 
     :param ecosystem: ecosystem for which the flow should be run
     :param package: package for which should be flow run
@@ -48,7 +48,7 @@ def server_create_analysis(ecosystem, package, version, force=False):
         'force': force
     }
 
-    return server_run_flow('bayesianFlow', args)
+    return server_run_flow('bayesianApiFlow', args)
 
 
 def do_projection(fields, analysis):
