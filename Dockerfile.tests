@@ -14,5 +14,4 @@ ENV PGBOUNCER_SERVICE_HOST=coreapi-pgbouncer
 RUN pip3 install -U git+https://github.com/selinon/selinon && \
  pip3 install -U git+https://github.com/selinon/selinonlib
 
-ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["py.test"]
+ENTRYPOINT ["/bayesian/hack/exec_tests.sh"]
