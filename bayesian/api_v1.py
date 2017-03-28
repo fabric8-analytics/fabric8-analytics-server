@@ -389,8 +389,8 @@ class AnalysesEPVByGraph(ResourceWithSchema):
                     " please rety after some time.".format(ecosystem=ecosystem, package=package, version=version)
             raise HTTPError(202, msg)
 
-        # Should never this point
-        return {'status': 'success'}
+        # analyses is in-progress: data not available on graphdb yet
+        return {'status': 'in-progress'}
 
 
 class Analyses(AnalysisBase):
