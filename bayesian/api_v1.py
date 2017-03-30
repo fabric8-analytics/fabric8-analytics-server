@@ -723,8 +723,8 @@ class ComponentsInRange(ResourceWithSchema):
 class UserFeedback(ResourceWithSchema):
     def post(self):
         bucket_name = os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback")
-        aws_access_key = os.environ['AWS_S3_ACCESS_KEY_ID']
-        aws_secret_access_key = os.environ['AWS_S3_SECRET_ACCESS_KEY']
+        aws_access_key = os.environ.get("AWS_S3_ACCESS_KEY_ID", "")
+        aws_secret_access_key = os.environ.get("AWS_S3_SECRET_ACCESS_KEY", "")
         if not request.json:
             raise HTTPError(400, error="Expected JSON request")
 
