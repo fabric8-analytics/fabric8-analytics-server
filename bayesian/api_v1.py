@@ -730,15 +730,14 @@ class UserFeedback(ResourceWithSchema):
 
         input_json = request.get_json()
         try:
-            s3 = AmazonS3(aws_access_key, aws_secret_access_key, bucket_name);
-            s3.connect();
+            s3 = AmazonS3(aws_access_key, aws_secret_access_key, bucket_name)
+            s3.connect()
         except:
             raise HTTPError(500, error="AWS credentials are not set")
 
         try:
             # Store data
-            uniq_rec_id = uuid.uuid4().hex
-            key = "{req_id}-{recommedation_id}".format(req_id=input_json.get("request_id"), recommedation_id=uniq_rec_id)
+            key = "{req_id}-{recommedation_id}".format(req_id=input_json.get("request_id"), recommedation_id=input_json.get("recommendation").get("name"))
             s3.store_dict(input_json, key, bucket_name)
 
         except BaseException as e:
