@@ -723,25 +723,16 @@ class ComponentsInRange(ResourceWithSchema):
 class UserFeedback(ResourceWithSchema):
     def post(self):
         bucket_name = os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback")
-        aws_access_key = os.environ.get("AWS_S3_ACCESS_KEY_ID", "")
-        aws_secret_access_key = os.environ.get("AWS_S3_SECRET_ACCESS_KEY", "")
-        if not request.json:
+        if not request.json or 'request_id' not in input_json:
             raise HTTPError(400, error="Expected JSON request")
-
         input_json = request.get_json()
-        try:
-            s3 = AmazonS3(aws_access_key, aws_secret_access_key, bucket_name)
-            s3.connect()
-        except:
-            raise HTTPError(500, error="AWS credentials are not set")
-
-        try:
-            # Store data
-            key = "{req_id}-{recommedation_id}".format(req_id=input_json.get("request_id"), recommedation_id=input_json.get("recommendation").get("name"))
-            s3.store_dict(input_json, key, bucket_name)
-
-        except BaseException as e:
-            raise HTTPError(500, error="Content set failed"+ str(e))
+        if 'recommendation' not in input_json or 'name' not in input_json['recommendation']:
+            raise HTTPError(400, error="Expected field name in recommendation")
+        s3 = AmazonS3(bucket_name=bucket_name)
+        s3.connect()
+        # Store data
+        key = "{req_id}-{recommedation_id}".format(req_id=input_json.get("request_id"), recommedation_id=input_json.get("recommendation").get("name"))
+        s3.store_dict(input_json, key, bucket_name)
 
         return {'status': 'success'}
 
