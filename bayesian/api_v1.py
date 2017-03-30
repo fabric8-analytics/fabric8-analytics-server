@@ -732,7 +732,7 @@ class UserFeedback(ResourceWithSchema):
         s3.connect()
         # Store data
         key = "{req_id}-{recommedation_id}".format(req_id=input_json.get("request_id"), recommedation_id=input_json.get("recommendation").get("name"))
-        s3.store_dict(input_json, key, bucket_name)
+        s3.store_dict(input_json, key)
 
         return {'status': 'success'}
 
