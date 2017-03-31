@@ -15,7 +15,6 @@ from .setup import Setup
 
 from requests import post
 
-
 def get_recent_analyses(limit=100):
     return rdb.session.query(Analysis).order_by(Analysis.started_at.desc()).limit(limit)
 
@@ -86,30 +85,12 @@ def add_field(analysis, field, ret):
         ret = ret.setdefault(f, {})
     prev_ret[f] = analysis
 
-
-def get_analyses_from_graph(ecosystem, package, version):
-    url = "http://{host}:{port}".format(
-           host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
-           port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
-    # qstring =  "g.V().has('pecosystem','"+ecosystem+"').has('pname','"+package+"').has('version','"+version+"')."
-    # qstring += "as('version').in('has_version').as('package').select('version','package').by(valueMap());"
-    qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
-              ".as('package').out('has_version').as('version').select('package','version').by(valueMap());"
-    payload = {'gremlin': qstring}
-    graph_req = post(url, data=json.dumps(payload))
-    resp = graph_req.json()
-    data = resp['result']['data']
-    # Template Dict for recommendation
-    reco = {
-        'recommendation': {
-            'component-analyses': {},
-        }
-    }
+def get_alternate_component_recommendation (component_result, package, version):
+    reco = {"recommendation": {}}
+    data = component_result.get('data')
     if data:
         # Get the Latest Version
-        latest_version = data[0].get('package', {}).get('latest_version', [None])[0]
-        message = ''
-        max_cvss = 0.0
+        message, max_cvss = '', 0.0
         # check if given version has a CVE or not
         for records in data:
             ver = records['version']
@@ -133,28 +114,41 @@ def get_analyses_from_graph(ecosystem, package, version):
                             max_cvss = cvss
                     message += ', '.join(cve_ids)
                     message += ' with a max cvss score of - ' + str(max_cvss)
-                    reco['recommendation']['component-analyses']['cve'] = cve_maps
+                    reco = {'recommendation': {'component-analyses': {'cve': cve_maps}}}
                     break
-                else:
-                    reco['recommendation'] = {}
-                    return {"result": reco}
 
         # check if latest version exists
-        if not latest_version or latest_version == '':
-            return {"result": reco}
-        # check if latest version has lower CVEs or no CVEs than current version
-        for records in data:
-            ver = records['version']
-            if latest_version == ver.get('version', [''])[0]:
-                if ver.get('cve_ids') and ver.get('cve_ids', [''])[0] != '':
-                    for cve in ver.get('cve_ids'):
-                        cvss = float(cve.split(':')[1])
-                        if cvss >= max_cvss:
-                            break
-                message += '\n It is recommended to use Version - ' + latest_version
-                reco['recommendation']['change_to'] = latest_version
-                reco['recommendation']['message'] = message
-    return {"result": reco}
+        latest_version = data[0].get('package', {}).get('latest_version', [None])[0]
+        if latest_version and latest_version != '':
+            for records in data:
+                ver = records['version']
+                if latest_version == ver.get('version', [''])[0]:
+                    if ver.get('cve_ids') and ver.get('cve_ids', [''])[0] != '':
+                        for cve in ver.get('cve_ids'):
+                            cvss = float(cve.split(':')[1])
+                            if cvss >= max_cvss:
+                                break
+                    message += '\n It is recommended to use Version - ' + latest_version
+                    reco['recommendation']['change_to'] = latest_version
+                    reco['recommendation']['message'] = message
+
+        component_result["recommendation"] = reco['recommendation']
+    return component_result
+
+
+def get_analyses_from_graph (ecosystem, package, version):
+    url = "http://{host}:{port}".format\
+            (host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),\
+            port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
+    qstring =  "g.V().has('pecosystem','"+ecosystem+"').has('pname','"+package+"').has('version','"+version+"')."
+    qstring += "as('version').in('has_version').as('package').select('version','package').by(valueMap());"
+    payload = {'gremlin': qstring}
+
+    graph_req = post(url,data=json.dumps(payload))
+    data = graph_req.json()
+
+    data = get_alternate_component_recommendation(data.get('result'), package, version)
+    return {"result": data}
 
 
 def get_latest_analysis_for(ecosystem, package, version):
