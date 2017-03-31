@@ -720,18 +720,24 @@ class ComponentsInRange(ResourceWithSchema):
                                            'difference': list(upstreams_nums - ours_nums)},
                                 'resolved_at': str(now)}
 
+
 class UserFeedback(ResourceWithSchema):
+    _ANALYTICS_BUCKET_NAME = "{DEPLOYMENT_PREFIX}-".format(**os.environ) \
+                             + os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback")
+
     def post(self):
-        bucket_name = os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback")
+        input_json = request.get_json()
+
         if not request.json or 'request_id' not in input_json:
             raise HTTPError(400, error="Expected JSON request")
-        input_json = request.get_json()
+
         if 'recommendation' not in input_json or 'name' not in input_json['recommendation']:
             raise HTTPError(400, error="Expected field name in recommendation")
-        s3 = AmazonS3(bucket_name=bucket_name)
+
+        s3 = AmazonS3(bucket_name=self._ANALYTICS_BUCKET_NAME)
         s3.connect()
         # Store data
-        key = "{req_id}-{recommedation_id}".format(req_id=input_json.get("request_id"), recommedation_id=input_json.get("recommendation").get("name"))
+        key = "{}-{}".format(input_json["request_id"], input_json["recommendation"]["name"])
         s3.store_dict(input_json, key)
 
         return {'status': 'success'}
