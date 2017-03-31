@@ -67,9 +67,5 @@ if (env.BRANCH_NAME == 'master') {
         stage('Deploy - rh-idev') {
             sh 'oc --context=rh-idev deploy bayesian-api --latest'
         }
-
-        stage('Deploy - dsaas') {
-            sh 'oc --context=dsaas deploy bayesian-api --latest'
-        }
     }
 }
