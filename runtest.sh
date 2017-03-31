@@ -76,6 +76,7 @@ docker run -t \
   --net=${NETWORK} \
   --name=${CONTAINER_NAME} \
   -e PGBOUNCER_SERVICE_HOST=${DB_CONTAINER_NAME} \
+  -e DEPLOYMENT_PREFIX='test' \
   $TEST_IMAGE_NAME $@ tests/
 
 echo "Test suite passed \\o/"
