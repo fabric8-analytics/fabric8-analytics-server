@@ -36,6 +36,8 @@ from .utils import (get_latest_analysis_for, get_latest_analysis_by_hash, get_sy
                     get_analyses_from_graph)
 from cucoslib.graphutils import (get_stack_usage_data_graph, get_stack_popularity_data_graph,
                          aggregate_stack_data)
+import os
+from cucoslib.storages import AmazonS3
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 rest_api_v1 = Api(api_v1)
@@ -718,6 +720,22 @@ class ComponentsInRange(ResourceWithSchema):
                                            'difference': list(upstreams_nums - ours_nums)},
                                 'resolved_at': str(now)}
 
+class UserFeedback(ResourceWithSchema):
+    def post(self):
+        bucket_name = os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback")
+        if not request.json or 'request_id' not in input_json:
+            raise HTTPError(400, error="Expected JSON request")
+        input_json = request.get_json()
+        if 'recommendation' not in input_json or 'name' not in input_json['recommendation']:
+            raise HTTPError(400, error="Expected field name in recommendation")
+        s3 = AmazonS3(bucket_name=bucket_name)
+        s3.connect()
+        # Store data
+        key = "{req_id}-{recommedation_id}".format(req_id=input_json.get("request_id"), recommedation_id=input_json.get("recommendation").get("name"))
+        s3.store_dict(input_json, key)
+
+        return {'status': 'success'}
+
 
 class StackAnalyses(ResourceWithSchema):
     def post(self):
@@ -970,6 +988,7 @@ add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
 add_resource_no_matter_slashes(StackAnalysesByGraphGET, '/stack-analyses/<external_request_id>')
 add_resource_no_matter_slashes(StackAnalysesByOrigin, '/stack-analyses/by-origin/<origin>')
+add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',
                                endpoint='get_schemas_by_collection')
