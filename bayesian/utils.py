@@ -151,10 +151,13 @@ def get_analyses_from_graph (ecosystem, package, version):
               ".as('package').out('has_version').as('version').select('package','version').by(valueMap());"
     payload = {'gremlin': qstring}
     graph_req = post(url, data=json.dumps(payload))
-    resp = graph_req.json()
-    data = resp['result']['data']
-    resp = generate_recommendation(data, package, version)
-    return resp
+    try:
+        resp = graph_req.json()
+        data = resp['result']['data']
+        resp = generate_recommendation(data, package, version)
+        return resp
+    except:
+        return None
 
 def get_latest_analysis_for(ecosystem, package, version):
     """Note: has to be called inside flask request context"""

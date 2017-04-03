@@ -379,7 +379,7 @@ class AnalysesEPVByGraph(ResourceWithSchema):
         result = get_analyses_from_graph(ecosystem, package, version)
         current_app.logger.warn( "%r" % result)
 
-        if  'data' in result.get('result',{}):
+        if result != None:
             # Known component for Bayesian
             return result
 
