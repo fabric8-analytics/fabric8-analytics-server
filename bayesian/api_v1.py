@@ -388,7 +388,7 @@ class AnalysesEPVByGraph(ResourceWithSchema):
             args = {'ecosystem': ecosystem, 'name': package, 'version': version}
             server_run_flow('graphSyncFlow', args)
             msg = "Package {ecosystem}:{package}:{version} is unavailable. The package will be available shortly,"\
-                    " please rety after some time.".format(ecosystem=ecosystem, package=package, version=version)
+                    " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
             raise HTTPError(202, msg)
 
         # analyses is in-progress: data not available on graphdb yet
@@ -603,7 +603,7 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
             return response
         except:
             raise HTTPError(500, "Error creating response for request {t}".format(t=external_request_id))
- 
+
 
 class StackAnalysesByGraph(ResourceWithSchema):
     schema_ref = SchemaRef('stack_analyses', '2-1-4')
@@ -612,33 +612,33 @@ class StackAnalysesByGraph(ResourceWithSchema):
         files = request.files.getlist('manifest[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
-        
+
         # At least one manifest file should be present to analyse a stack
         if len(files) <= 0:
             return jsonify( error="Error processing request. Please upload a valid manifest files.")
-        
+
         request_id = uuid.uuid4().hex
         manifests = []
         stack_data = {}
         result = []
         for f in files:
             filename = f.filename
-            
+
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
                 return jsonify (error="Manifest file '{filename}' is not supported".format(filename=filename))
-            
+
             content = f.read().decode('utf-8')
-            
+
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
-            
+
             # Check if the manifest is valid
             if not manifest_descriptor.validate(content):
                 return jsonify(error="Error processing request. Please upload a valid manifest file '{filename}'".
                                format(filename=filename))
-            
+
             # Limitation: Currently, appstack can support only package.json
             # Record the response details for this manifest file
             manifest = {'filename': filename, 'content': content, 'ecosystem': manifest_descriptor.ecosystem}
@@ -650,7 +650,7 @@ class StackAnalysesByGraph(ResourceWithSchema):
                 appstack_file = {'packagejson': manifest_file}
                 url = current_app.config["BAYESIAN_ANALYTICS_URL"]
                 analytics_url = "{analytics_baseurl}/api/v1.0/recommendation".format(analytics_baseurl=url)
-                                                
+
                 urls = [analytics_url,current_app.config["GREMLIN_SERVER_URL_REST"]]
                 # call recommendation api asynchronously
                 try:
@@ -677,14 +677,14 @@ class StackAnalysesByGraph(ResourceWithSchema):
 
         # Store the Request in DB
         try:
-            req = StackAnalysisRequest(id=request_id, submitTime=str(dt), requestJson={'manifest': manifests}, 
+            req = StackAnalysisRequest(id=request_id, submitTime=str(dt), requestJson={'manifest': manifests},
                                        origin=origin, result={'result': result})
             rdb.session.add(req)
             rdb.session.commit()
         except SQLAlchemyError:
             current_app.logger.exception('Failed to create new analysis request')
             raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id))
-        
+
         response = {'status': 'success',
                     'request_id': request_id,
                     'result':result}
@@ -715,8 +715,8 @@ class ComponentsInRange(ResourceWithSchema):
         ours_nums = set() if not ours else set(next(iter(ours.values())))
         upstreams_nums = set() if not upstream else set(next(iter(upstream.values())))
 
-        return {'query': query, 'detail': {'analysed': ours, 
-                                           'upstream': upstream, 
+        return {'query': query, 'detail': {'analysed': ours,
+                                           'upstream': upstream,
                                            'difference': list(upstreams_nums - ours_nums)},
                                 'resolved_at': str(now)}
 
