@@ -377,8 +377,9 @@ class AnalysesEPVByGraph(ResourceWithSchema):
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
         result = get_analyses_from_graph(ecosystem, package, version)
+        current_app.logger.warn( "%r" % result)
 
-        if  len(result.get('result',{}).get('data', [])) > 0:
+        if  'data' in result.get('result',{}):
             # Known component for Bayesian
             return result
 
