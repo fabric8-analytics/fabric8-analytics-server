@@ -133,7 +133,7 @@ def generate_recommendation(data, package, version):
         for records in data:
             ver = records['version']
             if latest_version == ver.get('version', [''])[0]:
-                if ver.get('cve_ids') and ver.get('cve_ids', [''])[0] != '':
+                if ver.get('cve_ids', [''])[0] != '':
                     for cve in ver.get('cve_ids'):
                         cvss = float(cve.split(':')[1])
                         if cvss >= max_cvss:
