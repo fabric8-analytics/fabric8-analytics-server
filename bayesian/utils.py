@@ -101,7 +101,9 @@ def generate_recommendation(data, package, version):
         for records in data:
             ver = records['version']
             if version == ver.get('version', [''])[0]:
-                reco['data'] = records
+                records_arr = []
+                records_arr.append(records)
+                reco['data'] = records_arr
                 cve_ids = []
                 cve_maps = []
                 if ver.get('cve_ids', [''])[0] != '':
