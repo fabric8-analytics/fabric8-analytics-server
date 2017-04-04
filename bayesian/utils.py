@@ -150,14 +150,25 @@ def get_analyses_from_graph (ecosystem, package, version):
     qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
               ".as('package').out('has_version').as('version').select('package','version').by(valueMap());"
     payload = {'gremlin': qstring}
-    graph_req = post(url, data=json.dumps(payload))
     try:
-        resp = graph_req.json()
-        data = resp['result']['data']
-        resp = generate_recommendation(data, package, version)
-        return resp
+        graph_req = post(url, data=json.dumps(payload))
     except:
         return None
+
+    resp = graph_req.json()
+
+    if len(resp['result']['data']) == 0:
+        # trigger unknown component flow in API for missing package
+        return None
+
+    data = resp['result']['data']
+    resp = generate_recommendation(data, package, version)
+
+    if 'data' not in resp.get('result'):
+        # trigger unknown component flow in API for missing version
+        return None
+
+    return resp
 
 def get_latest_analysis_for(ecosystem, package, version):
     """Note: has to be called inside flask request context"""
