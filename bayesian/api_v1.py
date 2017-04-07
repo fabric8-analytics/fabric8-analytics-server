@@ -570,6 +570,8 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
     schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     def get(self, external_request_id):
+        external_request_id = 'c9a85e97d379481f8440750f9ef5251b'
+
         try:
             results = rdb.session.query(WorkerResult)\
                                  .filter(WorkerResult.external_request_id == external_request_id,
