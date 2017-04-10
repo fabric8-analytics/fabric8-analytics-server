@@ -386,8 +386,7 @@ class AnalysesEPVByGraph(ResourceWithSchema):
         # Enter the unknown path
         result = get_latest_analysis_for(ecosystem, package, version)
         if result == None:
-            args = {'ecosystem': ecosystem, 'name': package, 'version': version}
-            server_run_flow('graphSyncFlow', args)
+            server_create_analysis(ecosystem, package, version, force=False)
             msg = "Package {ecosystem}:{package}:{version} is unavailable. The package will be available shortly,"\
                     " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
             raise HTTPError(202, msg)
