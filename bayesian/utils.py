@@ -31,20 +31,22 @@ def server_run_flow(flow_name, flow_args):
     return run_flow(flow_name, flow_args)
 
 
-def server_create_analysis(ecosystem, package, version, force=False):
+def server_create_analysis(ecosystem, package, version, force=False, force_graph_sync=False):
     """Create bayesianApiFlow handling analyses for specified EPV
 
     :param ecosystem: ecosystem for which the flow should be run
     :param package: package for which should be flow run
     :param version: package version
     :param force: force run flow even specified EPV exists
+    :param force_graph_sync: force synchronization to graph
     :return: dispatcher ID handling flow
     """
     args = {
         'ecosystem': ecosystem,
         'name': MavenCoordinates.normalize_str(package) if ecosystem == 'maven' else package,
         'version': version,
-        'force': force
+        'force': force,
+        'force_graph_sync': force_graph_sync
     }
 
     return server_run_flow('bayesianApiFlow', args)
