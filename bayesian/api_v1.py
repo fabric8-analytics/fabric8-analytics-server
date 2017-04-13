@@ -384,15 +384,10 @@ class AnalysesEPVByGraph(ResourceWithSchema):
             return result
 
         # Enter the unknown path
-        result = get_latest_analysis_for(ecosystem, package, version)
-        if result == None:
-            server_create_analysis(ecosystem, package, version, force=False, force_graph_sync=True)
-            msg = "Package {ecosystem}:{package}:{version} is unavailable. The package will be available shortly,"\
-                    " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
-            raise HTTPError(202, msg)
-
-        # analyses is in-progress: data not available on graphdb yet
-        return {'status': 'in-progress'}
+        server_create_analysis(ecosystem, package, version, force=False, force_graph_sync=True)            
+        msg = "{ecosystem} Package {package}/{version} is unavailable. The package will be available shortly,"\
+                " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
+        raise HTTPError(202, msg)
 
 
 class Analyses(AnalysisBase):
