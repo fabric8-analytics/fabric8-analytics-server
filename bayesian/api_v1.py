@@ -397,11 +397,16 @@ class AnalysesEPVByGraph(ResourceWithSchema):
             # Known component for Bayesian
             return result
 
-        # Enter the unknown path
-        server_create_analysis(ecosystem, package, version, force=False, force_graph_sync=True)
-        msg = "{ecosystem} Package {package}/{version} is unavailable. The package will be available shortly,"\
-                " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
-        raise HTTPError(202, msg)
+        if os.environ.get("INVOKE_API_WORKERS", "") == "1":
+            # Enter the unknown path
+            server_create_analysis(ecosystem, package, version, force=False, force_graph_sync=True)
+            msg = "{ecosystem} Package {package}/{version} is unavailable. The package will be available shortly,"\
+                    " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
+            raise HTTPError(202, msg)
+        else:
+            msg = "No data found for {ecosystem} Package {package}/{version}".format(ecosystem=ecosystem,\
+                    package=package, version=version)
+            return {"msg": msg}
 
 
 class Analyses(AnalysisBase):
