@@ -406,7 +406,7 @@ class AnalysesEPVByGraph(ResourceWithSchema):
         else:
             msg = "No data found for {ecosystem} Package {package}/{version}".format(ecosystem=ecosystem,\
                     package=package, version=version)
-            return {"msg": msg}
+            raise HTTPError(404, msg)
 
 
 class Analyses(AnalysisBase):
