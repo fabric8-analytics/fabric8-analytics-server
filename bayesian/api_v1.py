@@ -4,6 +4,7 @@ import urllib.parse
 import uuid
 import json
 import requests
+import re
 
 from requests_futures.sessions import FuturesSession
 
@@ -33,7 +34,7 @@ from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_latest_analysis_for, get_latest_analysis_by_hash, get_system_version,
                     do_projection, build_nested_schema_dict, server_create_analysis, server_run_flow,
-                    get_analyses_from_graph)
+                    get_analyses_from_graph, search_packages_from_graph)
 from cucoslib.graphutils import (get_stack_usage_data_graph, get_stack_popularity_data_graph,
                          aggregate_stack_data)
 import os
@@ -370,6 +371,19 @@ class AnalysisBase(ResourceWithSchema):
         return result
 
 
+@api_v1.route('/package-search')
+def search_package():
+    package = request.args.get('package')
+    if not package:
+        msg = "Please enter a valid search term"
+        raise HTTPError(202, msg)
+
+    # Tokenize the search term before calling graph search
+    result = search_packages_from_graph(re.split('\W+', package))
+
+    return result
+
+
 class AnalysesEPVByGraph(ResourceWithSchema):
     schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
 
@@ -384,7 +398,7 @@ class AnalysesEPVByGraph(ResourceWithSchema):
             return result
 
         # Enter the unknown path
-        server_create_analysis(ecosystem, package, version, force=False, force_graph_sync=True)            
+        server_create_analysis(ecosystem, package, version, force=False, force_graph_sync=True)
         msg = "{ecosystem} Package {package}/{version} is unavailable. The package will be available shortly,"\
                 " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
         raise HTTPError(202, msg)
