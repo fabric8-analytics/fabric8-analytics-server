@@ -1,0 +1,152 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: bayesian-api
+metadata:
+  name: bayesian-api
+  annotations:
+    description: bayesian-api
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      service: bayesian-api
+    name: bayesian-api
+  spec:
+    replicas: 1
+    selector:
+      service: bayesian-api
+    template:
+      metadata:
+        labels:
+          service: bayesian-api
+      spec:
+        containers:
+        - env:
+          - name: CCS_DEBUG
+            value: "true"
+          - name: DEPLOYMENT_PREFIX
+            value: "${DEPLOYMENT_PREFIX}"
+          - name: WORKER_ADMINISTRATION_REGION
+            value: "api"
+          - name: PGBOUNCER_SERVICE_HOST
+            value: bayesian-pgbouncer
+          - name: ANITYA_SERVICE_HOST
+            value: bayesian-anitya
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: coreapi-postgres
+                key: database
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: coreapi-postgres
+                key: password
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: coreapi-postgres
+                key: username
+          - name: AWS_SQS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: aws
+                key: sqs-access-key-id
+          - name: AWS_SQS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: aws
+                key: sqs-secret-access-key
+          - name: AWS_S3_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+               name: aws
+               key: s3-access-key-id
+          - name: AWS_S3_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: aws
+                key: s3-secret-access-key
+          image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
+          name: bayesian-api
+          ports:
+          - containerPort: 5000
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /api/v1/readiness
+              port: 5000
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /api/v1/liveness
+              port: 5000
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 6
+          resources:
+            limits:
+              memory: "512Mi"
+        restartPolicy: Always
+    test: false
+    triggers:
+    - type: ConfigChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      service: bayesian-api
+    name: bayesian-api
+  spec:
+    ports:
+    - name: "32000"
+      port: 32000
+      protocol: TCP
+      targetPort: 5000
+    selector:
+      service: bayesian-api
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: bayesian-api
+  spec:
+    host: ${BAYESIAN_API_HOSTNAME}
+    to:
+      kind: Service
+      name: bayesian-api
+
+parameters:
+- description: Deployment prefix used for deployment-specific AWS resources
+  displayName: Deployment prefix
+  required: true
+  name: DEPLOYMENT_PREFIX
+  value: "os"
+
+- description: A hostname where the Bayesian API should be exposed (will be auto-generated if empty)
+  displayName: Bayesian API hostname
+  required: false
+  name: BAYESIAN_API_HOSTNAME
+
+- description: Docker registry where the image is
+  displayName: Docker registry
+  required: true
+  name: DOCKER_REGISTRY
+  value: "registry.devshift.net"
+
+- description: Docker image to use
+  displayName: Docker image
+  required: true
+  name: DOCKER_IMAGE
+  value: "bayesian/bayesian-api"
+
+- description: Image tag
+  displayName: Image tag
+  required: true
+  name: IMAGE_TAG
+  value: "latest"
