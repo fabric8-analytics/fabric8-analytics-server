@@ -149,4 +149,4 @@ parameters:
   displayName: Image tag
   required: true
   name: IMAGE_TAG
-  value: "latest"
+  value: "latest"  # image-tag
