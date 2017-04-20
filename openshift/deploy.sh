@@ -11,13 +11,7 @@ function oc_process_apply() {
 }
 
 here=`dirname $0`
-template="${here}/api-template.yaml"
+template="${here}/template.yaml"
 
-if [[ $PTH_ENV ]]; then
-  deployment_prefix=$PTH_ENV
-else
-  deployment_prefix=$(oc whoami)
-fi
-
-oc_process_apply "$template" "-v DEPLOYMENT_PREFIX=${deployment_prefix} ${BAYESIAN_API_HOSTNAME:+-v BAYESIAN_API_HOSTNAME=${BAYESIAN_API_HOSTNAME}}"
+oc_process_apply "$template" "${BAYESIAN_API_HOSTNAME:+-v BAYESIAN_API_HOSTNAME=${BAYESIAN_API_HOSTNAME}}"
 

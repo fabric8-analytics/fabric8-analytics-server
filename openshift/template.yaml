@@ -27,7 +27,10 @@ objects:
           - name: CCS_DEBUG
             value: "true"
           - name: DEPLOYMENT_PREFIX
-            value: "${DEPLOYMENT_PREFIX}"
+            valueFrom:
+              configMapKeyRef:
+                name: bayesian-config
+                key: deployment-prefix
           - name: WORKER_ADMINISTRATION_REGION
             value: "api"
           - name: PGBOUNCER_SERVICE_HOST
@@ -122,12 +125,6 @@ objects:
       name: bayesian-api
 
 parameters:
-- description: Deployment prefix used for deployment-specific AWS resources
-  displayName: Deployment prefix
-  required: true
-  name: DEPLOYMENT_PREFIX
-  value: "os"
-
 - description: A hostname where the Bayesian API should be exposed (will be auto-generated if empty)
   displayName: Bayesian API hostname
   required: false
