@@ -5,8 +5,8 @@
 
 set -e
 
-SELINON_COMMIT=82bb790
-SELINONLIB_COMMIT=dc6898f
+SELINON_COMMIT=1b6b34a
+SELINONLIB_COMMIT=a6129f8
 
 
 pip3 install -U git+https://github.com/selinon/selinon@${SELINON_COMMIT} &&
