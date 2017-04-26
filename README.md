@@ -12,9 +12,6 @@ The API details are provided as a [RAML file](../docs/api/raml/api.raml).
 A [JSON schema definition](schemas/generated/component-analysis-v1-0-0.schema.json)
 is provided for the component analysis endpoint.
 
-There is also an [example API response](../docs/api/api-response-examples.md) and an
-overview of the [recorded analysis metadata](../docs/api/metadata-format.md).
-
 ## Core API Access Logs
 
 Core API access logs have following format:
@@ -33,82 +30,9 @@ For example:
 
 Method of accessing logs can vary based on the way the API is deployed. See below for [instructions on accessing logs](#logs).
 
-## Authentication
-
-The core API currently uses kerberos for authentication. When using `docker-compose` to run, it sets up a local kerberos instance and offers a container that you can use as a client. When running via Kubernetes, it expects a keytab to be mounted at `/mnt/httpd.keytab`.
-
-### Kerberos Authentication With docker-compose:
-
-- if you want to use kerberos authentication, you need to explicitly use `docker-compose.kerberos.yml` in addition to `docker-compose.yml` for all commands (see below)
-- note that while accessing the core API from `kerberos-client` container, you have to use `coreapi-server:5000` as the API server URL
-- commandline:
-  - run the system including kerberos containers
-
-            docker-compose -f docker-compose.yml -f docker-compose.kerberos.yml up
-
-  - open a new bash session in `kerberos-client` container
-
-            docker-compose -f docker-compose.yml -f docker-compose.kerberos.yml run kerberos-client /bin/bash
-
-  - get a ticket granting ticket, use password `user`
-
-            kinit user
-
-  - you are now authenticated and can access any kerberized endpoint of the core API server
-
-### Kerberos Authentication With Vagrant:
-
-- (re)run Vagrant box
-
-        vagrant up
-
-- if you want to authenticate from your host machine:
-  - note that while accessing the core API from your host, you have to use `192.168.42.42:32000` as the API URL (the port is different - 32000 - than the one you need to use when using docker-compose - 5000)
-  - install `krb5-workstation` package
-
-            dnf install krb5-workstation
-
-  - setup krb5 config (NOTE: it's important that you don't copy the file under the original name, since `kinit` ignores files with dots in filename under `/etc/krb5.conf.d/`)
-
-            sudo cp kerberos/krb5.conf /etc/krb5.conf.d/bayesian
-
-  - make sure that your `/etc/krb5.conf` file contains `includedir /etc/krb5.conf.d/` directive; if not, then add it
-  - get a ticket granting ticket
-
-            kinit user@EXAMPLE.COM
-
-  - commandline:
-    - you are now authenticated and can access any kerberized endpoint of the core API server
-
-- if you want to authenticate from the Vagrant box itself (commandline only):
-  - ssh into the Vagrant box
-
-            vagrant ssh
-
-  - get a ticket granting ticket, use password `user`
-
-            kinit user
-
-  - you are now authenticated and can access any kerberized endpoint of the core API server
-  - note that while running in Vagrant box, you have to use `coreapi-server:32000` as the core API URL (the port is different - 32000 - than the one you need to use when using docker-compose - 5000)
-
-### How the core API uses Kerberos Authentication
-
-To make authentication easy and fast, only a single API endpoint is behind kerberos - `/api/v1/api-token`. This will retrieve a token that can be used for all subsequent API calls. The validity of the token is limited by time, currently one hour.
-
-Assuming you have a valid kerberos ticket on your system, you can follow these instructions:
-- make a POST request to `/api/v1/api-token` with kerberos negotiation, e.g. `curl -X POST --negotiate -u : coreapi-server:port/api/v1/api-token`
-  - response will be something like: `{'token': 'some-string...', 'expires_at': '<timestamp>'}`
-- now you can use the token to authenticate to any other part of the API for one hour; the token must be provided in `Authorization` header of requests, for example:
-  - `curl -H "Authorization: token some-string" coreapi-server:5000/api/v1/ecosystems`
-
-Issuing a GET request to `/api/v1/api-token` will return API token and its expiration timestamp, while issuing a DELETE request to this URI will expire API token of the user doing that request. Each POST call to this URL will revoke the old token and generate and return a new one.
-
-# Running the tests locally
-
 ## Docker based API testing
 
-From the `server/` directory, run the tests in a container using the helper
+From the top-level git directory, run the tests in a container using the helper
 script:
 
     $ ./runtests.sh
