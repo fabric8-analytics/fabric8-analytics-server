@@ -30,7 +30,8 @@ def login_required(view):
                 format(token=token))
             try:
                 decoded = jwt.decode(token, current_app.config.get('BAYESIAN_PUBLIC_KEY', ''))
-                lgr.info('Successfuly authenticated user {e} using JWT'.format(e=user.email))
+                lgr.info('Successfuly authenticated user {e} using JWT'.
+                         format(e=decoded.get('email')))
             except:
                 lgr.exception('Failed decoding JWT token')
                 decoded = {'email': 'unauthenticated@jwt.failed'}
