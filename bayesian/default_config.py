@@ -31,4 +31,4 @@ BAYESIAN_ANALYTICS_URL = os.getenv('BAYESIAN_ANALYTICS_URL','http://recommendati
 GREMLIN_SERVER_URL_REST = "http://{host}:{port}".format\
                             (host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),\
                             port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
-
+BAYESIAN_PUBLIC_KEY = os.getenv('BAYESIAN_AUTH_KEY', '')
