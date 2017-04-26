@@ -385,6 +385,8 @@ def search_package():
 
 
 class AnalysesEPVByGraph(ResourceWithSchema):
+    method_decorators = [login_required]
+
     schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
 
     def get(self, ecosystem, package, version):
