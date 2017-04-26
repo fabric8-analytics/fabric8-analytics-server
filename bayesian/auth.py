@@ -10,6 +10,7 @@ from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
 
 from . import rdb
 from .exceptions import HTTPError
+from .utils import fetch_public_key
 
 
 jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
@@ -29,7 +30,9 @@ def login_required(view):
             lgr.info('Seeing "Bearer" Authentication header {token}, trying to decode as JWT token'.
                 format(token=token))
             try:
-                decoded = jwt.decode(token, current_app.config.get('BAYESIAN_PUBLIC_KEY', ''))
+                decoded = jwt.decode(token,
+                                     fetch_public_key(current_app),
+                                     audience=current_app.config.get('BAYESIAN_JWT_AUDIENCE'))
                 lgr.info('Successfuly authenticated user {e} using JWT'.
                          format(e=decoded.get('email')))
             except:

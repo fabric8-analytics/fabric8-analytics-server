@@ -13,7 +13,7 @@ from cucoslib.utils import json_serial, MavenCoordinates
 from . import rdb
 from .setup import Setup
 
-from requests import post
+from requests import get, post, exceptions
 
 def get_recent_analyses(limit=100):
     return rdb.session.query(Analysis).order_by(Analysis.started_at.desc()).limit(limit)
@@ -297,3 +297,29 @@ class JSONEncoderWithExtraTypes(JSONEncoder):
         else:
             return list(iterable)
         return JSONEncoder.default(self, obj)
+
+
+def fetch_public_key(app):
+    """ Gets public key and caches it on the app object for future use """
+    # TODO: even though saving the key on the app object is not very nice,
+    #  it's actually safe - the worst thing that can happen is that we will
+    #  fetch and save the same value on the app object multiple times
+    if not getattr(app, 'public_key', ''):
+        pub_key_url = app.config.get('BAYESIAN_FETCH_PUBLIC_KEY')
+        if pub_key_url:
+            try:
+                result = get(pub_key_url, timeout=0.5)
+                app.logger.info('Fetching public key from %s, status %d, result: %s',
+                                pub_key_url, result.status_code, result.text)
+            except exceptions.Timeout:
+                app.logger.error('Timeout fetching public key from %s', pub_key_url)
+                return ''
+            if result.status_code != 200:
+                return ''
+            pkey = result.json().get('public_key', '')
+            app.public_key = \
+                '-----BEGIN PUBLIC KEY-----\n{pkey}\n-----END PUBLIC KEY-----'.format(pkey=pkey)
+        else:
+            app.public_key = app.config.get('BAYESIAN_PUBLIC_KEY')
+
+    return app.public_key
