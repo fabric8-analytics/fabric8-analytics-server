@@ -45,7 +45,7 @@ def login_required(view):
             g.current_user = user
         else:
             g.current_user = APIUser('unauthenticated@no.auth.token')
-            # raise HTTPError(401, 'Authentication required')
+            raise HTTPError(401, 'Authentication required')
         return view(*args, **kwargs)
     return wrapper
 
