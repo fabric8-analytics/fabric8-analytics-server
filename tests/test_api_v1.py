@@ -179,7 +179,6 @@ class TestApiV1Root(object):
             "/api/v1/analyses/<ecosystem>/<package>/<version>",
             "/api/v1/analyses/by-artifact-hash/<algorithm>/<artifact_hash>",
             "/api/v1/analyses/by-id/<int:analysis_id>",
-            "/api/v1/api-token",
             "/api/v1/component-analyses/<ecosystem>/<package>/<version>",
             "/api/v1/ecosystems",
             "/api/v1/packages/<ecosystem>",
@@ -509,150 +508,8 @@ class TestGeneral(object):
 
 
 @pytest.mark.usefixtures('client_class', 'rdb')
-class TestApiToken(object):
-    # NOTE: due to the way pytest-flask works, we need to get a fresh client
-    #   if there are multiple requests in a single method; watch out for this!
-    def test_get_no_auth(self):
-        res = self.client.get(api_route_for('/api-token'))
-        assert res.status_code == 401
-        assert isinstance(current_user._get_current_object(), AnonymousUser)
-
-    def test_get_token_and_use_it(self):
-        res = self.client.post(api_route_for('/api-token'), environ_base={'REMOTE_USER': 'user'})
-        assert res.status_code == 200
-        assert 'token' in res.json
-
-        # now make sure that accessing some URL without auth doesn't login any user
-        with current_app.test_client() as c:
-            res2 = c.get(api_route_for('/ecosystems'))
-            assert res2.status_code == 200
-            assert isinstance(current_user._get_current_object(), AnonymousUser)
-
-        with current_app.test_client() as c:
-            res3 = c.get(api_route_for('/ecosystems'),
-                         headers=[('Authorization', 'token ' + res.json['token'])])
-            assert res3.status_code == 200
-            assert current_user.login == 'user'
-
-    def test_access_with_no_token(self):
-        res = self.client.get(api_route_for('/ecosystems'))
-        assert res.status_code == 200
-        assert isinstance(current_user._get_current_object(), AnonymousUser)
-
-    def test_access_with_invalid_token(self):
-        res = self.client.get(api_route_for('/ecosystems'),
-                              headers=[('Authorization', 'token asd')])
-        assert res.status_code == 401
-        assert res.json['error'] == 'Bad token'
-
-        with current_app.test_client() as c:
-            res2 = c.get(api_route_for('/ecosystems'),
-                         headers=[('Authorization', 'token')])
-            assert res2.status_code == 401
-            assert res2.json['error'] == 'Bad Authorization header'
-
-        with current_app.test_client() as c:
-            # for some reason, our error routing didn't find proper blueprint error
-            # handler on non-GET request previously... so test it
-            res3 = c.post(api_route_for('/ecosystems'),
-                          headers=[('Authorization', 'token sdf')])
-            assert res3.status_code == 401
-            assert res3.json['error'] == 'Bad token'
-
-    def test_access_with_expired_token(self):
-        with freeze_time('2016-01-01 01:01:01'):
-            res = self.client.post(api_route_for('/api-token'),
-                                   environ_base={'REMOTE_USER': 'user'})
-            assert res.status_code == 200
-            assert 'token' in res.json
-
-        with current_app.test_client() as c, freeze_time('2016-01-01 01:01:05'):
-            # tokens have 2 second lifespan when testing
-            res2 = c.get(api_route_for('/ecosystems'),
-                         headers=[('Authorization', 'token ' + res.json['token'])])
-            assert res2.status_code == 401
-            assert res2.json['error'] == 'Token expired'
-
-    def test_revoke_token(self):
-        res = self.client.post(api_route_for('/api-token'), environ_base={'REMOTE_USER': 'user'})
-        assert res.status_code == 200
-        assert 'token' in res.json
-
-        with current_app.test_client() as c:
-            res2 = c.delete(api_route_for('/api-token'),
-                            headers=[('Authorization', 'token ' + res.json['token'])])
-            assert res2.status_code == 200
-            assert res2.json['token'] is None
-
-        with current_app.test_client() as c:
-            res2 = c.get(api_route_for('/ecosystems'),
-                         headers=[('Authorization', 'token ' + res.json['token'])])
-            assert res2.status_code == 401
-            assert res2.json['error'] == 'Bad token'
-
-    def test_old_token_doesnt_work_if_newer_is_generated(self):
-        with freeze_time('2016-01-01 01:01:01'):
-            res = self.client.post(api_route_for('/api-token'),
-                                   environ_base={'REMOTE_USER': 'user'})
-            assert res.status_code == 200
-            assert 'token' in res.json
-
-            # now make sure that this token works
-            with current_app.test_client() as c:
-                res2 = c.get(api_route_for('/ecosystems'),
-                            headers=[('Authorization', 'token ' + res.json['token'])])
-                assert res2.status_code == 200
-                assert current_user.login == 'user'
-
-        # we freeze time one second later to make sure that even very slow
-        #   test runs still have the generated token working (testing setup
-        #   makes tokens expire after very short period of time)
-        with freeze_time('2016-01-01 01:01:02'):
-            # now generate a newer token one second later...
-            with current_app.test_client() as c:
-                res3 = c.post(api_route_for('/api-token'),
-                            headers=[('Authorization', 'token ' + res.json['token'])])
-                assert res3.status_code == 200
-
-            # ...make sure that the old token doesn't work any more...
-            with current_app.test_client() as c:
-                res4 = c.get(api_route_for('/ecosystems'),
-                            headers=[('Authorization', 'token ' + res.json['token'])])
-                assert res4.status_code == 401
-
-            # ...and that the new one does
-            with current_app.test_client() as c:
-                res5 = c.get(api_route_for('/ecosystems'),
-                            headers=[('Authorization', 'token ' + res3.json['token'])])
-                assert res5.status_code == 200
-                assert current_user.login == 'user'
-
-    @freeze_time('2016-01-01 01:01:01', tz_offset=2)
-    def test_timezone_troubles(self):
-        # make sure that token is valid across timezones
-        res = self.client.post(api_route_for('/api-token'), environ_base={'REMOTE_USER': 'user'})
-        assert res.status_code == 200
-        assert 'token' in res.json
-
-        with current_app.test_client() as c:
-            res2 = c.get(api_route_for('/ecosystems'),
-                         headers=[('Authorization', 'token ' + res.json['token'])])
-            assert res2.status_code == 200
-            assert current_user.login == 'user'
-
-
-@pytest.mark.usefixtures('client_class', 'rdb')
 class TestUser(object):
-    def test_login_required(self):
-        res = self.client.get(api_route_for('/user'))
-        assert res.status_code == 401
-
-    def test_returns_info(self, auth_header):
-        res = self.client.get(api_route_for('/user'), headers=[auth_header])
-        assert res.status_code == 200
-        res.json.pop('token_expires')
-        assert res.json == {'active': True, 'email': None, 'login': 'someuser', 'roles': [],
-                            'token': auth_header[1].split()[1]}
+    pass  # TODO
 
 
 @pytest.mark.usefixtures('client_class')

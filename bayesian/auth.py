@@ -1,55 +1,57 @@
 import datetime
 import enum
 
-from flask import current_app, request
+from flask import current_app, request, g
 from flask_principal import Permission as PrincipalPermission
 from flask_security import RoleMixin, UserMixin, current_user, login_user
 from itsdangerous import BadSignature, SignatureExpired, TimedJSONWebSignatureSerializer
+import jwt
+from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
 
 from . import rdb
 from .exceptions import HTTPError
 
 
-def unauthenticated_handler():
-    raise HTTPError(401, 'Authentication required')
+jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
 
 
-def request_loader(req):
-    # try to load REMOTE_USER set by httpd
-    #   for now, we assume all users that get logged in via httpd are allowed to access the system
-    #   so if the local user account doesn't exist, we create it automatically
-    remote_user = req.environ.get('REMOTE_USER', None)
-    api_token = None
-    user = None
+def login_required(view):
+    # NOTE: the actual authentication 401 failures are commented out for now and will be
+    # uncommented as soon as we know everything works fine; right now this is purely for
+    # being able to tail logs and see if stuff is going fine
+    def wrapper(*args, **kwargs):
+        lgr = current_app.logger
+        user = None
 
-    auth_header = req.headers.get('Authorization', None)
-    if auth_header and auth_header.startswith('token'):
-        split = auth_header.split()
-        if len(split) != 2:
-            raise HTTPError(401, 'Bad Authorization header')
-        api_token = split[1]
+        auth_header = request.headers.get('Authorization', '').strip()
+        if auth_header.startswith('Bearer '):
+            _, token = auth_header.split(' ', 1)
+            lgr.info('Seeing "Bearer" Authentication header {token}, trying to decode as JWT token'.
+                format(token=token))
+            try:
+                decoded = jwt.decode(token, current_app.config.get('BAYESIAN_PUBLIC_KEY', ''))
+                lgr.info('Successfuly authenticated user {e} using JWT'.format(e=user.email))
+            except:
+                lgr.exception('Failed decoding JWT token')
+                decoded = {'email': 'unauthenticated@jwt.failed'}
+                # TODO: raise HTTPError(401, 'Authentication failed - could not decode JWT token')
+            user = APIUser(decoded.get('email', 'nobody@nowhere.nodomain'))
 
-    if remote_user:
-        username = remote_user.split('@')[0]
-        user = current_app.user_datastore.find_user(login=username)
-        if not user and remote_user:
-            user = current_app.user_datastore.create_user(login=username)
-            rdb.session.commit()
-
-    if api_token:
-        try:
-            user = User.get_by_token(api_token)
-        except SignatureExpired:
-            # need to handle this first, since it's subclass of BadSignature
-            raise HTTPError(401, 'Token expired')
-        except BadSignature:
-            raise HTTPError(401, 'Bad token')
-
-    if user:
-        login_user(user)
-    return user
+        if user:
+            g.current_user = user
+        else:
+            g.current_user = APIUser('unauthenticated@no.auth.token')
+            # raise HTTPError(401, 'Authentication required')
+        return view(*args, **kwargs)
+    return wrapper
 
 
+class APIUser(UserMixin):
+    def __init__(self, email):
+        self.email = email
+
+
+# NOTE: the stuff below is obsolete and we'll most likely want to drop it in future
 roles_users = rdb.Table('roles_users',
                         rdb.Column('user_id', rdb.Integer(), rdb.ForeignKey('user.id')),
                         rdb.Column('role_id', rdb.Integer(), rdb.ForeignKey('role.id')))
