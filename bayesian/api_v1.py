@@ -10,10 +10,9 @@ from requests_futures.sessions import FuturesSession
 
 from io import StringIO
 
-from flask import Blueprint, current_app, request, url_for, Response
+from flask import Blueprint, current_app, request, url_for, Response, g
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
-from flask_security import current_user, login_required
 from flask_cors import CORS
 from sqlalchemy import func as sqlfunc
 from sqlalchemy import or_
@@ -30,6 +29,7 @@ from cucoslib.utils import (safe_get_latest_version, get_dependents_count, get_c
                             usage_rank2str, MavenCoordinates)
 from cucoslib.manifests import get_manifest_descriptor_by_filename
 from . import rdb
+from .auth import login_required
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_latest_analysis_for, get_latest_analysis_by_hash, get_system_version,
@@ -540,47 +540,16 @@ class AnalysisByID(AnalysisBase):
         return self._sanitize_result(result, debuginfo=args['debuginfo'])
 
 
-class ApiToken(ResourceWithSchema):
-    method_decorators = [login_required]
-    err = 'You have to be authenticated to {what} token'
-
-    def _format_token(self):
-        return {'token': current_user.token,
-                'expires_at': current_user.token_expires.isoformat() if current_user.token_expires
-                else None}
-
-    def get(self):
-        if current_user:
-            return self._format_token()
-        raise HTTPError(401, error=self.err.format(what='get'))
-
-    def post(self):
-        if current_user:
-            current_user.generate_auth_token()
-            # https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html says, that
-            #  action performed by the POST method might not result in a resource that can be
-            #  identified by a URI. In this case, either 200 (OK) or 204 (No Content) is the
-            #  appropriate response status
-            return self._format_token(), 200
-        raise HTTPError(401, error=self.err.format(what='create new'))
-
-    def delete(self):
-        if current_user:
-            current_user.revoke_auth_token()
-            return self._format_token(), 200
-        raise HTTPError(401, error=self.err.format(what='revoke'))
-
-
 class User(ResourceWithSchema):
     method_decorators = [login_required]
 
     def get(self):
-        ret = {}
-        for attr in ['login', 'email', 'active', 'roles', 'token', 'token_expires']:
-            ret[attr] = getattr(current_user, attr)
+        ret = {'email': g.current_user.email}
         return ret
 
 class StackAnalysesByGraphGET(ResourceWithSchema):
+    method_decorators = [login_required]
+
     schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     def get(self, external_request_id):
@@ -759,6 +728,8 @@ class UserFeedback(ResourceWithSchema):
 
 
 class StackAnalyses(ResourceWithSchema):
+    method_decorators = [login_required]
+
     def post(self):
         files = request.files.getlist('manifest[]')
         dt = datetime.datetime.now()
@@ -845,6 +816,8 @@ class StackAnalyses(ResourceWithSchema):
 
 
 class StackAnalysesByOrigin(ResourceWithSchema):
+    method_decorators = [login_required]
+
     def get(self, origin):
         try:
             results = rdb.session.query(StackAnalysisRequest)\
@@ -1003,7 +976,6 @@ add_resource_no_matter_slashes(AnalysisByEPV, '/analyses/<ecosystem>/<package>/<
                                endpoint='get_analysis')
 add_resource_no_matter_slashes(AnalysisByID, '/analyses/by-id/<int:analysis_id>',
                                endpoint='get_analysis_by_id')
-add_resource_no_matter_slashes(ApiToken, '/api-token')
 add_resource_no_matter_slashes(User, '/user')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')

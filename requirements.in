@@ -10,5 +10,9 @@ jsl
 # install httpd-devel in order to have apxs command, otherwise build fails
 mod_wsgi!=4.5.4
 psycopg2
+# in order for pyjwt to be able to use RS256 we need pycrypto
+pycrypto
+pyjwt
+requests-futures
 # we require cucoslib, but it is installed manually as it is not available in PyPI
 #cucoslib

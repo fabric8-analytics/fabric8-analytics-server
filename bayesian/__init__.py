@@ -26,7 +26,6 @@ def create_app(configfile=None):
     # do the imports here to not shadow e.g. "import bayesian.frontend.api_v1"
     # by Blueprint imported here
     from .api_v1 import api_v1
-    from .auth import User, Role, unauthenticated_handler, request_loader
     from .exceptions import HTTPError
     from .utils import JSONEncoderWithExtraTypes
     app = Flask(__name__)
@@ -36,13 +35,7 @@ def create_app(configfile=None):
     # actually init the DB with config values now
     rdb.init_app(app)
     app.rdb = rdb
-    app.user_datastore = SQLAlchemyUserDatastore(app.rdb, User, Role)
-    # we have our own custom login/logout routines, so don't register flask-security blueprint
-    app.security = Security(app, app.user_datastore, register_blueprint=False)
 
-    # flask_security automatically sets app.login_manager
-    app.login_manager.request_loader(request_loader)
-    app.login_manager.unauthorized_handler(unauthenticated_handler)
     # We need JSON encoder that can serialize datetime.datetime
     app.json_encoder = JSONEncoderWithExtraTypes
 
@@ -75,6 +68,10 @@ def create_app(configfile=None):
         return Response(e.error, status=e.status_code)
 
     setup_logging(app)
+
+    @app.before_request
+    def set_current_user():
+        g.current_user = None
 
     return app
 
