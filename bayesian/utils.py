@@ -133,8 +133,10 @@ def generate_recommendation(data, package, version):
                     reco['recommendation'] = {}
                     return {"result": reco}
 
-        # check if latest version exists
-        if not latest_version or latest_version == '':
+        # check if latest version exists or current version is latest version
+        if not latest_version or latest_version == '' or version == latest_version:
+            if message != '':
+                reco['recommendation']['message'] = message
             return {"result": reco}
         # check if latest version has lower CVEs or no CVEs than current version
         for records in data:
