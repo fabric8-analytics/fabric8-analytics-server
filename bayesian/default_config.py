@@ -60,4 +60,4 @@ ODA3tTXCRh4WGd4gzCirf42qTB4kcalWsXua9ckFHDsrkkMn3bitUbnThGwe+jA3
 7PSLZ0BnksFNkTCKZmP1m+CJ6tn2ANXtQx1JrK8ineAq1FV9EzZ/
 -----END RSA PRIVATE KEY-----
 """
-BAYESIAN_PUBLIC_KEY = os.getenv('BAYESIAN_AUTH_KEY', 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzvcgFOjStfab1sYkY4Wo20PZeI3pjeYuNgOcEgtEdVDd/JmdPL+lEL5opCX+sVslu/Rxcf9Z2o5Qa/ijlyxVxpHsI9Y880mDhGuSC2skYBjlnG7QDhJ+XJQjpEyfFuuV4//f5seNLlbjEVS1f+4vxSb7CXC5Hbq095AB7kfIY2j+aYM3OqiFAZVxrz2op/8cWcqZgt4xxpZAAf+jQpIrJlUQqUbrz3LcrROrpdgEL5KQ4iuxZyDvVmtfprObwM8Frr+FJyTrX0f4gt7tXCNelnixLmwujXQTSxIc1lvnujwykZM8EdA+Ao02ccaVOfYzLOYs9mbw4Kv4q4W2YLE4z root@localhost.localdomain')
+BAYESIAN_PUBLIC_KEY = os.getenv('BAYESIAN_AUTH_KEY', '')
