@@ -31,5 +31,5 @@ setup(
     description='Bayesian Core API Server',
     license='MIT',
     keywords='bayesian',
-    url='https://gitlab.cee.redhat.com/bayesian/Bayesian'
+    url='https://github.com/baytemp/server'
 )
