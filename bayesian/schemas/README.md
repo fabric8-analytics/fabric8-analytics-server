@@ -1,8 +1,10 @@
+# Schemas for API server
+
 This directory contains versioned schemas for the core Bayesian API
 endpoints, written in JSL format.
 
-JSON Schema: http://json-schema.org/documentation.html
-JSL: https://jsl.readthedocs.io/en/latest/tutorial.html
+ * [JSON Schema](http://json-schema.org/documentation.html)
+ * [JSL](https://jsl.readthedocs.io/en/latest/tutorial.html)
 
 The numbering of the schemas uses Snowplow's SchemaVer concept [1], which says
 that, given a version number MODEL-REVISION-ADDITION, increment the:
