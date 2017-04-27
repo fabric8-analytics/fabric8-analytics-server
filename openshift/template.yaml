@@ -38,7 +38,10 @@ objects:
           - name: ANITYA_SERVICE_HOST
             value: bayesian-anitya
           - name: BAYESIAN_FETCH_PUBLIC_KEY
-            value: "https://sso.openshift.io/auth/realms/fabric8/"
+            valueFrom:
+              configMapKeyRef:
+                name: bayesian-config
+                key: keycloak-url
           - name: BAYESIAN_JWT_AUDIENCE
             value: "fabric8-online-platform"
           - name: POSTGRESQL_DATABASE

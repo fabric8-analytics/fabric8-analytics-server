@@ -305,8 +305,9 @@ def fetch_public_key(app):
     #  it's actually safe - the worst thing that can happen is that we will
     #  fetch and save the same value on the app object multiple times
     if not getattr(app, 'public_key', ''):
-        pub_key_url = app.config.get('BAYESIAN_FETCH_PUBLIC_KEY')
-        if pub_key_url:
+        keycloak_url = app.config.get('BAYESIAN_FETCH_PUBLIC_KEY', '')
+        if keycloak_url:
+            pub_key_url = keycloak_url.strip('/') + '/auth/realms/fabric8/'
             try:
                 result = get(pub_key_url, timeout=0.5)
                 app.logger.info('Fetching public key from %s, status %d, result: %s',
