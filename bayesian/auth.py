@@ -38,14 +38,14 @@ def login_required(view):
             except:
                 lgr.exception('Failed decoding JWT token')
                 decoded = {'email': 'unauthenticated@jwt.failed'}
-                # TODO: raise HTTPError(401, 'Authentication failed - could not decode JWT token')
+                raise HTTPError(401, 'Authentication failed - could not decode JWT token')
             user = APIUser(decoded.get('email', 'nobody@nowhere.nodomain'))
 
         if user:
             g.current_user = user
         else:
             g.current_user = APIUser('unauthenticated@no.auth.token')
-            #raise HTTPError(401, 'Authentication required')
+            raise HTTPError(401, 'Authentication required')
         return view(*args, **kwargs)
     return wrapper
 
