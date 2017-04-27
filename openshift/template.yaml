@@ -14,7 +14,6 @@ objects:
       service: bayesian-api
     name: bayesian-api
   spec:
-    replicas: 1
     selector:
       service: bayesian-api
     template:
@@ -91,7 +90,7 @@ objects:
               scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 60
-            timeoutSeconds: 2
+            timeoutSeconds: 10
           livenessProbe:
             httpGet:
               path: /api/v1/liveness
@@ -99,7 +98,7 @@ objects:
               scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 60
-            timeoutSeconds: 6
+            timeoutSeconds: 10
           resources:
             limits:
               memory: "512Mi"
