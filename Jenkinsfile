@@ -18,7 +18,7 @@ node('docker') {
         dockerCleanup()
         // hack
         dir('worker') {
-            git url: 'https://github.com/baytemp/worker.git', branch: 'master', credentialsId: 'baytemp-ci-gh'
+            git url: 'https://github.com/fabric8-analytics/fabric8-analytics-worker.git', branch: 'master', credentialsId: 'baytemp-ci-gh'
         }
         docker.build(image.id, '--pull --no-cache .')
         sh "docker tag ${image.id} docker-registry.usersys.redhat.com/${image.id}"
@@ -40,7 +40,7 @@ node('docker') {
                 docker.image('bayesian/coreapi-pgbouncer').pull()
             }
 
-            git url: 'https://github.com/baytemp/common.git', branch: 'master', credentialsId: 'baytemp-ci-gh'
+            git url: 'https://github.com/fabric8-analytics/fabric8-analytics-common.git', branch: 'master', credentialsId: 'baytemp-ci-gh'
             dir('integration-tests') {
                 timeout(30) {
                     sh './runtest.sh'
