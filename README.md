@@ -1,6 +1,8 @@
-# Bayesian Core API Documentation
+# Fabric8-Analytics Core API Documentation
 
-The Bayesian Core API is a microservice that is responsible for:
+*Note on naming: The Fabric8-Analytics project has evolved from 2 different projects called "cucos" and "bayesian". We're currently in process of renaming the modules and updating documentation. Until that is completed, please consider "cucos" and "bayesian" to be synonyms of "Fabric8-Analytics".*
+
+The Fabric8-Analytics API is a microservice that is responsible for:
 
 * Serving generated analysis results to clients through API
 * Scheduling new analyses based on client requests
