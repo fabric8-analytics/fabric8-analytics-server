@@ -175,13 +175,8 @@ class TestApiV1Root(object):
     api_root = {
         "paths": [
             "/api/v1",
-            "/api/v1/analyses",
-            "/api/v1/analyses/<ecosystem>/<package>/<version>",
-            "/api/v1/analyses/by-artifact-hash/<algorithm>/<artifact_hash>",
-            "/api/v1/analyses/by-id/<int:analysis_id>",
             "/api/v1/component-analyses/<ecosystem>/<package>/<version>",
-            "/api/v1/ecosystems",
-            "/api/v1/packages/<ecosystem>",
+            "/api/v1/component-search/<package>",
             "/api/v1/schemas",
             "/api/v1/schemas/<collection>",
             "/api/v1/schemas/<collection>/<name>",
@@ -190,10 +185,7 @@ class TestApiV1Root(object):
             "/api/v1/stack-analyses/<external_request_id>",
             "/api/v1/stack-analyses/by-origin/<origin>",
             "/api/v1/system/version",
-            "/api/v1/user",
-            "/api/v1/user-feedback",
-            "/api/v1/versions/<ecosystem>/<package>",
-            "/api/v1/versions/in-range/<ecosystem>"
+            "/api/v1/user-feedback"
         ]
     }
 
