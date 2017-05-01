@@ -235,156 +235,23 @@ class ApiEndpoints(ResourceWithSchema):
     def get(self):
         return {'paths': sorted(_resource_paths)}
 
-
 class SystemVersion(ResourceWithSchema):
     def get(self):
         return get_system_version()
 
+class ComponentSearch(ResourceWithSchema):
+    method_decorators = [login_required]
 
-class Ecosystems(ResourceWithSchema):
-    @paginated
-    def get(self):
-        args = pagination_parser.parse_args()
-        count = rdb.session.query(Ecosystem).count()
-        ecosystems = rdb.session.query(Ecosystem, sqllabel('pc', sqlfunc.count(Package.id))).\
-            outerjoin(Package).\
-            order_by(Ecosystem.name.asc()).\
-            group_by(Ecosystem.id).\
-            offset(get_item_skip(args['page'], args['per_page'])).\
-            limit(get_item_relative_limit(args['page'], args['per_page']))
-        return {TOTAL_COUNT_KEY: count,
-                'items': [{'ecosystem': res.Ecosystem.name, 'url': res.Ecosystem.url,
-                           'backend': res.Ecosystem.backend.name, 'package_count': res.pc}
-                          for res in ecosystems]}
+    def get(self, package):
+        if not package:
+            msg = "Please enter a valid search term"
+            raise HTTPError(202, msg)
 
-
-class Packages(ResourceWithSchema):
-    @paginated
-    def get(self, ecosystem):
-        # TODO: only show packages with at least one successful analysis pass?
-        args = pagination_parser.parse_args()
-        if rdb.session.query(Ecosystem).filter(Ecosystem.name == ecosystem).count() == 0:
-            raise HTTPError(404, "Ecosystem '{}' does not exist.".format(ecosystem))
-        count = rdb.session.query(Package).join(Ecosystem).\
-            filter(Ecosystem.name == ecosystem).\
-            count()
-        # the implicit join-load doesn't work well with group_by, so turn it of in options()
-        packages = rdb.session.query(Package, sqllabel('vc', sqlfunc.count(Version.id))).\
-            options(sqllazyload('ecosystem')).\
-            join(Ecosystem).\
-            filter(Ecosystem.name == ecosystem).\
-            outerjoin(Version).\
-            group_by(Ecosystem.id, Package.id).\
-            order_by(Package.name.asc()).\
-            offset(get_item_skip(args['page'], args['per_page'])).\
-            limit(get_item_relative_limit(args['page'], args['per_page']))
-        return {TOTAL_COUNT_KEY: count,
-                'items': [{'ecosystem': res.Package.ecosystem.name, 'package': res.Package.name,
-                           'version_count': res.vc} for res in packages]}
-
-
-class Versions(ResourceWithSchema):
-    @paginated
-    def get(self, ecosystem, package):
-        args = pagination_parser.parse_args()
-        package = urllib.parse.unquote(package)
-        if ecosystem == 'maven':
-            package = MavenCoordinates.normalize_str(package)
-        package_found = rdb.session.query(Package).\
-            join(Ecosystem).\
-            filter(Ecosystem.name == ecosystem, Package.name == package).\
-            count()
-        if package_found == 0:
-            raise HTTPError(404, error="Package '{e}/{p}' not tracked".
-                            format(p=package, e=ecosystem))
-        query = rdb.session.query(Version).\
-            join(Package).join(Ecosystem).\
-            filter(Ecosystem.name == ecosystem, Package.name == package)
-        count = query.count()
-        versions = query.\
-            filter(Ecosystem.name == ecosystem, Package.name == package).\
-            order_by(Version.identifier.asc()).\
-            offset(get_item_skip(args['page'], args['per_page'])).\
-            limit(get_item_relative_limit(args['page'], args['per_page']))
-        items = [{'ecosystem': ecosystem,
-                  'package': package,
-                  'version': v.identifier}
-                 for v in versions]
-        return {TOTAL_COUNT_KEY: count, 'items': items}
-
-
-class AnalysisBase(ResourceWithSchema):
-    """Base class for different endpoints returning analyses."""
-    schema_ref = SchemaRef('component_analyses', '1-1-3')
-
-    def add_schema(self, response, status_code, method):
-        """Overrides add_schema to be able to add component analyses schemas."""
-        super().add_schema(response, status_code, method)
-        if status_code == 200 and method == 'GET':
-            for analysis_name, analysis in response.get('analyses', {}).items():
-                if analysis is not None and 'schema' in analysis:
-                    analysis['schema']['url'] = PublishedSchemas.get_component_analysis_schema_url(
-                        name=analysis['schema']['name'],
-                        version=analysis['schema']['version']
-                    )
-        return response
-
-    def _parse_args(self):
-        args = ['fields', 'debuginfo']
-        arg_parser = reqparse.RequestParser()
-        for arg in args:
-            arg_parser.add_argument(arg, default='')
-        parsed_args = arg_parser.parse_args()
-        result = {k: parsed_args[k] for k in args}
-        result['debuginfo'] = result['debuginfo'].lower() == 'true'
+        # Tokenize the search term before calling graph search
+        result = search_packages_from_graph(re.split('\W+', package))
         return result
 
-    def _get_projection(self, fields):
-        projection = {}
-        if fields:
-            for f in fields.split(','):
-                projection[f] = 1
-        return projection or None
-
-    def _do_analysis_projection(self, analysis, fields):
-        pass
-
-    def _inc_access_counter(self, analysis):
-        analysis.access_count += 1
-        rdb.session.commit()
-
-    def _sanitize_result(self, result, debuginfo=False):
-
-        result['_release'] = result.pop('release', None)
-        if debuginfo:
-            result['_audit'] = result.pop('audit', None)
-        else:
-            result.pop('id', None)
-            result.pop('audit', None)
-            result.pop('subtasks', None)
-            # Do not show init task
-            result.get('analyses', {}).pop('InitAnalysisFlow', None)
-            for analysis in result.get('analyses', {}):
-                if result['analyses'][analysis]:
-                    result['analyses'][analysis].pop('_audit', None)
-
-        return result
-
-
-@api_v1.route('/package-search')
-def search_package():
-    package = request.args.get('package')
-    if not package:
-        msg = "Please enter a valid search term"
-        raise HTTPError(202, msg)
-
-    # Tokenize the search term before calling graph search
-    result = search_packages_from_graph(re.split('\W+', package))
-
-    return result
-
-
-class AnalysesEPVByGraph(ResourceWithSchema):
+class ComponentAnalyses(ResourceWithSchema):
     method_decorators = [login_required]
 
     schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
@@ -410,144 +277,6 @@ class AnalysesEPVByGraph(ResourceWithSchema):
             msg = "No data found for {ecosystem} Package {package}/{version}".format(ecosystem=ecosystem,\
                     package=package, version=version)
             raise HTTPError(404, msg)
-
-
-class Analyses(AnalysisBase):
-    def add_schema(self, response, status_code, method):
-        # no schemas for analyses list
-        return response
-
-    def _get_sort_params(self):
-        arg_parser = reqparse.RequestParser()
-        arg_parser.add_argument('sort', default='')
-        args = arg_parser.parse_args()
-        sort = args['sort'].split(',')
-
-        if not any(sort):
-            sort = ['ecosystem', 'package', 'version', 'started_at']
-
-        for param in sort:
-            if param.startswith('-'):
-                param = param[1:]
-                if param in sort:
-                    raise HTTPError(400, 'Both "-{p}", "{p}" in sort parameters'.format(p=param))
-            if param not in [c.name for c in Analysis.__table__.columns] + ['ecosystem', 'package',
-                                                                            'version']:
-                raise HTTPError(400, 'Analysis doesn\'t have property "{p}"'.format(p=param))
-
-        return sort
-
-    def _get_order_attr(self, sort_opt):
-        if sort_opt == 'ecosystem':
-            return getattr(Ecosystem, 'name')
-        elif sort_opt == 'package':
-            return getattr(Package, 'name')
-        elif sort_opt == 'version':
-            return getattr(Version, 'identifier')
-        else:
-            return getattr(Analysis, sort_opt)
-
-    @paginated
-    def get(self):
-        pargs = pagination_parser.parse_args()
-        sort = self._get_sort_params()
-        count = rdb.session.query(Analysis).count()
-
-        # TODO: maybe it would make sense to create a SQL view for this?
-        analyses = rdb.session.query(Analysis, Version.identifier, Package.name, Ecosystem.name).\
-            join(Version).join(Package).join(Ecosystem)
-        for s in sort:
-            if s.startswith('-'):
-                order_by = self._get_order_attr(s[1:]).desc()
-            else:
-                order_by = self._get_order_attr(s).asc()
-            analyses = analyses.order_by(order_by)
-        analyses = analyses. \
-            offset(get_item_skip(pargs['page'], pargs['per_page'])). \
-            limit(get_item_relative_limit(pargs['page'], pargs['per_page']))
-
-        # make sure that analyses don't get loaded lazily by sanitizing results etc
-        analyses_results = [res.Analysis.to_dict(omit_analyses=True) for res in analyses]
-        return {'total_count': count,
-                'items': [self._sanitize_result(a) for a in analyses_results],
-                'truncated': True}
-
-    def post(self):
-        try:
-            data = request.get_json()
-            ecosystem = data['ecosystem']
-            package = data['package']
-            version = data['version']
-        except (BadRequest, TypeError, KeyError):
-            raise HTTPError(400, error="Invalid Request")
-
-        server_create_analysis(ecosystem, package, version, force=True)
-
-        return {}, 202
-
-
-class AnalysisByEPV(AnalysisBase):
-    """This endpoint is intentionally "analysis", not "analyses". In API v1, it will
-    always return 1 analysis, not more.
-    """
-
-    def get(self, ecosystem, package, version):
-        package = urllib.parse.unquote(package)
-        args = self._parse_args()
-        projection = self._get_projection(args['fields'])
-
-        result = get_latest_analysis_for(ecosystem, package, version)
-
-        if not result:
-            # NOTE: this won't force-create the analysis, meaning if an AnalysisRequest
-            #  already exists, this will do nothing
-            server_create_analysis(ecosystem, package, version)
-            return {}, 202
-
-        self._inc_access_counter(result)
-        result = do_projection(projection, result)
-        return self._sanitize_result(result, debuginfo=args['debuginfo'])
-
-
-class AnalysisByHash(AnalysisBase):
-    def get(self, algorithm, artifact_hash):
-        args = self._parse_args()
-
-        projection = self._get_projection(args['fields'])
-        result = get_latest_analysis_by_hash(algorithm, artifact_hash, projection)
-
-        if not result:
-            # We don't know how to map hash to EPV, so we can't schedule new
-            # analysis
-            return {}, 404
-
-        self._inc_access_counter(result)
-        result = do_projection(projection, result)
-        return self._sanitize_result(result, debuginfo=args['debuginfo'])
-
-
-class AnalysisByID(AnalysisBase):
-    """Retrieve a specific past analysis by its numeric ID"""
-    def get(self, analysis_id):
-        args = self._parse_args()
-
-        projection = self._get_projection(args['fields'])
-        try:
-            result = Analysis.by_id(rdb.session, analysis_id)
-        except NoResultFound:
-            return {}, 404
-
-        self._inc_access_counter(result)
-        result = do_projection(projection, result)
-        return self._sanitize_result(result, debuginfo=args['debuginfo'])
-
-
-class User(ResourceWithSchema):
-    method_decorators = [login_required]
-
-    def get(self):
-        ret = {'email': g.current_user.email}
-        return ret
 
 class StackAnalysesByGraphGET(ResourceWithSchema):
     method_decorators = [login_required]
@@ -589,123 +318,6 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
             return response
         except:
             raise HTTPError(500, "Error creating response for request {t}".format(t=external_request_id))
-
-
-class StackAnalysesByGraph(ResourceWithSchema):
-    schema_ref = SchemaRef('stack_analyses', '2-1-4')
-    def post(self):
-        session = FuturesSession()
-        files = request.files.getlist('manifest[]')
-        dt = datetime.datetime.now()
-        origin = request.form.get('origin')
-
-        # At least one manifest file should be present to analyse a stack
-        if len(files) <= 0:
-            return jsonify( error="Error processing request. Please upload a valid manifest files.")
-
-        request_id = uuid.uuid4().hex
-        manifests = []
-        stack_data = {}
-        result = []
-        for f in files:
-            filename = f.filename
-
-            # check if manifest files with given name are supported
-            manifest_descriptor = get_manifest_descriptor_by_filename(filename)
-            if manifest_descriptor is None:
-                return jsonify (error="Manifest file '{filename}' is not supported".format(filename=filename))
-
-            content = f.read().decode('utf-8')
-
-            # In memory file to be passed as an API parameter to /appstack
-            manifest_file = StringIO(content)
-
-            # Check if the manifest is valid
-            if not manifest_descriptor.validate(content):
-                return jsonify(error="Error processing request. Please upload a valid manifest file '{filename}'".
-                               format(filename=filename))
-
-            # Limitation: Currently, appstack can support only package.json
-            # Record the response details for this manifest file
-            manifest = {'filename': filename, 'content': content, 'ecosystem': manifest_descriptor.ecosystem}
-            manifests.append(manifest)
-            if 'package.json' in filename:
-                substr = []
-                # Read package contents
-                packagejson = json.loads(content)
-                appstack_file = {'packagejson': manifest_file}
-                url = current_app.config["BAYESIAN_ANALYTICS_URL"]
-                analytics_url = "{analytics_baseurl}/api/v1.0/recommendation".format(analytics_baseurl=url)
-
-                urls = [analytics_url,current_app.config["GREMLIN_SERVER_URL_REST"]]
-                # call recommendation api asynchronously
-                try:
-                    reco_req = session.post(urls[0],files=appstack_file, timeout=None)
-                except Exception as exc:
-                    current_app.logger.warn("Analytics query: {}".format(exc))
-                # carry on with further processing
-                for pkg, ver in packagejson['dependencies'].items():
-                    substr.append("has('pecosystem','NPM').has('pname','" + pkg + "').has('version','" + ver + "')")
-                substr1 = ",".join(substr)
-                str_gremlin = "g.V().or(" + substr1 + ").valueMap(true);"
-                payload = {'gremlin': str_gremlin}
-                # call graph endpoint to fetch attributes asynchronously
-                graph_req = session.post(urls[1],data=json.dumps(payload))
-                #wait for all request to process
-
-                graph_resp = graph_req.result()
-                stack_data = aggregate_stack_data(graph_resp.json(),filename, "npm") #Hardcoded to NPM
-                #Get Recommendation API result
-                reco_resp = reco_req.result()
-                reco_json= reco_resp.json()
-                stack_data['recommendation'] = reco_json
-                result.append(stack_data)
-
-        # Store the Request in DB
-        try:
-            req = StackAnalysisRequest(id=request_id, submitTime=str(dt), requestJson={'manifest': manifests},
-                                       origin=origin, result={'result': result})
-            rdb.session.add(req)
-            rdb.session.commit()
-        except SQLAlchemyError:
-            current_app.logger.exception('Failed to create new analysis request')
-            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id))
-
-        response = {'status': 'success',
-                    'request_id': request_id,
-                    'result':result}
-        return (response)
-
-class ComponentsInRange(ResourceWithSchema):
-    schema_ref = SchemaRef('version_range_resolver', '1-0-0')
-
-    def get(self,  ecosystem):
-        query = request.args.get('q')
-        eco = Ecosystem.by_name(rdb.session, ecosystem)
-        fetcher = CucosReleasesFetcher(eco, rdb.session)
-        now = datetime.datetime.now()
-
-        # Instantiate two different solvers, one using a custom fetcher to fetch
-        # matching releases from Bayesian DB and the other one fetching from
-        # upstream repositories.
-        # The data from these two solvers then provide information as to:
-        #   1) Which packages in the range we have already analysed and have information
-        #        about
-        #   2) Other packages from upstream repositories which match the version specification
-        cucos_solver, solver = get_ecosystem_solver(eco, with_fetcher=fetcher),\
-                               get_ecosystem_solver(eco)
-
-        ours = cucos_solver.solve([query], all_versions=True)
-        upstream = solver.solve([query], all_versions=True)
-
-        ours_nums = set() if not ours else set(next(iter(ours.values())))
-        upstreams_nums = set() if not upstream else set(next(iter(upstream.values())))
-
-        return {'query': query, 'detail': {'analysed': ours,
-                                           'upstream': upstream,
-                                           'difference': list(upstreams_nums - ours_nums)},
-                                'resolved_at': str(now)}
-
 
 class UserFeedback(ResourceWithSchema):
     _ANALYTICS_BUCKET_NAME = "{DEPLOYMENT_PREFIX}-".format(**os.environ) \
@@ -808,13 +420,7 @@ class StackAnalyses(ResourceWithSchema):
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
     def get(self):
-        try:
-            results = rdb.session.query(StackAnalysisRequest)\
-                                 .order_by(StackAnalysisRequest.submitTime.desc())
-            results_array = [result.to_dict() for result in results]
-        except SQLAlchemyError:
-            raise HTTPError(500,  "Error retrieving stack analyses")
-        return {"status": "success", "results": results_array}
+        raise HTTPError(404, "Unsupported API endpoint")
 
 
 class StackAnalysesByOrigin(ResourceWithSchema):
@@ -965,20 +571,10 @@ class PublishedSchemas(ResourceWithSchema):
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
-add_resource_no_matter_slashes(Ecosystems, '/ecosystems')
-add_resource_no_matter_slashes(Packages, '/packages/<ecosystem>')
-add_resource_no_matter_slashes(Versions, '/versions/<ecosystem>/<package>')
-add_resource_no_matter_slashes(ComponentsInRange, '/versions/in-range/<ecosystem>')
-add_resource_no_matter_slashes(AnalysesEPVByGraph, '/component-analyses/<ecosystem>/<package>/<version>',
+add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
+                                endpoint='get_components')
+add_resource_no_matter_slashes(ComponentAnalyses, '/component-analyses/<ecosystem>/<package>/<version>',
                                 endpoint='get_component_analysis')
-add_resource_no_matter_slashes(Analyses, '/analyses')
-add_resource_no_matter_slashes(AnalysisByHash, '/analyses/by-artifact-hash/<algorithm>/<artifact_hash>',
-                               endpoint='get_analysis_by_hash')
-add_resource_no_matter_slashes(AnalysisByEPV, '/analyses/<ecosystem>/<package>/<version>',
-                               endpoint='get_analysis')
-add_resource_no_matter_slashes(AnalysisByID, '/analyses/by-id/<int:analysis_id>',
-                               endpoint='get_analysis_by_id')
-add_resource_no_matter_slashes(User, '/user')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
 add_resource_no_matter_slashes(StackAnalysesByGraphGET, '/stack-analyses/<external_request_id>')
