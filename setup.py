@@ -28,8 +28,8 @@ setup(
     include_package_data=True,
     author='Slavek Kabrda',
     author_email='slavek@redhat.com',
-    description='Bayesian Core API Server',
-    license='MIT',
-    keywords='bayesian',
-    url='https://github.com/baytemp/server'
+    description='fabric8-analytics Core API Server',
+    license='ASL 2.0',
+    keywords='fabric8 analytics server',
+    url='https://github.com/fabric8-analytics/fabric8-analytics-server'
 )
