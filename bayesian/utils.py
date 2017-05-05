@@ -155,22 +155,23 @@ def generate_recommendation(data, package, version):
 
 def search_packages_from_graph(tokens):
     # TODO remove hardcoded url when moving to Production This is just a stop-gap measure for demo
-    # url = "http://{host}:{port}".format \
-    #     (host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"), \
-    #      port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
-    url = "http://gremlin-http-graph.dev.rdu2c.fabric8.io"
+    url = "http://{host}:{port}".format \
+          (host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
+           port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
+
     # TODO query string for actual STAGE/PROD
     # g.V().has('vertex_label','Package').has('tokens','one').has('tokens','two').
     # out('has_version').valueMap('pecosystem', 'pname', 'version')).limit(5)
-    # qstring = "g.V().has('vertex_label','Package')"
-    qstring = "g.V()"
+    qstring = "g.V().has('vertex_label','Package')"
+    # qstring = "g.V()"
     for tkn in tokens:
         if tkn:
             # TODO Change qstring
-            # qstring += ".has('tokens', '" + tkn + "')"
-            qstring += ".has('alias', '" + tkn + "')"
+            qstring += ".has('tokens', '" + tkn + "')"
+            # qstring += ".has('alias', '" + tkn + "')"
 
-    qstring += ".has('version').valueMap('pecosystem', 'pname', 'version').limit(5)"
+    # qstring += ".has('version').valueMap('pecosystem', 'pname', 'version').limit(5)"
+    qstring += ".out('has_version').valueMap('pecosystem', 'pname', 'version').dedup().limit(5)"
 
     payload = {'gremlin': qstring}
 
@@ -197,7 +198,7 @@ def search_packages_from_graph(tokens):
 def get_analyses_from_graph (ecosystem, package, version):
     url = "http://{host}:{port}".format\
             (host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),\
-            port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
+             port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
     qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
               ".as('package').out('has_version').as('version').select('package','version').by(valueMap());"
     payload = {'gremlin': qstring}
