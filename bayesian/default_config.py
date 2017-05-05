@@ -26,7 +26,6 @@ API_TOKEN_LIFETIME = 3600
 # Info about deployed version
 SYSTEM_VERSION = os.getenv('CCS_SYSTEM_VERSION', default='/etc/coreapi-release')
 
-#BAYESIAN_ANALYTICS_URL = os.getenv('BAYESIAN_ANALYTICS_URL','http://cucos-01.lab.eng.brq.redhat.com:32100')
 BAYESIAN_ANALYTICS_URL = os.getenv('BAYESIAN_ANALYTICS_URL','http://recommendationapi-server:5000')
 GREMLIN_SERVER_URL_REST = "http://{host}:{port}".format\
                             (host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),\
