@@ -209,6 +209,8 @@ def get_analyses_from_graph (ecosystem, package, version):
 
     resp = graph_req.json()
 
+    if 'result' not in resp:
+        return None
     if len(resp['result']['data']) == 0:
         # trigger unknown component flow in API for missing package
         return None
