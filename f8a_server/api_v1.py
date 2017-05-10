@@ -396,7 +396,7 @@ class AnalysesEPVByGraph(ResourceWithSchema):
         current_app.logger.warn( "%r" % result)
 
         if result != None:
-            # Known component for Bayesian
+            # Known component for Fabric8-analytics
             return result
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":

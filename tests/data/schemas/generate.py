@@ -8,7 +8,7 @@ if sys.version_info[0] < 3:
     print('Must be run under Python 3, since Python 2 adds trailing whitespaces to JSON')
     sys.exit(1)
 
-from bayesian.schemas import load_all_server_schemas
+from f8a_server.schemas import load_all_server_schemas
 
 here = os.path.dirname(__file__)
 

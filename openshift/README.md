@@ -1,4 +1,4 @@
-# Deploying Bayesian API server
+# Deploying Fabric8-analytics API server
 
 First make sure you're logged in to the right cluster and on the right project:
 

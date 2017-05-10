@@ -70,7 +70,7 @@ fi
 
 echo "Starting test suite"
 docker run -t \
-  -v "${here}:/bayesian:ro,Z" \
+  -v "${here}:/f8a_server:ro,Z" \
   ${cucoslib_vol:+-v} ${cucoslib_vol:-} \
   --link=${DB_CONTAINER_NAME} \
   --net=${NETWORK} \

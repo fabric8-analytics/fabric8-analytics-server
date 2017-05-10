@@ -15,8 +15,8 @@ import pytest
 import requests
 import jsonschema
 
-from bayesian import api_v1
-from bayesian.schemas import load_all_server_schemas
+from f8a_server import api_v1
+from f8a_server.schemas import load_all_server_schemas
 from cucoslib.enums import EcosystemBackend
 from cucoslib.models import Analysis, Ecosystem, Package, Version, WorkerResult, PackageGHUsage
 from cucoslib.schemas import load_all_worker_schemas

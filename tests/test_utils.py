@@ -1,7 +1,7 @@
 import datetime
 import pytest
 
-from bayesian.utils import do_projection
+from f8a_server.utils import do_projection
 from cucoslib.enums import EcosystemBackend
 from cucoslib.models import Analysis, Ecosystem, Package, Version, WorkerResult
 
