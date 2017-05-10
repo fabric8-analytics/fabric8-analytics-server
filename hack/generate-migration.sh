@@ -10,7 +10,7 @@ MIGRATIONS_IMAGE_NAME="coreapi-server-migrations"
 POSTGRES_CONTAINER_NAME="coreapi-migrations-postgres-${TIMESTAMP}"
 MIGRATIONS_CONTAINER_NAME="coreapi-server-migrations-${TIMESTAMP}"
 
-docker build --pull --tag=$IMAGE_NAME -f ${THISDIR}/../../Dockerfile.server ${THISDIR}/../..
+docker build --pull --tag=$IMAGE_NAME -f ${THISDIR}/../Dockerfile ${THISDIR}/..
 docker build -f ${THISDIR}/../Dockerfile.migrations --tag=$MIGRATIONS_IMAGE_NAME ${THISDIR}/..
 
 gc() {
@@ -34,11 +34,11 @@ for i in "$@"; do
   cmd="$cmd '$i'"
 done
 
-#for MAC docker run -t -v `pwd`:/bayesian \
-docker run -t -v `readlink -f ${THISDIR}/../..`:/bayesian \
+#for MAC docker run -t -v `pwd`:/fabric8-analytics \
+docker run -t -v `readlink -f ${THISDIR}/../..`:/fabric8-analytics \
   --link ${POSTGRES_CONTAINER_NAME} \
   --net=${NETWORK} \
   --name=${MIGRATIONS_CONTAINER_NAME} \
   --env=CCS_POSTGRES=postgresql://coreapi:coreapi@${POSTGRES_CONTAINER_NAME}:5432/coreapi \
-  --env=PYTHONPATH=/bayesian/lib \
+  --env=PYTHONPATH=/fabric8-analytics/fabric8-analytics-worker \
   ${MIGRATIONS_IMAGE_NAME} "$cmd"
