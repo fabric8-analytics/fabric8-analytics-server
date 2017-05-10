@@ -5,7 +5,7 @@ ENV LANG=en_US.UTF-8
 RUN useradd coreapi
 # python3-pycurl is needed for Amazon SQS (boto lib), we need CentOS' rpm - installing it from pip results in NSS errors
 RUN yum install -y epel-release &&\
-    yum install -y gcc patch git python34-pip python34-requests mod_auth_gssapi httpd httpd-devel python34-devel postgresql-devel redhat-rpm-config libxml2-devel libxslt-devel python34-pycurl &&\
+    yum install -y gcc patch git python34-pip python34-requests httpd httpd-devel python34-devel postgresql-devel redhat-rpm-config libxml2-devel libxslt-devel python34-pycurl &&\
     yum clean all
 
 RUN mkdir -p /coreapi
