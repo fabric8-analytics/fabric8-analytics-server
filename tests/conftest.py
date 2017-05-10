@@ -4,7 +4,7 @@ from flask import current_app
 import pytest
 
 from cucoslib.models import Base
-from bayesian import create_app
+from f8a_server import create_app
 
 
 @pytest.fixture

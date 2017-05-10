@@ -19,7 +19,7 @@ def get_requirements():
 reqs, dep_links = get_requirements()
 
 setup(
-    name='bayesian',
+    name='fabric8-analytics-server',
     version='0.1',
     packages=find_packages(exclude=['tests', 'tests.*']),
     scripts=['hack/coreapi-env.sh', 'hack/coreapi-server.sh'],

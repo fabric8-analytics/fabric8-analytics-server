@@ -23,7 +23,7 @@ rdb = SQLAlchemy()
 
 
 def create_app(configfile=None):
-    # do the imports here to not shadow e.g. "import bayesian.frontend.api_v1"
+    # do the imports here to not shadow e.g. "import f8a_server.frontend.api_v1"
     # by Blueprint imported here
     from .api_v1 import api_v1
     from .exceptions import HTTPError

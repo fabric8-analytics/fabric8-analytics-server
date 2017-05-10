@@ -1,6 +1,6 @@
 # Schemas for API server
 
-This directory contains versioned schemas for the core Bayesian API
+This directory contains versioned schemas for the core Fabric8-analytics API
 endpoints, written in JSL format.
 
  * [JSON Schema](http://json-schema.org/documentation.html)

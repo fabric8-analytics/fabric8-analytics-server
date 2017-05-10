@@ -1,8 +1,8 @@
 FROM docker-registry.usersys.redhat.com/bayesian/bayesian-api
 MAINTAINER Tomas Tomecek <ttomecek@redhat.com>
 
-COPY . /bayesian
-WORKDIR /bayesian
+COPY . /f8a_server
+WORKDIR /f8a_server
 RUN cd tests && pip3 install -r ./requirements.txt
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -14,4 +14,4 @@ ENV PGBOUNCER_SERVICE_HOST=coreapi-pgbouncer
 RUN pip3 install -U git+https://github.com/selinon/selinon && \
  pip3 install -U git+https://github.com/selinon/selinonlib
 
-ENTRYPOINT ["/bayesian/hack/exec_tests.sh"]
+ENTRYPOINT ["/f8a_server/hack/exec_tests.sh"]

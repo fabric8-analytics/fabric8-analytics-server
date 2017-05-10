@@ -1,6 +1,6 @@
 '''
 Script to generate an authentication token to be passed as header
-with requests to Bayesian API
+with requests to Fabric8-analytics API
 '''
 
 import jwt
@@ -10,7 +10,7 @@ import base64
 expiry = datetime.datetime.utcnow() + datetime.timedelta(days=90)
 userid = "testuser"
 f1 = open('./private_key.pem', 'r')
-bayesian_private_key = f1.read()
+f8a_server_private_key = f1.read()
 token = ""
 
 try:
@@ -19,7 +19,7 @@ try:
         'iat': datetime.datetime.utcnow(),
         'sub': userid
     }
-    token = jwt.encode(payload, key=bayesian_private_key, algorithm='RS256')
+    token = jwt.encode(payload, key=f8a_server_private_key, algorithm='RS256')
     print (token.decode('utf-8'))
 except Exception as e:
     print(e)
