@@ -32,8 +32,8 @@ RUN pushd /coreapi && \
     # needed for DB migrations
     find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
 
-ENV CUCOSLIB_VERSION=64484b0
-RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${CUCOSLIB_VERSION}
+ENV F8A_WORKER_VERSION=64484b0
+RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
 
 COPY .git/ /tmp/.git
 # date and hash of last commit
