@@ -1,7 +1,7 @@
 """JSL schema for component analysis endpoint"""
 import jsl
 
-from cucoslib.schemas import JSLSchemaBaseWithRelease
+from f8a_worker.schemas import JSLSchemaBaseWithRelease
 
 # Only one version currently
 ROLE_v1_0_0 = "v1-0-0"

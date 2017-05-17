@@ -1,5 +1,5 @@
 from threading import Lock
-from cucoslib.setup_celery import init_celery
+from f8a_worker.setup_celery import init_celery
 
 
 class Setup(object):

@@ -1,6 +1,6 @@
 import os
 
-from cucoslib.utils import json_serial
+from f8a_worker.utils import json_serial
 
 
 # Disable CDN support to mitigate potential risks connected to it

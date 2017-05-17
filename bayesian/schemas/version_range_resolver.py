@@ -1,6 +1,6 @@
 import jsl
 
-from cucoslib.schemas import JSLSchemaBase
+from f8a_worker.schemas import JSLSchemaBase
 
 
 ROLE_v1_0_0 = "v1_0_0"
