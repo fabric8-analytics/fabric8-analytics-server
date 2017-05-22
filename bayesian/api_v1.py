@@ -64,7 +64,7 @@ def error():
         return api_404_handler()
     msg = 'Unknown error'
     # for now, we just provide specific error for stuff that already happened;
-    #  before adding more, I'd like to see them actually happenning with reproducers
+    #  before adding more, I'd like to see them actually happening with reproducers
     if status == 401:
         msg = 'Authentication failed'
     elif status == 405:
@@ -224,9 +224,12 @@ class ApiEndpoints(ResourceWithSchema):
     def get(self):
         return {'paths': sorted(_resource_paths)}
 
+
 class SystemVersion(ResourceWithSchema):
-    def get(self):
+    @staticmethod
+    def get():
         return get_system_version()
+
 
 class ComponentSearch(ResourceWithSchema):
     method_decorators = [login_required]
@@ -240,43 +243,48 @@ class ComponentSearch(ResourceWithSchema):
         result = search_packages_from_graph(re.split('\W+', package))
         return result
 
+
 class ComponentAnalyses(ResourceWithSchema):
     method_decorators = [login_required]
 
     schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
 
-    def get(self, ecosystem, package, version):
+    @staticmethod
+    def get(ecosystem, package, version):
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
         result = get_analyses_from_graph(ecosystem, package, version)
-        current_app.logger.warn( "%r" % result)
+        current_app.logger.warn("%r" % result)
 
-        if result != None:
+        if result is not None:
             # Known component for Bayesian
             return result
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
             # Enter the unknown path
             server_create_analysis(ecosystem, package, version, api_flow=True, force=False, force_graph_sync=True)
-            msg = "{ecosystem} Package {package}/{version} is unavailable. The package will be available shortly,"\
-                    " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
+            msg = "Package {ecosystem}/{package}/{version} is unavailable. The package will be available shortly,"\
+                  " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
             raise HTTPError(202, msg)
         else:
             server_create_analysis(ecosystem, package, version, api_flow=False, force=False, force_graph_sync=True)
-            msg = "No data found for {ecosystem} Package {package}/{version}".format(ecosystem=ecosystem,\
-                    package=package, version=version)
+            msg = "No data found for {ecosystem} Package {package}/{version}".format(ecosystem=ecosystem,
+                                                                                     package=package, version=version)
             raise HTTPError(404, msg)
+
 
 class StackAnalysesByGraphGET(ResourceWithSchema):
     method_decorators = [login_required]
 
     schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
-    def get(self, external_request_id):
+    @staticmethod
+    def get(external_request_id):
         try:
             results = rdb.session.query(WorkerResult)\
                                  .filter(WorkerResult.external_request_id == external_request_id,
-                                         or_(WorkerResult.worker == "stack_aggregator",WorkerResult.worker == "recommendation"))
+                                         or_(WorkerResult.worker == "stack_aggregator",
+                                             WorkerResult.worker == "recommendation"))
             if results.count() <= 0:
                 raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
         except SQLAlchemyError:
@@ -308,9 +316,10 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
         except:
             raise HTTPError(500, "Error creating response for request {t}".format(t=external_request_id))
 
+
 class UserFeedback(ResourceWithSchema):
-    _ANALYTICS_BUCKET_NAME = "{DEPLOYMENT_PREFIX}-".format(**os.environ) \
-                             + os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback")
+    _ANALYTICS_BUCKET_NAME = "{}-{}".format(os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
+                                            os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback"))
 
     def post(self):
         input_json = request.get_json()
@@ -333,7 +342,8 @@ class UserFeedback(ResourceWithSchema):
 class StackAnalyses(ResourceWithSchema):
     method_decorators = [login_required]
 
-    def post(self):
+    @staticmethod
+    def post():
         files = request.files.getlist('manifest[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
@@ -360,7 +370,8 @@ class StackAnalyses(ResourceWithSchema):
 
             # Check if the manifest is valid
             if not manifest_descriptor.validate(content):
-                raise HTTPError(400, error="Error processing request. Please upload a valid manifest file '{filename}'".format(filename=filename))
+                raise HTTPError(400, error="Error processing request. Please upload a valid manifest file '{filename}'"
+                                .format(filename=filename))
 
             # appstack API call
             # Limitation: Currently, appstack can support only package.json
@@ -377,9 +388,10 @@ class StackAnalyses(ResourceWithSchema):
                 else:
                     if response.status_code == 200:
                         resp = response.json()
-                        appstack_id = resp.get('appstack_id','')
+                        appstack_id = resp.get('appstack_id', '')
                     else:
-                        current_app.logger.warn("{status}: {error}".format(status=response.status_code, error=response.content))
+                        current_app.logger.warn("{status}: {error}".format(status=response.status_code,
+                                                                           error=response.content))
 
             # Record the response details for this manifest file
             manifest = {'filename': filename, 'content': content, 'ecosystem': manifest_descriptor.ecosystem}
@@ -388,9 +400,14 @@ class StackAnalyses(ResourceWithSchema):
 
             manifests.append(manifest)
 
-        #Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies for a single request
+        # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies for a single request
         try:
-            req = StackAnalysisRequest(id=request_id, submitTime=str(dt), requestJson={'manifest': manifests}, origin=origin)
+            req = StackAnalysisRequest(
+                id=request_id,
+                submitTime=str(dt),
+                requestJson={'manifest': manifests},
+                origin=origin
+            )
             rdb.session.add(req)
             rdb.session.commit()
         except SQLAlchemyError:
@@ -402,20 +419,23 @@ class StackAnalyses(ResourceWithSchema):
             server_run_flow('stackApiGraphFlow', args)
         except:
             # Just log the exception here for now
-            current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'.format(id=request_id))
-            raise HTTPError(500, "Error processing request {t}. manifest files could not be processed".format(t=request_id))
-
+            current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
+                                         .format(id=request_id))
+            raise HTTPError(500, "Error processing request {t}. manifest files could not be processed"
+                                 .format(t=request_id))
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
-    def get(self):
+    @staticmethod
+    def get():
         raise HTTPError(404, "Unsupported API endpoint")
 
 
 class StackAnalysesByOrigin(ResourceWithSchema):
     method_decorators = [login_required]
 
-    def get(self, origin):
+    @staticmethod
+    def get(origin):
         try:
             results = rdb.session.query(StackAnalysisRequest)\
                                  .filter(StackAnalysisRequest.origin == origin)\
@@ -430,7 +450,6 @@ class StackAnalysesById(ResourceWithSchema):
     schema_ref = SchemaRef('stack_analyses', '2-1-3')
 
     def get(self, external_request_id):
-        submitted_at = ""
         manifest_appstackid_map = {}
         try:
             results = rdb.session.query(StackAnalysisRequest)\
@@ -443,7 +462,7 @@ class StackAnalysesById(ResourceWithSchema):
             request_json = json.loads(row["requestJson"])
 
             for manifest in request_json["manifest"]:
-                if manifest.get('appstack_id',0):
+                if manifest.get('appstack_id', 0):
                     manifest_appstackid_map[manifest["filename"]] = manifest["appstack_id"]
 
         except SQLAlchemyError:
@@ -473,29 +492,38 @@ class StackAnalysesById(ResourceWithSchema):
                         component["dependents_count"] = get_dependents_count(component["ecosystem"],
                                                                              component["name"],
                                                                              component["version"], rdb.session)
-                        component["relative_usage"] = usage_rank2str(get_component_percentile_rank(component["ecosystem"],
-                                                                                                   component["name"],
-                                                                                                   component["version"],
-                                                                                                   rdb.session))
-                    manifest_appstack_id = manifest_appstackid_map.get(manifest["manifest_name"],'')
+                        rank = get_component_percentile_rank(
+                            component["ecosystem"],
+                            component["name"],
+                            component["version"],
+                            rdb.session
+                        )
+                        component["relative_usage"] = usage_rank2str(rank)
+                    manifest_appstack_id = manifest_appstackid_map.get(manifest["manifest_name"], '')
                     if manifest_appstack_id != '':
                         url = current_app.config['BAYESIAN_ANALYTICS_URL']
-                        endpoint = "{analytics_baseurl}/api/v1.0/recommendation/{appstack_id}".format(analytics_baseurl=url,appstack_id=manifest_appstack_id)
+                        endpoint = "{analytics_baseurl}/api/v1.0/recommendation/{appstack_id}"\
+                                   .format(analytics_baseurl=url, appstack_id=manifest_appstack_id)
                         resp = requests.get(endpoint)
                         if resp.status_code == 200:
                             recommendation = resp.json()
 
                             # Adding URI of the stacks to the recommendation
-                            if recommendation.get("input_stack",{}).get("appstack_id","") != "":
-                                recommendation["input_stack"]["uri"] = "{analytics_baseurl}/api/v1.0/appstack/{appstack_id}".format(analytics_baseurl=url,appstack_id=recommendation["input_stack"]["appstack_id"])
+                            if recommendation.get("input_stack", {}).get("appstack_id", "") != "":
+                                uri = "{analytics_baseurl}/api/v1.0/appstack/{appstack_id}"\
+                                      .format(analytics_baseurl=url,
+                                              appstack_id=recommendation["input_stack"]["appstack_id"])
+                                recommendation["input_stack"]["uri"] = uri
 
-                            if recommendation.get("recommendations",{}).get("similar_stacks","") != "":
+                            if recommendation.get("recommendations", {}).get("similar_stacks", "") != "":
                                 for r in recommendation["recommendations"]["similar_stacks"]:
                                     if r["stack_id"] != "":
-                                        r["uri"] = "{analytics_baseurl}/api/v1.0/appstack/{appstack_id}".format(analytics_baseurl=url,appstack_id=r["stack_id"])
+                                        r["uri"] = "{analytics_baseurl}/api/v1.0/appstack/{appstack_id}"\
+                                            .format(analytics_baseurl=url, appstack_id=r["stack_id"])
                             manifest["recommendation"] = recommendation
                         else:
-                            current_app.logger.warn("{status}: {error}".format(status=resp.status_code, error=resp.content))
+                            current_app.logger.warn("{status}: {error}".format(status=resp.status_code,
+                                                                               error=resp.content))
 
                     manifest_response.append(manifest)
                 response = {
@@ -561,9 +589,9 @@ class PublishedSchemas(ResourceWithSchema):
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
-                                endpoint='get_components')
+                               endpoint='get_components')
 add_resource_no_matter_slashes(ComponentAnalyses, '/component-analyses/<ecosystem>/<package>/<version>',
-                                endpoint='get_component_analysis')
+                               endpoint='get_component_analysis')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
 add_resource_no_matter_slashes(StackAnalysesByGraphGET, '/stack-analyses/<external_request_id>')
