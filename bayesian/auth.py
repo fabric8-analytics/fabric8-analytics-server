@@ -7,11 +7,11 @@ from flask_security import RoleMixin, UserMixin, current_user, login_user
 from itsdangerous import BadSignature, SignatureExpired, TimedJSONWebSignatureSerializer
 import jwt
 from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
+from os import getenv
 
 from . import rdb
 from .exceptions import HTTPError
 from .utils import fetch_public_key
-
 
 jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
 
@@ -22,7 +22,7 @@ def login_required(view):
     # being able to tail logs and see if stuff is going fine
     def wrapper(*args, **kwargs):
         # Disable authentication for local setup
-        if current_app.config.get('DISABLE_JWT_AUTH', False):
+        if getenv('DISABLE_AUTHENTICATION'):
             return view(*args, **kwargs)
 
         lgr = current_app.logger
