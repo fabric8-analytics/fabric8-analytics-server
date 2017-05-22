@@ -21,6 +21,10 @@ def login_required(view):
     # uncommented as soon as we know everything works fine; right now this is purely for
     # being able to tail logs and see if stuff is going fine
     def wrapper(*args, **kwargs):
+        # Disable authentication for local setup
+        if current_app.config.get('DISABLE_JWT_AUTH', False):
+            return view(*args, **kwargs)
+
         lgr = current_app.logger
         user = None
 
