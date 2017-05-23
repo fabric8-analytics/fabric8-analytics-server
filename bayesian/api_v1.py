@@ -17,7 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from cucoslib.models import Ecosystem, WorkerResult, StackAnalysisRequest
 from cucoslib.schemas import load_all_worker_schemas, SchemaRef
 from cucoslib.utils import (safe_get_latest_version, get_dependents_count, get_component_percentile_rank,
-                            usage_rank2str, MavenCoordinates)
+                            usage_rank2str, MavenCoordinates, case_sensitivity_transform)
 from cucoslib.manifests import get_manifest_descriptor_by_filename
 from . import rdb
 from .auth import login_required
@@ -253,6 +253,7 @@ class ComponentAnalyses(ResourceWithSchema):
     def get(ecosystem, package, version):
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
+        package = case_sensitivity_transform(ecosystem, package)
         result = get_analyses_from_graph(ecosystem, package, version)
         current_app.logger.warn("%r" % result)
 
