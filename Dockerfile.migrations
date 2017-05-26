@@ -3,8 +3,8 @@ MAINTAINER Slavek Kabrda <slavek@redhat.com>
 
 RUN pip3 install alembic
 
-RUN mkdir -p /bayesian/server
-WORKDIR /bayesian/server
-VOLUME /bayesian
+RUN mkdir -p /fabric8-analytics/fabric8-analytics-server
+WORKDIR /fabric8-analytics/fabric8-analytics-server
+VOLUME /fabric8-analytics
 
 ENTRYPOINT ["bash", "-c"]
