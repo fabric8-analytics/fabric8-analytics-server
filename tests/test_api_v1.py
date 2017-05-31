@@ -17,9 +17,9 @@ import jsonschema
 
 from bayesian import api_v1
 from bayesian.schemas import load_all_server_schemas
-from cucoslib.enums import EcosystemBackend
-from cucoslib.models import Analysis, Ecosystem, Package, Version, WorkerResult, PackageGHUsage
-from cucoslib.schemas import load_all_worker_schemas
+from f8a_worker.enums import EcosystemBackend
+from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult, PackageGHUsage
+from f8a_worker.schemas import load_all_worker_schemas
 
 def api_route_for(route):
     return '/api/v1' + route
