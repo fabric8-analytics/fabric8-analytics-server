@@ -327,3 +327,19 @@ def fetch_public_key(app):
             app.public_key = app.config.get('BAYESIAN_PUBLIC_KEY')
 
     return app.public_key
+
+def retrieve_worker_result (rdb, external_request_id, worker):
+    try:
+        results = rdb.session.query(WorkerResult)\
+                             .filter(WorkerResult.external_request_id == external_request_id,
+                             WorkerResult.worker == worker)
+        if results.count() <= 0:
+            return None
+    except SQLAlchemyError:
+        return None
+
+    result = {}
+    for row in results:
+        result = row.to_dict()
+    return result
+
