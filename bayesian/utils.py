@@ -336,7 +336,7 @@ def retrieve_worker_result (rdb, external_request_id, worker):
         if results.count() <= 0:
             return None
     except SQLAlchemyError:
-        return None
+        return -1
 
     result = {}
     for row in results:

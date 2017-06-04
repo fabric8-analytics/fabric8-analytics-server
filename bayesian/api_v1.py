@@ -23,7 +23,7 @@ from . import rdb
 from .auth import login_required
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
-from .utils import (get_system_version,
+from .utils import (get_system_version, retrieve_worker_result,
                     build_nested_schema_dict, server_create_analysis, server_run_flow,
                     get_analyses_from_graph, search_packages_from_graph)
 import os
@@ -282,18 +282,26 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation")
 
+        if stack_result == None and reco_result == None:
+            raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
+
+        if stack_result == -1 and reco_result == -1:
+            raise HTTPError(500, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))
+
         started_at = None
         finished_at = None
         manifest_response = []
         recommendation = {}
 
         if stack_result != None and 'task_result' in stack_result:
-            started_at = stack_result["task_result"]["_audit"]["started_at"]
-            finished_at = stack_result["task_result"]["_audit"]["ended_at"]
-            manifest_response.append(stack_result["task_result"])
+            if stack_result["task_result"] != None:
+                started_at = stack_result["task_result"]["_audit"]["started_at"]
+                finished_at = stack_result["task_result"]["_audit"]["ended_at"]
+                manifest_response.append(stack_result["task_result"])
 
         if reco_result != None and 'task_result' in recommendation_result:
-            recommendation = reco_result['task_result']['recommendations']
+            if reco_result["task_result"] != None:
+                recommendation = reco_result['task_result']['recommendations']
 
         return {
             "started_at": started_at,
