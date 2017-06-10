@@ -282,11 +282,11 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation")
 
-        if stack_result == None and reco_result == None:
+        if stack_result is None and reco_result is None:
             raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
 
         if stack_result == -1 and reco_result == -1:
-            raise HTTPError(500, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))
+            raise HTTPError(404, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))
 
         started_at = None
         finished_at = None
@@ -299,7 +299,7 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
                 finished_at = stack_result["task_result"]["_audit"]["ended_at"]
                 manifest_response.append(stack_result["task_result"])
 
-        if reco_result != None and 'task_result' in recommendation_result:
+        if reco_result is not None and 'task_result' in reco_result:
             if reco_result["task_result"] != None:
                 recommendation = reco_result['task_result']['recommendations']
 
