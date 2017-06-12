@@ -14,6 +14,7 @@ from . import rdb
 from .setup import Setup
 
 from requests import get, post, exceptions
+from sqlalchemy.exc import SQLAlchemyError
 
 def get_recent_analyses(limit=100):
     return rdb.session.query(Analysis).order_by(Analysis.started_at.desc()).limit(limit)
@@ -327,3 +328,17 @@ def fetch_public_key(app):
             app.public_key = app.config.get('BAYESIAN_PUBLIC_KEY')
 
     return app.public_key
+
+def retrieve_worker_result (rdb, external_request_id, worker):
+    try:
+        results = rdb.session.query(WorkerResult).filter(\
+                    WorkerResult.external_request_id == external_request_id, WorkerResult.worker == worker)
+        if results.count() <= 0:
+            return None
+    except SQLAlchemyError:
+        return -1
+
+    for row in results:
+        result = row.to_dict()
+    return result
+

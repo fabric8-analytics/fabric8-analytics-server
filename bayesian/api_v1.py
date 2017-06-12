@@ -23,7 +23,7 @@ from . import rdb
 from .auth import login_required
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
-from .utils import (get_system_version,
+from .utils import (get_system_version, retrieve_worker_result,
                     build_nested_schema_dict, server_create_analysis, server_run_flow,
                     get_analyses_from_graph, search_packages_from_graph)
 import os
@@ -276,46 +276,41 @@ class ComponentAnalyses(ResourceWithSchema):
 
 class StackAnalysesByGraphGET(ResourceWithSchema):
     method_decorators = [login_required]
-
     schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
     def get(external_request_id):
-        try:
-            results = rdb.session.query(WorkerResult)\
-                                 .filter(WorkerResult.external_request_id == external_request_id,
-                                         or_(WorkerResult.worker == "stack_aggregator",
-                                             WorkerResult.worker == "recommendation"))
-            if results.count() <= 0:
-                raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
-        except SQLAlchemyError:
-            raise HTTPError(500, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))
+        stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator")
+        reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation")
 
-        try:
-            recommendation_result = {}
-            audit = ""
-            external_request_id = ""
-            manifest_response = []
+        if stack_result is None and reco_result is None:
+            raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
 
-            for row in results:
-                result = row.to_dict()
-                if result["worker"] == "stack_aggregator":
-                    audit = result["task_result"]["_audit"]
-                    external_request_id = result["external_request_id"]
-                    manifest_response.append(result["task_result"])
-                else:
-                    recommendation_result = {"recommendations": result["task_result"]["recommendations"]}
+        if stack_result == -1 and reco_result == -1:
+            raise HTTPError(404, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))
 
-            response = {
-                "started_at": audit["started_at"],
-                "finished_at": audit["ended_at"],
-                "request_id": external_request_id,
-                "result": manifest_response,
-                "recommendation": recommendation_result
-            }
-            return response
-        except:
-            raise HTTPError(500, "Error creating response for request {t}".format(t=external_request_id))
+        started_at = None
+        finished_at = None
+        manifest_response = []
+        recommendation = {}
+
+        if stack_result != None and 'task_result' in stack_result:
+            if stack_result["task_result"] != None:
+                started_at = stack_result["task_result"]["_audit"]["started_at"]
+                finished_at = stack_result["task_result"]["_audit"]["ended_at"]
+                manifest_response.append(stack_result["task_result"])
+
+        if reco_result is not None and 'task_result' in reco_result:
+            if reco_result["task_result"] != None:
+                recommendation = reco_result['task_result']['recommendations']
+
+        return {
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "request_id": external_request_id,
+            "result": manifest_response,
+            "recommendation": recommendation
+        }
 
 
 class UserFeedback(ResourceWithSchema):
