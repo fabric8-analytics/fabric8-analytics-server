@@ -106,6 +106,7 @@ objects:
     test: false
     triggers:
     - type: ConfigChange
+    replicas: ${REPLICAS}
 - apiVersion: v1
   kind: Service
   metadata:
@@ -153,3 +154,9 @@ parameters:
   required: true
   name: IMAGE_TAG
   value: "latest"  # image-tag
+
+- description: Number of deployment replicas
+  displayName: Number of deployment replicas
+  required: true
+  name: REPLICAS
+  value: "1"
