@@ -77,4 +77,3 @@ def create_app(configfile=None):
 
 
 app = create_app()
-from . import filters
