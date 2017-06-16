@@ -1,5 +1,5 @@
 from threading import Lock
-from cucoslib.setup_celery import init_celery
+from cucoslib.setup_celery import init_celery, init_selinon
 
 
 class Setup(object):
@@ -19,4 +19,5 @@ class Setup(object):
             if not cls._connected:
                 # We do not have to have result backend on server since we are just pushing tasks to message queue
                 init_celery(result_backend=False)
+                init_selinon()
 
