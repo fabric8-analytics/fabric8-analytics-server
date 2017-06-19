@@ -15,6 +15,16 @@ from .utils import fetch_public_key
 
 jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
 
+# START - USER PROFILING
+def decode_token(token): 
+    try:
+        pub_key = fetch_public_key(current_app)
+        token = jwt.decode(token, pub_key)
+    except:
+        raise Exception('Invalid Token')
+    return token
+# START - USER PROFILING
+
 
 def login_required(view):
     # NOTE: the actual authentication 401 failures are commented out for now and will be
@@ -34,11 +44,11 @@ def login_required(view):
             lgr.info('Seeing "Bearer" Authentication header {token}, trying to decode as JWT token'.
                 format(token=token))
             try:
-                decoded = jwt.decode(token,
-                                     fetch_public_key(current_app),
-                                     audience=current_app.config.get('BAYESIAN_JWT_AUDIENCE'))
+                email = decode_token(token).get('email')
+                decoded = decode_token(token)
+                
                 lgr.info('Successfuly authenticated user {e} using JWT'.
-                         format(e=decoded.get('email')))
+                         format(e=email))
             except:
                 lgr.exception('Failed decoding JWT token')
                 decoded = {'email': 'unauthenticated@jwt.failed'}
