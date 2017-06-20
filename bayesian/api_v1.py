@@ -26,6 +26,8 @@ from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result,
                     build_nested_schema_dict, server_create_analysis, server_run_flow,
                     get_analyses_from_graph, search_packages_from_graph)
+
+from .read_sentiment import SentimentDetails
 import os
 from cucoslib.storages import AmazonS3
 
@@ -273,7 +275,22 @@ class ComponentAnalyses(ResourceWithSchema):
                                                                                      package=package, version=version)
             raise HTTPError(404, msg)
 
+class ComponentSentimentAnalyses(ResourceWithSchema):
+    #method_decorators = [login_required]
 
+    #schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
+
+    @staticmethod
+    def get(package):        
+        print ("You have entered the Package = ", package)
+#        package_name = request.values.get("package")
+        input_json = {}
+        input_json['package_name'] = package
+        input_json['timestamp'] = datetime.datetime.now()
+        sentiment_details = SentimentDetails.get_pkg_sentiment('key.json', input_json)
+        print("sentiment_details", sentiment_details)
+        return sentiment_details
+        
 class StackAnalysesByGraphGET(ResourceWithSchema):
     method_decorators = [login_required]
     schema_ref = SchemaRef('stack_analyses', '2-1-4')
@@ -581,6 +598,10 @@ class PublishedSchemas(ResourceWithSchema):
     def get_component_analysis_schema_url(cls, name, version):
         return cls._get_schema_url(collection=cls.COMPONENT_ANALYSES_COLLECTION,
                                    name=name, version=version)
+#    @classmethod
+#    def get_sentiment_analysis_schema_url(cls, name):
+#        return cls._get_schema_url(collection=cls.COMPONENT_ANALYSES_COLLECTION,
+#                                   name=name)
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
@@ -588,6 +609,7 @@ add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
 add_resource_no_matter_slashes(ComponentAnalyses, '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
+add_resource_no_matter_slashes(ComponentSentimentAnalyses, '/sentiment-analyses/<package>')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
 add_resource_no_matter_slashes(StackAnalysesByGraphGET, '/stack-analyses/<external_request_id>')
