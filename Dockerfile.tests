@@ -1,4 +1,4 @@
-FROM docker-registry.usersys.redhat.com/bayesian/bayesian-api
+FROM registry.devshift.net/bayesian/bayesian-api
 MAINTAINER Tomas Tomecek <ttomecek@redhat.com>
 
 COPY . /bayesian
