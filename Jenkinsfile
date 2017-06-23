@@ -17,7 +17,7 @@ node('docker') {
     stage('Build') {
         dockerCleanup()
         docker.build(image.id, '--pull --no-cache .')
-        sh "docker tag ${image.id} https://registry.devshift.net/${image.id}"
+        sh "docker tag ${image.id} registry.devshift.net/${image.id}"
         docker.build('coreapi-server-tests', '-f Dockerfile.tests .')
     }
 
