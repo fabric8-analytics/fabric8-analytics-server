@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from cucoslib.schemas import BundledSchemaLibrary, assert_no_two_consecutive_schemas_are_same
+from f8a_worker.schemas import BundledSchemaLibrary, assert_no_two_consecutive_schemas_are_same
 from bayesian.schemas import load_all_server_schemas
 
 

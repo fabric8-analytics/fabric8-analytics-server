@@ -7,8 +7,8 @@ from flask import current_app
 from flask.json import JSONEncoder
 from sqlalchemy.orm.exc import NoResultFound
 
-from cucoslib.models import Analysis, Ecosystem, Package, Version, WorkerResult
-from cucoslib.utils import json_serial, MavenCoordinates
+from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
+from f8a_worker.utils import json_serial, MavenCoordinates
 
 from . import rdb
 from .setup import Setup

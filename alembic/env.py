@@ -16,7 +16,7 @@ if 'CCS_POSTGRES' in os.environ:
     config.set_main_option('sqlalchemy.url', os.environ['CCS_POSTGRES'])
     if 'MIGRATE_ONLY' not in os.environ:
         from bayesian import app
-        from cucoslib.models import Base
+        from f8a_worker.models import Base
         # we need to merge metadata from multiple bases (lib and server)
         # https://bitbucket.org/zzzeek/alembic/issues/38/allow-multiple-metadata-objects-for
         for metadata in [app.rdb.metadata, Base.metadata]:
