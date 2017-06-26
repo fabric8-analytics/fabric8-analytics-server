@@ -39,6 +39,6 @@ docker run -t -v `readlink -f ${THISDIR}/../..`:/bayesian \
   --link ${POSTGRES_CONTAINER_NAME} \
   --net=${NETWORK} \
   --name=${MIGRATIONS_CONTAINER_NAME} \
-  --env=CCS_POSTGRES=postgresql://coreapi:coreapi@${POSTGRES_CONTAINER_NAME}:5432/coreapi \
+  --env=F8A_POSTGRES=postgresql://coreapi:coreapi@${POSTGRES_CONTAINER_NAME}:5432/coreapi \
   --env=PYTHONPATH=/bayesian/lib \
   ${MIGRATIONS_IMAGE_NAME} "$cmd"
