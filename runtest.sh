@@ -62,16 +62,16 @@ done;
 set -x
 
 
-# mount cucoslib, if available (won't be in CI)
-cucoslib_path="${here}/../worker/cucoslib"
-if [ -d ${cucoslib_path} ]; then
-    cucoslib_vol="${cucoslib_path}:/usr/lib/python3.4/site-packages/cucoslib:ro,Z"
+# mount f8a_worker, if available (won't be in CI)
+f8a_worker_path="${here}/../worker/f8a_worker"
+if [ -d ${f8a_worker_path} ]; then
+    f8a_worker_vol="${f8a_worker_path}:/usr/lib/python3.4/site-packages/f8a_worker:ro,Z"
 fi
 
 echo "Starting test suite"
 docker run -t \
   -v "${here}:/bayesian:ro,Z" \
-  ${cucoslib_vol:+-v} ${cucoslib_vol:-} \
+  ${f8a_worker_vol:+-v} ${f8a_worker_vol:-} \
   --link=${DB_CONTAINER_NAME} \
   --net=${NETWORK} \
   --name=${CONTAINER_NAME} \

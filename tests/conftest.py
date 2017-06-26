@@ -3,7 +3,7 @@ import os
 from flask import current_app
 import pytest
 
-from cucoslib.models import Base
+from f8a_worker.models import Base
 from bayesian import create_app
 
 

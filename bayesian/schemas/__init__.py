@@ -1,4 +1,4 @@
-from cucoslib.schemas import BundledDynamicSchemaLibrary
+from f8a_worker.schemas import BundledDynamicSchemaLibrary
 
 _server_schemas_lib = BundledDynamicSchemaLibrary(__name__)
 load_server_schema = _server_schemas_lib.load_schema

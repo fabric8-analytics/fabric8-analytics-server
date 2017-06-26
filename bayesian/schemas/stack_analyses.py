@@ -1,6 +1,6 @@
 import jsl
 
-from cucoslib.schemas import JSLSchemaBase, added_in, removed_in
+from f8a_worker.schemas import JSLSchemaBase, added_in, removed_in
 
 ROLE_v1_0_0 = "v1_0_0"
 ROLE_v1_1_0 = "v1_1_0"

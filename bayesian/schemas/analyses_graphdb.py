@@ -1,7 +1,7 @@
 """JSL schema for component analysis endpoint that interfaces with graphdb"""
 import jsl
 
-from cucoslib.schemas import JSLSchemaBase, added_in, removed_in
+from f8a_worker.schemas import JSLSchemaBase, added_in, removed_in
 
 ROLE_v1_0_0 = "v1-0-0"
 ROLE_v1_1_0 = "v1-1-0"

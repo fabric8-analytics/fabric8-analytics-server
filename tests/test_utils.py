@@ -2,8 +2,8 @@ import datetime
 import pytest
 
 from bayesian.utils import do_projection
-from cucoslib.enums import EcosystemBackend
-from cucoslib.models import Analysis, Ecosystem, Package, Version, WorkerResult
+from f8a_worker.enums import EcosystemBackend
+from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
 
 now = datetime.datetime.now()
 later = now + datetime.timedelta(minutes=10)
