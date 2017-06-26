@@ -20,7 +20,7 @@ from cucoslib.utils import (safe_get_latest_version, get_dependents_count, get_c
                             usage_rank2str, MavenCoordinates, case_sensitivity_transform)
 from cucoslib.manifests import get_manifest_descriptor_by_filename
 from . import rdb
-from .auth import login_required
+from .auth import login_required, decode_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result,
@@ -151,6 +151,19 @@ def paginated(func):
 # flask-restful doesn't actually store a list of endpoints, so we register them as they
 #  pass through add_resource_no_matter_slashes
 _resource_paths = []
+
+# START - TOKEN DECODE
+def get_decoded_token():
+    token = request.headers.get('Authorization')
+    if token.startswith('Bearer '):
+        _, token = token.split(' ', 1)
+    try:
+        decoded_token = decode_token(token)
+    except:
+        raise Exception('Invalid Auth Token')
+    
+    return decoded_token
+# END - TOKEN DECODE
 
 
 def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None):
@@ -344,6 +357,8 @@ class StackAnalyses(ResourceWithSchema):
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
 
+        # Decode the token and pass this to Graph Aggregator task for User profiling
+        decoded_token_value = get_decoded_token()
         # At least one manifest file should be present to analyse a stack
         if len(files) <= 0:
             raise HTTPError(400, error="Error processing request. Please upload a valid manifest files.")
@@ -406,12 +421,13 @@ class StackAnalyses(ResourceWithSchema):
             )
             rdb.session.add(req)
             rdb.session.commit()
+
         except SQLAlchemyError:
             current_app.logger.exception('Failed to create new analysis request')
             raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id))
 
         try:
-            args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem}
+            args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem, 'user_profile': decoded_token_value}
             server_run_flow('stackApiGraphFlow', args)
         except:
             # Just log the exception here for now
