@@ -34,6 +34,9 @@ node('docker') {
                 docker.image('bayesian/coreapi-downstream-data-import').pull()
                 docker.image('bayesian/coreapi-jobs').pull()
                 docker.image('bayesian/coreapi-pgbouncer').pull()
+                docker.image('bayesian/cvedb-s3-dump').pull()
+                docker.image('slavek/anitya-server').pull()
+                docker.image('bayesian/gremlin').pull()
             }
 
             git url: 'https://github.com/fabric8-analytics/fabric8-analytics-common.git', branch: 'master', poll: false
