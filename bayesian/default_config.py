@@ -6,10 +6,10 @@ from f8a_worker.utils import json_serial
 # Disable CDN support to mitigate potential risks connected to it
 BOOTSTRAP_SERVE_LOCAL = True
 
-DEBUG = os.getenv('CCS_DEBUG', False)
+DEBUG = os.getenv('F8A_DEBUG', False)
 
 # DB Settings
-SQLALCHEMY_DATABASE_URI = os.getenv('CCS_POSTGRES',
+SQLALCHEMY_DATABASE_URI = os.getenv('F8A_POSTGRES',
                                     default='postgres://coreapi:coreapi@localhost:5432/coreapi')
 
 # Don't attach custom messages to 404 errors with flask-restful
@@ -24,7 +24,7 @@ SECRET_KEY = 'devkey'
 API_TOKEN_LIFETIME = 3600
 
 # Info about deployed version
-SYSTEM_VERSION = os.getenv('CCS_SYSTEM_VERSION', default='/etc/coreapi-release')
+SYSTEM_VERSION = os.getenv('F8A_SYSTEM_VERSION', default='/etc/coreapi-release')
 
 BAYESIAN_ANALYTICS_URL = os.getenv('BAYESIAN_ANALYTICS_URL','http://recommendationapi-server:5000')
 GREMLIN_SERVER_URL_REST = "http://{host}:{port}".format\
