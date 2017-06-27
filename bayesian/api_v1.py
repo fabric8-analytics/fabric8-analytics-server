@@ -275,20 +275,27 @@ class ComponentAnalyses(ResourceWithSchema):
                                                                                      package=package, version=version)
             raise HTTPError(404, msg)
 
-class ComponentSentimentAnalyses(ResourceWithSchema):
-    #method_decorators = [login_required]
-
-    #schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
+class ComponentSentimentAnalysis(ResourceWithSchema):
+    """
+    This class provides an endpoint: sentiment-analysis to compute sentiment details for a given package,
+    only package name is required as an input
+    """
 
     @staticmethod
-    def get(package):        
-        print ("You have entered the Package = ", package)
-#        package_name = request.values.get("package")
-        input_json = {}
-        input_json['package_name'] = package
-        input_json['timestamp'] = datetime.datetime.now()
-        sentiment_details = SentimentDetails.get_pkg_sentiment('key.json', input_json)
-        print("sentiment_details", sentiment_details)
+    def get(package):
+        sentiment_details = {}
+        if package is None:
+            current_app.logger.warn("No package is provided for Sentiment-analysis")
+        else:
+            current_app.logger.warn("Sentiment-analysis started for the package: {}".format(package))
+            sentiment_obj = SentimentDetails()
+            sentiment_details = sentiment_obj.get_pkg_sentiment('key.json', package)
+            if sentiment_details is None:
+                current_app.logger.warn("There is no node in graph for package: {}".format(package))
+            else:
+                current_app.logger.warn("Computed sentiment details for package {} is : {}"\
+                                        .format(package, sentiment_details))
+        current_app.logger.warning("Senetiment-Analysis for the package {} is finished sucessfully!".format(package))
         return sentiment_details
         
 class StackAnalysesByGraphGET(ResourceWithSchema):
@@ -609,7 +616,7 @@ add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
 add_resource_no_matter_slashes(ComponentAnalyses, '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
-add_resource_no_matter_slashes(ComponentSentimentAnalyses, '/sentiment-analyses/<package>')
+add_resource_no_matter_slashes(ComponentSentimentAnalysis, '/sentiment-analysis/<package>')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
 add_resource_no_matter_slashes(StackAnalysesByGraphGET, '/stack-analyses/<external_request_id>')
