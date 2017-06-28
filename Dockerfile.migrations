@@ -1,4 +1,4 @@
-FROM docker-registry.usersys.redhat.com/bayesian/bayesian-api
+FROM registry.devshift.net/bayesian/bayesian-api
 MAINTAINER Slavek Kabrda <slavek@redhat.com>
 
 RUN pip3 install alembic

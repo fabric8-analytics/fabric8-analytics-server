@@ -17,7 +17,7 @@ node('docker') {
     stage('Build') {
         dockerCleanup()
         docker.build(image.id, '--pull --no-cache .')
-        sh "docker tag ${image.id} docker-registry.usersys.redhat.com/${image.id}"
+        sh "docker tag ${image.id} registry.devshift.net/${image.id}"
         docker.build('coreapi-server-tests', '-f Dockerfile.tests .')
     }
 
@@ -29,14 +29,17 @@ node('docker') {
 
     stage('Integration Tests') {
         ws {
-            docker.withRegistry('https://docker-registry.usersys.redhat.com/') {
+            docker.withRegistry('https://registry.devshift.net/') {
                 docker.image('bayesian/cucos-worker').pull()
                 docker.image('bayesian/coreapi-downstream-data-import').pull()
                 docker.image('bayesian/coreapi-jobs').pull()
                 docker.image('bayesian/coreapi-pgbouncer').pull()
+                docker.image('bayesian/cvedb-s3-dump').pull()
+                docker.image('slavek/anitya-server').pull()
+                docker.image('bayesian/gremlin').pull()
             }
 
-            git url: 'https://github.com/fabric8-analytics/fabric8-analytics-common.git', branch: 'master'
+            git url: 'https://github.com/fabric8-analytics/fabric8-analytics-common.git', branch: 'master', poll: false
             dir('integration-tests') {
                 timeout(30) {
                     sh './runtest.sh'
@@ -47,10 +50,6 @@ node('docker') {
 
     if (env.BRANCH_NAME == 'master') {
         stage('Push Images') {
-            docker.withRegistry('https://docker-registry.usersys.redhat.com/') {
-                image.push('latest')
-                image.push(commitId)
-            }
             docker.withRegistry('https://registry.devshift.net/') {
                 image.push('latest')
                 image.push(commitId)
