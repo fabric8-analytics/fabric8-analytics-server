@@ -39,6 +39,10 @@ def login_required(view):
                                      audience=current_app.config.get('BAYESIAN_JWT_AUDIENCE'))
                 lgr.info('Successfuly authenticated user {e} using JWT'.
                          format(e=decoded.get('email')))
+            except jwt.ExpiredSignatureError:
+                lgr.exception('Expired JWT token')
+                decoded = {'email': 'unauthenticated@jwt.failed'}
+                raise HTTPError(401, 'Authentication failed - token has expired')
             except:
                 lgr.exception('Failed decoding JWT token')
                 decoded = {'email': 'unauthenticated@jwt.failed'}
