@@ -16,3 +16,11 @@ pyjwt
 requests-futures
 # we require cucoslib, but it is installed manually as it is not available in PyPI
 #cucoslib
+gunicorn
+boto3
+boto
+gremlinpython
+google-cloud-natural-language
+google-cloud-bigquery
+protobuf
+pyyaml

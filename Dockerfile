@@ -32,7 +32,7 @@ RUN pushd /coreapi && \
     # needed for DB migrations
     find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
 
-ENV CUCOSLIB_VERSION=d47a9cd83
+ENV CUCOSLIB_VERSION=94cf55b
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${CUCOSLIB_VERSION}
 
 COPY .git/ /tmp/.git
@@ -49,3 +49,4 @@ RUN sh /tmp/update_selinon.sh
 RUN cd /tmp/install_deps/ && /tmp/install_deps/apply_patches.sh
 
 RUN yum install -y npm && npm install -g semver-ranger
+RUN pip3 uninstall -y protobuf && pip3 install packaging appdirs && pip3 install --upgrade --no-binary :all: protobuf==3.2.0
