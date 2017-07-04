@@ -308,7 +308,7 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
             "started_at": started_at,
             "finished_at": finished_at,
             "request_id": external_request_id,
-            "result": manifest_response,
+            "stack_data": manifest_response,
             "recommendation": recommendation
         }
 
