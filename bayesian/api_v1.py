@@ -14,11 +14,11 @@ from flask_cors import CORS
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 
-from cucoslib.models import Ecosystem, WorkerResult, StackAnalysisRequest
-from cucoslib.schemas import load_all_worker_schemas, SchemaRef
-from cucoslib.utils import (safe_get_latest_version, get_dependents_count, get_component_percentile_rank,
+from f8a_worker.models import Ecosystem, WorkerResult, StackAnalysisRequest
+from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
+from f8a_worker.utils import (safe_get_latest_version, get_dependents_count, get_component_percentile_rank,
                             usage_rank2str, MavenCoordinates, case_sensitivity_transform)
-from cucoslib.manifests import get_manifest_descriptor_by_filename
+from f8a_worker.manifests import get_manifest_descriptor_by_filename
 from . import rdb
 from .auth import login_required
 from .exceptions import HTTPError
@@ -27,7 +27,7 @@ from .utils import (get_system_version, retrieve_worker_result,
                     build_nested_schema_dict, server_create_analysis, server_run_flow,
                     get_analyses_from_graph, search_packages_from_graph)
 import os
-from cucoslib.storages import AmazonS3
+from f8a_worker.storages import AmazonS3
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 rest_api_v1 = Api(api_v1)
@@ -178,7 +178,7 @@ class ResourceWithSchema(Resource):
     If a subclass of ResourceWithSchema is supposed to add a schema, it has to:
     - either implement `add_schema` method (see its docstring for information on signature
       of this method)
-    - or add a `schema_ref` (instance of `cucoslib.schemas.SchemaRef`) class attribute.
+    - or add a `schema_ref` (instance of `f8a_worker.schemas.SchemaRef`) class attribute.
       If this attribute is added, it only adds schema to response with `200` status code
       on `GET` request.
     Note that if both `schema_ref` and `add_schema` are defined, only the method will be used.

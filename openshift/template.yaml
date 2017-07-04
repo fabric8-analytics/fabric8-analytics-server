@@ -23,7 +23,7 @@ objects:
       spec:
         containers:
         - env:
-          - name: CCS_DEBUG
+          - name: F8A_DEBUG
             value: "true"
           - name: DEPLOYMENT_PREFIX
             valueFrom:

@@ -9,14 +9,14 @@ from logging.config import fileConfig
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-if 'CCS_POSTGRES' in os.environ:
+if 'F8A_POSTGRES' in os.environ:
     # if we only need to migrate, we don't really need to import all the stuff,
     #   we just need to set sqlalchemy.url
     target_metadata = MetaData()
-    config.set_main_option('sqlalchemy.url', os.environ['CCS_POSTGRES'])
+    config.set_main_option('sqlalchemy.url', os.environ['F8A_POSTGRES'])
     if 'MIGRATE_ONLY' not in os.environ:
         from bayesian import app
-        from cucoslib.models import Base
+        from f8a_worker.models import Base
         # we need to merge metadata from multiple bases (lib and server)
         # https://bitbucket.org/zzzeek/alembic/issues/38/allow-multiple-metadata-objects-for
         for metadata in [app.rdb.metadata, Base.metadata]:

@@ -19,7 +19,7 @@ that, given a version number MODEL-REVISION-ADDITION, increment the:
   cannot conflict with fields in any historical data)
 
 For information on how to properly create schemas and what top-level variables
-need to be provided in the schema file, see `lib/cucoslib/workers/schemas/README.md`.
+need to be provided in the schema file, see `lib/f8a_worker/workers/schemas/README.md`.
 
 TODO: Unify schema readme files for lib and server
 TODO: Hyperlink to detailed component scanner schemas
