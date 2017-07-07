@@ -313,6 +313,46 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
         }
 
 
+class StackAnalysesGETV2(ResourceWithSchema):
+    method_decorators = [login_required]
+    #schema_ref = SchemaRef('stack_analyses', '2-1-4')
+
+    @staticmethod
+    def get(external_request_id):
+        stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator_v2")
+        reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
+
+        if stack_result is None and reco_result is None:
+            raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
+
+        if stack_result == -1 and reco_result == -1:
+            raise HTTPError(404, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))
+
+        started_at = None
+        finished_at = None
+        manifest_response = []
+        recommendation = {}
+
+        if stack_result != None and 'task_result' in stack_result:
+            if stack_result["task_result"] != None:
+                started_at = stack_result["task_result"]["_audit"]["started_at"]
+                finished_at = stack_result["task_result"]["_audit"]["ended_at"]
+
+
+        if reco_result is not None and 'task_result' in reco_result:
+            if reco_result["task_result"] != None:
+                recommendation = reco_result['task_result']['recommendations']
+
+        stack_result['task_result']['recommendations'] = recommendation
+        manifest_response.append(stack_result["task_result"])
+        return {
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "request_id": external_request_id,
+            "result": manifest_response
+        }
+
+
 class UserFeedback(ResourceWithSchema):
     _ANALYTICS_BUCKET_NAME = "{}-{}".format(os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
                                             os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback"))
@@ -413,6 +453,98 @@ class StackAnalyses(ResourceWithSchema):
         try:
             args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem}
             server_run_flow('stackApiGraphFlow', args)
+        except:
+            # Just log the exception here for now
+            current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
+                                         .format(id=request_id))
+            raise HTTPError(500, "Error processing request {t}. manifest files could not be processed"
+                                 .format(t=request_id))
+
+        return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
+
+    @staticmethod
+    def get():
+        raise HTTPError(404, "Unsupported API endpoint")
+
+
+class StackAnalysesV2(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        files = request.files.getlist('manifest[]')
+        dt = datetime.datetime.now()
+        origin = request.form.get('origin')
+
+        # At least one manifest file should be present to analyse a stack
+        if len(files) <= 0:
+            raise HTTPError(400, error="Error processing request. Please upload a valid manifest files.")
+
+        request_id = uuid.uuid4().hex
+        manifests = []
+        ecosystem = None
+        for f in files:
+            filename = f.filename
+
+            # check if manifest files with given name are supported
+            manifest_descriptor = get_manifest_descriptor_by_filename(filename)
+            if manifest_descriptor is None:
+                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
+
+            content = f.read().decode('utf-8')
+
+            # In memory file to be passed as an API parameter to /appstack
+            manifest_file = StringIO(content)
+
+            # Check if the manifest is valid
+            if not manifest_descriptor.validate(content):
+                raise HTTPError(400, error="Error processing request. Please upload a valid manifest file '{filename}'"
+                                .format(filename=filename))
+
+            # appstack API call
+            # Limitation: Currently, appstack can support only package.json
+            #             The following condition is to be reworked
+            appstack_id = ''
+            if 'package.json' in filename:
+                appstack_files = {'packagejson': manifest_file}
+                url = current_app.config["BAYESIAN_ANALYTICS_URL"]
+                endpoint = "{analytics_baseurl}/api/v1.0/appstack".format(analytics_baseurl=url)
+                try:
+                    response = requests.post(endpoint, files=appstack_files)
+                except Exception as exc:
+                    current_app.logger.warn("Analytics query: {}".format(exc))
+                else:
+                    if response.status_code == 200:
+                        resp = response.json()
+                        appstack_id = resp.get('appstack_id', '')
+                    else:
+                        current_app.logger.warn("{status}: {error}".format(status=response.status_code,
+                                                                           error=response.content))
+
+            # Record the response details for this manifest file
+            manifest = {'filename': filename, 'content': content, 'ecosystem': manifest_descriptor.ecosystem}
+            if appstack_id != '':
+                manifest['appstack_id'] = appstack_id
+
+            manifests.append(manifest)
+
+        # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies for a single request
+        try:
+            req = StackAnalysisRequest(
+                id=request_id,
+                submitTime=str(dt),
+                requestJson={'manifest': manifests},
+                origin=origin
+            )
+            rdb.session.add(req)
+            rdb.session.commit()
+        except SQLAlchemyError:
+            current_app.logger.exception('Failed to create new analysis request')
+            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id))
+
+        try:
+            args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem}
+            server_run_flow('stackApiGraphV2Flow', args)
         except:
             # Just log the exception here for now
             current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
@@ -590,7 +722,9 @@ add_resource_no_matter_slashes(ComponentAnalyses, '/component-analyses/<ecosyste
                                endpoint='get_component_analysis')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
+add_resource_no_matter_slashes(StackAnalysesV2, '/stack-analyses-v2')
 add_resource_no_matter_slashes(StackAnalysesByGraphGET, '/stack-analyses/<external_request_id>')
+add_resource_no_matter_slashes(StackAnalysesGETV2, '/stack-analyses-v2/<external_request_id>')
 add_resource_no_matter_slashes(StackAnalysesByOrigin, '/stack-analyses/by-origin/<origin>')
 add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')

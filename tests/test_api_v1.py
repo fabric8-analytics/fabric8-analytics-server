@@ -121,6 +121,8 @@ class TestApiV1Root(object):
             "/api/v1/schemas/<collection>/<name>",
             "/api/v1/schemas/<collection>/<name>/<version>",
             "/api/v1/stack-analyses",
+            "/api/v1/stack-analyses-v2",
+            "/api/v1/stack-analyses-v2/<external_request_id>",
             "/api/v1/stack-analyses/<external_request_id>",
             "/api/v1/stack-analyses/by-origin/<origin>",
             "/api/v1/system/version",
