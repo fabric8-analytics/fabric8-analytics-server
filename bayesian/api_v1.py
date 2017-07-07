@@ -315,7 +315,7 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
 
 class StackAnalysesGETV2(ResourceWithSchema):
     method_decorators = [login_required]
-    schema_ref = SchemaRef('stack_analyses', '2-1-4')
+    #schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
     def get(external_request_id):
