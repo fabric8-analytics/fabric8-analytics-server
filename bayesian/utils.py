@@ -180,7 +180,7 @@ def search_packages_from_graph(tokens):
     resp = response.json()
     packages = resp.get('result', {}).get('data', [])
     if not packages:
-        return json.dumps({'result': []})
+        return {'result': []}
 
     pkg_list = []
     for pkg in packages:
@@ -193,7 +193,7 @@ def search_packages_from_graph(tokens):
             }
             pkg_list.append(pkg_map)
 
-    return json.dumps({'result': pkg_list})
+    return {'result': pkg_list}
 
 
 def get_analyses_from_graph (ecosystem, package, version):
