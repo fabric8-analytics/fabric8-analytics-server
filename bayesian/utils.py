@@ -15,6 +15,9 @@ from .setup import Setup
 
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
+from urllib.parse import urljoin
+
+ROOT_DIR = "/tmp/"
 
 def get_recent_analyses(limit=100):
     return rdb.session.query(Analysis).order_by(Analysis.started_at.desc()).limit(limit)
@@ -342,3 +345,47 @@ def retrieve_worker_result (rdb, external_request_id, worker):
         result = row.to_dict()
     return result
 
+def get_files_github_url(github_url):
+    prefix_url = "https://api.github.com/repos/"
+    repo_suffix = github_url.split("https://github.com/")[-1]
+    raw_first_url = "https://raw.githubusercontent.com/"
+    manifest_types = ["pom.xml", "package.json", "requirements.txt"]
+    manifest_paths = []
+
+    try:
+        repo_url = prefix_url + repo_suffix
+        check_valid_repo = get(repo_url)
+        manifest_type = ""
+        if check_valid_repo.status_code == 200:
+            for manifest in manifest_types:
+                content_url = "%s/%s/%s"%(repo_url, "contents", manifest)
+                check_valid_manifest = get(content_url)
+                if check_valid_manifest.status_code == 200:
+
+                    temp_url = "/%s/%s/%s"%(repo_suffix, "master", manifest)
+                    raw_url = urljoin(raw_first_url, temp_url)
+                    raw_data = get(raw_url)
+                    if raw_data.status_code == 200:
+                        file_content = raw_data.content
+                        # filename = ROOT_DIR + uuid4().hex + manifest
+                        filename = ROOT_DIR + manifest
+                        with open(filename, 'wb') as m_file:
+                            m_file.write(raw_data.content)
+
+                        manifest_paths.append(filename)
+                        break
+    except Exception as e:
+        print(e)
+        raise
+    return manifest_paths
+
+def del_temp_files():
+    manifest_types = ("pom.xml","package.json","requirements.txt")
+    for the_file in os.listdir(ROOT_DIR):
+        if(the_file.endswith(manifest_types)):
+            file_path = os.path.join(ROOT_DIR, the_file)
+            try:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            except Exception as e:
+                print(e)

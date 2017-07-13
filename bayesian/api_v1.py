@@ -25,7 +25,8 @@ from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result,
                     build_nested_schema_dict, server_create_analysis, server_run_flow,
-                    get_analyses_from_graph, search_packages_from_graph)
+                    get_analyses_from_graph, search_packages_from_graph, get_files_github_url,
+                    del_temp_files)
 import os
 from f8a_worker.storages import AmazonS3
 
@@ -380,20 +381,32 @@ class StackAnalyses(ResourceWithSchema):
 
     @staticmethod
     def post():
-        files = request.files.getlist('manifest[]')
+        github_url = request.form.get("github_url")
+        if github_url is not None:
+            files= get_files_github_url(github_url)
+        else:
+            files = request.files.getlist('manifest[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
-
         # At least one manifest file should be present to analyse a stack
         if len(files) <= 0:
-            raise HTTPError(400, error="Error processing request. Please upload a valid manifest files.")
+            raise HTTPError(400, error="Error processing request. Please upload a valid manifest files"
+                                    " or a valid github link")
 
         request_id = uuid.uuid4().hex
         manifests = []
         ecosystem = None
-        for f in files:
-            filename = f.filename
 
+
+        for f in files:
+            try:
+                filename = f.filename
+            except:
+                # In case of multiple manifest, uuid can be used along the
+                # type of manifest file(basename)
+                # This step is done to pass the manifest descriptor
+                filename = os.path.basename(f)
+                f = open(f, 'rb')
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
@@ -459,6 +472,12 @@ class StackAnalyses(ResourceWithSchema):
                                          .format(id=request_id))
             raise HTTPError(500, "Error processing request {t}. manifest files could not be processed"
                                  .format(t=request_id))
+
+        try:
+            del_temp_files()
+        except Exception as exc:
+            current_app.logger.warn("Temporary files can't be deleted because {}".format(exc))
+
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
