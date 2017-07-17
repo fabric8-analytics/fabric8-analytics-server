@@ -292,7 +292,7 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
         started_at = None
         finished_at = None
         manifest_response = []
-        recommendation = {}
+        recommendations = {}
 
         if stack_result != None and 'task_result' in stack_result:
             if stack_result["task_result"] != None:
@@ -302,14 +302,14 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
 
         if reco_result is not None and 'task_result' in reco_result:
             if reco_result["task_result"] != None:
-                recommendation = reco_result['task_result']['recommendations']
+                recommendations = reco_result['task_result']
 
         return {
             "started_at": started_at,
             "finished_at": finished_at,
             "request_id": external_request_id,
             "result": manifest_response,
-            "recommendation": recommendation
+            "recommendation": recommendations
         }
 
 
@@ -381,6 +381,7 @@ class StackAnalyses(ResourceWithSchema):
     @staticmethod
     def post():
         files = request.files.getlist('manifest[]')
+        filepaths = request.values.getlist('filePath[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
 
@@ -391,15 +392,16 @@ class StackAnalyses(ResourceWithSchema):
         request_id = uuid.uuid4().hex
         manifests = []
         ecosystem = None
-        for f in files:
-            filename = f.filename
+        for index, manifest_file_raw in enumerate(files):
+            filename = manifest_file_raw.filename
+            filepath = filepaths[index]
 
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
                 raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
 
-            content = f.read().decode('utf-8')
+            content = manifest_file_raw.read().decode('utf-8')
 
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
@@ -430,7 +432,7 @@ class StackAnalyses(ResourceWithSchema):
                                                                            error=response.content))
 
             # Record the response details for this manifest file
-            manifest = {'filename': filename, 'content': content, 'ecosystem': manifest_descriptor.ecosystem}
+            manifest = {'filename': filename, 'content': content, 'ecosystem': manifest_descriptor.ecosystem, 'filepath': filepath}
             if appstack_id != '':
                 manifest['appstack_id'] = appstack_id
 
