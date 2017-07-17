@@ -16,3 +16,6 @@ pyjwt
 requests-futures
 # we require f8a_worker, but it is installed manually as it is not available in PyPI
 #f8a_worker
+
+google-cloud
+joblib

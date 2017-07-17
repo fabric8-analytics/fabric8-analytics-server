@@ -321,6 +321,8 @@ class StackAnalysesGETV2(ResourceWithSchema):
     def get(external_request_id):
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator_v2")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
+        user_stack_sentiment_result = retrieve_worker_result(rdb, external_request_id, "user_stack_sentiment_scorer")
+        reco_pkg_sentiment_result = retrieve_worker_result(rdb, external_request_id, "reco_pkg_sentiment_scorer")
 
         if stack_result is None and reco_result is None:
             raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
@@ -342,6 +344,31 @@ class StackAnalysesGETV2(ResourceWithSchema):
         if reco_result is not None and 'task_result' in reco_result:
             if reco_result["task_result"] != None:
                 recommendation = reco_result['task_result']['recommendations']
+
+        # Populate sentiment score for packages in user's stack
+        if stack_result is not None:
+            user_stack_deps = stack_result['task_result']['user_stack_info']['dependencies']
+            for dep in user_stack_deps:
+                if user_stack_sentiment_result is not None:
+                    dep['sentiment']['overall_score'] = user_stack_sentiment_result['task_result'][dep['name']]['score']
+                else:
+                    dep['sentiment'] = {}
+
+        # Populate sentiment score for recommended packages
+        if reco_result is not None:
+            alternate = reco_result['task_result']['recommendations']['alternate']
+            for pkg in alternate:
+                if reco_pkg_sentiment_result is not None:
+                    pkg['sentiment']['overall_score'] = reco_pkg_sentiment_result['task_result'][pkg['name']]['score']
+                else:
+                    pkg['sentiment'] = {}
+
+            companion = reco_result['task_result']['recommendations']['companion']
+            for pkg in companion:
+                if reco_pkg_sentiment_result is not None:
+                    pkg['sentiment']['overall_score'] = reco_pkg_sentiment_result['task_result'][pkg['name']]['score']
+                else:
+                    pkg['sentiment'] = {}
 
         stack_result['task_result']['recommendations'] = recommendation
         manifest_response.append(stack_result["task_result"])
