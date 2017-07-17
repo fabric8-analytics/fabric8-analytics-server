@@ -15,6 +15,23 @@ from .utils import fetch_public_key
 
 jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
 
+def decode_token():
+    token = request.headers.get('Authorization')
+    print (token)
+    if token == None:
+        return token
+
+    if token.startswith('Bearer '):
+        _, token = token.split(' ', 1)
+
+    pub_key = fetch_public_key(current_app)
+    try:
+        decoded_token = jwt.decode(token, pub_key, audience=current_app.config.get('BAYESIAN_JWT_AUDIENCE'))
+    except:
+        current_app.logger.error('Invalid Auth Token')
+        raise
+    
+    return decoded_token
 
 def login_required(view):
     # NOTE: the actual authentication 401 failures are commented out for now and will be
@@ -28,25 +45,23 @@ def login_required(view):
         lgr = current_app.logger
         user = None
 
-        auth_header = request.headers.get('Authorization', '').strip()
-        if auth_header.startswith('Bearer '):
-            _, token = auth_header.split(' ', 1)
-            lgr.info('Seeing "Bearer" Authentication header {token}, trying to decode as JWT token'.
-                format(token=token))
-            try:
-                decoded = jwt.decode(token,
-                                     fetch_public_key(current_app),
-                                     audience=current_app.config.get('BAYESIAN_JWT_AUDIENCE'))
-                lgr.info('Successfuly authenticated user {e} using JWT'.
+        try:
+            decoded = decode_token()
+            if decoded == None:
+                lgr.exception('Provide an Authorization token with the API request')
+                raise HTTPError(401, 'Authentication failed - token missing')
+
+            lgr.info('Successfuly authenticated user {e} using JWT'.
                          format(e=decoded.get('email')))
-            except jwt.ExpiredSignatureError:
-                lgr.exception('Expired JWT token')
-                decoded = {'email': 'unauthenticated@jwt.failed'}
-                raise HTTPError(401, 'Authentication failed - token has expired')
-            except:
-                lgr.exception('Failed decoding JWT token')
-                decoded = {'email': 'unauthenticated@jwt.failed'}
-                raise HTTPError(401, 'Authentication failed - could not decode JWT token')
+        except jwt.ExpiredSignatureError:
+            lgr.exception('Expired JWT token')
+            decoded = {'email': 'unauthenticated@jwt.failed'}
+            raise HTTPError(401, 'Authentication failed - token has expired')
+        except:
+            lgr.exception('Failed decoding JWT token')
+            decoded = {'email': 'unauthenticated@jwt.failed'}
+            raise HTTPError(401, 'Authentication failed - could not decode JWT token')
+        else:
             user = APIUser(decoded.get('email', 'nobody@nowhere.nodomain'))
 
         if user:
