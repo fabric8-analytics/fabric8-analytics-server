@@ -5,8 +5,8 @@
 
 set -e
 
-SELINON_COMMIT=356cfa6
-SELINONLIB_COMMIT=67d9147
+SELINON_COMMIT=f6cae43
+SELINONLIB_COMMIT=591c31f
 
 
 pip3 uninstall --yes selinon selinonlib
