@@ -17,8 +17,7 @@ jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
 
 def decode_token():
     token = request.headers.get('Authorization')
-    print (token)
-    if token == None:
+    if token is None:
         return token
 
     if token.startswith('Bearer '):
@@ -47,7 +46,7 @@ def login_required(view):
 
         try:
             decoded = decode_token()
-            if decoded == None:
+            if decoded is None:
                 lgr.exception('Provide an Authorization token with the API request')
                 raise HTTPError(401, 'Authentication failed - token missing')
 

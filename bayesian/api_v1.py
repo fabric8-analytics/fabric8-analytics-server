@@ -251,11 +251,7 @@ class ComponentAnalyses(ResourceWithSchema):
 
     @staticmethod
     def get(ecosystem, package, version):
-        decoded = decode_token()
-        if decoded == None:
-            current_app.logger.error("Provide an Authorization token with the request")
-            raise HTTPError(401, 'Authentication failed - Authorization token missing')
-            
+        decoded = decode_token()            
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
         package = case_sensitivity_transform(ecosystem, package)
@@ -263,7 +259,7 @@ class ComponentAnalyses(ResourceWithSchema):
 
         if result is not None:
             # Known component for Bayesian
-            server_create_component_bookkeeping (ecosystem, package, version, decoded)
+            server_create_component_bookkeeping(ecosystem, package, version, decoded)
             return result
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
@@ -413,10 +409,6 @@ class StackAnalyses(ResourceWithSchema):
     @staticmethod
     def post():
         decoded = decode_token()
-        if decoded == None:
-            current_app.logger.error("Provide an Authorization token with the request")
-            raise HTTPError(401, 'Authentication failed - Authorization token missing')
-
         files = request.files.getlist('manifest[]')
         filepaths = request.values.getlist('filePath[]')
         dt = datetime.datetime.now()
@@ -515,10 +507,6 @@ class StackAnalysesV2(ResourceWithSchema):
     @staticmethod
     def post():
         decoded = decode_token()
-        if decoded == None:
-            current_app.logger.error("Provide an Authorization token with the request")
-            raise HTTPError(401, 'Authentication failed')
-
         files = request.files.getlist('manifest[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
