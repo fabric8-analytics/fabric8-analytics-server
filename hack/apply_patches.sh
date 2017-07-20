@@ -1,11 +1,11 @@
-#!/usr/bin/bash -e
+#!/usr/bin/bash -ex
 
 HERE=$(dirname $0)
 
 patches_dir="${HERE}/patches"
 
 # list of all patches in directory
-patches=$(ls $patches_dir/*.patch 2>/dev/null)
+patches=$(ls $patches_dir/*.patch 2>/dev/null || :)
 
 # not patches -> exit
 [[ -z "${patches}" ]] && exit 0
