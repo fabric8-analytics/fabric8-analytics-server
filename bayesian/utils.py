@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import uuid
 
 from selinon import run_flow
 from flask import current_app
@@ -31,8 +32,19 @@ def server_run_flow(flow_name, flow_args):
     Setup.connect_if_not_connected()
     return run_flow(flow_name, flow_args)
 
+def server_create_component_bookkeeping(ecosystem, name, version, user_profile):
+    args = {
+        'external_request_id': uuid.uuid4().hex,
+        'data': {
+            'api_name': 'component_analyses',
+            'user_email': user_profile.get('email','bayesian@redhat.com'),
+            'user_profile': user_profile,
+            'request': {'ecosystem': ecosystem, 'name': name, 'version': version}
+        }
+    }
+    return server_run_flow('componentApiFlow', args)
 
-def server_create_analysis(ecosystem, package, version, api_flow=True, force=False, force_graph_sync=False):
+def server_create_analysis(ecosystem, package, version, user_profile, api_flow=True, force=False, force_graph_sync=False):
     """Create bayesianApiFlow handling analyses for specified EPV
 
     :param ecosystem: ecosystem for which the flow should be run
@@ -42,9 +54,13 @@ def server_create_analysis(ecosystem, package, version, api_flow=True, force=Fal
     :param force_graph_sync: force synchronization to graph
     :return: dispatcher ID handling flow
     """
+    # Bookkeeping first
+    component = MavenCoordinates.normalize_str(package) if ecosystem == 'maven' else package
+    server_create_component_bookkeeping(ecosystem, component, version, user_profile)
+
     args = {
         'ecosystem': ecosystem,
-        'name': MavenCoordinates.normalize_str(package) if ecosystem == 'maven' else package,
+        'name': component,
         'version': version,
         'force': force,
         'force_graph_sync': force_graph_sync

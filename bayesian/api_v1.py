@@ -20,10 +20,10 @@ from f8a_worker.utils import (safe_get_latest_version, get_dependents_count, get
                             usage_rank2str, MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 from . import rdb
-from .auth import login_required
+from .auth import login_required, decode_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
-from .utils import (get_system_version, retrieve_worker_result,
+from .utils import (get_system_version, retrieve_worker_result, server_create_component_bookkeeping,
                     build_nested_schema_dict, server_create_analysis, server_run_flow,
                     get_analyses_from_graph, search_packages_from_graph)
 import os
@@ -251,24 +251,25 @@ class ComponentAnalyses(ResourceWithSchema):
 
     @staticmethod
     def get(ecosystem, package, version):
+        decoded = decode_token()            
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
         package = case_sensitivity_transform(ecosystem, package)
         result = get_analyses_from_graph(ecosystem, package, version)
-        current_app.logger.warn("%r" % result)
 
         if result is not None:
             # Known component for Bayesian
+            server_create_component_bookkeeping(ecosystem, package, version, decoded)
             return result
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
             # Enter the unknown path
-            server_create_analysis(ecosystem, package, version, api_flow=True, force=False, force_graph_sync=True)
+            server_create_analysis(ecosystem, package, version, user_profile=decoded, api_flow=True, force=False, force_graph_sync=True)
             msg = "Package {ecosystem}/{package}/{version} is unavailable. The package will be available shortly,"\
                   " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
             raise HTTPError(202, msg)
         else:
-            server_create_analysis(ecosystem, package, version, api_flow=False, force=False, force_graph_sync=True)
+            server_create_analysis(ecosystem, package, version, user_profile=decoded, api_flow=False, force=False, force_graph_sync=True)
             msg = "No data found for {ecosystem} Package {package}/{version}".format(ecosystem=ecosystem,
                                                                                      package=package, version=version)
             raise HTTPError(404, msg)
@@ -407,6 +408,7 @@ class StackAnalyses(ResourceWithSchema):
 
     @staticmethod
     def post():
+        decoded = decode_token()
         files = request.files.getlist('manifest[]')
         filepaths = request.values.getlist('filePath[]')
         dt = datetime.datetime.now()
@@ -501,6 +503,7 @@ class StackAnalysesV2(ResourceWithSchema):
 
     @staticmethod
     def post():
+        decoded = decode_token()
         files = request.files.getlist('manifest[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
@@ -572,7 +575,10 @@ class StackAnalysesV2(ResourceWithSchema):
             raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id))
 
         try:
-            args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem}
+            data = {'api_name': 'stack_analyses', 'request': manifests,
+                    'user_email': decoded.get('email','bayesian@redhat.com'),
+                    'user_profile': decoded}
+            args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem, 'data': data}
             server_run_flow('stackApiGraphV2Flow', args)
         except:
             # Just log the exception here for now
