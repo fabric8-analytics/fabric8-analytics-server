@@ -32,7 +32,7 @@ RUN pushd /coreapi && \
     # needed for DB migrations
     find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
 
-ENV F8A_WORKER_VERSION=30f256d
+ENV F8A_WORKER_VERSION=aa3a742
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
 
 COPY .git/ /tmp/.git
