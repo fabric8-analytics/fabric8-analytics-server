@@ -8,7 +8,7 @@ from flask import current_app
 from flask.json import JSONEncoder
 from sqlalchemy.orm.exc import NoResultFound
 
-from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
+from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult, StackAnalysisRequest
 from f8a_worker.utils import json_serial, MavenCoordinates
 
 from . import rdb
@@ -358,3 +358,7 @@ def retrieve_worker_result (rdb, external_request_id, worker):
         result = row.to_dict()
     return result
 
+def get_request_count(rdb, external_request_id):
+    count = rdb.session.query(StackAnalysisRequest).filter(\
+                StackAnalysisRequest.id == external_request_id).count()
+    return count

@@ -25,7 +25,7 @@ from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, server_create_component_bookkeeping,
                     build_nested_schema_dict, server_create_analysis, server_run_flow,
-                    get_analyses_from_graph, search_packages_from_graph)
+                    get_analyses_from_graph, search_packages_from_graph, get_request_count)
 import os
 from f8a_worker.storages import AmazonS3
 
@@ -281,6 +281,9 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
 
     @staticmethod
     def get(external_request_id):
+        if get_request_count(rdb, external_request_id) < 1:
+            raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
+
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation")
 
@@ -320,6 +323,9 @@ class StackAnalysesGETV2(ResourceWithSchema):
 
     @staticmethod
     def get(external_request_id):
+        if get_request_count(rdb, external_request_id) < 1:
+            raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
+
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator_v2")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
         user_stack_sentiment_result = retrieve_worker_result(rdb, external_request_id, "user_stack_sentiment_scorer")
