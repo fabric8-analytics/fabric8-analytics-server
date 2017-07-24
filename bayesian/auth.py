@@ -38,7 +38,7 @@ def login_required(view):
     # being able to tail logs and see if stuff is going fine
     def wrapper(*args, **kwargs):
         # Disable authentication for local setup
-        if getenv('DISABLE_AUTHENTICATION'):
+        if getenv('DISABLE_AUTHENTICATION') in ('1', 'True', 'true'):
             return view(*args, **kwargs)
 
         lgr = current_app.logger
