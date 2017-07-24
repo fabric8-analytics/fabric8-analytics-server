@@ -281,7 +281,7 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
 
     @staticmethod
     def get(external_request_id):
-        if (get_request_count(rdb, external_request_id) < 1):
+        if get_request_count(rdb, external_request_id) < 1:
             raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
 
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator")
@@ -323,7 +323,7 @@ class StackAnalysesGETV2(ResourceWithSchema):
 
     @staticmethod
     def get(external_request_id):
-        if (get_request_count(rdb, external_request_id) < 1):
+        if get_request_count(rdb, external_request_id) < 1:
             raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
 
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator_v2")

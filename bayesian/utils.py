@@ -359,9 +359,6 @@ def retrieve_worker_result (rdb, external_request_id, worker):
     return result
 
 def get_request_count(rdb, external_request_id):
-    try:
-        count = rdb.session.query(StackAnalysisRequest).filter(\
-                    StackAnalysisRequest.id == external_request_id).count()
-        return count
-    except SQLAlchemyError:
-        return 0
+    count = rdb.session.query(StackAnalysisRequest).filter(\
+                StackAnalysisRequest.id == external_request_id).count()
+    return count
