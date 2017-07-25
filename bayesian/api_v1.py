@@ -247,7 +247,7 @@ class ComponentSearch(ResourceWithSchema):
 class ComponentAnalyses(ResourceWithSchema):
     method_decorators = [login_required]
 
-    schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
+    schema_ref = SchemaRef('component_analysis', '2-0-0')
 
     @staticmethod
     def get(ecosystem, package, version):

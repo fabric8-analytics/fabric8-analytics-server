@@ -1,0 +1,343 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions": {
+        "component_data": {
+            "type": "object",
+            "properties": {
+                "package": {
+                    "$ref": "#/definitions/package_data"
+                },
+                "version": {
+                    "$ref": "#/definitions/version_data"
+                }
+            },
+            "required": [
+                "package",
+                "version"
+            ],
+            "additionalProperties": false
+        },
+        "package_data": {
+            "type": "object",
+            "description": "Package data",
+            "properties": {
+                "ecosystem": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "gh_forks": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "gh_issues_last_month_closed": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "gh_issues_last_month_opened": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "gh_issues_last_year_closed": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "gh_issues_last_year_opened": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "gh_prs_last_month_closed": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "gh_prs_last_month_opened": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "gh_prs_last_year_closed": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "gh_prs_last_year_opened": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "gh_stargazers": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "last_updated": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "last_updated_sentiment_score": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "latest_version": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "libio_contributors": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "libio_dependents_projects": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "libio_dependents_repos": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "libio_latest_release": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "libio_total_releases": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "libio_usedby": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "libio_watchers": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "name": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "package_dependents_count": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "package_relative_used": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sentiment_magnitude": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sentiment_score": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "vertex_label": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "ecosystem",
+                "name"
+            ],
+            "additionalProperties": false
+        },
+        "result_list": {
+            "type": "object",
+            "description": "List of result data",
+            "properties": {
+                "result_data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/component_data"
+                    }
+                }
+            },
+            "additionalProperties": false
+        },
+        "version_data": {
+            "type": "object",
+            "description": "Version data",
+            "properties": {
+                "cm_avg_cyclomatic_complexity": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "cm_loc": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "cm_num_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "dependents_count": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "description": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "last_updated": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "licenses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pecosystem": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pname": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "shipped_as_downstream": {
+                    "type": "array",
+                    "items": {
+                        "type": "boolean"
+                    }
+                },
+                "version": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "vertex_label": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "pecosystem",
+                "pname",
+                "version"
+            ],
+            "additionalProperties": false
+        }
+    },
+    "type": "object",
+    "description": "Software component analysis",
+    "properties": {
+        "schema": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the schema",
+                    "pattern": "^[a-zA-Z0-9_]+$"
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version of the schema",
+                    "pattern": "^[0-9]+-[0-9]+-[0-9]+$"
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Full URL of the schema",
+                    "format": "uri"
+                }
+            },
+            "required": [
+                "name",
+                "version"
+            ],
+            "additionalProperties": false
+        },
+        "_release": {
+            "type": "string",
+            "description": "Unique release id in form of \"ecosystem:package:version\""
+        },
+        "result": {
+            "$ref": "#/definitions/result_list"
+        },
+        "dependents_count": {
+            "type": "number",
+            "description": "Number of dependent GitHub projects"
+        }
+    },
+    "required": [
+        "result",
+        "dependents_count"
+    ],
+    "additionalProperties": false,
+    "title": "component_analysis-v2-0-0"
+}
