@@ -24,12 +24,17 @@ def decode_token():
         _, token = token.split(' ', 1)
 
     pub_key = fetch_public_key(current_app)
-    try:
-        decoded_token = jwt.decode(token, pub_key, audience=current_app.config.get('BAYESIAN_JWT_AUDIENCE'))
-    except:
-        current_app.logger.error('Invalid Auth Token')
-        raise
-    
+    audiences = current_app.config.get('BAYESIAN_JWT_AUDIENCE').split(',')
+    aud_counter = 0
+    aud_len = len(audiences)
+    for aud in audiences:
+        aud_counter += 1
+        try:
+            decoded_token = jwt.decode(token, pub_key, audience=aud)
+        except jwt.InvalidTokenError:
+            current_app.logger.error('Auth Token could not be decoded for audience {}'.format(aud))
+            raise if aud_counter == aud_len else continue
+
     return decoded_token
 
 def login_required(view):
