@@ -51,7 +51,7 @@ if (env.BRANCH_NAME == 'master') {
             stage('End-to-End Tests') {
                 def result
                 try {
-                    timeout(10) {
+                    timeout(20) {
                         sleep 5
                         sh "oc logs -f dc/${dc}"
                         def e2e = build job: 'fabric8-analytics-common-master', wait: true, propagate: false, parameters: [booleanParam(name: 'runOnOpenShift', value: true)]
