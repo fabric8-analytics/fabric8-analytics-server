@@ -25,15 +25,21 @@ def decode_token():
 
     pub_key = fetch_public_key(current_app)
     audiences = current_app.config.get('BAYESIAN_JWT_AUDIENCE').split(',')
-    aud_counter = 0
     aud_len = len(audiences)
     for aud in audiences:
-        aud_counter += 1
         try:
             decoded_token = jwt.decode(token, pub_key, audience=aud)
         except jwt.InvalidTokenError:
             current_app.logger.error('Auth Token could not be decoded for audience {}'.format(aud))
-            raise if aud_counter == aud_len else continue
+            decoded_token = None
+
+        if decoded_token == None:
+            continue
+        else:
+            break
+
+    if decoded_token == None:
+        raise jwt.InvalidTokenError
 
     return decoded_token
 
