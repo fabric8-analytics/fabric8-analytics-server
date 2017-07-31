@@ -342,7 +342,7 @@ class StackAnalysesGETV2(ResourceWithSchema):
         manifest_response = []
         recommendation = {}
 
-        if stack_result != None:
+        if stack_result != None and 'task_result' in stack_result:
             if stack_result["task_result"] != None:
                 started_at = stack_result["task_result"]["_audit"]["started_at"]
                 finished_at = stack_result["task_result"]["_audit"]["ended_at"]
