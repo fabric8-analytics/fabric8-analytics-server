@@ -33,12 +33,11 @@ def decode_token():
             current_app.logger.error('Auth Token could not be decoded for audience {}'.format(aud))
             decoded_token = None
 
-        if decoded_token == None:
-            continue
-        else:
+        if decoded_token is not None:
             break
 
-    if decoded_token == None:
+    if decoded_token is None:
+        current_app.logger.exception('Auth token audience cannot be verified.')
         raise jwt.InvalidTokenError
 
     return decoded_token
