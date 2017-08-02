@@ -360,7 +360,7 @@ class StackAnalysesGETV2(ResourceWithSchema):
 
         # Populate sentiment score for packages in user's stack
         if stack_data is not None:
-            user_stack_deps = stack_data.get('dependencies',[])
+            user_stack_deps = stack_data.get('dependencies', [])
             for dep in user_stack_deps:
                 if user_stack_sentiment_result is not None:
                     user_stack_sentiment = user_stack_sentiment_result.get('task_result', {})
@@ -391,7 +391,7 @@ class StackAnalysesGETV2(ResourceWithSchema):
                             "magnitude": 0
                         }
             current_app.logger.info("Sentiment Analysis for Alternate Packages is completed successfully.")
-            companion = recommendation.get('companion',[])
+            companion = recommendation.get('companion', [])
             for pkg in companion:
                 if reco_pkg_sentiment_result is not None:
                     reco_pkg_sentiment_companion = reco_pkg_sentiment_result.get('task_result', {})
