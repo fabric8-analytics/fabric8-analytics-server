@@ -340,22 +340,27 @@ class StackAnalysesGETV2(ResourceWithSchema):
         started_at = None
         finished_at = None
         manifest_response = []
-        recommendation = {}
+        recommendation = None
+        stack_data = None
 
-        if stack_result != None and 'task_result' in stack_result:
-            if stack_result["task_result"] != None:
-                started_at = stack_result["task_result"]["_audit"]["started_at"]
-                finished_at = stack_result["task_result"]["_audit"]["ended_at"]
+        if stack_result is not None and 'task_result' in stack_result:
+            if stack_result["task_result"] is not None:
+                if 'user_stack_info' in stack_result["task_result"]:
+                    stack_data = stack_result["task_result"]["user_stack_info"]
+
+                if '_audit' in stack_result["task_result"]:
+                    started_at = stack_result["task_result"]["_audit"]["started_at"]
+                    finished_at = stack_result["task_result"]["_audit"]["ended_at"]
 
         if reco_result is not None and 'task_result' in reco_result:
-            if reco_result["task_result"] != None:
-                recommendation = reco_result.get('task_result').get('recommendations', {})
+            if reco_result["task_result"] is not None and 'recommendations' in reco_result["task_result"]:
+                recommendation = reco_result['task_result']['recommendations']
             else:
-                current_app.logger.info("task results for recommendation does't exit.")
+                current_app.logger.info("No recommendations found.")
 
         # Populate sentiment score for packages in user's stack
-        if stack_result is not None:
-            user_stack_deps = stack_result.get('task_result', {}).get('user_stack_info', {}).get('dependencies',[])
+        if stack_data is not None:
+            user_stack_deps = stack_data.get('dependencies',[])
             for dep in user_stack_deps:
                 if user_stack_sentiment_result is not None:
                     user_stack_sentiment = user_stack_sentiment_result.get('task_result', {})
@@ -371,8 +376,8 @@ class StackAnalysesGETV2(ResourceWithSchema):
         current_app.logger.info("Sentiment Analysis for User Stack is completed successfully" )
 
         # Populate sentiment score for recommended packages
-        if reco_result is not None:
-            alternate = reco_result.get('task_result', {}).get('recommendations', {}).get('alternate', [])
+        if recommendation is not None:
+            alternate = recommendation.get('alternate', [])
             for pkg in alternate:
                 if reco_pkg_sentiment_result is not None:
                     reco_pkg_sentiment_alter = reco_pkg_sentiment_result.get('task_result', {})
@@ -386,7 +391,7 @@ class StackAnalysesGETV2(ResourceWithSchema):
                             "magnitude": 0
                         }
             current_app.logger.info("Sentiment Analysis for Alternate Packages is completed successfully.")
-            companion = reco_result.get('task_result', {}).get('recommendations', {}).get('companion',[])
+            companion = recommendation.get('companion',[])
             for pkg in companion:
                 if reco_pkg_sentiment_result is not None:
                     reco_pkg_sentiment_companion = reco_pkg_sentiment_result.get('task_result', {})
@@ -400,6 +405,8 @@ class StackAnalysesGETV2(ResourceWithSchema):
                             "magnitude": 0
                         }
             current_app.logger.info("Sentiment Analysis for Companion Packages is completed successfully.")
+        else:
+            recommendation = {}
 
         stack_result['task_result']['recommendations'] = recommendation
         manifest_response.append(stack_result["task_result"])
