@@ -313,6 +313,10 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
             "recommendation": recommendations
         }
 
+def get_recommendation_for_a_manifest(manifest_file_path, recommendations):
+        for recommendation in recommendations:
+            if(recommendation.get("manifest_file_path") == manifest_file_path):
+                return recommendation
 
 class StackAnalysesGETV2(ResourceWithSchema):
     method_decorators = [login_required]
@@ -333,6 +337,8 @@ class StackAnalysesGETV2(ResourceWithSchema):
 
         started_at = None
         finished_at = None
+        version = None
+        release = None
         manifest_response = []
         stacks = []
         recommendations = []
@@ -341,6 +347,8 @@ class StackAnalysesGETV2(ResourceWithSchema):
             if stack_result["task_result"] != None:
                 started_at = stack_result["task_result"]["_audit"]["started_at"]
                 finished_at = stack_result["task_result"]["_audit"]["ended_at"]
+                version = stack_result["task_result"]["_audit"]["version"]
+                release = stack_result["task_result"]["_release"]
             if stack_result["task_result"] != None and 'stack_data' in stack_result["task_result"]:
                 stacks = stack_result["task_result"]["stack_data"]
 
@@ -385,16 +393,19 @@ class StackAnalysesGETV2(ResourceWithSchema):
                         pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item[pkg['name']]['score']
                     else:
                         pkg['sentiment'] = {}
+        
+        for stack in stacks:
+            stack["recommendation"] = get_recommendation_for_a_manifest(stack.get("manifest_file_path"), recommendations)
+            manifest_response.append(stack)
 
-        stack_result['task_result']['recommendations'] = recommendations
-        manifest_response.append(stack_result["task_result"])
         return {
+            "version": version,
+            "release": release,
             "started_at": started_at,
             "finished_at": finished_at,
             "request_id": external_request_id,
             "result": manifest_response
         }
-
 
 class UserFeedback(ResourceWithSchema):
     _ANALYTICS_BUCKET_NAME = "{}-{}".format(os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
