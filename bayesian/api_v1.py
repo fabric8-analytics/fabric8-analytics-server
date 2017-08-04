@@ -25,7 +25,7 @@ from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, server_create_component_bookkeeping,
                     build_nested_schema_dict, server_create_analysis, server_run_flow,
-                    get_analyses_from_graph, search_packages_from_graph, get_item_from_list_by_key_value)
+                    get_analyses_from_graph, search_packages_from_graph, get_request_count, get_item_from_list_by_key_value)
 import os
 from f8a_worker.storages import AmazonS3
 
@@ -281,6 +281,9 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
 
     @staticmethod
     def get(external_request_id):
+        if get_request_count(rdb, external_request_id) < 1:
+            raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
+
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation")
 
@@ -313,17 +316,15 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
             "recommendation": recommendations
         }
 
-def get_recommendation_for_a_manifest(manifest_file_path, recommendations):
-        for recommendation in recommendations:
-            if(recommendation.get("manifest_file_path") == manifest_file_path):
-                return recommendation
-
 class StackAnalysesGETV2(ResourceWithSchema):
     method_decorators = [login_required]
     #schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
     def get(external_request_id):
+        if get_request_count(rdb, external_request_id) < 1:
+            raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
+
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator_v2")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
         user_stack_sentiment_result = retrieve_worker_result(rdb, external_request_id, "user_stack_sentiment_scorer")
@@ -352,6 +353,9 @@ class StackAnalysesGETV2(ResourceWithSchema):
             if stack_result["task_result"] != None and 'stack_data' in stack_result["task_result"]:
                 stacks = stack_result["task_result"]["stack_data"]
 
+                if '_audit' in stack_result["task_result"]:
+                    started_at = stack_result["task_result"]["_audit"]["started_at"]
+                    finished_at = stack_result["task_result"]["_audit"]["ended_at"]
 
         if reco_result is not None and 'task_result' in reco_result:
             if reco_result["task_result"] != None and 'recommendations' in reco_result["task_result"]:
@@ -395,7 +399,7 @@ class StackAnalysesGETV2(ResourceWithSchema):
                         pkg['sentiment'] = {}
         
         for stack in stacks:
-            stack["recommendation"] = get_recommendation_for_a_manifest(stack.get("manifest_file_path"), recommendations)
+            stack["recommendation"] = get_item_from_list_by_key_value(recommendations, "manifest_file_path", stack.get("manifest_file_path"))
             manifest_response.append(stack)
 
         return {

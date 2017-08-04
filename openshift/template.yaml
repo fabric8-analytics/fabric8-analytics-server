@@ -42,7 +42,7 @@ objects:
                 name: bayesian-config
                 key: keycloak-url
           - name: BAYESIAN_JWT_AUDIENCE
-            value: "fabric8-online-platform"
+            value: "fabric8-online-platform,openshiftio-public"
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:

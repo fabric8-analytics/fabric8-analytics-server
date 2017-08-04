@@ -24,12 +24,22 @@ def decode_token():
         _, token = token.split(' ', 1)
 
     pub_key = fetch_public_key(current_app)
-    try:
-        decoded_token = jwt.decode(token, pub_key, audience=current_app.config.get('BAYESIAN_JWT_AUDIENCE'))
-    except:
-        current_app.logger.error('Invalid Auth Token')
-        raise
-    
+    audiences = current_app.config.get('BAYESIAN_JWT_AUDIENCE').split(',')
+    aud_len = len(audiences)
+    for aud in audiences:
+        try:
+            decoded_token = jwt.decode(token, pub_key, audience=aud)
+        except jwt.InvalidTokenError:
+            current_app.logger.error('Auth Token could not be decoded for audience {}'.format(aud))
+            decoded_token = None
+
+        if decoded_token is not None:
+            break
+
+    if decoded_token is None:
+        current_app.logger.exception('Auth token audience cannot be verified.')
+        raise jwt.InvalidTokenError
+
     return decoded_token
 
 def login_required(view):
@@ -38,7 +48,7 @@ def login_required(view):
     # being able to tail logs and see if stuff is going fine
     def wrapper(*args, **kwargs):
         # Disable authentication for local setup
-        if getenv('DISABLE_AUTHENTICATION'):
+        if getenv('DISABLE_AUTHENTICATION') in ('1', 'True', 'true'):
             return view(*args, **kwargs)
 
         lgr = current_app.logger
