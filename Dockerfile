@@ -33,7 +33,8 @@ RUN pushd /coreapi && \
     # needed for DB migrations
     find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
 
-RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
+RUN pip3 install --upgrade --no-binary :all: protobuf && \
+    pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
 
 COPY .git/ /tmp/.git
 # date and hash of last commit
@@ -47,5 +48,3 @@ RUN sh /tmp/update_selinon.sh
 
 # Apply patches here to be also able to patch selinon
 RUN cd /tmp/install_deps/ && /tmp/install_deps/apply_patches.sh
-
-RUN pip3 uninstall -y protobuf && pip3 install packaging appdirs && pip3 install --upgrade --no-binary :all: protobuf==3.3.0
