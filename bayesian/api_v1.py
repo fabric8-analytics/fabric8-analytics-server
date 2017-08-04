@@ -316,6 +316,7 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
             "recommendation": recommendations
         }
 
+
 class StackAnalysesGETV2(ResourceWithSchema):
     method_decorators = [login_required]
     #schema_ref = SchemaRef('stack_analyses', '2-1-4')
@@ -345,19 +346,14 @@ class StackAnalysesGETV2(ResourceWithSchema):
         recommendations = []
 
         if stack_result != None and 'task_result' in stack_result:
-            if stack_result["task_result"] != None:
-                if '_audit' in stack_result["task_result"]:
-                    started_at = stack_result["task_result"]["_audit"]["started_at"]
-                    finished_at = stack_result["task_result"]["_audit"]["ended_at"]
-                    version = stack_result["task_result"]["_audit"]["version"]
-                if '_release' in stack_result["task_result"]:
-                    release = stack_result["task_result"]["_release"]
-                if 'stack_data' in stack_result["task_result"]:
-                    stacks = stack_result["task_result"]["stack_data"]
+            started_at = stack_result.get("task_result", {}).get("_audit", {}).get("started_at", started_at)
+            finished_at = stack_result.get("task_result", {}).get("_audit", {}).get("ended_at", finished_at)
+            version = stack_result.get("task_result", {}).get("_audit", {}).get("version", version)
+            release = stack_result.get("task_result", {}).get("_release", release)
+            stacks = stack_result.get("task_result", {}).get("stack_data", stacks)
 
         if reco_result is not None and 'task_result' in reco_result:
-            if reco_result["task_result"] != None and 'recommendations' in reco_result["task_result"]:
-                recommendations = reco_result['task_result']['recommendations']
+            recommendations = reco_result.get("task_result", {}).get("recommendations", recommendations)
 
         # Populate sentiment score for packages in user's stack
         if not stacks:
@@ -369,13 +365,18 @@ class StackAnalysesGETV2(ResourceWithSchema):
             }
 
         for stack in stacks:
-            user_stack_deps = stack['user_stack_info']['dependencies']
+            user_stack_deps = stack.get('user_stack_info', {}).get('dependencies', [])
             for dep in user_stack_deps:
                 if user_stack_sentiment_result is not None:
-                    user_stack_sentiment_item = get_item_from_list_by_key_value(user_stack_sentiment_result['task_result']['sentiment'], 'manifest_file_path', stack['manifest_file_path'])
-                    dep['sentiment']['overall_score'] = user_stack_sentiment_item[dep['name']]['score']
+                    user_stack_sentiment_item = get_item_from_list_by_key_value(user_stack_sentiment_result.get('task_result', {}).get('sentiment', []), 'manifest_file_path', stack.get('manifest_file_path'))
+                    dep['sentiment']['overall_score'] = user_stack_sentiment_item.get(dep['name'], {}).get('score', 0)
+                    dep['sentiment']['magnitude'] = user_stack_sentiment_item.get(dep['name'], {}).get('magnitude', 0)
                 else:
-                    dep['sentiment'] = {}
+                    dep['sentiment'] = {
+                        "latest_comment": "",
+                        "overall_score": 0,
+                        "magnitude": 0
+                    }
 
         # Populate sentiment score for recommended packages
         if recommendations:
@@ -383,18 +384,28 @@ class StackAnalysesGETV2(ResourceWithSchema):
                 alternate = recommendation['alternate']
                 for pkg in alternate:
                     if reco_pkg_sentiment_result is not None:
-                        reco_pkg_sentiment_item = get_item_from_list_by_key_value(reco_pkg_sentiment_result['task_result']['sentiment'], 'manifest_file_path', recommendation['manifest_file_path'])
-                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item[pkg['name']]['score']
+                        reco_pkg_sentiment_item = get_item_from_list_by_key_value(reco_pkg_sentiment_result.get('task_result', {}).get('sentiment', []), 'manifest_file_path', recommendation.get('manifest_file_path'))
+                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('score', 0)
+                        pkg['sentiment']['magnitude'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('magnitude', 0)
                     else:
-                        pkg['sentiment'] = {}
+                        pkg['sentiment'] = {
+                            "latest_comment": "",
+                            "overall_score": 0,
+                            "magnitude": 0
+                        }
 
                 companion = recommendation['companion']
                 for pkg in companion:
                     if reco_pkg_sentiment_result is not None:
-                        reco_pkg_sentiment_item = get_item_from_list_by_key_value(reco_pkg_sentiment_result['task_result']['sentiment'], 'manifest_file_path', recommendation['manifest_file_path'])
-                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item[pkg['name']]['score']
+                        reco_pkg_sentiment_item = get_item_from_list_by_key_value(reco_pkg_sentiment_result.get('task_result', {}).get('sentiment', []), 'manifest_file_path', recommendation.get('manifest_file_path'))
+                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('score', 0)
+                        pkg['sentiment']['magnitude'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('magnitude', 0)
                     else:
-                        pkg['sentiment'] = {}
+                        pkg['sentiment'] = {
+                            "latest_comment": "",
+                            "overall_score": 0,
+                            "magnitude": 0
+                        }
         
         for stack in stacks:
             stack["recommendation"] = get_item_from_list_by_key_value(recommendations, "manifest_file_path", stack.get("manifest_file_path"))
