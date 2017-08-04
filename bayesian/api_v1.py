@@ -352,6 +352,12 @@ class StackAnalysesGETV2(ResourceWithSchema):
                     started_at = stack_result["task_result"]["_audit"]["started_at"]
                     finished_at = stack_result["task_result"]["_audit"]["ended_at"]
 
+                # Add topics from recommendation block
+                if reco_result is not None and 'task_result' in reco_result:
+                    for component in stack_result["task_result"].get("user_stack_info", {}).get("dependencies", []):
+                        component["topic_list"] = reco_result["task_result"].get("recommendations", {}) \
+                                                  .get("input_stack_topics", {}).get(component.get('name'))
+
         if reco_result is not None and 'task_result' in reco_result:
             if reco_result["task_result"] is not None and 'recommendations' in reco_result["task_result"]:
                 recommendation = reco_result['task_result']['recommendations']
