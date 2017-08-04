@@ -48,6 +48,4 @@ RUN sh /tmp/update_selinon.sh
 # Apply patches here to be also able to patch selinon
 RUN cd /tmp/install_deps/ && /tmp/install_deps/apply_patches.sh
 
-RUN yum install -y npm && npm install -g semver-ranger
-
 RUN pip3 uninstall -y protobuf && pip3 install packaging appdirs && pip3 install --upgrade --no-binary :all: protobuf==3.3.0
