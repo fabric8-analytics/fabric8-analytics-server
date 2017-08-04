@@ -346,16 +346,14 @@ class StackAnalysesGETV2(ResourceWithSchema):
 
         if stack_result != None and 'task_result' in stack_result:
             if stack_result["task_result"] != None:
+                if '_audit' in stack_result["task_result"]:
                 started_at = stack_result["task_result"]["_audit"]["started_at"]
                 finished_at = stack_result["task_result"]["_audit"]["ended_at"]
                 version = stack_result["task_result"]["_audit"]["version"]
+                if '_release' in stack_result["task_result"]:
                 release = stack_result["task_result"]["_release"]
-            if stack_result["task_result"] != None and 'stack_data' in stack_result["task_result"]:
+                if 'stack_data' in stack_result["task_result"]:
                 stacks = stack_result["task_result"]["stack_data"]
-
-                if '_audit' in stack_result["task_result"]:
-                    started_at = stack_result["task_result"]["_audit"]["started_at"]
-                    finished_at = stack_result["task_result"]["_audit"]["ended_at"]
 
         if reco_result is not None and 'task_result' in reco_result:
             if reco_result["task_result"] != None and 'recommendations' in reco_result["task_result"]:
