@@ -1,6 +1,7 @@
 FROM registry.centos.org/centos/centos:7
 MAINTAINER Pavel Odvody <podvody@redhat.com>
-ENV LANG=en_US.UTF-8
+ENV LANG=en_US.UTF-8 \
+    F8A_WORKER_VERSION=e8875ac
 
 RUN useradd coreapi
 # python3-pycurl is needed for Amazon SQS (boto lib), we need CentOS' rpm - installing it from pip results in NSS errors
@@ -32,7 +33,6 @@ RUN pushd /coreapi && \
     # needed for DB migrations
     find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
 
-ENV F8A_WORKER_VERSION=65bb6b0
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
 
 COPY .git/ /tmp/.git
