@@ -432,22 +432,23 @@ class StackAnalysesGETV2(ResourceWithSchema):
 
 
 class UserFeedback(ResourceWithSchema):
+    method_decorators = [login_required]
     _ANALYTICS_BUCKET_NAME = "{}-{}".format(os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
                                             os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback"))
-
-    def post(self):
+    @staticmethod
+    def post():
         input_json = request.get_json()
 
         if not request.json or 'request_id' not in input_json:
             raise HTTPError(400, error="Expected JSON request")
 
-        if 'recommendation' not in input_json or 'name' not in input_json['recommendation']:
-            raise HTTPError(400, error="Expected field name in recommendation")
+        if 'feedback' not in input_json:
+            raise HTTPError(400, error="Expected feedback")
 
-        s3 = AmazonS3(bucket_name=self._ANALYTICS_BUCKET_NAME)
+        s3 = AmazonS3(bucket_name=UserFeedback._ANALYTICS_BUCKET_NAME)
         s3.connect()
         # Store data
-        key = "{}-{}".format(input_json["request_id"], input_json["recommendation"]["name"])
+        key = "{}".format(input_json["request_id"])
         s3.store_dict(input_json, key)
 
         return {'status': 'success'}
