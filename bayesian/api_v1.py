@@ -326,6 +326,11 @@ class StackAnalysesGETV2(ResourceWithSchema):
         if get_request_count(rdb, external_request_id) < 1:
             raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
 
+        graph_agg = retrieve_worker_result(rdb, external_request_id, "GraphAggregatorTask")
+        if graph_agg is not None and 'task_result' in graph_agg:
+            if graph_agg['task_result'] is None:
+                raise HTTPError(500, 'Invalid manifest file(s) received. Please analyse the stack with proper manifests')
+
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator_v2")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
         user_stack_sentiment_result = retrieve_worker_result(rdb, external_request_id, "user_stack_sentiment_scorer")
@@ -353,10 +358,13 @@ class StackAnalysesGETV2(ResourceWithSchema):
                     finished_at = stack_result["task_result"]["_audit"]["ended_at"]
 
                 # Add topics from recommendation block
+                current_app.logger.info("&&&&&&%r&&&&" % reco_result)
                 if reco_result is not None and 'task_result' in reco_result:
                     for component in stack_result["task_result"].get("user_stack_info", {}).get("dependencies", []):
-                        component["topic_list"] = reco_result["task_result"].get("recommendations", {}) \
-                                                  .get("input_stack_topics", {}).get(component.get('name'))
+                        task_result = reco_result['task_result']
+                        if task_result is not None:
+                            component["topic_list"] = task_result.get("recommendations", {}) \
+                                .get("input_stack_topics", {}).get(component.get('name'))
 
         if reco_result is not None and 'task_result' in reco_result:
             if reco_result["task_result"] is not None and 'recommendations' in reco_result["task_result"]:
