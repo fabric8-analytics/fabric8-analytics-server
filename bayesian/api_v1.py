@@ -329,7 +329,7 @@ class StackAnalysesGETV2(ResourceWithSchema):
         graph_agg = retrieve_worker_result(rdb, external_request_id, "GraphAggregatorTask")
         if graph_agg is not None and 'task_result' in graph_agg:
             if graph_agg['task_result'] is None:
-                raise HTTPError(500, 'Invalid manifest file(s) received. Please analyse the stack with proper manifests')
+                raise HTTPError(500, 'Invalid manifest file(s) received. Please submit valid manifest files for stack analysis')
 
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator_v2")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
