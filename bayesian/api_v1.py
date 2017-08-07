@@ -358,7 +358,6 @@ class StackAnalysesGETV2(ResourceWithSchema):
                     finished_at = stack_result["task_result"]["_audit"]["ended_at"]
 
                 # Add topics from recommendation block
-                current_app.logger.info("&&&&&&%r&&&&" % reco_result)
                 if reco_result is not None and 'task_result' in reco_result:
                     for component in stack_result["task_result"].get("user_stack_info", {}).get("dependencies", []):
                         task_result = reco_result['task_result']
