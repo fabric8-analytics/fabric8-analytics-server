@@ -43,8 +43,8 @@ RUN cd /tmp/.git &&\
     rm -rf /tmp/.git/
 
 # A temporary hack to keep Selinon up2date
-COPY hack/update_selinon.sh /tmp/
-RUN sh /tmp/update_selinon.sh
+COPY hack/install_selinon.sh /tmp/
+RUN sh /tmp/install_selinon.sh
 
 # Apply patches here to be also able to patch selinon
 RUN cd /tmp/install_deps/ && /tmp/install_deps/apply_patches.sh
