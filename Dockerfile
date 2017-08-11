@@ -1,7 +1,7 @@
 FROM registry.centos.org/centos/centos:7
 MAINTAINER Pavel Odvody <podvody@redhat.com>
 ENV LANG=en_US.UTF-8 \
-    F8A_WORKER_VERSION=cca680a
+    F8A_WORKER_VERSION=9734983
 
 RUN useradd coreapi
 # python3-pycurl is needed for Amazon SQS (boto lib), we need CentOS' rpm - installing it from pip results in NSS errors
@@ -41,10 +41,6 @@ COPY .git/ /tmp/.git
 RUN cd /tmp/.git &&\
     git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD | tee /etc/coreapi-release &&\
     rm -rf /tmp/.git/
-
-# A temporary hack to keep Selinon up2date
-COPY hack/update_selinon.sh /tmp/
-RUN sh /tmp/update_selinon.sh
 
 # Apply patches here to be also able to patch selinon
 RUN cd /tmp/install_deps/ && /tmp/install_deps/apply_patches.sh
