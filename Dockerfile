@@ -1,7 +1,7 @@
 FROM registry.centos.org/centos/centos:7
 MAINTAINER Pavel Odvody <podvody@redhat.com>
 ENV LANG=en_US.UTF-8 \
-    F8A_WORKER_VERSION=cca680a
+    F8A_WORKER_VERSION=9734983
 
 RUN useradd coreapi
 # python3-pycurl is needed for Amazon SQS (boto lib), we need CentOS' rpm - installing it from pip results in NSS errors
