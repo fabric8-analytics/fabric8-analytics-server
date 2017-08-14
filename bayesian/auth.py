@@ -37,8 +37,7 @@ def decode_token():
             break
 
     if decoded_token is None:
-        current_app.logger.exception('Auth token audience cannot be verified.')
-        raise jwt.InvalidTokenError
+        raise jwt.InvalidTokenError('Auth token audience cannot be verified.')
 
     return decoded_token
 
