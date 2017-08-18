@@ -357,13 +357,12 @@ class StackAnalysesGETV2(ResourceWithSchema):
             release = stack_result.get("task_result", {}).get("_release", release)
             stacks = stack_result.get("task_result", {}).get("stack_data", stacks)
 
-                # Add topics from recommendation block
-                if reco_result is not None and 'task_result' in reco_result:
-                    for component in stack_result["task_result"].get("user_stack_info", {}).get("dependencies", []):
-                        task_result = reco_result['task_result']
-                        if task_result is not None:
-                            component["topic_list"] = task_result.get("recommendations", {}) \
-                                .get("input_stack_topics", {}).get(component.get('name'))
+            # Add topics from recommendation block
+            if reco_result is not None and 'task_result' in reco_result:
+                for component in stack_result["task_result"].get("user_stack_info", {}).get("dependencies", []):
+                    task_result = reco_result['task_result']
+                    if task_result is not None:
+                        component["topic_list"] = task_result.get("recommendations", {}).get("input_stack_topics", {}).get(component.get('name'))
 
         if reco_result is not None and 'task_result' in reco_result:
             recommendations = reco_result.get("task_result", {}).get("recommendations", recommendations)

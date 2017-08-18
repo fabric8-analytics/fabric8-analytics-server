@@ -70,3 +70,6 @@ target/
 
 # workaround for private GH repositories
 worker/
+
+#editor
+.vscode
