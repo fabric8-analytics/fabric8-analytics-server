@@ -358,6 +358,12 @@ def retrieve_worker_result (rdb, external_request_id, worker):
         result = row.to_dict()
     return result
 
+def get_item_from_list_by_key_value(items, key, value):
+    for item in items:
+        if (item[key] == value):
+            return item
+    return None
+
 def get_request_count(rdb, external_request_id):
     count = rdb.session.query(StackAnalysisRequest).filter(\
                 StackAnalysisRequest.id == external_request_id).count()
