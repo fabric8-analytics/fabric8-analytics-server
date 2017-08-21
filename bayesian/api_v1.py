@@ -370,6 +370,8 @@ class StackAnalysesGETV2(ResourceWithSchema):
         # Populate sentiment score for packages in user's stack
         if not stacks:
             return {
+                "version": version,
+                "release": release,
                 "started_at": started_at,
                 "finished_at": finished_at,
                 "request_id": external_request_id,
