@@ -25,7 +25,7 @@ from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, server_create_component_bookkeeping,
                     build_nested_schema_dict, server_create_analysis, server_run_flow,
-                    get_analyses_from_graph, search_packages_from_graph, get_request_count)
+                    get_analyses_from_graph, search_packages_from_graph, get_request_count, get_item_from_list_by_key_value)
 import os
 from f8a_worker.storages import AmazonS3
 
@@ -335,7 +335,7 @@ class StackAnalysesGETV2(ResourceWithSchema):
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
         user_stack_sentiment_result = retrieve_worker_result(rdb, external_request_id, "user_stack_sentiment_scorer")
         reco_pkg_sentiment_result = retrieve_worker_result(rdb, external_request_id, "reco_pkg_sentiment_scorer")
-
+        
         if stack_result is None and reco_result is None:
             raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
 
@@ -344,92 +344,95 @@ class StackAnalysesGETV2(ResourceWithSchema):
 
         started_at = None
         finished_at = None
+        version = None
+        release = None
         manifest_response = []
-        recommendation = None
-        stack_data = None
+        stacks = []
+        recommendations = []
 
         if stack_result is not None and 'task_result' in stack_result:
-            if stack_result["task_result"] is not None:
-                if 'user_stack_info' in stack_result["task_result"]:
-                    stack_data = stack_result["task_result"]["user_stack_info"]
+            started_at = stack_result.get("task_result", {}).get("_audit", {}).get("started_at", started_at)
+            finished_at = stack_result.get("task_result", {}).get("_audit", {}).get("ended_at", finished_at)
+            version = stack_result.get("task_result", {}).get("_audit", {}).get("version", version)
+            release = stack_result.get("task_result", {}).get("_release", release)
+            stacks = stack_result.get("task_result", {}).get("stack_data", stacks)
 
-                if '_audit' in stack_result["task_result"]:
-                    started_at = stack_result["task_result"]["_audit"]["started_at"]
-                    finished_at = stack_result["task_result"]["_audit"]["ended_at"]
-
-                # Add topics from recommendation block
-                if reco_result is not None and 'task_result' in reco_result:
-                    for component in stack_result["task_result"].get("user_stack_info", {}).get("dependencies", []):
-                        task_result = reco_result['task_result']
-                        if task_result is not None:
-                            component["topic_list"] = task_result.get("recommendations", {}) \
-                                .get("input_stack_topics", {}).get(component.get('name'))
+            # Add topics from recommendation block
+            if reco_result is not None and 'task_result' in reco_result:
+                for component in stack_result["task_result"].get("user_stack_info", {}).get("dependencies", []):
+                    task_result = reco_result['task_result']
+                    if task_result is not None:
+                        component["topic_list"] = task_result.get("recommendations", {}).get("input_stack_topics", {}).get(component.get('name'))
 
         if reco_result is not None and 'task_result' in reco_result:
-            if reco_result["task_result"] is not None and 'recommendations' in reco_result["task_result"]:
-                recommendation = reco_result['task_result']['recommendations']
-            else:
-                current_app.logger.info("No recommendations found.")
+            recommendations = reco_result.get("task_result", {}).get("recommendations", recommendations)
 
         # Populate sentiment score for packages in user's stack
-        if stack_data is not None:
-            user_stack_deps = stack_data.get('dependencies', [])
+        if not stacks:
+            return {
+                "version": version,
+                "release": release,
+                "started_at": started_at,
+                "finished_at": finished_at,
+                "request_id": external_request_id,
+                "result": manifest_response
+            }
+
+        for stack in stacks:
+            user_stack_deps = stack.get('user_stack_info', {}).get('dependencies', [])
             for dep in user_stack_deps:
                 if user_stack_sentiment_result is not None:
-                    user_stack_sentiment = user_stack_sentiment_result.get('task_result', {})
-                    if user_stack_sentiment.get(dep['name']) is not None:
-                        dep['sentiment']['overall_score'] = user_stack_sentiment.get(dep['name']).get('score', 0)
-                        dep['sentiment']['magnitude'] = user_stack_sentiment.get(dep['name'], {}).get('magnitude', 0)
-                    else:
-                        dep['sentiment'] = {
-                            "latest_comment": "",
-                            "overall_score": 0,
-                            "magnitude": 0
-                        }
-        current_app.logger.info("Sentiment Analysis for User Stack is completed successfully" )
+                    user_stack_sentiment_item = get_item_from_list_by_key_value(user_stack_sentiment_result.get('task_result', {}).get('sentiment', []), 'manifest_file_path', stack.get('manifest_file_path'))
+                    dep['sentiment']['overall_score'] = user_stack_sentiment_item.get(dep['name'], {}).get('score', 0)
+                    dep['sentiment']['magnitude'] = user_stack_sentiment_item.get(dep['name'], {}).get('magnitude', 0)
+                else:
+                    dep['sentiment'] = {
+                        "latest_comment": "",
+                        "overall_score": 0,
+                        "magnitude": 0
+                    }
 
         # Populate sentiment score for recommended packages
-        if recommendation is not None:
-            alternate = recommendation.get('alternate', [])
-            for pkg in alternate:
-                if reco_pkg_sentiment_result is not None:
-                    reco_pkg_sentiment_alter = reco_pkg_sentiment_result.get('task_result', {})
-                    if reco_pkg_sentiment_alter is not None:
-                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_alter.get(pkg['name'], {}).get('score', 0)
-                        pkg['sentiment']['magnitude'] = reco_pkg_sentiment_alter.get(pkg['name'], {}).get('magnitude', 0)
+        if recommendations:
+            for recommendation in recommendations:
+                alternate = recommendation['alternate']
+                for pkg in alternate:
+                    if reco_pkg_sentiment_result is not None:
+                        reco_pkg_sentiment_item = get_item_from_list_by_key_value(reco_pkg_sentiment_result.get('task_result', {}).get('sentiment', []), 'manifest_file_path', recommendation.get('manifest_file_path'))
+                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('score', 0)
+                        pkg['sentiment']['magnitude'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('magnitude', 0)
                     else:
                         pkg['sentiment'] = {
                             "latest_comment": "",
                             "overall_score": 0,
                             "magnitude": 0
                         }
-            current_app.logger.info("Sentiment Analysis for Alternate Packages is completed successfully.")
-            companion = recommendation.get('companion', [])
-            for pkg in companion:
-                if reco_pkg_sentiment_result is not None:
-                    reco_pkg_sentiment_companion = reco_pkg_sentiment_result.get('task_result', {})
-                    if reco_pkg_sentiment_companion is not None:
-                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_companion.get(pkg['name'], {}).get('score', 0)
-                        pkg['sentiment']['magnitude'] = reco_pkg_sentiment_companion.get(pkg['name'], {}).get('magnitude', 0)
-                    else:
-                        pkg['sentiment'] = {
-                            "latest_comment": "",
-                            "overall_score": 0,
-                            "magnitude": 0
-                        }
-            current_app.logger.info("Sentiment Analysis for Companion Packages is completed successfully.")
-        else:
-            recommendation = {}
 
-        stack_result['task_result']['recommendations'] = recommendation
-        manifest_response.append(stack_result["task_result"])
+                companion = recommendation['companion']
+                for pkg in companion:
+                    if reco_pkg_sentiment_result is not None:
+                        reco_pkg_sentiment_item = get_item_from_list_by_key_value(reco_pkg_sentiment_result.get('task_result', {}).get('sentiment', []), 'manifest_file_path', recommendation.get('manifest_file_path'))
+                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('score', 0)
+                        pkg['sentiment']['magnitude'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('magnitude', 0)
+                    else:
+                        pkg['sentiment'] = {
+                            "latest_comment": "",
+                            "overall_score": 0,
+                            "magnitude": 0
+                        }
+        
+        for stack in stacks:
+            stack["recommendation"] = get_item_from_list_by_key_value(recommendations, "manifest_file_path", stack.get("manifest_file_path"))
+            manifest_response.append(stack)
+
         return {
+            "version": version,
+            "release": release,
             "started_at": started_at,
             "finished_at": finished_at,
             "request_id": external_request_id,
             "result": manifest_response
         }
-
 
 class UserFeedback(ResourceWithSchema):
     method_decorators = [login_required]
@@ -556,6 +559,7 @@ class StackAnalysesV2(ResourceWithSchema):
     def post():
         decoded = decode_token()
         files = request.files.getlist('manifest[]')
+        filepaths = request.values.getlist('filePath[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
 
@@ -566,15 +570,16 @@ class StackAnalysesV2(ResourceWithSchema):
         request_id = uuid.uuid4().hex
         manifests = []
         ecosystem = None
-        for f in files:
-            filename = f.filename
+        for index, manifest_file_raw in enumerate(files):
+            filename = manifest_file_raw.filename
+            filepath = filepaths[index]
 
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
                 raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
 
-            content = f.read().decode('utf-8')
+            content = manifest_file_raw.read().decode('utf-8')
 
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
@@ -605,7 +610,7 @@ class StackAnalysesV2(ResourceWithSchema):
                                                                            error=response.content))
 
             # Record the response details for this manifest file
-            manifest = {'filename': filename, 'content': content, 'ecosystem': manifest_descriptor.ecosystem}
+            manifest = {'filename': filename, 'content': content, 'ecosystem': manifest_descriptor.ecosystem, 'filepath': filepath}
             if appstack_id != '':
                 manifest['appstack_id'] = appstack_id
 
