@@ -350,7 +350,7 @@ class StackAnalysesGETV2(ResourceWithSchema):
         stacks = []
         recommendations = []
 
-        if stack_result != None and 'task_result' in stack_result:
+        if stack_result is not None and 'task_result' in stack_result:
             started_at = stack_result.get("task_result", {}).get("_audit", {}).get("started_at", started_at)
             finished_at = stack_result.get("task_result", {}).get("_audit", {}).get("ended_at", finished_at)
             version = stack_result.get("task_result", {}).get("_audit", {}).get("version", version)
@@ -555,7 +555,7 @@ class StackAnalysesV2(ResourceWithSchema):
 
     @staticmethod
     def post():
-        decoded = decode_token()
+        decoded = {}
         files = request.files.getlist('manifest[]')
         filepaths = request.values.getlist('filePath[]')
         dt = datetime.datetime.now()

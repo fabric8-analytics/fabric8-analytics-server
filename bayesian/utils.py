@@ -360,7 +360,7 @@ def retrieve_worker_result (rdb, external_request_id, worker):
 
 def get_item_from_list_by_key_value(items, key, value):
     for item in items:
-        if (item[key] == value):
+        if item[key] == value:
             return item
     return None
 
