@@ -298,14 +298,14 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
         manifest_response = []
         recommendations = {}
 
-        if stack_result != None and 'task_result' in stack_result:
-            if stack_result["task_result"] != None:
+        if stack_result is not None and 'task_result' in stack_result:
+            if stack_result["task_result"] is not None:
                 started_at = stack_result["task_result"]["_audit"]["started_at"]
                 finished_at = stack_result["task_result"]["_audit"]["ended_at"]
                 manifest_response.append(stack_result["task_result"])
 
         if reco_result is not None and 'task_result' in reco_result:
-            if reco_result["task_result"] != None:
+            if reco_result["task_result"] is not None:
                 recommendations = reco_result['task_result']
 
         return {
