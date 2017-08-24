@@ -812,11 +812,8 @@ add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
 add_resource_no_matter_slashes(ComponentAnalyses, '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
-add_resource_no_matter_slashes(StackAnalysesV1, '/stack-analyses-v1')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
-add_resource_no_matter_slashes(StackAnalysesGETV1, '/stack-analyses-v1/<external_request_id>')
 add_resource_no_matter_slashes(StackAnalysesGET, '/stack-analyses/<external_request_id>')
-add_resource_no_matter_slashes(StackAnalysesByOrigin, '/stack-analyses-v1/by-origin/<origin>')
 add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',
