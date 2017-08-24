@@ -283,7 +283,6 @@ def get_system_version():
             lines = f.readlines()
     except OSError:
         raise
-        return {}
 
     ret = {}
     for line in lines:
