@@ -275,7 +275,7 @@ class ComponentAnalyses(ResourceWithSchema):
             raise HTTPError(404, msg)
 
 
-class StackAnalysesByGraphGET(ResourceWithSchema):
+class StackAnalysesGETV1(ResourceWithSchema):
     method_decorators = [login_required]
     schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
@@ -317,7 +317,7 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
         }
 
 
-class StackAnalysesGETV2(ResourceWithSchema):
+class StackAnalysesGET(ResourceWithSchema):
     method_decorators = [login_required]
     #schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
@@ -457,7 +457,7 @@ class UserFeedback(ResourceWithSchema):
         return {'status': 'success'}
 
 
-class StackAnalyses(ResourceWithSchema):
+class StackAnalysesV1(ResourceWithSchema):
     method_decorators = [login_required]
 
     @staticmethod
@@ -552,7 +552,7 @@ class StackAnalyses(ResourceWithSchema):
         raise HTTPError(404, "Unsupported API endpoint")
 
 
-class StackAnalysesV2(ResourceWithSchema):
+class StackAnalyses(ResourceWithSchema):
     method_decorators = [login_required]
 
     @staticmethod
@@ -813,10 +813,7 @@ add_resource_no_matter_slashes(ComponentAnalyses, '/component-analyses/<ecosyste
                                endpoint='get_component_analysis')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
-add_resource_no_matter_slashes(StackAnalysesV2, '/stack-analyses-v2')
-add_resource_no_matter_slashes(StackAnalysesByGraphGET, '/stack-analyses/<external_request_id>')
-add_resource_no_matter_slashes(StackAnalysesGETV2, '/stack-analyses-v2/<external_request_id>')
-add_resource_no_matter_slashes(StackAnalysesByOrigin, '/stack-analyses/by-origin/<origin>')
+add_resource_no_matter_slashes(StackAnalysesGET, '/stack-analyses/<external_request_id>')
 add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',
