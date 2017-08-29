@@ -298,14 +298,14 @@ class StackAnalysesGETV1(ResourceWithSchema):
         manifest_response = []
         recommendations = {}
 
-        if stack_result != None and 'task_result' in stack_result:
-            if stack_result["task_result"] != None:
+        if stack_result is not None and 'task_result' in stack_result:
+            if stack_result["task_result"] is not None:
                 started_at = stack_result["task_result"]["_audit"]["started_at"]
                 finished_at = stack_result["task_result"]["_audit"]["ended_at"]
                 manifest_response.append(stack_result["task_result"])
 
         if reco_result is not None and 'task_result' in reco_result:
-            if reco_result["task_result"] != None:
+            if reco_result["task_result"] is not None:
                 recommendations = reco_result['task_result']
 
         return {
@@ -531,19 +531,19 @@ class StackAnalysesV1(ResourceWithSchema):
             )
             rdb.session.add(req)
             rdb.session.commit()
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
             current_app.logger.exception('Failed to create new analysis request')
-            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id))
+            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
 
         try:
             args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem}
             server_run_flow('stackApiGraphFlow', args)
-        except:
+        except Exception as exc:
             # Just log the exception here for now
             current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
                                          .format(id=request_id))
             raise HTTPError(500, "Error processing request {t}. manifest files could not be processed"
-                                 .format(t=request_id))
+                                 .format(t=request_id)) from exc
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
@@ -626,9 +626,9 @@ class StackAnalyses(ResourceWithSchema):
             )
             rdb.session.add(req)
             rdb.session.commit()
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
             current_app.logger.exception('Failed to create new analysis request')
-            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id))
+            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
 
         try:
             data = {'api_name': 'stack_analyses', 'request': manifests,
@@ -636,12 +636,12 @@ class StackAnalyses(ResourceWithSchema):
                     'user_profile': decoded}
             args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem, 'data': data}
             server_run_flow('stackApiGraphV2Flow', args)
-        except:
+        except Exception as exc:
             # Just log the exception here for now
             current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
                                          .format(id=request_id))
             raise HTTPError(500, "Error processing request {t}. manifest files could not be processed"
-                                 .format(t=request_id))
+                                 .format(t=request_id)) from exc
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
@@ -660,8 +660,8 @@ class StackAnalysesByOrigin(ResourceWithSchema):
                                  .filter(StackAnalysisRequest.origin == origin)\
                                  .order_by(StackAnalysisRequest.submitTime.desc())
             results_array = [result.to_dict() for result in results]
-        except SQLAlchemyError:
-            raise HTTPError(500,  "Error retrieving stack analyses")
+        except SQLAlchemyError as exc:
+            raise HTTPError(500,  "Error retrieving stack analyses") from exc
         return {"status": "success", "results": results_array}
 
 
@@ -684,8 +684,9 @@ class StackAnalysesById(ResourceWithSchema):
                 if manifest.get('appstack_id', 0):
                     manifest_appstackid_map[manifest["filename"]] = manifest["appstack_id"]
 
-        except SQLAlchemyError:
-            raise HTTPError(500, "Error fetching data for request ID '{id}'".format(id=external_request_id))
+        except SQLAlchemyError as exc:
+            raise HTTPError(500, "Error fetching data for request ID '{id}'".format(id=external_request_id))\
+                from exc
 
         try:
             results = rdb.session.query(WorkerResult)\
@@ -693,8 +694,9 @@ class StackAnalysesById(ResourceWithSchema):
                                          WorkerResult.worker == "dependency_aggregator")
             if results.count() <= 0:
                 raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
-        except SQLAlchemyError:
-            raise HTTPError(500, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))
+        except SQLAlchemyError as exc:
+            raise HTTPError(500, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))\
+                from exc
 
         try:
             if results.count() > 0:
@@ -754,8 +756,9 @@ class StackAnalysesById(ResourceWithSchema):
                     "result": manifest_response
                 }
                 return response
-        except:
-            raise HTTPError(500, "Error creating response for request {t}".format(t=external_request_id))
+        except Exception as exc:
+            raise HTTPError(500, "Error creating response for request {t}".format(t=external_request_id))\
+                from exc
 
 
 class PublishedSchemas(ResourceWithSchema):
