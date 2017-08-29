@@ -8,12 +8,14 @@ from itsdangerous import BadSignature, SignatureExpired, TimedJSONWebSignatureSe
 import jwt
 from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
 from os import getenv
+from sqlalchemy.exc import SQLAlchemyError
 
 from . import rdb
 from .exceptions import HTTPError
 from .utils import fetch_public_key
 
 jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
+
 
 def decode_token():
     token = request.headers.get('Authorization')
@@ -256,8 +258,14 @@ def require_permissions(*needs_perms):
                 if not current_user.is_authenticated:
                     raise HTTPError(401, 'Unauthenticated user can\'t access this view')
                 # get all user permissions from DB
-                user = rdb.session.query(User).outerjoin(User.roles).outerjoin(Role.permissions).\
-                    filter(User.id == current_user.id).first()
+                try:
+                    user = rdb.session.query(User).\
+                                       outerjoin(User.roles).\
+                                       outerjoin(Role.permissions).\
+                                       filter(User.id == current_user.id).first()
+                except SQLAlchemyError:
+                    rdb.session.rollback()
+                    raise
                 has_perms = []
                 for role in user.roles:
                     for perm in role.permissions:

@@ -241,11 +241,12 @@ def get_analyses_from_graph (ecosystem, package, version):
 
     return resp
 
+
 def get_latest_analysis_for(ecosystem, package, version):
     """Note: has to be called inside flask request context"""
+    if ecosystem == 'maven':
+        package = MavenCoordinates.normalize_str(package)
     try:
-        if ecosystem == 'maven':
-            package = MavenCoordinates.normalize_str(package)
         return rdb.session.query(Analysis).\
             join(Version).join(Package).join(Ecosystem).\
             filter(Ecosystem.name == ecosystem).\
@@ -253,8 +254,9 @@ def get_latest_analysis_for(ecosystem, package, version):
             filter(Version.identifier == version).\
             order_by(Analysis.started_at.desc()).\
             first()
-    except NoResultFound:
-        return None
+    except SQLAlchemyError:
+        rdb.session.rollback()
+        raise
 
 
 def get_latest_analysis_by_hash(algorithm, artifact_hash, projection=None):
@@ -262,16 +264,17 @@ def get_latest_analysis_by_hash(algorithm, artifact_hash, projection=None):
     if algorithm not in ['sha1', 'sha256', 'md5']:
         return None
 
+    contains_dict = {'details': [{"artifact": True, algorithm: artifact_hash}]}
     try:
-        contains_dict = {'details': [{"artifact": True, algorithm: artifact_hash}]}
         return rdb.session.query(Analysis).\
             join(WorkerResult).\
             filter(WorkerResult.worker == 'digests').\
             filter(WorkerResult.task_result.contains(contains_dict)).\
             order_by(Analysis.started_at.desc()).\
             first()
-    except NoResultFound:
-        return None
+    except SQLAlchemyError:
+        rdb.session.rollback()
+        raise
 
 
 def get_system_version():
@@ -280,7 +283,6 @@ def get_system_version():
             lines = f.readlines()
     except OSError:
         raise
-        return {}
 
     ret = {}
     for line in lines:
