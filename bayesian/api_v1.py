@@ -634,7 +634,7 @@ class StackAnalyses(ResourceWithSchema):
             data = {'api_name': 'stack_analyses', 'request': manifests,
                     'user_email': decoded.get('email','bayesian@redhat.com'),
                     'user_profile': decoded}
-            args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem, 'data': data}
+            args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
             server_run_flow('stackApiGraphV2Flow', args)
         except Exception as exc:
             # Just log the exception here for now
