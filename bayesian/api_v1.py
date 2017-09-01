@@ -631,7 +631,7 @@ class StackAnalyses(ResourceWithSchema):
             raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
 
         try:
-            data = {'api_name': 'stack_analyses', 'request': manifests,
+            data = {'api_name': 'stack_analyses',
                     'user_email': decoded.get('email','bayesian@redhat.com'),
                     'user_profile': decoded}
             args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
