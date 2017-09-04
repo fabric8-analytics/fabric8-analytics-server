@@ -2,17 +2,21 @@ import datetime
 import json
 import os
 import uuid
+import shutil
 
 from selinon import run_flow
 from flask import current_app
 from flask.json import JSONEncoder
 from sqlalchemy.orm.exc import NoResultFound
+from urllib.parse import urljoin
 
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult, StackAnalysisRequest
 from f8a_worker.utils import json_serial, MavenCoordinates
+from f8a_worker.process import Git
 
 from . import rdb
 from .setup import Setup
+from .exceptions import HTTPError
 
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
@@ -370,3 +374,65 @@ def get_request_count(rdb, external_request_id):
     count = rdb.session.query(StackAnalysisRequest).filter(\
                 StackAnalysisRequest.id == external_request_id).count()
     return count
+
+class GithubRead():
+    CLONED_DIR = "/tmp/stack-analyses-repo-folder"
+    PREFIX_GIT_URL = "https://github.com/"
+    PREFIX_URL = "https://api.github.com/repos/"
+    RAW_FIRST_URL = "https://raw.githubusercontent.com/"
+    MANIFEST_TYPES = ["pom.xml", "package.json", "requirements.txt"]
+
+    def get_manifest_files(self):
+        manifest_file_paths = []
+        for base, dirs, files in os.walk(self.CLONED_DIR):
+            if '.git' in dirs:
+                dirs.remove('.git')
+            if 'node_modules' in dirs:
+                dirs.remove('node_modules')
+            for filename in files:
+                if filename in self.MANIFEST_TYPES:
+                    filepath = base + '/' + filename
+                    manifest_file_paths.append({
+                        "filename": filename,
+                        "filepath": filepath
+                    })
+        return manifest_file_paths            
+
+    def get_files_github_url(self, github_url):
+        global CLONED_DIR
+        global PREFIX_URL
+        global RAW_FIRST_URL
+        global MANIFEST_TYPES
+        
+        manifest_data = []
+
+        self.del_temp_files()
+
+        repo_suffix = github_url.split("https://github.com/")[-1].rstrip()
+        try:
+            repo_url = urljoin(self.PREFIX_URL, repo_suffix)
+            check_valid_repo = get(repo_url)
+            if check_valid_repo.status_code == 200:
+                repo_clone_url = urljoin(self.PREFIX_GIT_URL, repo_suffix, '.git')
+                Git.clone(repo_clone_url, self.CLONED_DIR)
+                for file_obj in self.get_manifest_files():
+                    file_content = None
+                    filename = file_obj.get('filename')
+                    filepath = file_obj.get('filepath')
+                    with open(filepath, 'rb') as m_file:
+                        file_content = m_file.read().decode('utf-8')
+                    manifest_data.append({
+                        "filename": filename,
+                        "content": file_content,
+                        "filepath": filepath.replace(self.CLONED_DIR, '')
+                    })
+            
+            self.del_temp_files()
+        except Exception as e:
+            raise HTTPError(500, "Error in reading repo from github.")
+
+        return manifest_data
+
+    def del_temp_files(self):
+        if os.path.exists(self.CLONED_DIR):
+            shutil.rmtree(self.CLONED_DIR)
