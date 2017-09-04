@@ -554,7 +554,7 @@ class StackAnalyses(ResourceWithSchema):
 
     @staticmethod
     def post():
-        decoded = {}
+        decoded = decode_token()
         files = request.files.getlist('manifest[]')
         filepaths = request.values.getlist('filePath[]')
         dt = datetime.datetime.now()
