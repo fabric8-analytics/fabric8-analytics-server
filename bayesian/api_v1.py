@@ -357,13 +357,6 @@ class StackAnalysesGET(ResourceWithSchema):
             release = stack_result.get("task_result", {}).get("_release", release)
             stacks = stack_result.get("task_result", {}).get("stack_data", stacks)
 
-            # Add topics from recommendation block
-            if reco_result is not None and 'task_result' in reco_result:
-                for component in stack_result["task_result"].get("user_stack_info", {}).get("dependencies", []):
-                    task_result = reco_result['task_result']
-                    if task_result is not None:
-                        component["topic_list"] = task_result.get("recommendations", {}).get("input_stack_topics", {}).get(component.get('name'))
-
         if reco_result is not None and 'task_result' in reco_result:
             recommendations = reco_result.get("task_result", {}).get("recommendations", recommendations)
 
@@ -391,6 +384,10 @@ class StackAnalysesGET(ResourceWithSchema):
                         "overall_score": 0,
                         "magnitude": 0
                     }
+                
+                # Adding topics from the recommendations
+                stack_recommendation = get_item_from_list_by_key_value(recommendations, "manifest_file_path", stack.get("manifest_file_path"))
+                dep["topic_list"] = stack_recommendation.get("input_stack_topics", {}).get(dep.get('name'), [])
 
         # Populate sentiment score for recommended packages
         if recommendations:
