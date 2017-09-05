@@ -465,7 +465,7 @@ class StackAnalysesV1(ResourceWithSchema):
         decoded = decode_token()
         github_url = request.form.get("github_url")
         if github_url is not None:
-            files = get_files_github_url(github_url)
+            files = GithubRead().get_files_github_url(github_url)
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')
@@ -575,9 +575,8 @@ class StackAnalyses(ResourceWithSchema):
     def post():
         decoded = decode_token()
         github_url = request.form.get("github_url")
-        github_read = GithubRead()
         if github_url is not None:
-            files = github_read.get_files_github_url(github_url)
+            files = GithubRead().get_files_github_url(github_url)
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')

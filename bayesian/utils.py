@@ -11,7 +11,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from urllib.parse import urljoin
 
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult, StackAnalysisRequest
-from f8a_worker.utils import json_serial, MavenCoordinates
+from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 
 from . import rdb
@@ -391,7 +391,7 @@ class GithubRead():
                 dirs.remove('node_modules')
             for filename in files:
                 if filename in self.MANIFEST_TYPES:
-                    filepath = base + '/' + filename
+                    filepath = os.path.join(base, filename)
                     manifest_file_paths.append({
                         "filename": filename,
                         "filepath": filepath
@@ -399,17 +399,10 @@ class GithubRead():
         return manifest_file_paths            
 
     def get_files_github_url(self, github_url):
-        global CLONED_DIR
-        global PREFIX_URL
-        global RAW_FIRST_URL
-        global MANIFEST_TYPES
-        
         manifest_data = []
-
-        self.del_temp_files()
-
-        repo_suffix = github_url.split("https://github.com/")[-1].rstrip()
+        repo_suffix = parse_gh_repo(github_url)
         try:
+            self.del_temp_files()
             repo_url = urljoin(self.PREFIX_URL, repo_suffix)
             check_valid_repo = get(repo_url)
             if check_valid_repo.status_code == 200:
@@ -426,10 +419,10 @@ class GithubRead():
                         "content": file_content,
                         "filepath": filepath.replace(self.CLONED_DIR, '')
                     })
-            
-            self.del_temp_files()
         except Exception as e:
             raise HTTPError(500, "Error in reading repo from github.")
+        finally:
+            self.del_temp_files()
 
         return manifest_data
 
