@@ -25,7 +25,7 @@ from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, server_create_component_bookkeeping,
                     build_nested_schema_dict, server_create_analysis, server_run_flow,
-                    get_analyses_from_graph, search_packages_from_graph, get_request_count, get_item_from_list_by_key_value)
+                    get_analyses_from_graph, search_packages_from_graph, get_request_count, get_item_from_list_by_key_value, GithubRead)
 import os
 from f8a_worker.storages import AmazonS3
 
@@ -387,7 +387,10 @@ class StackAnalysesGET(ResourceWithSchema):
                 
                 # Adding topics from the recommendations
                 stack_recommendation = get_item_from_list_by_key_value(recommendations, "manifest_file_path", stack.get("manifest_file_path"))
-                dep["topic_list"] = stack_recommendation.get("input_stack_topics", {}).get(dep.get('name'), [])
+                if stack_recommendation is not None:
+                    dep["topic_list"] = stack_recommendation.get("input_stack_topics", {}).get(dep.get('name'), [])
+                else:
+                    dep["topic_list"] = []
 
         # Populate sentiment score for recommended packages
         if recommendations:
@@ -460,8 +463,12 @@ class StackAnalysesV1(ResourceWithSchema):
     @staticmethod
     def post():
         decoded = decode_token()
-        files = request.files.getlist('manifest[]')
-        filepaths = request.values.getlist('filePath[]')
+        github_url = request.form.get("github_url")
+        if github_url is not None:
+            files = GithubRead().get_files_github_url(github_url)
+        else:
+            files = request.files.getlist('manifest[]')
+            filepaths = request.values.getlist('filePath[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
 
@@ -469,19 +476,28 @@ class StackAnalysesV1(ResourceWithSchema):
         if len(files) <= 0:
             raise HTTPError(400, error="Error processing request. Please upload a valid manifest files.")
 
+        # At least one manifest file path should be present to analyse a stack
+        if github_url is None:
+            if len(filepaths) <= 0:
+                raise HTTPError(400, error="Error processing request. Please send a valid manifest file path")
+
         request_id = uuid.uuid4().hex
         manifests = []
         ecosystem = None
         for index, manifest_file_raw in enumerate(files):
-            filename = manifest_file_raw.filename
-            filepath = filepaths[index]
+            if github_url is not None:
+                filename = manifest_file_raw.get('filename', None)
+                filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
+            else:
+                filename = manifest_file_raw.filename
+                filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
 
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
                 raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
-
-            content = manifest_file_raw.read().decode('utf-8')
 
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
@@ -555,29 +571,42 @@ class StackAnalyses(ResourceWithSchema):
     @staticmethod
     def post():
         decoded = decode_token()
-        files = request.files.getlist('manifest[]')
-        filepaths = request.values.getlist('filePath[]')
+        github_url = request.form.get("github_url")
+        if github_url is not None:
+            files = GithubRead().get_files_github_url(github_url)
+        else:
+            files = request.files.getlist('manifest[]')
+            filepaths = request.values.getlist('filePath[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
 
         # At least one manifest file should be present to analyse a stack
         if len(files) <= 0:
             raise HTTPError(400, error="Error processing request. Please upload a valid manifest files.")
+        
+        # At least one manifest file path should be present to analyse a stack
+        if github_url is None:
+            if len(filepaths) <= 0:
+                raise HTTPError(400, error="Error processing request. Please send a valid manifest file path")
 
         request_id = uuid.uuid4().hex
         manifests = []
         ecosystem = None
         for index, manifest_file_raw in enumerate(files):
-            filename = manifest_file_raw.filename
-            filepath = filepaths[index]
+            if github_url is not None:
+                filename = manifest_file_raw.get('filename', None)
+                filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
+            else:
+                filename = manifest_file_raw.filename
+                filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
 
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
                 raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
-
-            content = manifest_file_raw.read().decode('utf-8')
-
+            
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
 
