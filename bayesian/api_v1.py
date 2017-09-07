@@ -488,19 +488,16 @@ class StackAnalysesV1(ResourceWithSchema):
             if github_url is not None:
                 filename = manifest_file_raw.get('filename', None)
                 filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
             else:
                 filename = manifest_file_raw.filename
                 filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
 
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
                 raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
-
-            if github_url is not None:
-                content = manifest_file_raw.get('content')
-            else:
-                content = manifest_file_raw.read().decode('utf-8')
 
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
@@ -599,19 +596,16 @@ class StackAnalyses(ResourceWithSchema):
             if github_url is not None:
                 filename = manifest_file_raw.get('filename', None)
                 filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
             else:
                 filename = manifest_file_raw.filename
                 filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
 
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
                 raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
-
-            if github_url is not None:
-                content = manifest_file_raw.get('content')
-            else:
-                content = manifest_file_raw.read().decode('utf-8')
             
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
