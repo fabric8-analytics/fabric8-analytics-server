@@ -20,6 +20,7 @@ fast-docker-build-tests:
 
 test: fast-docker-build-tests
 	./runtest.sh
+	./run-linter.sh
 
 get-image-name:
 	@echo $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG)
