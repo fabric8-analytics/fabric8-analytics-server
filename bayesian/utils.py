@@ -10,8 +10,8 @@ from flask.json import JSONEncoder
 from sqlalchemy.orm.exc import NoResultFound
 from urllib.parse import urljoin
 
-from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult,\
-                              StackAnalysisRequest
+from f8a_worker.models import (Analysis, Ecosystem, Package, Version, WorkerResult,
+                               StackAnalysisRequest)
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 
