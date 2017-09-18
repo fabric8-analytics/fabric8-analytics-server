@@ -1,4 +1,5 @@
-directories="alembic bayesian hack tests"
+directories="bayesian hack tests"
+separate_files="alembic/env.py"
 fail=0
 
 function prepare_venv() {
@@ -15,6 +16,7 @@ ls -1
 
 [ "$NOVENV" == "1" ] || prepare_venv || exit 1
 
+# checks for the whole directories
 for directory in $directories
 do
     files=`find $directory -path $directory/venv -prune -o -name '*.py' -print`
@@ -31,6 +33,27 @@ do
             fail=1
         fi
     done
+done
+
+
+echo
+echo "----------------------------------------------------"
+echo "Running Python linter against selected files:"
+echo $separate_files
+echo "----------------------------------------------------"
+
+# check for individual files
+for source in $separate_files
+do
+    echo $source
+    pycodestyle $source
+    if [ $? -eq 0 ]
+    then
+        echo "    Pass"
+    else
+        echo "    Fail"
+        fail=1
+    fi
 done
 
 
