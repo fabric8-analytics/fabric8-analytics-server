@@ -10,7 +10,8 @@ from flask.json import JSONEncoder
 from sqlalchemy.orm.exc import NoResultFound
 from urllib.parse import urljoin
 
-from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult, StackAnalysisRequest
+from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult,\
+                              StackAnalysisRequest
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 
@@ -20,6 +21,7 @@ from .exceptions import HTTPError
 
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
+
 
 def get_recent_analyses(limit=100):
     return rdb.session.query(Analysis).order_by(Analysis.started_at.desc()).limit(limit)
@@ -36,19 +38,22 @@ def server_run_flow(flow_name, flow_args):
     Setup.connect_if_not_connected()
     return run_flow(flow_name, flow_args)
 
+
 def server_create_component_bookkeeping(ecosystem, name, version, user_profile):
     args = {
         'external_request_id': uuid.uuid4().hex,
         'data': {
             'api_name': 'component_analyses',
-            'user_email': user_profile.get('email','bayesian@redhat.com'),
+            'user_email': user_profile.get('email', 'bayesian@redhat.com'),
             'user_profile': user_profile,
             'request': {'ecosystem': ecosystem, 'name': name, 'version': version}
         }
     }
     return server_run_flow('componentApiFlow', args)
 
-def server_create_analysis(ecosystem, package, version, user_profile, api_flow=True, force=False, force_graph_sync=False):
+
+def server_create_analysis(ecosystem, package, version, user_profile,
+                           api_flow=True, force=False, force_graph_sync=False):
     """Create bayesianApiFlow handling analyses for specified EPV
 
     :param ecosystem: ecosystem for which the flow should be run
@@ -111,6 +116,7 @@ def add_field(analysis, field, ret):
         ret = ret.setdefault(f, {})
     prev_ret[f] = analysis
 
+
 def generate_recommendation(data, package, version):
     # Template Dict for recommendation
     reco = {
@@ -133,7 +139,8 @@ def generate_recommendation(data, package, version):
                 cve_ids = []
                 cve_maps = []
                 if ver.get('cve_ids', [''])[0] != '':
-                    message = 'CVE/s found for Package - ' + package + ', Version - ' + version + '\n'
+                    message = 'CVE/s found for Package - ' + package + ', Version - ' + \
+                              version + '\n'
                     # for each CVE get cve_id and cvss scores
                     for cve in ver.get('cve_ids'):
                         cve_id = cve.split(':')[0]
@@ -176,8 +183,8 @@ def generate_recommendation(data, package, version):
 
 def search_packages_from_graph(tokens):
     # TODO remove hardcoded url when moving to Production This is just a stop-gap measure for demo
-    url = "http://{host}:{port}".format \
-          (host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
+    url = "http://{host}:{port}".format(
+           host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
            port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
 
     # TODO query string for actual STAGE/PROD
@@ -204,7 +211,9 @@ def search_packages_from_graph(tokens):
 
     pkg_list = []
     for pkg in packages:
-        condition = [pkg['pecosystem'][0] is not None, pkg['pname'][0] is not None, pkg['version'][0] is not None]
+        condition = [pkg['pecosystem'][0] is not None,
+                     pkg['pname'][0] is not None,
+                     pkg['version'][0] is not None]
         if all(condition):
             pkg_map = {
                 'ecosystem': pkg['pecosystem'][0],
@@ -216,12 +225,13 @@ def search_packages_from_graph(tokens):
     return {'result': pkg_list}
 
 
-def get_analyses_from_graph (ecosystem, package, version):
-    url = "http://{host}:{port}".format\
-            (host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),\
+def get_analyses_from_graph(ecosystem, package, version):
+    url = "http://{host}:{port}".format(
+             host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
              port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
     qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
-              ".as('package').out('has_version').as('version').select('package','version').by(valueMap());"
+              ".as('package').out('has_version').as('version').select('package','version')." \
+              "by(valueMap());"
     payload = {'gremlin': qstring}
     try:
         graph_req = post(url, data=json.dumps(payload))
@@ -351,10 +361,12 @@ def fetch_public_key(app):
 
     return app.public_key
 
-def retrieve_worker_result (rdb, external_request_id, worker):
+
+def retrieve_worker_result(rdb, external_request_id, worker):
     try:
-        results = rdb.session.query(WorkerResult).filter(\
-                    WorkerResult.external_request_id == external_request_id, WorkerResult.worker == worker)
+        results = rdb.session.query(WorkerResult).filter(
+                    WorkerResult.external_request_id == external_request_id,
+                    WorkerResult.worker == worker)
         if results.count() <= 0:
             return None
     except SQLAlchemyError:
@@ -364,16 +376,19 @@ def retrieve_worker_result (rdb, external_request_id, worker):
         result = row.to_dict()
     return result
 
+
 def get_item_from_list_by_key_value(items, key, value):
     for item in items:
         if item[key] == value:
             return item
     return None
 
+
 def get_request_count(rdb, external_request_id):
-    count = rdb.session.query(StackAnalysisRequest).filter(\
+    count = rdb.session.query(StackAnalysisRequest).filter(
                 StackAnalysisRequest.id == external_request_id).count()
     return count
+
 
 class GithubRead():
     CLONED_DIR = "/tmp/stack-analyses-repo-folder"
@@ -396,7 +411,7 @@ class GithubRead():
                         "filename": filename,
                         "filepath": filepath
                     })
-        return manifest_file_paths            
+        return manifest_file_paths
 
     def get_files_github_url(self, github_url):
         manifest_data = []

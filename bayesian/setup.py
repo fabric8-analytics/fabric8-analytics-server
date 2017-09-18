@@ -11,13 +11,14 @@ class Setup(object):
 
     @classmethod
     def connect_if_not_connected(cls):
-        """Connect to Celery if not already connected, do it safely as we have concurrent server"""
+        """Connect to Celery if not already connected, do it safely as we have
+        concurrent server"""
         if cls._connected:
             return
 
         with cls._setup_lock:
             if not cls._connected:
-                # We do not have to have result backend on server since we are just pushing tasks to message queue
+                # We do not have to have result backend on server since we are
+                # just pushing tasks to message queue
                 init_celery(result_backend=False)
                 init_selinon()
-
