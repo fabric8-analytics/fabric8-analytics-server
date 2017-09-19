@@ -35,10 +35,11 @@ class AnalysisSet(jsl.Document):
     metadata = jsl.DictField(additional_properties=True)
     github_details = jsl.DictField(additional_properties=True)
     redhat_downstream = jsl.DictField(additional_properties=True)
-    blackduck = jsl.Var({lambda v: v == ROLE_v1_0_1 or v >= ROLE_v1_1_1: jsl.DictField(additional_properties=True)})
+    blackduck = jsl.Var({lambda v: v == ROLE_v1_0_1 or v >= ROLE_v1_1_1:
+                        jsl.DictField(additional_properties=True)})
     with jsl.Scope(lambda v: v >= ROLE_v1_1_2) as added_in_v1_1_2:
         added_in_v1_1_2.dependency_snapshot = jsl.DictField(additional_properties=True)
-    with jsl.Scope(lambda v: v>= ROLE_v1_1_3) as added_in_v1_1_3:
+    with jsl.Scope(lambda v: v >= ROLE_v1_1_3) as added_in_v1_1_3:
         added_in_v1_1_3.code_metrics = jsl.DictField(additional_properties=True)
 
 
