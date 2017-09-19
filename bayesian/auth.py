@@ -8,12 +8,14 @@ from itsdangerous import BadSignature, SignatureExpired, TimedJSONWebSignatureSe
 import jwt
 from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
 from os import getenv
+from sqlalchemy.exc import SQLAlchemyError
 
 from . import rdb
 from .exceptions import HTTPError
 from .utils import fetch_public_key
 
 jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
+
 
 def decode_token():
     token = request.headers.get('Authorization')
@@ -24,13 +26,23 @@ def decode_token():
         _, token = token.split(' ', 1)
 
     pub_key = fetch_public_key(current_app)
-    try:
-        decoded_token = jwt.decode(token, pub_key, audience=current_app.config.get('BAYESIAN_JWT_AUDIENCE'))
-    except:
-        current_app.logger.error('Invalid Auth Token')
-        raise
-    
+    audiences = current_app.config.get('BAYESIAN_JWT_AUDIENCE').split(',')
+    aud_len = len(audiences)
+    for aud in audiences:
+        try:
+            decoded_token = jwt.decode(token, pub_key, audience=aud)
+        except jwt.InvalidTokenError:
+            current_app.logger.error('Auth Token could not be decoded for audience {}'.format(aud))
+            decoded_token = None
+
+        if decoded_token is not None:
+            break
+
+    if decoded_token is None:
+        raise jwt.InvalidTokenError('Auth token audience cannot be verified.')
+
     return decoded_token
+
 
 def login_required(view):
     # NOTE: the actual authentication 401 failures are commented out for now and will be
@@ -38,7 +50,7 @@ def login_required(view):
     # being able to tail logs and see if stuff is going fine
     def wrapper(*args, **kwargs):
         # Disable authentication for local setup
-        if getenv('DISABLE_AUTHENTICATION'):
+        if getenv('DISABLE_AUTHENTICATION') in ('1', 'True', 'true'):
             return view(*args, **kwargs)
 
         lgr = current_app.logger
@@ -51,15 +63,15 @@ def login_required(view):
                 raise HTTPError(401, 'Authentication failed - token missing')
 
             lgr.info('Successfuly authenticated user {e} using JWT'.
-                         format(e=decoded.get('email')))
-        except jwt.ExpiredSignatureError:
+                     format(e=decoded.get('email')))
+        except jwt.ExpiredSignatureError as exc:
             lgr.exception('Expired JWT token')
             decoded = {'email': 'unauthenticated@jwt.failed'}
-            raise HTTPError(401, 'Authentication failed - token has expired')
-        except:
+            raise HTTPError(401, 'Authentication failed - token has expired') from exc
+        except Exception as exc:
             lgr.exception('Failed decoding JWT token')
             decoded = {'email': 'unauthenticated@jwt.failed'}
-            raise HTTPError(401, 'Authentication failed - could not decode JWT token')
+            raise HTTPError(401, 'Authentication failed - could not decode JWT token') from exc
         else:
             user = APIUser(decoded.get('email', 'nobody@nowhere.nodomain'))
 
@@ -87,6 +99,7 @@ permissions_roles = rdb.Table('permissions_roles',
                               rdb.Column('role_id', rdb.Integer(), rdb.ForeignKey('role.id')),
                               rdb.Column('permission_id', rdb.Integer(),
                                          rdb.ForeignKey('permission.id')))
+
 
 class LazyRowBasedPermission(PrincipalPermission):
     """This class represents a lazily-checked row-based permission. You'll need to create
@@ -247,8 +260,14 @@ def require_permissions(*needs_perms):
                 if not current_user.is_authenticated:
                     raise HTTPError(401, 'Unauthenticated user can\'t access this view')
                 # get all user permissions from DB
-                user = rdb.session.query(User).outerjoin(User.roles).outerjoin(Role.permissions).\
-                    filter(User.id == current_user.id).first()
+                try:
+                    user = rdb.session.query(User).\
+                                       outerjoin(User.roles).\
+                                       outerjoin(Role.permissions).\
+                                       filter(User.id == current_user.id).first()
+                except SQLAlchemyError:
+                    rdb.session.rollback()
+                    raise
                 has_perms = []
                 for role in user.roles:
                     for perm in role.permissions:

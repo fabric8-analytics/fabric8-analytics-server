@@ -13,7 +13,7 @@ here=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
 TIMESTAMP="$(date +%F-%H-%M-%S)"
 DB_CONTAINER_NAME="db-server-tests-${TIMESTAMP}"
 CONTAINER_NAME="server-tests-${TIMESTAMP}"
-IMAGE_NAME="registry.devshift.net/bayesian/bayesian-api"
+IMAGE_NAME=${IMAGE_NAME:-registry.devshift.net/bayesian/bayesian-api}
 TEST_IMAGE_NAME="coreapi-server-tests"
 POSTGRES_IMAGE_NAME="registry.centos.org/sclo/postgresql-94-centos7:latest"
 

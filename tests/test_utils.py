@@ -7,6 +7,8 @@ from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResul
 
 now = datetime.datetime.now()
 later = now + datetime.timedelta(minutes=10)
+
+
 @pytest.fixture
 def analyses(app):
     e1 = Ecosystem(name='npm', backend=EcosystemBackend.npm)
@@ -29,7 +31,6 @@ def analyses(app):
     for w, tr in worker_results2.items():
         app.rdb.session.add(WorkerResult(analysis_id=model2.id, worker=w, task_result=tr))
 
-
     model3 = Analysis(version=v2, started_at=later, access_count=1,
                       audit={'audit': {'audit': 'audit', 'e': 'f', 'g': 'h'}, 'a': 'b', 'c': 'd'})
     app.rdb.session.add(model3)
@@ -41,6 +42,7 @@ def analyses(app):
         app.rdb.session.add(WorkerResult(analysis_id=model3.id, worker=w, task_result=tr))
     app.rdb.session.commit()
     return (model1, model2, model3)
+
 
 @pytest.mark.usefixtures('rdb')
 class TestDoProjection(object):
@@ -70,8 +72,8 @@ class TestDoProjection(object):
         """Test whether filtering of nested JSON returns just desired field"""
         projection = ['analyses.digests']
         expected = {'analyses': {'digests': {'details':
-                                                 [{'artifact': True, 'sha1':
-                                                     '6be7ae55bae2372c7be490321bbe5ead278bb51b'}]}}}
+                                             [{'artifact': True, 'sha1':
+                                               '6be7ae55bae2372c7be490321bbe5ead278bb51b'}]}}}
         result = do_projection(projection, analyses[1])
         assert expected == result
 
@@ -87,9 +89,10 @@ class TestDoProjection(object):
     def test_three_level_fields(self, analyses):
         """Testing third level of nested JSON"""
         projection = ['analyses.digests.details', 'audit.audit.audit']
-        expected = {'audit': {'audit': {'audit': 'audit'}}, 'analyses':
-            {'digests': {'details':
-                             [{'artifact': True, 'sha1':
-                                 '6be7ae55bae2372c7be490321bbe5ead278bb51b'}]}}}
+        expected = {'audit': {'audit': {'audit': 'audit'}},
+                    'analyses':
+                    {'digests': {'details':
+                                 [{'artifact': True,
+                                     'sha1': '6be7ae55bae2372c7be490321bbe5ead278bb51b'}]}}}
         result = do_projection(projection, analyses[2])
         assert expected == result

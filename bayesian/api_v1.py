@@ -16,16 +16,19 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from f8a_worker.models import Ecosystem, WorkerResult, StackAnalysisRequest
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
-from f8a_worker.utils import (safe_get_latest_version, get_dependents_count, get_component_percentile_rank,
-                            usage_rank2str, MavenCoordinates, case_sensitivity_transform)
+from f8a_worker.utils import (safe_get_latest_version, get_dependents_count,
+                              get_component_percentile_rank, usage_rank2str,
+                              MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 from . import rdb
 from .auth import login_required, decode_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
-from .utils import (get_system_version, retrieve_worker_result, server_create_component_bookkeeping,
-                    build_nested_schema_dict, server_create_analysis, server_run_flow,
-                    get_analyses_from_graph, search_packages_from_graph)
+from .utils import (get_system_version, retrieve_worker_result,
+                    server_create_component_bookkeeping, build_nested_schema_dict,
+                    server_create_analysis, server_run_flow, get_analyses_from_graph,
+                    search_packages_from_graph, get_request_count,
+                    get_item_from_list_by_key_value, GithubRead)
 import os
 from f8a_worker.storages import AmazonS3
 
@@ -80,7 +83,8 @@ def readiness():
 @api_v1.route('/liveness')
 def liveness():
     # Check database connection
-    current_app.logger.warning("Liveness probe - trying to connect to database and execute a query")
+    current_app.logger.warning("Liveness probe - trying to connect to database "
+                               "and execute a query")
     rdb.session.query(Ecosystem).count()
     # Check broker connection
     current_app.logger.warning("Liveness probe - trying to schedule the livenessFlow")
@@ -251,7 +255,7 @@ class ComponentAnalyses(ResourceWithSchema):
 
     @staticmethod
     def get(ecosystem, package, version):
-        decoded = decode_token()            
+        decoded = decode_token()
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
         package = case_sensitivity_transform(ecosystem, package)
@@ -264,45 +268,55 @@ class ComponentAnalyses(ResourceWithSchema):
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
             # Enter the unknown path
-            server_create_analysis(ecosystem, package, version, user_profile=decoded, api_flow=True, force=False, force_graph_sync=True)
-            msg = "Package {ecosystem}/{package}/{version} is unavailable. The package will be available shortly,"\
-                  " please retry after some time.".format(ecosystem=ecosystem, package=package, version=version)
+            server_create_analysis(ecosystem, package, version, user_profile=decoded,
+                                   api_flow=True, force=False, force_graph_sync=True)
+            msg = "Package {ecosystem}/{package}/{version} is unavailable. " \
+                  "The package will be available shortly," \
+                  " please retry after some time.".format(ecosystem=ecosystem, package=package,
+                                                          version=version)
             raise HTTPError(202, msg)
         else:
-            server_create_analysis(ecosystem, package, version, user_profile=decoded, api_flow=False, force=False, force_graph_sync=True)
-            msg = "No data found for {ecosystem} Package {package}/{version}".format(ecosystem=ecosystem,
-                                                                                     package=package, version=version)
+            server_create_analysis(ecosystem, package, version, user_profile=decoded,
+                                   api_flow=False, force=False, force_graph_sync=True)
+            msg = "No data found for {ecosystem} Package " \
+                  "{package}/{version}".format(ecosystem=ecosystem,
+                                               package=package, version=version)
             raise HTTPError(404, msg)
 
 
-class StackAnalysesByGraphGET(ResourceWithSchema):
+class StackAnalysesGETV1(ResourceWithSchema):
     method_decorators = [login_required]
     schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
     def get(external_request_id):
+        if get_request_count(rdb, external_request_id) < 1:
+            raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
+
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation")
 
         if stack_result is None and reco_result is None:
-            raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
+            raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(
+                t=external_request_id))
 
         if stack_result == -1 and reco_result == -1:
-            raise HTTPError(404, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))
+            raise HTTPError(404, "Worker result for request ID '{t}' doesn't exist yet".format(
+                t=external_request_id))
 
         started_at = None
         finished_at = None
         manifest_response = []
         recommendations = {}
 
-        if stack_result != None and 'task_result' in stack_result:
-            if stack_result["task_result"] != None:
+        if stack_result is not None and 'task_result' in stack_result:
+            if stack_result["task_result"] is not None:
                 started_at = stack_result["task_result"]["_audit"]["started_at"]
                 finished_at = stack_result["task_result"]["_audit"]["ended_at"]
                 manifest_response.append(stack_result["task_result"])
 
         if reco_result is not None and 'task_result' in reco_result:
-            if reco_result["task_result"] != None:
+            if reco_result["task_result"] is not None:
                 recommendations = reco_result['task_result']
 
         return {
@@ -314,66 +328,142 @@ class StackAnalysesByGraphGET(ResourceWithSchema):
         }
 
 
-class StackAnalysesGETV2(ResourceWithSchema):
+class StackAnalysesGET(ResourceWithSchema):
     method_decorators = [login_required]
-    #schema_ref = SchemaRef('stack_analyses', '2-1-4')
+    # schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
     def get(external_request_id):
+        if get_request_count(rdb, external_request_id) < 1:
+            raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
+
+        graph_agg = retrieve_worker_result(rdb, external_request_id, "GraphAggregatorTask")
+        if graph_agg is not None and 'task_result' in graph_agg:
+            if graph_agg['task_result'] is None:
+                raise HTTPError(500, 'Invalid manifest file(s) received. '
+                                     'Please submit valid manifest files for stack analysis')
+
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator_v2")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
-        user_stack_sentiment_result = retrieve_worker_result(rdb, external_request_id, "user_stack_sentiment_scorer")
-        reco_pkg_sentiment_result = retrieve_worker_result(rdb, external_request_id, "reco_pkg_sentiment_scorer")
+        user_stack_sentiment_result = retrieve_worker_result(rdb, external_request_id,
+                                                             "user_stack_sentiment_scorer")
+        reco_pkg_sentiment_result = retrieve_worker_result(rdb, external_request_id,
+                                                           "reco_pkg_sentiment_scorer")
 
         if stack_result is None and reco_result is None:
-            raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
+            raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(
+                t=external_request_id))
 
         if stack_result == -1 and reco_result == -1:
-            raise HTTPError(404, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))
+            raise HTTPError(404, "Worker result for request ID '{t}' doesn't exist yet".format(
+                t=external_request_id))
 
         started_at = None
         finished_at = None
+        version = None
+        release = None
         manifest_response = []
-        recommendation = {}
+        stacks = []
+        recommendations = []
 
-        if stack_result != None and 'task_result' in stack_result:
-            if stack_result["task_result"] != None:
-                started_at = stack_result["task_result"]["_audit"]["started_at"]
-                finished_at = stack_result["task_result"]["_audit"]["ended_at"]
-
+        if stack_result is not None and 'task_result' in stack_result:
+            started_at = stack_result.get("task_result", {}).get("_audit", {}).get("started_at",
+                                                                                   started_at)
+            finished_at = stack_result.get("task_result", {}).get("_audit", {}).get("ended_at",
+                                                                                    finished_at)
+            version = stack_result.get("task_result", {}).get("_audit", {}).get("version",
+                                                                                version)
+            release = stack_result.get("task_result", {}).get("_release", release)
+            stacks = stack_result.get("task_result", {}).get("stack_data", stacks)
 
         if reco_result is not None and 'task_result' in reco_result:
-            if reco_result["task_result"] != None:
-                recommendation = reco_result['task_result']['recommendations']
+            recommendations = reco_result.get("task_result", {}).get("recommendations",
+                                                                     recommendations)
 
         # Populate sentiment score for packages in user's stack
-        if stack_result is not None:
-            user_stack_deps = stack_result['task_result']['user_stack_info']['dependencies']
+        if not stacks:
+            return {
+                "version": version,
+                "release": release,
+                "started_at": started_at,
+                "finished_at": finished_at,
+                "request_id": external_request_id,
+                "result": manifest_response
+            }
+
+        for stack in stacks:
+            user_stack_deps = stack.get('user_stack_info', {}).get('dependencies', [])
             for dep in user_stack_deps:
                 if user_stack_sentiment_result is not None:
-                    dep['sentiment']['overall_score'] = user_stack_sentiment_result['task_result'][dep['name']]['score']
+                    user_stack_sentiment_item = \
+                        get_item_from_list_by_key_value(user_stack_sentiment_result.get(
+                            'task_result', {}).get('sentiment', []), 'manifest_file_path',
+                            stack.get('manifest_file_path'))
+                    dep['sentiment']['overall_score'] = \
+                        user_stack_sentiment_item.get(dep['name'], {}).get('score', 0)
+                    dep['sentiment']['magnitude'] = \
+                        user_stack_sentiment_item.get(dep['name'], {}).get('magnitude', 0)
                 else:
-                    dep['sentiment'] = {}
+                    dep['sentiment'] = {
+                        "latest_comment": "",
+                        "overall_score": 0,
+                        "magnitude": 0
+                    }
+
+                # Adding topics from the recommendations
+                stack_recommendation = get_item_from_list_by_key_value(recommendations,
+                                                                       "manifest_file_path",
+                                                                       stack.get("manifest_file_path"))
+                if stack_recommendation is not None:
+                    dep["topic_list"] = stack_recommendation.get("input_stack_topics",
+                                                                 {}).get(dep.get('name'), [])
+                else:
+                    dep["topic_list"] = []
 
         # Populate sentiment score for recommended packages
-        if reco_result is not None:
-            alternate = reco_result['task_result']['recommendations']['alternate']
-            for pkg in alternate:
-                if reco_pkg_sentiment_result is not None:
-                    pkg['sentiment']['overall_score'] = reco_pkg_sentiment_result['task_result'][pkg['name']]['score']
-                else:
-                    pkg['sentiment'] = {}
+        if recommendations:
+            for recommendation in recommendations:
+                alternate = recommendation['alternate']
+                for pkg in alternate:
+                    if reco_pkg_sentiment_result is not None:
+                        reco_pkg_sentiment_item = \
+                            get_item_from_list_by_key_value(reco_pkg_sentiment_result.get(
+                                                                'task_result', {}).get('sentiment', []),
+                                                            'manifest_file_path',
+                                                            recommendation.get('manifest_file_path'))
+                        pkg['sentiment']['overall_score'] = \
+                            reco_pkg_sentiment_item.get(pkg['name'], {}).get('score', 0)
+                        pkg['sentiment']['magnitude'] = \
+                            reco_pkg_sentiment_item.get(pkg['name'], {}).get('magnitude', 0)
+                    else:
+                        pkg['sentiment'] = {
+                            "latest_comment": "",
+                            "overall_score": 0,
+                            "magnitude": 0
+                        }
 
-            companion = reco_result['task_result']['recommendations']['companion']
-            for pkg in companion:
-                if reco_pkg_sentiment_result is not None:
-                    pkg['sentiment']['overall_score'] = reco_pkg_sentiment_result['task_result'][pkg['name']]['score']
-                else:
-                    pkg['sentiment'] = {}
+                companion = recommendation['companion']
+                for pkg in companion:
+                    if reco_pkg_sentiment_result is not None:
+                        reco_pkg_sentiment_item = get_item_from_list_by_key_value(reco_pkg_sentiment_result.get('task_result', {}).get('sentiment', []), 'manifest_file_path', recommendation.get('manifest_file_path'))
+                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('score', 0)
+                        pkg['sentiment']['magnitude'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('magnitude', 0)
+                    else:
+                        pkg['sentiment'] = {
+                            "latest_comment": "",
+                            "overall_score": 0,
+                            "magnitude": 0
+                        }
 
-        stack_result['task_result']['recommendations'] = recommendation
-        manifest_response.append(stack_result["task_result"])
+        for stack in stacks:
+            stack["recommendation"] = get_item_from_list_by_key_value(recommendations,
+                                                                      "manifest_file_path",
+                                                                      stack.get("manifest_file_path"))
+            manifest_response.append(stack)
+
         return {
+            "version": version,
+            "release": release,
             "started_at": started_at,
             "finished_at": finished_at,
             "request_id": external_request_id,
@@ -382,55 +472,72 @@ class StackAnalysesGETV2(ResourceWithSchema):
 
 
 class UserFeedback(ResourceWithSchema):
+    method_decorators = [login_required]
     _ANALYTICS_BUCKET_NAME = "{}-{}".format(os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
                                             os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback"))
 
-    def post(self):
+    @staticmethod
+    def post():
         input_json = request.get_json()
 
         if not request.json or 'request_id' not in input_json:
             raise HTTPError(400, error="Expected JSON request")
 
-        if 'recommendation' not in input_json or 'name' not in input_json['recommendation']:
-            raise HTTPError(400, error="Expected field name in recommendation")
+        if 'feedback' not in input_json:
+            raise HTTPError(400, error="Expected feedback")
 
-        s3 = AmazonS3(bucket_name=self._ANALYTICS_BUCKET_NAME)
+        s3 = AmazonS3(bucket_name=UserFeedback._ANALYTICS_BUCKET_NAME)
         s3.connect()
         # Store data
-        key = "{}-{}".format(input_json["request_id"], input_json["recommendation"]["name"])
+        key = "{}".format(input_json["request_id"])
         s3.store_dict(input_json, key)
 
         return {'status': 'success'}
 
 
-class StackAnalyses(ResourceWithSchema):
+class StackAnalysesV1(ResourceWithSchema):
     method_decorators = [login_required]
 
     @staticmethod
     def post():
         decoded = decode_token()
-        files = request.files.getlist('manifest[]')
-        filepaths = request.values.getlist('filePath[]')
+        github_url = request.form.get("github_url")
+        if github_url is not None:
+            files = GithubRead().get_files_github_url(github_url)
+        else:
+            files = request.files.getlist('manifest[]')
+            filepaths = request.values.getlist('filePath[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
 
         # At least one manifest file should be present to analyse a stack
         if len(files) <= 0:
-            raise HTTPError(400, error="Error processing request. Please upload a valid manifest files.")
+            raise HTTPError(400, error="Error processing request. "
+                                       "Please upload a valid manifest files.")
+
+        # At least one manifest file path should be present to analyse a stack
+        if github_url is None:
+            if len(filepaths) <= 0:
+                raise HTTPError(400, error="Error processing request. "
+                                           "Please send a valid manifest file path")
 
         request_id = uuid.uuid4().hex
         manifests = []
         ecosystem = None
         for index, manifest_file_raw in enumerate(files):
-            filename = manifest_file_raw.filename
-            filepath = filepaths[index]
+            if github_url is not None:
+                filename = manifest_file_raw.get('filename', None)
+                filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
+            else:
+                filename = manifest_file_raw.filename
+                filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
 
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
                 raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
-
-            content = manifest_file_raw.read().decode('utf-8')
 
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
@@ -467,7 +574,8 @@ class StackAnalyses(ResourceWithSchema):
 
             manifests.append(manifest)
 
-        # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies for a single request
+        # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies
+        # for a single request
         try:
             req = StackAnalysisRequest(
                 id=request_id,
@@ -477,19 +585,20 @@ class StackAnalyses(ResourceWithSchema):
             )
             rdb.session.add(req)
             rdb.session.commit()
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
             current_app.logger.exception('Failed to create new analysis request')
-            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id))
+            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
 
         try:
-            args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem}
+            args = {'external_request_id': request_id, 'manifest': manifests,
+                    'ecosystem': ecosystem}
             server_run_flow('stackApiGraphFlow', args)
-        except:
+        except Exception as exc:
             # Just log the exception here for now
             current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
                                          .format(id=request_id))
             raise HTTPError(500, "Error processing request {t}. manifest files could not be processed"
-                                 .format(t=request_id))
+                                 .format(t=request_id)) from exc
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
@@ -498,13 +607,18 @@ class StackAnalyses(ResourceWithSchema):
         raise HTTPError(404, "Unsupported API endpoint")
 
 
-class StackAnalysesV2(ResourceWithSchema):
+class StackAnalyses(ResourceWithSchema):
     method_decorators = [login_required]
 
     @staticmethod
     def post():
         decoded = decode_token()
-        files = request.files.getlist('manifest[]')
+        github_url = request.form.get("github_url")
+        if github_url is not None:
+            files = GithubRead().get_files_github_url(github_url)
+        else:
+            files = request.files.getlist('manifest[]')
+            filepaths = request.values.getlist('filePath[]')
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
 
@@ -512,18 +626,28 @@ class StackAnalysesV2(ResourceWithSchema):
         if len(files) <= 0:
             raise HTTPError(400, error="Error processing request. Please upload a valid manifest files.")
 
+        # At least one manifest file path should be present to analyse a stack
+        if github_url is None:
+            if len(filepaths) <= 0:
+                raise HTTPError(400, error="Error processing request. Please send a valid manifest file path")
+
         request_id = uuid.uuid4().hex
         manifests = []
         ecosystem = None
-        for f in files:
-            filename = f.filename
+        for index, manifest_file_raw in enumerate(files):
+            if github_url is not None:
+                filename = manifest_file_raw.get('filename', None)
+                filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
+            else:
+                filename = manifest_file_raw.filename
+                filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
 
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
                 raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
-
-            content = f.read().decode('utf-8')
 
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
@@ -554,13 +678,17 @@ class StackAnalysesV2(ResourceWithSchema):
                                                                            error=response.content))
 
             # Record the response details for this manifest file
-            manifest = {'filename': filename, 'content': content, 'ecosystem': manifest_descriptor.ecosystem}
+            manifest = {'filename': filename,
+                        'content': content,
+                        'ecosystem': manifest_descriptor.ecosystem,
+                        'filepath': filepath}
             if appstack_id != '':
                 manifest['appstack_id'] = appstack_id
 
             manifests.append(manifest)
 
-        # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies for a single request
+        # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies
+        # for a single request
         try:
             req = StackAnalysisRequest(
                 id=request_id,
@@ -570,22 +698,23 @@ class StackAnalysesV2(ResourceWithSchema):
             )
             rdb.session.add(req)
             rdb.session.commit()
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
             current_app.logger.exception('Failed to create new analysis request')
-            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id))
+            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
 
         try:
-            data = {'api_name': 'stack_analyses', 'request': manifests,
-                    'user_email': decoded.get('email','bayesian@redhat.com'),
+            data = {'api_name': 'stack_analyses',
+                    'user_email': decoded.get('email', 'bayesian@redhat.com'),
                     'user_profile': decoded}
-            args = {'external_request_id': request_id, 'manifest': manifests, 'ecosystem': ecosystem, 'data': data}
+            args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
             server_run_flow('stackApiGraphV2Flow', args)
-        except:
+        except Exception as exc:
             # Just log the exception here for now
             current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
                                          .format(id=request_id))
-            raise HTTPError(500, "Error processing request {t}. manifest files could not be processed"
-                                 .format(t=request_id))
+            raise HTTPError(500, "Error processing request {t}. manifest files "
+                                 "could not be processed"
+                                 .format(t=request_id)) from exc
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
@@ -604,8 +733,8 @@ class StackAnalysesByOrigin(ResourceWithSchema):
                                  .filter(StackAnalysisRequest.origin == origin)\
                                  .order_by(StackAnalysisRequest.submitTime.desc())
             results_array = [result.to_dict() for result in results]
-        except SQLAlchemyError:
-            raise HTTPError(500,  "Error retrieving stack analyses")
+        except SQLAlchemyError as exc:
+            raise HTTPError(500, "Error retrieving stack analyses") from exc
         return {"status": "success", "results": results_array}
 
 
@@ -628,8 +757,9 @@ class StackAnalysesById(ResourceWithSchema):
                 if manifest.get('appstack_id', 0):
                     manifest_appstackid_map[manifest["filename"]] = manifest["appstack_id"]
 
-        except SQLAlchemyError:
-            raise HTTPError(500, "Error fetching data for request ID '{id}'".format(id=external_request_id))
+        except SQLAlchemyError as exc:
+            raise HTTPError(500, "Error fetching data for request ID '{id}'".format(id=external_request_id))\
+                from exc
 
         try:
             results = rdb.session.query(WorkerResult)\
@@ -637,8 +767,9 @@ class StackAnalysesById(ResourceWithSchema):
                                          WorkerResult.worker == "dependency_aggregator")
             if results.count() <= 0:
                 raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
-        except SQLAlchemyError:
-            raise HTTPError(500, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))
+        except SQLAlchemyError as exc:
+            raise HTTPError(500, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))\
+                from exc
 
         try:
             if results.count() > 0:
@@ -662,11 +793,13 @@ class StackAnalysesById(ResourceWithSchema):
                             rdb.session
                         )
                         component["relative_usage"] = usage_rank2str(rank)
-                    manifest_appstack_id = manifest_appstackid_map.get(manifest["manifest_name"], '')
+                    manifest_appstack_id = manifest_appstackid_map.get(manifest["manifest_name"],
+                                                                       '')
                     if manifest_appstack_id != '':
                         url = current_app.config['BAYESIAN_ANALYTICS_URL']
                         endpoint = "{analytics_baseurl}/api/v1.0/recommendation/{appstack_id}"\
-                                   .format(analytics_baseurl=url, appstack_id=manifest_appstack_id)
+                                   .format(analytics_baseurl=url,
+                                           appstack_id=manifest_appstack_id)
                         resp = requests.get(endpoint)
                         if resp.status_code == 200:
                             recommendation = resp.json()
@@ -698,8 +831,10 @@ class StackAnalysesById(ResourceWithSchema):
                     "result": manifest_response
                 }
                 return response
-        except:
-            raise HTTPError(500, "Error creating response for request {t}".format(t=external_request_id))
+        except Exception as exc:
+            raise HTTPError(500, "Error creating response for request {t}".format(
+                t=external_request_id))\
+                from exc
 
 
 class PublishedSchemas(ResourceWithSchema):
@@ -753,14 +888,12 @@ class PublishedSchemas(ResourceWithSchema):
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
-add_resource_no_matter_slashes(ComponentAnalyses, '/component-analyses/<ecosystem>/<package>/<version>',
+add_resource_no_matter_slashes(ComponentAnalyses,
+                               '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
-add_resource_no_matter_slashes(StackAnalysesV2, '/stack-analyses-v2')
-add_resource_no_matter_slashes(StackAnalysesByGraphGET, '/stack-analyses/<external_request_id>')
-add_resource_no_matter_slashes(StackAnalysesGETV2, '/stack-analyses-v2/<external_request_id>')
-add_resource_no_matter_slashes(StackAnalysesByOrigin, '/stack-analyses/by-origin/<origin>')
+add_resource_no_matter_slashes(StackAnalysesGET, '/stack-analyses/<external_request_id>')
 add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',

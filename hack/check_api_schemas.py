@@ -8,6 +8,7 @@ from urllib.parse import quote as quoteurl
 
 _LOCAL_API_ENDPOINT = "http://localhost:32000/api/v1/analyses/"
 
+
 def _get_analysis(api_url, ecosystem, component, version):
     component_path = quoteurl(component, safe="")
     analysis_url = os.path.join(api_url, ecosystem, component_path, version)
@@ -16,11 +17,13 @@ def _get_analysis(api_url, ecosystem, component, version):
         return None
     return analysis.json()
 
+
 def get_analysis(analysis_info):
     return _get_analysis(_LOCAL_API_ENDPOINT,
                          analysis_info["ecosystem"],
                          analysis_info["package"],
                          analysis_info["version"])
+
 
 if __name__ == "__main__":
     # Only the component analysis API has a defined schema for now

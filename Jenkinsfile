@@ -21,36 +21,15 @@ node('docker') {
         docker.build('coreapi-server-tests', '-f Dockerfile.tests .')
     }
 
-    stage('Tests') {
+    stage('Unit Tests') {
         timeout(30) {
             sh './runtest.sh'
         }
     }
 
-    stage('Integration Tests') {
-        ws {
-            docker.withRegistry('https://registry.devshift.net/') {
-                docker.image('bayesian/cucos-worker').pull()
-                docker.image('bayesian/data-model-importer').pull()
-                docker.image('bayesian/coreapi-jobs').pull()
-                docker.image('bayesian/coreapi-pgbouncer').pull()
-                docker.image('bayesian/cvedb-s3-dump').pull()
-                docker.image('slavek/anitya-server').pull()
-                docker.image('bayesian/gremlin').pull()
-            }
-
-            git url: 'https://github.com/fabric8-analytics/fabric8-analytics-common.git', branch: 'master', poll: false
-            dir('integration-tests') {
-                timeout(30) {
-                    sh './runtest.sh'
-                }
-            }
-        }
-    }
-
     if (env.BRANCH_NAME == 'master') {
         stage('Push Images') {
-            docker.withRegistry('https://registry.devshift.net/') {
+            docker.withRegistry('https://push.registry.devshift.net/', 'devshift-registry') {
                 image.push('latest')
                 image.push(commitId)
             }
@@ -60,14 +39,35 @@ node('docker') {
 
 if (env.BRANCH_NAME == 'master') {
     node('oc') {
-        stage('Deploy - dev') {
-            unstash 'template'
-            sh "oc --context=dev process -v IMAGE_TAG=${commitId} -f template.yaml | oc --context=dev apply -f -"
-        }
 
-        stage('Deploy - rh-idev') {
-            unstash 'template'
-            sh "oc --context=rh-idev process -v IMAGE_TAG=${commitId} -f template.yaml | oc --context=rh-idev apply -f -"
+        def dc = 'bayesian-api'
+        lock('f8a_staging') {
+
+            stage('Deploy - Stage') {
+                unstash 'template'
+                sh "oc --context=rh-idev process -v IMAGE_TAG=${commitId} -f template.yaml | oc --context=rh-idev apply -f -"
+            }
+
+            stage('End-to-End Tests') {
+                def result
+                try {
+                    timeout(20) {
+                        sleep 5
+                        sh "oc logs -f dc/${dc}"
+                        def e2e = build job: 'fabric8-analytics-common-master', wait: true, propagate: false, parameters: [booleanParam(name: 'runOnOpenShift', value: true)]
+                        result = e2e.result
+                    }
+                } catch (err) {
+                    error "Error: ${err}"
+                } finally {
+                    if (!result?.equals('SUCCESS')) {
+                        sh "oc rollback ${dc}"
+                        error 'End-to-End tests failed.'
+                    } else {
+                        echo 'End-to-End tests passed.'
+                    }
+                }
+            }
         }
     }
 }

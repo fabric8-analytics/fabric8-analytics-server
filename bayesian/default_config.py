@@ -26,10 +26,11 @@ API_TOKEN_LIFETIME = 3600
 # Info about deployed version
 SYSTEM_VERSION = os.getenv('F8A_SYSTEM_VERSION', default='/etc/coreapi-release')
 
-BAYESIAN_ANALYTICS_URL = os.getenv('BAYESIAN_ANALYTICS_URL','http://recommendationapi-server:5000')
-GREMLIN_SERVER_URL_REST = "http://{host}:{port}".format\
-                            (host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),\
-                            port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
+BAYESIAN_ANALYTICS_URL = os.getenv('BAYESIAN_ANALYTICS_URL',
+                                   'http://recommendationapi-server:5000')
+GREMLIN_SERVER_URL_REST = "http://{host}:{port}".format(
+                           host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
+                           port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
 BAYESIAN_FETCH_PUBLIC_KEY = os.getenv('BAYESIAN_FETCH_PUBLIC_KEY', None)
 BAYESIAN_PUBLIC_KEY = os.getenv('BAYESIAN_AUTH_KEY', '')
 BAYESIAN_JWT_AUDIENCE = os.getenv('BAYESIAN_JWT_AUDIENCE', None)

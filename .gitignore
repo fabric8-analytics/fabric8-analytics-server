@@ -11,6 +11,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+venv/
 # some bower JS components have build/ directory and we want to keep these
 # so we only ignore a top-level build/ directory
 /build/
@@ -70,3 +71,6 @@ target/
 
 # workaround for private GH repositories
 worker/
+
+#editor
+.vscode
