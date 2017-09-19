@@ -21,6 +21,7 @@ from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult, PackageGHUsage
 from f8a_worker.schemas import load_all_worker_schemas
 
+
 def api_route_for(route):
     return '/api/v1' + route
 
@@ -70,20 +71,21 @@ def fill_analyses(app):
     ]
 
     analyses = [
-        Analysis(version=versions[0], started_at=now),                    # pypi/flexmock/0.10.1
-        Analysis(version=versions[0], started_at=later, access_count=1),  # pypi/flexmock/0.10.1
-        Analysis(version=versions[1], started_at=even_later),             # pypi/flexmock/0.9.1
-        Analysis(version=versions[2], started_at=now),                    # pypi/requests/2.0.0
-        Analysis(version=versions[3], started_at=later),                  # npm/sequence/2.2.1
-        Analysis(version=versions[4], started_at=now, finished_at=later), # npm/arrify/1.0.1
+        Analysis(version=versions[0], started_at=now),                     # pypi/flexmock/0.10.1
+        Analysis(version=versions[0], started_at=later, access_count=1),   # pypi/flexmock/0.10.1
+        Analysis(version=versions[1], started_at=even_later),              # pypi/flexmock/0.9.1
+        Analysis(version=versions[2], started_at=now),                     # pypi/requests/2.0.0
+        Analysis(version=versions[3], started_at=later),                   # npm/sequence/2.2.1
+        Analysis(version=versions[4], started_at=now, finished_at=later),  # npm/arrify/1.0.1
         Analysis(version=versions[5], started_at=now, finished_at=later,
                  release='npm:serve-static:1.7.1'),                      # npm/serve-static/1.7.1
     ]
     # worker results that correspond to analyses above
     worker_results = [
         WorkerResult(worker='digests', analysis=analyses[1],
-                    task_result={'details': [{'artifact': True,
-                                                'sha1': '6be7ae55bae2372c7be490321bbe5ead278bb51b'}]}),
+                     task_result={'details': [{'artifact': True,
+                                               'sha1':
+                                               '6be7ae55bae2372c7be490321bbe5ead278bb51b'}]}),
         WorkerResult(worker='static_analysis', task_result={'details': []}, analysis=analyses[1]),
         WorkerResult(worker='source_licenses',
                      task_result={'schema': {'name': 'source_licenses', 'version': '1-0-0'}},
@@ -109,6 +111,7 @@ def fill_packages_for_paging(app, request):
     app.rdb.session.commit()
     # no cleanup (we're recreating DB after every test case)
 
+
 @pytest.mark.usefixtures('client_class')
 class TestApiV1Root(object):
     api_root = {
@@ -131,6 +134,7 @@ class TestApiV1Root(object):
         res = self.client.get(api_route_for('/'), headers=accept_json)
         assert res.status_code == 200
         assert res.json == self.api_root
+
 
 @pytest.mark.usefixtures('client_class', 'rdb')
 class TestUser(object):
@@ -166,7 +170,6 @@ class TestApiV1Schemas(object):
                 for version, schema in versions.items():
                     version_path = schema_path + "/" + version
                     self._check_schema_id(schema, version_path)
-
 
     def test_get_schemas_by_collection(self, accept_json):
         collection_path = api_route_for('/schemas/api')
@@ -205,7 +208,8 @@ class TestApiV1Schemas(object):
         assert res.status_code == 200
         received_data = res.json
         assert received_data == api_v1.PublishedSchemas.\
-            schema_collections[api_v1.PublishedSchemas.API_COLLECTION]['component_analyses']['1-0-0']
+            schema_collections[api_v1.PublishedSchemas.
+                               API_COLLECTION]['component_analyses']['1-0-0']
         self._check_schema_id(received_data, version_path)
 
         res = self.client.get(api_route_for('/schemas/api/component_analyses/blah-blah-blah'),
@@ -223,9 +227,9 @@ class TestApiV1Schemas(object):
             self._check_schema_id(received_schema, path)
             received_schema.pop('id')
             json_path = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                    'data',
-                                    'schemas',
-                                    '{}-v{}.schema.json'.
+                                     'data',
+                                     'schemas',
+                                     '{}-v{}.schema.json'.
                                      format(schema_ref.name, schema_ref.version))
             with open(json_path) as f:
                 assert received_schema == json.load(f)
@@ -234,11 +238,10 @@ class TestApiV1Schemas(object):
         # test all worker schemas are provided in all versions through the API
         for schema_ref, json_schema in load_all_worker_schemas().items():
             path = api_route_for('/schemas/component_analyses/{}/{}'.
-                                format(schema_ref.name, schema_ref.version))
+                                 format(schema_ref.name, schema_ref.version))
             res = self.client.get(path, headers=accept_json)
             assert res.status_code == 200
             received_schema = res.json
             self._check_schema_id(received_schema, path)
             received_schema.pop('id')
             assert received_schema == json_schema
-
