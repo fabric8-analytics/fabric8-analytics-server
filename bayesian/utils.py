@@ -39,12 +39,20 @@ def server_run_flow(flow_name, flow_args):
     return run_flow(flow_name, flow_args)
 
 
+def get_user_email(user_profile):
+    default_email = 'bayesian@redhat.com'
+    if user_profile is not None:
+        return user_profile.get('email', default_email)
+    else:
+        return default_email
+
+
 def server_create_component_bookkeeping(ecosystem, name, version, user_profile):
     args = {
         'external_request_id': uuid.uuid4().hex,
         'data': {
             'api_name': 'component_analyses',
-            'user_email': user_profile.get('email', 'bayesian@redhat.com'),
+            'user_email': get_user_email(user_profile),
             'user_profile': user_profile,
             'request': {'ecosystem': ecosystem, 'name': name, 'version': version}
         }
