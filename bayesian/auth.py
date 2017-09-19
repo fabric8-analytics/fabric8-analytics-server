@@ -43,6 +43,7 @@ def decode_token():
 
     return decoded_token
 
+
 def login_required(view):
     # NOTE: the actual authentication 401 failures are commented out for now and will be
     # uncommented as soon as we know everything works fine; right now this is purely for
@@ -62,7 +63,7 @@ def login_required(view):
                 raise HTTPError(401, 'Authentication failed - token missing')
 
             lgr.info('Successfuly authenticated user {e} using JWT'.
-                         format(e=decoded.get('email')))
+                     format(e=decoded.get('email')))
         except jwt.ExpiredSignatureError as exc:
             lgr.exception('Expired JWT token')
             decoded = {'email': 'unauthenticated@jwt.failed'}
@@ -98,6 +99,7 @@ permissions_roles = rdb.Table('permissions_roles',
                               rdb.Column('role_id', rdb.Integer(), rdb.ForeignKey('role.id')),
                               rdb.Column('permission_id', rdb.Integer(),
                                          rdb.ForeignKey('permission.id')))
+
 
 class LazyRowBasedPermission(PrincipalPermission):
     """This class represents a lazily-checked row-based permission. You'll need to create

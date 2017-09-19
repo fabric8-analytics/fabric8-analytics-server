@@ -17,6 +17,7 @@ def setup_logging(app):
         handler.setLevel(logging.WARNING)
         app.logger.addHandler(handler)
 
+
 # we must initialize DB here to not create import loop with .auth...
 #  flask really sucks at this
 rdb = SQLAlchemy()
@@ -43,6 +44,7 @@ def create_app(configfile=None):
     # Redirect to latest API version if /api is accessed
     app.route('/api')(lambda: redirect(url_for('api_v1.apiendpoints__slashless')))
     # Likewise for base URL, and make that accessible by name
+
     @app.route('/')
     def base_url():
         return redirect(url_for('api_v1.apiendpoints__slashless'))
