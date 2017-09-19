@@ -15,6 +15,7 @@ class VersionResolutionDetail(JSLSchemaBase):
     analysed = jsl.DictField(required=True)
     upstream = jsl.DictField(required=True)
 
+
 class VersionRangeResolver(JSLSchemaBase):
     class Options:
         description = "Version range resolver"

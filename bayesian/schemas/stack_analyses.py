@@ -63,6 +63,7 @@ class CVEDetail(jsl.Document):
     cvss = jsl.NumberField(required=True)
     id = jsl.StringField(required=True)
 
+
 with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
     class Month(jsl.Document):
         class Options:
@@ -97,6 +98,7 @@ class GithubDetails(jsl.Document):
         v2_0_0.issues = jsl.DocumentField(GithubMetrics, as_ref=True, required=True)
         v2_0_0.pull_requests = jsl.DocumentField(GithubMetrics, as_ref=True, required=True)
 
+
 with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
     class RegisteredSRPM(jsl.Document):
         class Options:
@@ -119,7 +121,8 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
 
         package_names = jsl.ArrayField(jsl.StringField(), required=True)
         published_in = jsl.ArrayField(jsl.StringField(), required=True)
-        registered_srpms = jsl.ArrayField(jsl.DocumentField(RegisteredSRPM, as_ref=True), required=True)
+        registered_srpms = jsl.ArrayField(jsl.DocumentField(RegisteredSRPM, as_ref=True),
+                                          required=True)
         with added_in(ROLE_v2_1_1) as added_in_v2_1_1:
             added_in_v2_1_1.all_rhn_channels = jsl.ArrayField(jsl.StringField())
             added_in_v2_1_1.all_rhsm_content_sets = jsl.ArrayField(jsl.StringField())
@@ -127,7 +130,6 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
             added_in_v2_1_2.all_rhsm_product_names = jsl.ArrayField(jsl.StringField())
         with added_in(ROLE_v2_1_3) as added_in_v2_1_3:
             added_in_v2_1_3.rh_mvn_matched_versions = jsl.ArrayField(jsl.StringField())
-
 
     class Popularity(jsl.Document):
         class Options:
@@ -190,6 +192,7 @@ class ComponentInfo(jsl.Document):
     with jsl.Scope(lambda v: v >= ROLE_v2_0_3) as added_in_v2_0_3:
         added_in_v2_0_3.metadata = jsl.DocumentField(ComponentMetadata, as_ref=True, required=True)
 
+
 with jsl.Scope(lambda v: v >= ROLE_v2_0_2) as v2_0_2:
     class InputStack(jsl.Document):
         class Options:
@@ -206,7 +209,6 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_2) as v2_0_2:
         version_mismatch = jsl.ArrayField(jsl.StringField(), required=True)
         with jsl.Scope(lambda v: v >= ROLE_v2_1_4) as v2_1_4:
             v2_1_4.missing_downstream_component = jsl.ArrayField(jsl.StringField(), required=True)
-
 
     class SimilarStacks(jsl.Document):
         class Options:
@@ -225,9 +227,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_2) as v2_0_2:
         class Options:
             description = "Stack Recommendations"
             definition_id = "stack_recommendations"
-        #TODO: Get more details about component_level. Current example responses have this field as Null
+        # TODO: Get more details about component_level. Current example
+        # responses have this field as Null
         component_level = jsl.NullField(required=True)
-        similar_stacks = jsl.ArrayField(jsl.DocumentField(SimilarStacks, as_ref=True), required=True)
+        similar_stacks = jsl.ArrayField(jsl.DocumentField(SimilarStacks, as_ref=True),
+                                        required=True)
 
     class Recommendation(jsl.Document):
         class Options:
@@ -285,7 +289,8 @@ class StackAnalysisResponse(JSLSchemaBase):
         definition_id = "stack_analysis"
 
     with jsl.Scope(lambda v: v < ROLE_v2_0_1) as before_v2_0_1:
-        before_v2_0_1.status = jsl.StringField(enum=["FINISHED", "FAILED", "INPROGRESS"], required=True)
+        before_v2_0_1.status = jsl.StringField(enum=["FINISHED", "FAILED", "INPROGRESS"],
+                                               required=True)
     with jsl.Scope(lambda v: v >= ROLE_v2_0_1) as since_v2_0_1:
         since_v2_0_1.status = jsl.StringField(enum=["success"], required=True)
     submitted_at = jsl.DateTimeField(required=True)
@@ -294,10 +299,13 @@ class StackAnalysisResponse(JSLSchemaBase):
     request_id = jsl.StringField(required=True)
     with jsl.Scope(lambda v: v < ROLE_v2_1_0) as removed_in_v2_1_0:
         removed_in_v2_1_0.analyses_result = jsl.ArrayField(jsl.StringField(), required=True)
-    with jsl.Scope(lambda v: v == ROLE_v1_0_0 or v == ROLE_v1_1_0 or v == ROLE_v1_2_0) as upto_v1_2_0:
+    with jsl.Scope(lambda v: v == ROLE_v1_0_0 or v == ROLE_v1_1_0 or
+                   v == ROLE_v1_2_0) as upto_v1_2_0:
         upto_v1_2_0.result = jsl.DocumentField(StackAnalysisResult, required=True)
     with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as added_in_v2_0_0:
-        added_in_v2_0_0.result = jsl.ArrayField(jsl.DocumentField(StackAnalysisReport, as_ref=True),
-                                                                  required=True)
+        added_in_v2_0_0.result = jsl.ArrayField(jsl.DocumentField(StackAnalysisReport,
+                                                                  as_ref=True),
+                                                required=True)
+
 
 THE_SCHEMA = StackAnalysisResponse
