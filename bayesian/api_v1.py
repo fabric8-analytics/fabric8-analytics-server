@@ -493,6 +493,10 @@ class StackAnalyses(ResourceWithSchema):
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')
+            if len(files) != len(filepaths):
+                raise HTTPError(400, error="Error processing request. "
+                                           "Number of manifests and filePaths must be the same.")
+
         dt = datetime.datetime.now()
         origin = request.form.get('origin')
 
