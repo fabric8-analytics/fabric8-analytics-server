@@ -413,7 +413,8 @@ class StackAnalysesGET(ResourceWithSchema):
                 # Adding topics from the recommendations
                 stack_recommendation = get_item_from_list_by_key_value(recommendations,
                                                                        "manifest_file_path",
-                                                                       stack.get("manifest_file_path"))
+                                                                       stack.get(
+                                                                           "manifest_file_path"))
                 if stack_recommendation is not None:
                     dep["topic_list"] = stack_recommendation.get("input_stack_topics",
                                                                  {}).get(dep.get('name'), [])
@@ -428,9 +429,11 @@ class StackAnalysesGET(ResourceWithSchema):
                     if reco_pkg_sentiment_result is not None:
                         reco_pkg_sentiment_item = \
                             get_item_from_list_by_key_value(reco_pkg_sentiment_result.get(
-                                                                'task_result', {}).get('sentiment', []),
+                                                                'task_result', {}).get(
+                                                                    'sentiment', []),
                                                             'manifest_file_path',
-                                                            recommendation.get('manifest_file_path'))
+                                                            recommendation.get(
+                                                                'manifest_file_path'))
                         pkg['sentiment']['overall_score'] = \
                             reco_pkg_sentiment_item.get(pkg['name'], {}).get('score', 0)
                         pkg['sentiment']['magnitude'] = \
@@ -445,9 +448,14 @@ class StackAnalysesGET(ResourceWithSchema):
                 companion = recommendation['companion']
                 for pkg in companion:
                     if reco_pkg_sentiment_result is not None:
-                        reco_pkg_sentiment_item = get_item_from_list_by_key_value(reco_pkg_sentiment_result.get('task_result', {}).get('sentiment', []), 'manifest_file_path', recommendation.get('manifest_file_path'))
-                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('score', 0)
-                        pkg['sentiment']['magnitude'] = reco_pkg_sentiment_item.get(pkg['name'], {}).get('magnitude', 0)
+                        reco_pkg_sentiment_item = get_item_from_list_by_key_value(
+                            reco_pkg_sentiment_result.get('task_result', {}).get(
+                                'sentiment', []), 'manifest_file_path', recommendation.get(
+                                    'manifest_file_path'))
+                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item.get(
+                            pkg['name'], {}).get('score', 0)
+                        pkg['sentiment']['magnitude'] = reco_pkg_sentiment_item.get(
+                            pkg['name'], {}).get('magnitude', 0)
                     else:
                         pkg['sentiment'] = {
                             "latest_comment": "",
@@ -456,9 +464,10 @@ class StackAnalysesGET(ResourceWithSchema):
                         }
 
         for stack in stacks:
-            stack["recommendation"] = get_item_from_list_by_key_value(recommendations,
-                                                                      "manifest_file_path",
-                                                                      stack.get("manifest_file_path"))
+            stack["recommendation"] = get_item_from_list_by_key_value(
+                recommendations,
+                "manifest_file_path",
+                stack.get("manifest_file_path"))
             manifest_response.append(stack)
 
         return {
@@ -473,8 +482,9 @@ class StackAnalysesGET(ResourceWithSchema):
 
 class UserFeedback(ResourceWithSchema):
     method_decorators = [login_required]
-    _ANALYTICS_BUCKET_NAME = "{}-{}".format(os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
-                                            os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback"))
+    _ANALYTICS_BUCKET_NAME = "{}-{}".format(
+        os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
+        os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback"))
 
     @staticmethod
     def post():
@@ -537,14 +547,16 @@ class StackAnalysesV1(ResourceWithSchema):
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
-                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
+                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
+                    filename=filename))
 
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
 
             # Check if the manifest is valid
             if not manifest_descriptor.validate(content):
-                raise HTTPError(400, error="Error processing request. Please upload a valid manifest file '{filename}'"
+                raise HTTPError(400, error="Error processing request. Please upload a valid "
+                                           "manifest file '{filename}'"
                                 .format(filename=filename))
 
             # appstack API call
@@ -564,11 +576,13 @@ class StackAnalysesV1(ResourceWithSchema):
                         resp = response.json()
                         appstack_id = resp.get('appstack_id', '')
                     else:
-                        current_app.logger.warn("{status}: {error}".format(status=response.status_code,
-                                                                           error=response.content))
+                        current_app.logger.warn("{status}: {error}".format(
+                            status=response.status_code,
+                            error=response.content))
 
             # Record the response details for this manifest file
-            manifest = {'filename': filename, 'content': content, 'ecosystem': manifest_descriptor.ecosystem, 'filepath': filepath}
+            manifest = {'filename': filename, 'content': content,
+                        'ecosystem': manifest_descriptor.ecosystem, 'filepath': filepath}
             if appstack_id != '':
                 manifest['appstack_id'] = appstack_id
 
@@ -597,8 +611,8 @@ class StackAnalysesV1(ResourceWithSchema):
             # Just log the exception here for now
             current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
                                          .format(id=request_id))
-            raise HTTPError(500, "Error processing request {t}. manifest files could not be processed"
-                                 .format(t=request_id)) from exc
+            raise HTTPError(500, "Error processing request {t}. manifest files could not "
+                                 "be processed".format(t=request_id)) from exc
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
@@ -624,12 +638,14 @@ class StackAnalyses(ResourceWithSchema):
 
         # At least one manifest file should be present to analyse a stack
         if len(files) <= 0:
-            raise HTTPError(400, error="Error processing request. Please upload a valid manifest files.")
+            raise HTTPError(400, error="Error processing request. "
+                                       "Please upload a valid manifest files.")
 
         # At least one manifest file path should be present to analyse a stack
         if github_url is None:
             if len(filepaths) <= 0:
-                raise HTTPError(400, error="Error processing request. Please send a valid manifest file path")
+                raise HTTPError(400, error="Error processing request. "
+                                           "Please send a valid manifest file path")
 
         request_id = uuid.uuid4().hex
         manifests = []
@@ -647,15 +663,16 @@ class StackAnalyses(ResourceWithSchema):
             # check if manifest files with given name are supported
             manifest_descriptor = get_manifest_descriptor_by_filename(filename)
             if manifest_descriptor is None:
-                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(filename=filename))
+                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
+                    filename=filename))
 
             # In memory file to be passed as an API parameter to /appstack
             manifest_file = StringIO(content)
 
             # Check if the manifest is valid
             if not manifest_descriptor.validate(content):
-                raise HTTPError(400, error="Error processing request. Please upload a valid manifest file '{filename}'"
-                                .format(filename=filename))
+                raise HTTPError(400, error="Error processing request. Please upload a valid "
+                                           "manifest file '{filename}'".format(filename=filename))
 
             # appstack API call
             # Limitation: Currently, appstack can support only package.json
@@ -674,8 +691,9 @@ class StackAnalyses(ResourceWithSchema):
                         resp = response.json()
                         appstack_id = resp.get('appstack_id', '')
                     else:
-                        current_app.logger.warn("{status}: {error}".format(status=response.status_code,
-                                                                           error=response.content))
+                        current_app.logger.warn("{status}: {error}".format(
+                            status=response.status_code,
+                            error=response.content))
 
             # Record the response details for this manifest file
             manifest = {'filename': filename,
@@ -747,7 +765,8 @@ class StackAnalysesById(ResourceWithSchema):
             results = rdb.session.query(StackAnalysisRequest)\
                                  .filter(StackAnalysisRequest.id == external_request_id)
             if results.count() <= 0:
-                raise HTTPError(404, "Invalid request ID '{id}' received".format(id=external_request_id))
+                raise HTTPError(404, "Invalid request ID '{id}' received".format(
+                    id=external_request_id))
 
             row = results.first().to_dict()
             submitted_at = row["submitTime"]
@@ -758,18 +777,19 @@ class StackAnalysesById(ResourceWithSchema):
                     manifest_appstackid_map[manifest["filename"]] = manifest["appstack_id"]
 
         except SQLAlchemyError as exc:
-            raise HTTPError(500, "Error fetching data for request ID '{id}'".format(id=external_request_id))\
-                from exc
+            raise HTTPError(500, "Error fetching data for request ID '{id}'".format(
+                id=external_request_id)) from exc
 
         try:
             results = rdb.session.query(WorkerResult)\
                                  .filter(WorkerResult.external_request_id == external_request_id,
                                          WorkerResult.worker == "dependency_aggregator")
             if results.count() <= 0:
-                raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(t=external_request_id))
+                raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(
+                    t=external_request_id))
         except SQLAlchemyError as exc:
-            raise HTTPError(500, "Worker result for request ID '{t}' doesn't exist yet".format(t=external_request_id))\
-                from exc
+            raise HTTPError(500, "Worker result for request ID '{t}' doesn't exist yet".format(
+                t=external_request_id)) from exc
 
         try:
             if results.count() > 0:
@@ -781,11 +801,13 @@ class StackAnalysesById(ResourceWithSchema):
 
                 for manifest in result["task_result"]["result"]:
                     for component in manifest["components"]:
-                        component["latest_version"] = safe_get_latest_version(component["ecosystem"],
-                                                                              component["name"])
-                        component["dependents_count"] = get_dependents_count(component["ecosystem"],
-                                                                             component["name"],
-                                                                             component["version"], rdb.session)
+                        component["latest_version"] = safe_get_latest_version(
+                            component["ecosystem"],
+                            component["name"])
+                        component["dependents_count"] = get_dependents_count(
+                            component["ecosystem"],
+                            component["name"],
+                            component["version"], rdb.session)
                         rank = get_component_percentile_rank(
                             component["ecosystem"],
                             component["name"],
@@ -808,18 +830,22 @@ class StackAnalysesById(ResourceWithSchema):
                             if recommendation.get("input_stack", {}).get("appstack_id", "") != "":
                                 uri = "{analytics_baseurl}/api/v1.0/appstack/{appstack_id}"\
                                       .format(analytics_baseurl=url,
-                                              appstack_id=recommendation["input_stack"]["appstack_id"])
+                                              appstack_id=recommendation["input_stack"]
+                                              ["appstack_id"])
                                 recommendation["input_stack"]["uri"] = uri
 
-                            if recommendation.get("recommendations", {}).get("similar_stacks", "") != "":
+                            if recommendation.get("recommendations", {}).\
+                               get("similar_stacks", "") != "":
                                 for r in recommendation["recommendations"]["similar_stacks"]:
                                     if r["stack_id"] != "":
-                                        r["uri"] = "{analytics_baseurl}/api/v1.0/appstack/{appstack_id}"\
-                                            .format(analytics_baseurl=url, appstack_id=r["stack_id"])
+                                        r["uri"] = "{analytics_baseurl}/api/v1.0/appstack/" \
+                                            "{appstack_id}".format(analytics_baseurl=url,
+                                                                   appstack_id=r["stack_id"])
                             manifest["recommendation"] = recommendation
                         else:
-                            current_app.logger.warn("{status}: {error}".format(status=resp.status_code,
-                                                                               error=resp.content))
+                            current_app.logger.warn("{status}: {error}".format(
+                                status=resp.status_code,
+                                error=resp.content))
 
                     manifest_response.append(manifest)
                 response = {
