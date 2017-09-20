@@ -27,7 +27,7 @@ def decode_token():
 
     pub_key = fetch_public_key(current_app)
     audiences = current_app.config.get('BAYESIAN_JWT_AUDIENCE').split(',')
-    aud_len = len(audiences)
+
     for aud in audiences:
         try:
             decoded_token = jwt.decode(token, pub_key, audience=aud)
