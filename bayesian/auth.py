@@ -20,7 +20,7 @@ jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
 def decode_token():
     token = request.headers.get('Authorization')
     if token is None:
-        return token
+        return {}
 
     if token.startswith('Bearer '):
         _, token = token.split(' ', 1)
