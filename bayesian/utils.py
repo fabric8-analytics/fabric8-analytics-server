@@ -393,12 +393,15 @@ def get_item_from_list_by_key_value(items, key, value):
 
 
 def get_request_count(rdb, external_request_id):
-    count = rdb.session.query(StackAnalysisRequest).filter(
-                StackAnalysisRequest.id == external_request_id).count()
-    return count
+    try:
+        return rdb.session.query(StackAnalysisRequest)\
+                          .filter(StackAnalysisRequest.id == external_request_id).count()
+    except SQLAlchemyError:
+        rdb.session.rollback()
+        raise
 
 
-class GithubRead():
+class GithubRead:
     CLONED_DIR = "/tmp/stack-analyses-repo-folder"
     PREFIX_GIT_URL = "https://github.com/"
     PREFIX_URL = "https://api.github.com/repos/"
