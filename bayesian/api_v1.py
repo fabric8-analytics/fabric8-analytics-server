@@ -283,6 +283,17 @@ class ComponentAnalyses(ResourceWithSchema):
                                                package=package, version=version)
             raise HTTPError(404, msg)
 
+    @staticmethod
+    def post(ecosystem, package, version):
+        decoded = decode_token()
+        if ecosystem == 'maven':
+            package = MavenCoordinates.normalize_str(package)
+        package = case_sensitivity_transform(ecosystem, package)
+
+        server_create_analysis(ecosystem, package, version,
+                               user_profile=decoded or {}, api_flow=True, force=True, force_graph_sync=False)
+        return {}, 202
+
 
 class StackAnalysesGETV1(ResourceWithSchema):
     method_decorators = [login_required]
