@@ -20,14 +20,14 @@ jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
 def decode_token():
     token = request.headers.get('Authorization')
     if token is None:
-        return token
+        return {}
 
     if token.startswith('Bearer '):
         _, token = token.split(' ', 1)
 
     pub_key = fetch_public_key(current_app)
     audiences = current_app.config.get('BAYESIAN_JWT_AUDIENCE').split(',')
-    aud_len = len(audiences)
+
     for aud in audiences:
         try:
             decoded_token = jwt.decode(token, pub_key, audience=aud)
