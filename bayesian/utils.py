@@ -7,7 +7,7 @@ import shutil
 from selinon import run_flow
 from flask import current_app
 from flask.json import JSONEncoder
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
 
 from f8a_worker.models import (Analysis, Ecosystem, Package, Version, WorkerResult,
@@ -372,17 +372,17 @@ def fetch_public_key(app):
 
 def retrieve_worker_result(rdb, external_request_id, worker):
     try:
-        results = rdb.session.query(WorkerResult).filter(
-                    WorkerResult.external_request_id == external_request_id,
-                    WorkerResult.worker == worker)
-        if results.count() <= 0:
-            return None
+        query = rdb.session.query(WorkerResult) \
+                           .filter(WorkerResult.external_request_id == external_request_id,
+                                   WorkerResult.worker == worker)
+        result = query.one()
+    except (NoResultFound, MultipleResultsFound):
+        return None
     except SQLAlchemyError:
-        return -1
+        rdb.session.rollback()
+        raise
 
-    for row in results:
-        result = row.to_dict()
-    return result
+    return result.to_dict()
 
 
 def get_item_from_list_by_key_value(items, key, value):
