@@ -45,6 +45,8 @@ TOTAL_COUNT_KEY = 'total_count'
 
 original_handle_error = rest_api_v1.handle_error
 
+ANALYTICS_API_VERSION = "v1.0"
+
 
 # see <dir>.exceptions.HTTPError docstring
 def handle_http_error(e):
@@ -291,7 +293,8 @@ class ComponentAnalyses(ResourceWithSchema):
         package = case_sensitivity_transform(ecosystem, package)
 
         server_create_analysis(ecosystem, package, version,
-                               user_profile=decoded or {}, api_flow=True, force=True, force_graph_sync=False)
+                               user_profile=decoded or {}, api_flow=True, force=True,
+                               force_graph_sync=False)
         return {}, 202
 
 
@@ -577,7 +580,9 @@ class StackAnalysesV1(ResourceWithSchema):
             if 'package.json' in filename:
                 appstack_files = {'packagejson': manifest_file}
                 url = current_app.config["BAYESIAN_ANALYTICS_URL"]
-                endpoint = "{analytics_baseurl}/api/v1.0/appstack".format(analytics_baseurl=url)
+                endpoint = "{analytics_baseurl}/api/{version}/appstack".format(
+                    analytics_baseurl=url,
+                    version=ANALYTICS_API_VERSION)
                 try:
                     response = requests.post(endpoint, files=appstack_files)
                 except Exception as exc:
@@ -692,7 +697,9 @@ class StackAnalyses(ResourceWithSchema):
             if 'package.json' in filename:
                 appstack_files = {'packagejson': manifest_file}
                 url = current_app.config["BAYESIAN_ANALYTICS_URL"]
-                endpoint = "{analytics_baseurl}/api/v1.0/appstack".format(analytics_baseurl=url)
+                endpoint = "{analytics_baseurl}/api/{version}/appstack".format(
+                    analytics_baseurl=url,
+                    version=ANALYTICS_API_VERSION)
                 try:
                     response = requests.post(endpoint, files=appstack_files)
                 except Exception as exc:
@@ -830,8 +837,9 @@ class StackAnalysesById(ResourceWithSchema):
                                                                        '')
                     if manifest_appstack_id != '':
                         url = current_app.config['BAYESIAN_ANALYTICS_URL']
-                        endpoint = "{analytics_baseurl}/api/v1.0/recommendation/{appstack_id}"\
+                        endpoint = "{analytics_baseurl}/api/{version}/recommendation/{appstack_id}"\
                                    .format(analytics_baseurl=url,
+                                           version=ANALYTICS_API_VERSION,
                                            appstack_id=manifest_appstack_id)
                         resp = requests.get(endpoint)
                         if resp.status_code == 200:
@@ -839,8 +847,9 @@ class StackAnalysesById(ResourceWithSchema):
 
                             # Adding URI of the stacks to the recommendation
                             if recommendation.get("input_stack", {}).get("appstack_id", "") != "":
-                                uri = "{analytics_baseurl}/api/v1.0/appstack/{appstack_id}"\
+                                uri = "{analytics_baseurl}/api/{version}/appstack/{appstack_id}"\
                                       .format(analytics_baseurl=url,
+                                              version=ANALYTICS_API_VERSION,
                                               appstack_id=recommendation["input_stack"]
                                               ["appstack_id"])
                                 recommendation["input_stack"]["uri"] = uri
@@ -849,8 +858,9 @@ class StackAnalysesById(ResourceWithSchema):
                                get("similar_stacks", "") != "":
                                 for r in recommendation["recommendations"]["similar_stacks"]:
                                     if r["stack_id"] != "":
-                                        r["uri"] = "{analytics_baseurl}/api/v1.0/appstack/" \
+                                        r["uri"] = "{analytics_baseurl}/api/{version}/appstack/" \
                                             "{appstack_id}".format(analytics_baseurl=url,
+                                                                   version=ANALYTICS_API_VERSION,
                                                                    appstack_id=r["stack_id"])
                             manifest["recommendation"] = recommendation
                         else:
