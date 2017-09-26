@@ -581,6 +581,66 @@ class GithubRead:
                     })
         return manifest_file_paths
 
+    def get_manifest_details(self, github_url):
+        manifest_data = []
+        supported_manifests = {
+            'requirements.txt': True,
+            'pom.xml': True,
+            'package.json': True
+        }
+        repo_tuple = parse_gh_repo(github_url)
+        if repo_tuple:
+            project, repo = repo_tuple.split('/')
+        else:
+            return None
+
+        last_commit_url = 'https://api.github.com/repos/{project}/{repo}/git/refs/heads/master'.format(project=project, repo=repo)
+        trees_url = 'https://api.github.com/repos/{project}/{repo}/git/trees/{sha}?recursive=1'
+        raw_content_path = 'https://raw.githubusercontent.com/{project}/{repo}/master/{filename}'
+
+        # Fetch the latest commit of the repo
+        try:
+            resp = get(last_commit_url)
+        except exceptions.RequestException as e:
+            print (e)
+            return None
+
+        last_commit = ''
+        if resp.status_code == 200:
+            try:
+                last_commit = resp.json()['object']['sha']
+            except KeyError as e:
+                print (e)
+                return None
+
+        # Fetch the contents tree using the last commit sha
+        try:
+            resp = get(trees_url.format(project=project, repo=repo, sha=last_commit))
+        except exceptions.RequestException as e:
+            print (e)
+            return None
+
+        if resp.status_code == 200:
+            try:
+                tree = resp.json()['tree']
+            except KeyError as e:
+                print (e)
+                return None
+
+        for t in tree:
+            try:
+                if supported_manifests[os.path.basename(t['path'])]:
+                    manifest_data.append({
+                        'filename': os.path.basename(t['path']),
+                        'download_url': raw_content_path.format(project=project, repo=repo, filename=t['path']),
+                        'filepath': os.path.dirname(t['path'])
+                    })
+            except KeyError as e:
+                print (e)
+                continue
+
+        return manifest_data
+
     def get_files_github_url(self, github_url):
         """Clone the repository from GitHub and retrieve manifest files from it."""
         manifest_data = []

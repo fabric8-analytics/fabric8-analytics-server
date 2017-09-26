@@ -652,7 +652,7 @@ class StackAnalysesV2(ResourceWithSchema):
         decoded = decode_token()
         github_url = request.form.get("github_url")
         if github_url is not None:
-            files = GithubRead().get_files_github_url(github_url)
+            files = GithubRead().get_manifest_details(github_url)
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')
@@ -678,7 +678,15 @@ class StackAnalysesV2(ResourceWithSchema):
             if github_url is not None:
                 filename = manifest_file_raw.get('filename', None)
                 filepath = manifest_file_raw.get('filepath', None)
-                content = manifest_file_raw.get('content')
+                download_url = manifest_file_raw.get('download_url')
+                try:
+                    response = requests.get(download_url)
+                    if response.status_code == 200:
+                        content = response.text
+                except request.exceptions.RequestException as e:
+                    current_app.logger.warn('contents for manifest file {}/{} could not be downloaded. '\
+                            'continuing with other manifest files in the GitHub repo'.format(filepath,filename))
+                    continue
             else:
                 filename = manifest_file_raw.filename
                 filepath = filepaths[index]
