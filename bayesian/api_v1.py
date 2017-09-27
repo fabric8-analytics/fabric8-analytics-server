@@ -415,6 +415,37 @@ class UserFeedback(ResourceWithSchema):
 
         return {'status': 'success'}
 
+class UserIntent(ResourceWithSchema):
+    method_decorators = [login_required]
+    _ANALYTICS_BUCKET_NAME = "{}-{}".format(
+        os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
+        os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-intent"))
+
+    @staticmethod
+    def post():
+        input_json = request.get_json()
+
+        if not input_json:
+            raise HTTPError(400, error="Expected JSON request")
+        
+        if 'component' not in input_json:
+            raise HTTPError(400, error="Expected component name in the request")
+        
+        if 'intent' not in input_json:
+            raise HTTPError(400, error="Expected intent in the request")
+
+        s3 = AmazonS3(bucket_name=UserIntent._ANALYTICS_BUCKET_NAME)
+        s3.connect()
+
+        # Store data
+        key = "{}".format(input_json["component"])
+        if s3.object_exists(key):
+            existingObject = s3.retrieve_dict(key)
+            existingIntentList = existingObject.get('intent', [])
+            input_json.get('intent', []).extend(existingIntentList)
+        s3.store_dict(input_json, key)
+
+        return {'status': 'success'}
 
 class StackAnalyses(ResourceWithSchema):
     method_decorators = [login_required]
@@ -596,6 +627,7 @@ add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
 add_resource_no_matter_slashes(StackAnalysesGET, '/stack-analyses/<external_request_id>')
 add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
+add_resource_no_matter_slashes(UserIntent, '/user-intent')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',
                                endpoint='get_schemas_by_collection')
