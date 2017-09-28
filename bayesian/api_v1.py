@@ -31,6 +31,7 @@ from .utils import (get_system_version, retrieve_worker_result,
                     get_item_from_list_by_key_value, GithubRead)
 import os
 from f8a_worker.storages import AmazonS3
+import urllib
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 rest_api_v1 = Api(api_v1)
@@ -258,6 +259,7 @@ class ComponentAnalyses(ResourceWithSchema):
     @staticmethod
     def get(ecosystem, package, version):
         decoded = decode_token()
+        package = urllib.parse.unquote(package)
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
         package = case_sensitivity_transform(ecosystem, package)
