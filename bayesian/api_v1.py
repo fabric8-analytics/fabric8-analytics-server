@@ -51,7 +51,6 @@ original_handle_error = rest_api_v1.handle_error
 
 ANALYTICS_API_VERSION = "v1.0"
 
-
 # see <dir>.exceptions.HTTPError docstring
 def handle_http_error(e):
     if isinstance(e, HTTPError):
@@ -418,9 +417,6 @@ class UserFeedback(ResourceWithSchema):
 
 class UserIntent(ResourceWithSchema):
     method_decorators = [login_required]
-    _ANALYTICS_BUCKET_NAME = "{}-{}".format(
-        os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
-        os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-intent"))
 
     @staticmethod
     def post():
@@ -435,16 +431,9 @@ class UserIntent(ResourceWithSchema):
         if 'intent' not in input_json:
             raise HTTPError(400, error="Expected intent in the request")
 
-        s3 = AmazonS3(bucket_name=UserIntent._ANALYTICS_BUCKET_NAME)
-        s3.connect()
-
+        s3 = StoragePool.get_connected_storage('S3UserIntent')
         # Store data
-        key = "{}".format(input_json["component"])
-        if s3.object_exists(key):
-            existingObject = s3.retrieve_dict(key)
-            existingIntentList = existingObject.get('intent', [])
-            input_json.get('intent', []).extend(existingIntentList)
-        s3.store_dict(input_json, key)
+        s3.store_in_bucket(input_json)
 
         return {'status': 'success'}
 
