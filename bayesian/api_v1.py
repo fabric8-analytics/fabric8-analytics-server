@@ -371,6 +371,11 @@ class StackAnalysesGET(ResourceWithSchema):
                 else:
                     dep["topic_list"] = []
 
+        for stack in stacks:
+            stack["recommendation"] = get_item_from_list_by_key_value(
+                recommendations,
+                "manifest_file_path",
+                stack.get("manifest_file_path"))
             manifest_response.append(stack)
 
         return {
