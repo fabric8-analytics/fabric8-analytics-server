@@ -198,7 +198,7 @@ def search_packages_from_graph(tokens):
     # TODO query string for actual STAGE/PROD
     # g.V().has('vertex_label','Package').has('tokens','one').has('tokens','two').
     # out('has_version').valueMap('pecosystem', 'pname', 'version')).limit(5)
-    qstring = "g.V().has('vertex_label','Package')"
+    qstring = "g.V()"
     # qstring = "g.V()"
     for tkn in tokens:
         if tkn:
