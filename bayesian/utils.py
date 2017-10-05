@@ -469,10 +469,12 @@ class RecommendationReason:
         :return: same dict. object with populated reasons
         """
         # Populate reason for each companion package
-        manifest_response = self._companion_reason(manifest_response)
+        if len(manifest_response[0].get("recommendation", {}).get("companion", [])) > 0:
+            manifest_response = self._companion_reason(manifest_response)
 
         # Populate reason for each alternate package
-        manifest_response = self._alternate_reason(manifest_response)
+        if len(manifest_response[0].get("recommendation", {}).get("alternate", [])) > 0:
+            manifest_response = self._alternate_reason(manifest_response)
         return manifest_response
 
     def _alternate_reason(self, manifest_response):
@@ -481,36 +483,32 @@ class RecommendationReason:
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for alternate package
         """
-        length = len(manifest_response[0].get("recommendation").get("alternate"))
-        if length > 0:
-            count = 0
-            while count < length:
-                test_usage_outlier = self._check_usage_outlier(count, manifest_response)
-                sentence = ""
-                if test_usage_outlier:
-                    sentence = manifest_response[0].get("recommendation").get("alternate")[count].get("name") + \
-                               " is recommended as an alternate package for " + \
-                               manifest_response[0].get("recommendation").get("alternate")[0].get("replaces")[
-                                   0].get("name") \
-                               + " as very few stacks are using it with provided input stack."
-                manifest_response[0]["recommendation"]["alternate"][count]["reason"] = sentence
-                count = count + 1
+        for pkg in manifest_response[0].get("recommendation", {}).get("alternate", []):
+            name = pkg.get("name")
+            replaces = pkg.get("replaces", [])[0].get("name")
+            test_usage_outlier = self._check_usage_outlier(replaces, manifest_response)
+            sentence = ""
+            if test_usage_outlier:
+                sentence = "Package " + name + " is recommended as an alternative for Package " + replaces + \
+                           " because, Package " + name + " is comparatively used more with the given combination" \
+                                                         " of input stack."
+            pkg["reason"] = sentence
         return manifest_response
 
-    def _check_usage_outlier(self, count, manifest_response):
+    def _check_usage_outlier(self, pkg_name, manifest_response):
         """
         It will check usage outlier a package mentioned by count index
-        :param count: Index of input package in manifest_response
+        :param pkg_name: Name of the possible usage-outlier package
         :param manifest_response: dict. object having all recommendation elements
         :return: True or False for usage outlier of input package at count index position
         """
         test = False
-        pkg_name = manifest_response[0].get("recommendation").get("alternate")[0].get("replaces")[count].get("name")
-        outliers = manifest_response[0].get("recommendation").get("usage_outliers")
-        for outlier in outliers:
-            if pkg_name == outlier.get("package_name"):
-                test = True
-                break
+        outliers = manifest_response[0].get("recommendation", {}).get("usage_outliers", [])
+        if outliers:
+            for outlier in outliers:
+                if pkg_name == outlier.get("package_name"):
+                    test = True
+                    break
         return test
 
     def _companion_reason(self, manifest_response):
@@ -519,15 +517,12 @@ class RecommendationReason:
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for each companion package
         """
-        length = len(manifest_response[0].get("recommendation").get("companion"))
-        if length > 0:
-            count = 0
-            while count < length:
-                sentence = manifest_response[0].get("recommendation").get("companion")[count].get("package_name") \
-                           + " is being used in " + str(
-                    manifest_response[0].get("recommendation").get("companion")[count] \
-                        .get("cooccurrence_probability")) + " different stacks with provided input stack, " \
-                                                            "so recommended as a companion package."
-                manifest_response[0]["recommendation"]["companion"][count]["reason"] = sentence
-                count = count + 1
+        for pkg in manifest_response[0].get("recommendation", {}).get("companion", []):
+            name = pkg.get("package_name")
+            stack_count = str(pkg.get("cooccurrence_probability"))
+            print(name, stack_count)
+            sentence = "Package " + name + " appears in " + stack_count + " different stacks along with the provided" \
+                            " input stack. Do you want to consider adding this Package? Do you want to consider" \
+                                                                         " replacing this Package?"
+            pkg["reason"] = sentence
         return manifest_response
