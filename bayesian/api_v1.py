@@ -519,7 +519,7 @@ class StackAnalyses(ResourceWithSchema):
                     'user_email': decoded.get('email', 'bayesian@redhat.com'),
                     'user_profile': decoded}
             args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
-            server_run_flow('stackApiGraphFlow', args)
+            server_run_flow('stackApiGraphV2Flow', args)
         except Exception as exc:
             # Just log the exception here for now
             current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
