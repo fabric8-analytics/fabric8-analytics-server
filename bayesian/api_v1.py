@@ -317,10 +317,6 @@ class StackAnalysesGET(ResourceWithSchema):
 
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator_v2")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
-        user_stack_sentiment_result = retrieve_worker_result(rdb, external_request_id,
-                                                             "user_stack_sentiment_scorer")
-        reco_pkg_sentiment_result = retrieve_worker_result(rdb, external_request_id,
-                                                           "reco_pkg_sentiment_scorer")
 
         if stack_result is None and reco_result is None:
             raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(
@@ -352,7 +348,6 @@ class StackAnalysesGET(ResourceWithSchema):
             recommendations = reco_result.get("task_result", {}).get("recommendations",
                                                                      recommendations)
 
-        # Populate sentiment score for packages in user's stack
         if not stacks:
             return {
                 "version": version,
@@ -362,78 +357,19 @@ class StackAnalysesGET(ResourceWithSchema):
                 "request_id": external_request_id,
                 "result": manifest_response
             }
-
         for stack in stacks:
             user_stack_deps = stack.get('user_stack_info', {}).get('dependencies', [])
+            stack_recommendation = get_item_from_list_by_key_value(recommendations,
+                                                                   "manifest_file_path",
+                                                                   stack.get(
+                                                                       "manifest_file_path"))
             for dep in user_stack_deps:
-                if user_stack_sentiment_result is not None:
-                    user_stack_sentiment_item = \
-                        get_item_from_list_by_key_value(user_stack_sentiment_result.get(
-                            'task_result', {}).get('sentiment', []), 'manifest_file_path',
-                            stack.get('manifest_file_path'))
-                    dep['sentiment']['overall_score'] = \
-                        user_stack_sentiment_item.get(dep['name'], {}).get('score', 0)
-                    dep['sentiment']['magnitude'] = \
-                        user_stack_sentiment_item.get(dep['name'], {}).get('magnitude', 0)
-                else:
-                    dep['sentiment'] = {
-                        "latest_comment": "",
-                        "overall_score": 0,
-                        "magnitude": 0
-                    }
-
                 # Adding topics from the recommendations
-                stack_recommendation = get_item_from_list_by_key_value(recommendations,
-                                                                       "manifest_file_path",
-                                                                       stack.get(
-                                                                           "manifest_file_path"))
                 if stack_recommendation is not None:
                     dep["topic_list"] = stack_recommendation.get("input_stack_topics",
                                                                  {}).get(dep.get('name'), [])
                 else:
                     dep["topic_list"] = []
-
-        # Populate sentiment score for recommended packages
-        if recommendations:
-            for recommendation in recommendations:
-                alternate = recommendation['alternate']
-                for pkg in alternate:
-                    if reco_pkg_sentiment_result is not None:
-                        reco_pkg_sentiment_item = \
-                            get_item_from_list_by_key_value(reco_pkg_sentiment_result.get(
-                                                                'task_result', {}).get(
-                                                                    'sentiment', []),
-                                                            'manifest_file_path',
-                                                            recommendation.get(
-                                                                'manifest_file_path'))
-                        pkg['sentiment']['overall_score'] = \
-                            reco_pkg_sentiment_item.get(pkg['name'], {}).get('score', 0)
-                        pkg['sentiment']['magnitude'] = \
-                            reco_pkg_sentiment_item.get(pkg['name'], {}).get('magnitude', 0)
-                    else:
-                        pkg['sentiment'] = {
-                            "latest_comment": "",
-                            "overall_score": 0,
-                            "magnitude": 0
-                        }
-
-                companion = recommendation['companion']
-                for pkg in companion:
-                    if reco_pkg_sentiment_result is not None:
-                        reco_pkg_sentiment_item = get_item_from_list_by_key_value(
-                            reco_pkg_sentiment_result.get('task_result', {}).get(
-                                'sentiment', []), 'manifest_file_path', recommendation.get(
-                                    'manifest_file_path'))
-                        pkg['sentiment']['overall_score'] = reco_pkg_sentiment_item.get(
-                            pkg['name'], {}).get('score', 0)
-                        pkg['sentiment']['magnitude'] = reco_pkg_sentiment_item.get(
-                            pkg['name'], {}).get('magnitude', 0)
-                    else:
-                        pkg['sentiment'] = {
-                            "latest_comment": "",
-                            "overall_score": 0,
-                            "magnitude": 0
-                        }
 
         for stack in stacks:
             stack["recommendation"] = get_item_from_list_by_key_value(
