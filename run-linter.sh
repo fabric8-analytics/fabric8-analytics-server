@@ -68,6 +68,5 @@ then
     echo "All checks passed"
 else
     echo "Linter fail, $fail source files need to be fixed"
-    # let's return 0 in all cases not to break CI (ATM :)
-    # exit 1
+    exit 1
 fi
