@@ -7,7 +7,7 @@ import re
 
 from io import StringIO
 
-from flask import Blueprint, current_app, request, url_for
+from flask import Blueprint, current_app, request, url_for, send_file
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
@@ -31,6 +31,7 @@ from .utils import (get_system_version, retrieve_worker_result,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason)
 import os
 from f8a_worker.storages import AmazonS3
+from .generate_manifest import PomXMLTemplate
 import urllib
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
@@ -95,6 +96,15 @@ def liveness():
     current_app.logger.warning("Liveness probe finished")
     return jsonify({}), 200
 
+
+@api_v1.route('/generatefile', methods=['POST'])
+def generatefile():
+# generate manifest file
+    input_json = request.get_json()
+    if input_json['ecosystem'] == 'maven':
+        return send_file(PomXMLTemplate(input_json).xml_file(),
+                        attachment_filename='pom.xml',
+                        as_attachment=True)
 
 api_v1.coreapi_http_error_handler = handle_http_error
 # work around https://github.com/flask-restful/flask-restful/issues/542
