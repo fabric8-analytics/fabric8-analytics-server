@@ -64,7 +64,7 @@ def error():
     """This endpoint is used by httpd, which redirects its errors to it."""
     try:
         status = int(request.environ['REDIRECT_STATUS'])
-    except:
+    except Exception:
         # if there's an exception, it means that a client accessed this directly;
         #  in this case, we want to make it look like the endpoint is not here
         return api_404_handler()

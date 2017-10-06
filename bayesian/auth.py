@@ -157,7 +157,7 @@ class LazyRowBasedPermission(PrincipalPermission):
     def __str__(self):
         try:
             arg = self.get_arg()
-        except:
+        except Exception:
             arg = 'unknown'
         return self.name.format(arg=arg)
 

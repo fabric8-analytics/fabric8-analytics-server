@@ -94,7 +94,7 @@ def do_projection(fields, analysis):
     if fields is None or analysis is None:
         try:
             return analysis.to_dict()
-        except:
+        except Exception:
             return None
     analysis = analysis.to_dict()
 
@@ -106,12 +106,12 @@ def do_projection(fields, analysis):
     return ret
 
 
-def has_field(analysis, field):
+def has_field(analysis, fields):
     """Return true or false if given field exists in analysis"""
-    for f in field:
+    for field in fields:
         try:
-            analysis = analysis[f]
-        except:
+            analysis = analysis[field]
+        except Exception:
             return False
     return True
 
@@ -243,7 +243,7 @@ def get_analyses_from_graph(ecosystem, package, version):
     payload = {'gremlin': qstring}
     try:
         graph_req = post(url, data=json.dumps(payload))
-    except:
+    except Exception:
         return None
 
     resp = graph_req.json()
