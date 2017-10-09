@@ -28,8 +28,8 @@ SYSTEM_VERSION = os.getenv('F8A_SYSTEM_VERSION', default='/etc/coreapi-release')
 BAYESIAN_ANALYTICS_URL = os.getenv('BAYESIAN_ANALYTICS_URL',
                                    'http://recommendationapi-server:5000')
 GREMLIN_SERVER_URL_REST = "http://{host}:{port}".format(
-                           host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
-                           port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
+                           host=worker_configuration.BAYESIAN_GREMLIN_HTTP_SERVICE_HOST,
+                           port=worker_configuration.BAYESIAN_GREMLIN_HTTP_SERVICE_PORT)
 BAYESIAN_FETCH_PUBLIC_KEY = os.getenv('BAYESIAN_FETCH_PUBLIC_KEY', None)
 BAYESIAN_PUBLIC_KEY = os.getenv('BAYESIAN_AUTH_KEY', '')
 BAYESIAN_JWT_AUDIENCE = os.getenv('BAYESIAN_JWT_AUDIENCE', None)
