@@ -22,7 +22,7 @@ setup(
     name='bayesian',
     version='0.1',
     packages=find_packages(exclude=['tests', 'tests.*']),
-    scripts=['hack/coreapi-env.sh', 'hack/coreapi-server.sh'],
+    scripts=['hack/coreapi-server.sh'],
     install_requires=reqs,
     dependency_links=dep_links,
     include_package_data=True,

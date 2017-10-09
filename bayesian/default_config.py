@@ -1,7 +1,7 @@
 import os
 
 from f8a_worker.utils import json_serial
-
+from f8a_worker.defaults import configuration as worker_configuration
 
 # Disable CDN support to mitigate potential risks connected to it
 BOOTSTRAP_SERVE_LOCAL = True
@@ -9,8 +9,7 @@ BOOTSTRAP_SERVE_LOCAL = True
 DEBUG = os.getenv('F8A_DEBUG', False)
 
 # DB Settings
-SQLALCHEMY_DATABASE_URI = os.getenv('F8A_POSTGRES',
-                                    default='postgres://coreapi:coreapi@localhost:5432/coreapi')
+SQLALCHEMY_DATABASE_URI = worker_configuration.POSTGRES_CONNECTION
 
 # Don't attach custom messages to 404 errors with flask-restful
 ERROR_404_HELP = False
