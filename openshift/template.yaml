@@ -100,8 +100,12 @@ objects:
             periodSeconds: 60
             timeoutSeconds: 10
           resources:
+            requests:
+              memory: "256Mi"
+              cpu: "300m"
             limits:
               memory: "512Mi"
+              cpu: "500m"
         restartPolicy: Always
     test: false
     triggers:
