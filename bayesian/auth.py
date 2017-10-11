@@ -58,7 +58,7 @@ def login_required(view):
 
         try:
             decoded = decode_token()
-            if decoded is None:
+            if not decoded:
                 lgr.exception('Provide an Authorization token with the API request')
                 raise HTTPError(401, 'Authentication failed - token missing')
 
