@@ -1,8 +1,6 @@
 #!/usr/bin/bash
 
 set -e
-DIR=$(dirname "${BASH_SOURCE[0]}")
-source $DIR/coreapi-env.sh
 
 # NOTE: the --python-eggs /home/coreapi is there before I figure out a proper solution
 #   https://github.com/GrahamDumpleton/mod_wsgi/issues/125 or upstream fixes it

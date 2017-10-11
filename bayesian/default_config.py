@@ -1,7 +1,7 @@
 import os
 
 from f8a_worker.utils import json_serial
-
+from f8a_worker.defaults import configuration as worker_configuration
 
 # Disable CDN support to mitigate potential risks connected to it
 BOOTSTRAP_SERVE_LOCAL = True
@@ -9,8 +9,7 @@ BOOTSTRAP_SERVE_LOCAL = True
 DEBUG = os.getenv('F8A_DEBUG', False)
 
 # DB Settings
-SQLALCHEMY_DATABASE_URI = os.getenv('F8A_POSTGRES',
-                                    default='postgres://coreapi:coreapi@localhost:5432/coreapi')
+SQLALCHEMY_DATABASE_URI = worker_configuration.POSTGRES_CONNECTION
 
 # Don't attach custom messages to 404 errors with flask-restful
 ERROR_404_HELP = False
@@ -29,8 +28,8 @@ SYSTEM_VERSION = os.getenv('F8A_SYSTEM_VERSION', default='/etc/coreapi-release')
 BAYESIAN_ANALYTICS_URL = os.getenv('BAYESIAN_ANALYTICS_URL',
                                    'http://recommendationapi-server:5000')
 GREMLIN_SERVER_URL_REST = "http://{host}:{port}".format(
-                           host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
-                           port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
+                           host=worker_configuration.BAYESIAN_GREMLIN_HTTP_SERVICE_HOST,
+                           port=worker_configuration.BAYESIAN_GREMLIN_HTTP_SERVICE_PORT)
 BAYESIAN_FETCH_PUBLIC_KEY = os.getenv('BAYESIAN_FETCH_PUBLIC_KEY', None)
 BAYESIAN_PUBLIC_KEY = os.getenv('BAYESIAN_AUTH_KEY', '')
 BAYESIAN_JWT_AUDIENCE = os.getenv('BAYESIAN_JWT_AUDIENCE', None)
