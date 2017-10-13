@@ -7,7 +7,7 @@ import re
 
 from io import StringIO
 
-from flask import Blueprint, current_app, request, url_for, send_file
+from flask import Blueprint, current_app, request, url_for, Response
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
@@ -96,15 +96,6 @@ def liveness():
     current_app.logger.warning("Liveness probe finished")
     return jsonify({}), 200
 
-
-@api_v1.route('/generatefile', methods=['POST'])
-def generatefile():
-# generate manifest file
-    input_json = request.get_json()
-    if input_json['ecosystem'] == 'maven':
-        return send_file(PomXMLTemplate(input_json).xml_file(),
-                        attachment_filename='pom.xml',
-                        as_attachment=True)
 
 api_v1.coreapi_http_error_handler = handle_http_error
 # work around https://github.com/flask-restful/flask-restful/issues/542
@@ -200,6 +191,7 @@ class ResourceWithSchema(Resource):
       on `GET` request.
     Note that if both `schema_ref` and `add_schema` are defined, only the method will be used.
     """
+
     def add_schema(self, response, status_code, method):
         """Add schema to response. The schema must be dict containing 3 string values:
         name, version and url (representing name and version of the schema and its
@@ -596,6 +588,32 @@ class PublishedSchemas(ResourceWithSchema):
                                    name=name, version=version)
 
 
+class GenerateManifest(Resource):
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        input_json = request.get_json()
+        if 'ecosystem' not in input_json:
+            raise HTTPError(400, "Must provide a ecosystem")
+        if input_json.get('ecosystem') == 'maven':
+            return Response(
+                PomXMLTemplate(input_json).xml_file(),
+                headers={
+                    "Content-disposition": 'attachment;filename=pom.xml',
+                    "Content-Type": "text/xml;charset=utf-8"
+                }
+            )
+        elif input_json.get('ecosystem') == 'node':
+            return {'result': 'ecosystem node is not yet supported'}
+        elif input_json.get('ecosystem') == 'python':
+            return {'result': 'ecosystem python is not yet supported'}
+        else:
+            current_app.logger.exception('Unknown ecosystem {esystem} encountered'.format(
+                esystem=input_json.get('ecosystem')))
+            raise HTTPError(400, "Unknown ecosystem encountered")
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
@@ -613,6 +631,7 @@ add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>',
                                endpoint='get_schemas_by_name')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>/<version>',
                                endpoint='get_schema_by_name_and_version')
+add_resource_no_matter_slashes(GenerateManifest, '/generate-file')
 
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
