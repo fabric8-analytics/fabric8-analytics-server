@@ -59,6 +59,6 @@ class PomXMLTemplate:
                                        item.split(':')):
                     SubElement(dp, child).text = data
 
-    def xml_file(self):
+    def xml_string(self):
         return tostring(self.root, encoding='utf-8',
                         xml_declaration=True, pretty_print=True)
