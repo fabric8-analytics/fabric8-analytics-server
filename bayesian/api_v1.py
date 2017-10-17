@@ -422,13 +422,22 @@ class UserIntent(ResourceWithSchema):
 
     @staticmethod
     def get(user, ecosystem):
-        if user is not None and ecosystem is not None:
-            raise HTTPError(404, "Invalid user '{u}' and ecosystem '{e}'.".format(u=user,
-                                                                                  e=ecosystem))
+        if user is None:
+            raise HTTPError(400, error="Expected user name in the request")
+
+        if ecosystem is None:
+            raise HTTPError(400, error="Expected ecosystem in the request")
 
         s3 = StoragePool.get_connected_storage('S3ManualTagging')
         # get user data
-        return s3.fetch_user_data(user, ecosystem)
+        try:
+            result = s3.fetch_user_data(user, ecosystem)
+        except Exception as exc:
+            # Just log the exception here for now
+            current_app.logger.exception("Failed to fetch data for the user {u}".format(u=user))
+            raise HTTPError(404, error="Failed to fetch data for the user {u}".format(u=user))
+
+        return result
 
     @staticmethod
     def post():
