@@ -422,10 +422,10 @@ class UserIntent(ResourceWithSchema):
 
     @staticmethod
     def get(user, ecosystem):
-        if user is None:
+        if not user:
             raise HTTPError(400, error="Expected user name in the request")
 
-        if ecosystem is None:
+        if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
         s3 = StoragePool.get_connected_storage('S3ManualTagging')
