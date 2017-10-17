@@ -7,7 +7,7 @@ import re
 
 from io import StringIO
 
-from flask import Blueprint, current_app, request, url_for
+from flask import Blueprint, current_app, request, url_for, Response
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
@@ -31,6 +31,7 @@ from .utils import (get_system_version, retrieve_worker_result,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason)
 import os
 from f8a_worker.storages import AmazonS3
+from .generate_manifest import PomXMLTemplate
 import urllib
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
@@ -190,6 +191,7 @@ class ResourceWithSchema(Resource):
       on `GET` request.
     Note that if both `schema_ref` and `add_schema` are defined, only the method will be used.
     """
+
     def add_schema(self, response, status_code, method):
         """Add schema to response. The schema must be dict containing 3 string values:
         name, version and url (representing name and version of the schema and its
@@ -586,6 +588,30 @@ class PublishedSchemas(ResourceWithSchema):
                                    name=name, version=version)
 
 
+class GenerateManifest(Resource):
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        input_json = request.get_json()
+        if 'ecosystem' not in input_json:
+            raise HTTPError(400, "Must provide an ecosystem")
+        if input_json.get('ecosystem') == 'maven':
+            return Response(
+                PomXMLTemplate(input_json).xml_string(),
+                headers={
+                    "Content-disposition": 'attachment;filename=pom.xml',
+                    "Content-Type": "text/xml;charset=utf-8"
+                }
+            )
+        else:
+            return Response(
+                {'result': "ecosystem '{}' is not yet supported".format(
+                    input_json['ecosystem'])},
+                status=400
+            )
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
@@ -603,6 +629,7 @@ add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>',
                                endpoint='get_schemas_by_name')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>/<version>',
                                endpoint='get_schema_by_name_and_version')
+add_resource_no_matter_slashes(GenerateManifest, '/generate-file')
 
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
