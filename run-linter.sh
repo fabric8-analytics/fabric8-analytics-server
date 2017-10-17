@@ -18,8 +18,6 @@ echo $directories
 echo "----------------------------------------------------"
 echo
 
-ls -1
-
 [ "$NOVENV" == "1" ] || prepare_venv || exit 1
 
 # checks for the whole directories
