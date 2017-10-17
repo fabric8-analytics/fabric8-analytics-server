@@ -425,11 +425,7 @@ class UserIntent(ResourceWithSchema):
         
         s3 = StoragePool.get_connected_storage('S3ManualTagging')
         # get user data
-        input_json = {
-            'user': user,
-            'ecosystem': ecosystem
-        }
-        return s3.fetch_user_data(input_json)
+        return s3.fetch_user_data(user, ecosystem)
         
     @staticmethod
     def post():
