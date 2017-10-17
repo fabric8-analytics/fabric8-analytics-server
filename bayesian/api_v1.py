@@ -598,20 +598,18 @@ class GenerateManifest(Resource):
             raise HTTPError(400, "Must provide a ecosystem")
         if input_json.get('ecosystem') == 'maven':
             return Response(
-                PomXMLTemplate(input_json).xml_file(),
+                PomXMLTemplate(input_json).xml_string(),
                 headers={
                     "Content-disposition": 'attachment;filename=pom.xml',
                     "Content-Type": "text/xml;charset=utf-8"
                 }
             )
-        elif input_json.get('ecosystem') == 'node':
-            return {'result': 'ecosystem node is not yet supported'}
-        elif input_json.get('ecosystem') == 'python':
-            return {'result': 'ecosystem python is not yet supported'}
         else:
-            current_app.logger.exception('Unknown ecosystem {esystem} encountered'.format(
-                esystem=input_json.get('ecosystem')))
-            raise HTTPError(400, "Unknown ecosystem encountered")
+            return Response(
+                {'result': "ecosystem '{}' is not yet supported".format(
+                    input_json['ecosystem'])},
+                status=400
+            )
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
