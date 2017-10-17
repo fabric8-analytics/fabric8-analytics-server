@@ -595,7 +595,7 @@ class GenerateManifest(Resource):
     def post():
         input_json = request.get_json()
         if 'ecosystem' not in input_json:
-            raise HTTPError(400, "Must provide a ecosystem")
+            raise HTTPError(400, "Must provide an ecosystem")
         if input_json.get('ecosystem') == 'maven':
             return Response(
                 PomXMLTemplate(input_json).xml_string(),
