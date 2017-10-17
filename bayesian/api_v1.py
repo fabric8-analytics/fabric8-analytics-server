@@ -49,6 +49,7 @@ original_handle_error = rest_api_v1.handle_error
 
 ANALYTICS_API_VERSION = "v1.0"
 
+
 # see <dir>.exceptions.HTTPError docstring
 def handle_http_error(e):
     if isinstance(e, HTTPError):
@@ -415,29 +416,31 @@ class UserFeedback(ResourceWithSchema):
 
         return {'status': 'success'}
 
+
 class UserIntent(ResourceWithSchema):
     method_decorators = [login_required]
 
     @staticmethod
     def get(user, ecosystem):
         if user is not None and ecosystem is not None:
-            raise HTTPError(404, "Invalid user '{u}' and ecosystem '{e}'.".format(u=user, e=ecosystem))
-        
+            raise HTTPError(404, "Invalid user '{u}' and ecosystem '{e}'.".format(u=user,
+                                                                                  e=ecosystem))
+
         s3 = StoragePool.get_connected_storage('S3ManualTagging')
         # get user data
         return s3.fetch_user_data(user, ecosystem)
-        
+
     @staticmethod
     def post():
         input_json = request.get_json()
 
         if not input_json:
             raise HTTPError(400, error="Expected JSON request")
-        
+
         if 'manual_tagging' not in input_json:
             if 'component' not in input_json:
                 raise HTTPError(400, error="Expected component name in the request")
-            
+
             if 'intent' not in input_json:
                 raise HTTPError(400, error="Expected intent in the request")
 
@@ -445,16 +448,15 @@ class UserIntent(ResourceWithSchema):
         else:
             if 'user' not in input_json:
                 raise HTTPError(400, error="Expected user name in the request")
-            
+
             if 'data' not in input_json:
                 raise HTTPError(400, error="Expected tags in the request")
 
             s3 = StoragePool.get_connected_storage('S3ManualTagging')
 
         # Store data
-        s3.store_in_bucket(input_json)
+        return s3.store_in_bucket(input_json)
 
-        return {'status': 'success'}
 
 class StackAnalyses(ResourceWithSchema):
     method_decorators = [login_required]
