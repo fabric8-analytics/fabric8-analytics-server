@@ -454,6 +454,9 @@ class UserIntent(ResourceWithSchema):
                 raise HTTPError(400, error="Expected intent in the request")
 
             s3 = StoragePool.get_connected_storage('S3UserIntent')
+
+            # Store data
+            return s3.store_in_bucket(input_json)
         else:
             if 'user' not in input_json:
                 raise HTTPError(400, error="Expected user name in the request")
@@ -463,8 +466,8 @@ class UserIntent(ResourceWithSchema):
 
             s3 = StoragePool.get_connected_storage('S3ManualTagging')
 
-        # Store data
-        return s3.store_in_bucket(input_json)
+            # Store data
+            return s3.store_user_data(input_json)
 
 
 class UserIntent(ResourceWithSchema):
