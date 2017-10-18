@@ -7,6 +7,7 @@ import re
 
 from io import StringIO
 
+import botocore
 from flask import Blueprint, current_app, request, url_for
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
@@ -432,10 +433,11 @@ class UserIntent(ResourceWithSchema):
         # get user data
         try:
             result = s3.fetch_user_data(user, ecosystem)
-        except Exception as exc:
-            # Just log the exception here for now
-            current_app.logger.exception("Failed to fetch data for the user {u}".format(u=user))
-            raise HTTPError(404, error="Failed to fetch data for the user {u}".format(u=user))
+        except botocore.exceptions.ClientError:
+            err_msg = "Failed to fetch data for the user {u}, ecosystem {e}".format(u=user,
+                                                                                    e=ecosystem)
+            current_app.logger.exception(err_msg)
+            raise HTTPError(404, error=err_msg)
 
         return result
 

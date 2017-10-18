@@ -80,4 +80,4 @@ The marked offline tests can then be run as:
 If the Docker container based tests have been run, then this may complain
 about mismatched locations in compiled files. Those can be deleted using:
 
-    (bayesian) $ sudo find -name *.pyc -delete 
+    (bayesian) $ sudo find -name *.pyc -delete
