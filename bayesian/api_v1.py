@@ -678,7 +678,7 @@ add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
 add_resource_no_matter_slashes(StackAnalysesGET, '/stack-analyses/<external_request_id>')
 add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
-add_resource_no_matter_slashes(UserIntent, '/user-intent')
+add_resource_no_matter_slashes(UserIntent, '/user-intent/<user>/<ecosystem>')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',
                                endpoint='get_schemas_by_collection')
