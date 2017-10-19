@@ -421,26 +421,6 @@ class UserIntent(ResourceWithSchema):
     method_decorators = [login_required]
 
     @staticmethod
-    def get(user, ecosystem):
-        if not user:
-            raise HTTPError(400, error="Expected user name in the request")
-
-        if not ecosystem:
-            raise HTTPError(400, error="Expected ecosystem in the request")
-
-        s3 = StoragePool.get_connected_storage('S3ManualTagging')
-        # get user data
-        try:
-            result = s3.fetch_user_data(user, ecosystem)
-        except botocore.exceptions.ClientError:
-            err_msg = "Failed to fetch data for the user {u}, ecosystem {e}".format(u=user,
-                                                                                    e=ecosystem)
-            current_app.logger.exception(err_msg)
-            raise HTTPError(404, error=err_msg)
-
-        return result
-
-    @staticmethod
     def post():
         input_json = request.get_json()
 
@@ -469,6 +449,30 @@ class UserIntent(ResourceWithSchema):
 
             # Store data
             return s3.store_user_data(input_json)
+
+
+class UserIntentGET(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    @staticmethod
+    def get(user, ecosystem):
+        if not user:
+            raise HTTPError(400, error="Expected user name in the request")
+
+        if not ecosystem:
+            raise HTTPError(400, error="Expected ecosystem in the request")
+
+        s3 = StoragePool.get_connected_storage('S3ManualTagging')
+        # get user data
+        try:
+            result = s3.fetch_user_data(user, ecosystem)
+        except botocore.exceptions.ClientError:
+            err_msg = "Failed to fetch data for the user {u}, ecosystem {e}".format(u=user,
+                                                                                    e=ecosystem)
+            current_app.logger.exception(err_msg)
+            raise HTTPError(404, error=err_msg)
+
+        return result
 
 
 class StackAnalyses(ResourceWithSchema):
@@ -675,7 +679,8 @@ add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
 add_resource_no_matter_slashes(StackAnalysesGET, '/stack-analyses/<external_request_id>')
 add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
-add_resource_no_matter_slashes(UserIntent, '/user-intent/<user>/<ecosystem>')
+add_resource_no_matter_slashes(UserIntent, '/user-intent')
+add_resource_no_matter_slashes(UserIntentGET, '/user-intent/<user>/<ecosystem>')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',
                                endpoint='get_schemas_by_collection')
