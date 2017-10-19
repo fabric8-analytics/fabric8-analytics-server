@@ -489,10 +489,9 @@ class RecommendationReason:
             test_usage_outlier = self._check_usage_outlier(replaces, manifest_response)
             sentence = ""
             if test_usage_outlier:
-                sentence = "Package " + name + " is recommended as an alternative for Package " \
-                           + replaces + " because, Package " + name + \
-                           " is comparatively used more with the given combination" \
-                           " of input stack. Do you want to consider replacing this Package?"
+                sentence = "Package " + name + " is recommended as an alternative for Package " + replaces + \
+                           " because, Package " + name + " is comparatively used more with the given combination" \
+                                                         " of input stack."
             pkg["reason"] = sentence
         return manifest_response
 
@@ -522,8 +521,8 @@ class RecommendationReason:
             name = pkg.get("package_name")
             stack_count = str(pkg.get("cooccurrence_probability"))
             print(name, stack_count)
-            sentence = "Package " + name + " appears in " + stack_count + " different stacks " \
-                       "along with the provided input stack. Do you want to consider adding this " \
-                       "Package? "
+            sentence = "Package " + name + " appears in " + stack_count + " different stacks along with the provided" \
+                            " input stack. Do you want to consider adding this Package? Do you want to consider" \
+                                                                         " replacing this Package?"
             pkg["reason"] = sentence
         return manifest_response
