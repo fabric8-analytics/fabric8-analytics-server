@@ -435,7 +435,7 @@ class UserIntent(ResourceWithSchema):
 
             if 'intent' not in input_json:
                 raise HTTPError(400, error="Expected intent in the request")
-            
+
             Setup.connect_if_not_connected()
             s3 = StoragePool.get_connected_storage('S3UserIntent')
 
