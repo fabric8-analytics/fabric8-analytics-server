@@ -22,6 +22,8 @@ from f8a_worker.utils import (safe_get_latest_version, get_dependents_count,
                               get_component_percentile_rank, usage_rank2str,
                               MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
+from f8a_worker.setup_celery import init_selinon
+
 from . import rdb
 from .auth import login_required, decode_token
 from .exceptions import HTTPError
@@ -31,7 +33,6 @@ from .utils import (get_system_version, retrieve_worker_result,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count,
                     get_item_from_list_by_key_value, GithubRead)
-from .setup import Setup
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -436,7 +437,7 @@ class UserIntent(ResourceWithSchema):
             if 'intent' not in input_json:
                 raise HTTPError(400, error="Expected intent in the request")
 
-            Setup.connect_if_not_connected()
+            init_selinon()
             s3 = StoragePool.get_connected_storage('S3UserIntent')
 
             # Store data
@@ -448,7 +449,7 @@ class UserIntent(ResourceWithSchema):
             if 'data' not in input_json:
                 raise HTTPError(400, error="Expected tags in the request")
 
-            Setup.connect_if_not_connected()
+            init_selinon()
             s3 = StoragePool.get_connected_storage('S3ManualTagging')
 
             # Store data
@@ -466,7 +467,7 @@ class UserIntentGET(ResourceWithSchema):
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
-        Setup.connect_if_not_connected()
+        init_selinon()
         s3 = StoragePool.get_connected_storage('S3ManualTagging')
         # get user data
         try:
