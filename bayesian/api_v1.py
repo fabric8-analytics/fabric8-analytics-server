@@ -32,7 +32,7 @@ from .utils import (get_system_version, retrieve_worker_result,
                     server_create_component_bookkeeping, build_nested_schema_dict,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count,
-                    get_item_from_list_by_key_value, GithubRead)
+                    get_item_from_list_by_key_value, GithubRead, RecommendationReason)
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -384,6 +384,10 @@ class StackAnalysesGET(ResourceWithSchema):
                 "manifest_file_path",
                 stack.get("manifest_file_path"))
             manifest_response.append(stack)
+
+        # Populate reason for alternate and companion recommendation
+        if manifest_response[0].get('recommendation'):
+            manifest_response = RecommendationReason().add_reco_reason(manifest_response)
 
         return {
             "version": version,
