@@ -32,7 +32,8 @@ from .utils import (get_system_version, retrieve_worker_result,
                     server_create_component_bookkeeping, build_nested_schema_dict,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count,
-                    get_item_from_list_by_key_value, GithubRead, RecommendationReason)
+                    get_item_from_list_by_key_value, GithubRead, RecommendationReason,
+                    retrieve_worker_results)
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -397,6 +398,33 @@ class StackAnalysesGET(ResourceWithSchema):
             "request_id": external_request_id,
             "result": manifest_response
         }
+
+
+@api_v1.route('/stack-analyses/<external_request_id>/_debug')
+@login_required
+def stack_analyses_debug(external_request_id):
+    """Debug endpoint exposing operational data for particular stack analysis.
+
+    This endpoint is not part of the public API.
+
+    Note the existence of the data is not guaranteed,
+    therefore the endpoint can return 404 even for valid request IDs.
+    """
+
+    results = retrieve_worker_results(rdb, external_request_id)
+    if not results:
+        return jsonify(error='No operational data for the request ID'), 404
+
+    response = {'tasks': []}
+    for result in results:
+        op_data = result.to_dict()
+        audit = op_data.get('task_result', {}).get('_audit', {})
+        task_data = {'task_name': op_data.get('worker')}
+        task_data['started_at'] = audit.get('started_at')
+        task_data['ended_at'] = audit.get('ended_at')
+        task_data['error'] = op_data.get('error')
+        response['tasks'].append(task_data)
+    return jsonify(response), 200
 
 
 class UserFeedback(ResourceWithSchema):

@@ -1,4 +1,5 @@
 import logging
+import os
 
 from flask import Flask
 from flask import Response
@@ -14,7 +15,8 @@ from flask_sqlalchemy import SQLAlchemy
 def setup_logging(app):
     if not app.debug:
         handler = logging.StreamHandler()
-        handler.setLevel(logging.WARNING)
+        log_level = os.environ.get('FLASK_LOGGING_LEVEL', logging.getLevelName(logging.WARNING))
+        handler.setLevel(log_level)
         app.logger.addHandler(handler)
 
 

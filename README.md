@@ -81,3 +81,11 @@ If the Docker container based tests have been run, then this may complain
 about mismatched locations in compiled files. Those can be deleted using:
 
     (bayesian) $ sudo find -name *.pyc -delete
+
+# Accessing operational data for stack analyses
+
+It's possible to access operational data related to a particular stack analysis request:
+
+`/api/v1/stack-analyses/<request-id>/_debug`
+
+Note this endpoint is not part of the public API.
