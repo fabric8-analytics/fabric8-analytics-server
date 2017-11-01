@@ -78,6 +78,8 @@ objects:
               secretKeyRef:
                 name: aws
                 key: s3-secret-access-key
+          - name: FLASK_LOGGING_LEVEL
+            value: ${FLASK_LOGGING_LEVEL}
           image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
           name: bayesian-api
           ports:
@@ -165,7 +167,7 @@ parameters:
   name: REPLICAS
   value: "1"
 
-- description: Flask logging level (see: https://docs.python.org/3/library/logging.html#levels)
+- description: "Flask logging level (see: https://docs.python.org/3/library/logging.html#levels)"
   displayName: Flask logging level
   required: false
   name: FLASK_LOGGING_LEVEL
