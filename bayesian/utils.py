@@ -370,6 +370,20 @@ def fetch_public_key(app):
     return app.public_key
 
 
+def retrieve_worker_results(rdb, external_request_id):
+    try:
+        query = rdb.session.query(WorkerResult) \
+                           .filter(WorkerResult.external_request_id == external_request_id)
+        results = query.all()
+    except (NoResultFound, MultipleResultsFound):
+        return None
+    except SQLAlchemyError:
+        rdb.session.rollback()
+        raise
+
+    return results
+
+
 def retrieve_worker_result(rdb, external_request_id, worker):
     try:
         query = rdb.session.query(WorkerResult) \
