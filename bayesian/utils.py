@@ -241,10 +241,14 @@ def get_analyses_from_graph(ecosystem, package, version):
               ".as('package').out('has_version').as('version').select('package','version')." \
               "by(valueMap());"
     payload = {'gremlin': qstring}
+    start = datetime.datetime.now()
     try:
         graph_req = post(url, data=json.dumps(payload))
     except Exception:
         return None
+    finally:
+        elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+        current_app.logger.debug("Gremlin request took {} seconds.".format(elapsed_seconds))
 
     resp = graph_req.json()
 
