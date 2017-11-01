@@ -78,6 +78,8 @@ objects:
               secretKeyRef:
                 name: aws
                 key: s3-secret-access-key
+          - name: FLASK_LOGGING_LEVEL
+            value: ${FLASK_LOGGING_LEVEL}
           image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
           name: bayesian-api
           ports:
