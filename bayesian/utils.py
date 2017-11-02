@@ -34,9 +34,17 @@ def server_run_flow(flow_name, flow_args):
     :param flow_args: arguments for the flow
     :return: dispatcher ID handling flow
     """
+    current_app.logger.debug('Running flow {}'.format(flow_name))
+    start = datetime.datetime.now()
+
     # Before we schedule a flow, we have to ensure that we are connected to broker
     Setup.connect_if_not_connected()
-    return run_flow(flow_name, flow_args)
+    dispacher_id = run_flow(flow_name, flow_args)
+
+    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+    current_app.logger.debug("It took {t} seconds to start {f} flow.".format(t=elapsed_seconds,
+                                                                             f=flow_name))
+    return dispacher_id
 
 
 def get_user_email(user_profile):
