@@ -248,7 +248,9 @@ def get_analyses_from_graph(ecosystem, package, version):
         return None
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        current_app.logger.debug("Gremlin request took {} seconds.".format(elapsed_seconds))
+        epv = "{e}/{p}/{v}".format(e=ecosystem, p=package, v=version)
+        current_app.logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
+                                                                                t=elapsed_seconds))
 
     resp = graph_req.json()
 
