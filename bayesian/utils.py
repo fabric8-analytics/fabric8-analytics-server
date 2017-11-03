@@ -34,9 +34,17 @@ def server_run_flow(flow_name, flow_args):
     :param flow_args: arguments for the flow
     :return: dispatcher ID handling flow
     """
+    current_app.logger.debug('Running flow {}'.format(flow_name))
+    start = datetime.datetime.now()
+
     # Before we schedule a flow, we have to ensure that we are connected to broker
     Setup.connect_if_not_connected()
-    return run_flow(flow_name, flow_args)
+    dispacher_id = run_flow(flow_name, flow_args)
+
+    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+    current_app.logger.debug("It took {t} seconds to start {f} flow.".format(t=elapsed_seconds,
+                                                                             f=flow_name))
+    return dispacher_id
 
 
 def get_user_email(user_profile):
@@ -248,7 +256,9 @@ def get_analyses_from_graph(ecosystem, package, version):
         return None
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        current_app.logger.debug("Gremlin request took {} seconds.".format(elapsed_seconds))
+        epv = "{e}/{p}/{v}".format(e=ecosystem, p=package, v=version)
+        current_app.logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
+                                                                                t=elapsed_seconds))
 
     resp = graph_req.json()
 
@@ -375,6 +385,7 @@ def fetch_public_key(app):
 
 
 def retrieve_worker_results(rdb, external_request_id):
+    start = datetime.datetime.now()
     try:
         query = rdb.session.query(WorkerResult) \
                            .filter(WorkerResult.external_request_id == external_request_id)
@@ -385,10 +396,16 @@ def retrieve_worker_results(rdb, external_request_id):
         rdb.session.rollback()
         raise
 
+    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+    msg = "It took {t} seconds to retrieve " \
+          "all worker results for {r}.".format(t=elapsed_seconds, r=external_request_id)
+    current_app.logger.debug(msg)
+
     return results
 
 
 def retrieve_worker_result(rdb, external_request_id, worker):
+    start = datetime.datetime.now()
     try:
         query = rdb.session.query(WorkerResult) \
                            .filter(WorkerResult.external_request_id == external_request_id,
@@ -399,8 +416,13 @@ def retrieve_worker_result(rdb, external_request_id, worker):
     except SQLAlchemyError:
         rdb.session.rollback()
         raise
+    result_dict = result.to_dict()
+    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+    msg = "It took {t} seconds to retrieve {w} " \
+          "worker results for {r}.".format(t=elapsed_seconds, w=worker, r=external_request_id)
+    current_app.logger.debug(msg)
 
-    return result.to_dict()
+    return result_dict
 
 
 def get_item_from_list_by_key_value(items, key, value):
