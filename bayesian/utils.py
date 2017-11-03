@@ -385,6 +385,7 @@ def fetch_public_key(app):
 
 
 def retrieve_worker_results(rdb, external_request_id):
+    start = datetime.datetime.now()
     try:
         query = rdb.session.query(WorkerResult) \
                            .filter(WorkerResult.external_request_id == external_request_id)
@@ -395,10 +396,16 @@ def retrieve_worker_results(rdb, external_request_id):
         rdb.session.rollback()
         raise
 
+    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+    msg = "It took {t} seconds to retrieve " \
+          "all worker results for {r}.".format(t=elapsed_seconds, r=external_request_id)
+    current_app.logger.debug(msg)
+
     return results
 
 
 def retrieve_worker_result(rdb, external_request_id, worker):
+    start = datetime.datetime.now()
     try:
         query = rdb.session.query(WorkerResult) \
                            .filter(WorkerResult.external_request_id == external_request_id,
@@ -409,8 +416,13 @@ def retrieve_worker_result(rdb, external_request_id, worker):
     except SQLAlchemyError:
         rdb.session.rollback()
         raise
+    result_dict = result.to_dict()
+    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+    msg = "It took {t} seconds to retrieve {w} " \
+          "worker results for {r}.".format(t=elapsed_seconds, w=worker, r=external_request_id)
+    current_app.logger.debug(msg)
 
-    return result.to_dict()
+    return result_dict
 
 
 def get_item_from_list_by_key_value(items, key, value):
