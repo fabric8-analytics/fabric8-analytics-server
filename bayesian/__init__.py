@@ -11,6 +11,8 @@ from flask_appconfig import AppConfig
 from flask_security import SQLAlchemyUserDatastore, Security
 from flask_sqlalchemy import SQLAlchemy
 
+from .setup import Setup
+
 
 def setup_logging(app):
     if not app.debug:
@@ -80,4 +82,9 @@ def create_app(configfile=None):
     return app
 
 
+# Before we schedule a flow, we have to ensure that we are connected to broker
+Setup.connect_if_not_connected()
+
 app = create_app()
+
+app.logger.info('App initialized, ready to roll...')

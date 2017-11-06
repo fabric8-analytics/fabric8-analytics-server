@@ -16,7 +16,6 @@ from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 
 from . import rdb
-from .setup import Setup
 from .exceptions import HTTPError
 
 from requests import get, post, exceptions
@@ -37,8 +36,6 @@ def server_run_flow(flow_name, flow_args):
     current_app.logger.debug('Running flow {}'.format(flow_name))
     start = datetime.datetime.now()
 
-    # Before we schedule a flow, we have to ensure that we are connected to broker
-    Setup.connect_if_not_connected()
     dispacher_id = run_flow(flow_name, flow_args)
 
     elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
