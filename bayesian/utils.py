@@ -14,6 +14,8 @@ from f8a_worker.models import (Analysis, Ecosystem, Package, Version, WorkerResu
                                StackAnalysisRequest)
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
+from f8a_worker.setup_celery import init_celery
+
 
 from . import rdb
 from .exceptions import HTTPError
@@ -36,6 +38,7 @@ def server_run_flow(flow_name, flow_args):
     current_app.logger.debug('Running flow {}'.format(flow_name))
     start = datetime.datetime.now()
 
+    init_celery(result_backend=False)
     dispacher_id = run_flow(flow_name, flow_args)
 
     elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
