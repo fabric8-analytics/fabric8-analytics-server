@@ -11,7 +11,7 @@ from flask_appconfig import AppConfig
 from flask_security import SQLAlchemyUserDatastore, Security
 from flask_sqlalchemy import SQLAlchemy
 
-from .setup import Setup
+from f8a_worker.setup_celery import init_selinon
 
 
 def setup_logging(app):
@@ -82,8 +82,7 @@ def create_app(configfile=None):
     return app
 
 
-# Before we schedule a flow, we have to ensure that we are connected to broker
-Setup.connect_if_not_connected()
+init_selinon()
 
 app = create_app()
 
