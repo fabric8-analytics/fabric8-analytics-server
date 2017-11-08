@@ -462,16 +462,16 @@ class UserIntent(ResourceWithSchema):
             raise HTTPError(400, error="Expected JSON request")
 
         if 'manual_tagging' not in input_json:
-            if 'component' not in input_json:
-                raise HTTPError(400, error="Expected component name in the request")
+            if 'ecosystem' not in input_json:
+                raise HTTPError(400, error="Expected ecosystem in the request")
 
-            if 'intent' not in input_json:
-                raise HTTPError(400, error="Expected intent in the request")
+            if 'data' not in input_json:
+                raise HTTPError(400, error="Expected data in the request")
 
             s3 = StoragePool.get_connected_storage('S3UserIntent')
 
             # Store data
-            return s3.store_in_bucket(input_json)
+            return s3.store_master_tags(input_json)
         else:
             if 'user' not in input_json:
                 raise HTTPError(400, error="Expected user name in the request")
@@ -503,6 +503,27 @@ class UserIntentGET(ResourceWithSchema):
         except botocore.exceptions.ClientError:
             err_msg = "Failed to fetch data for the user {u}, ecosystem {e}".format(u=user,
                                                                                     e=ecosystem)
+            current_app.logger.exception(err_msg)
+            raise HTTPError(404, error=err_msg)
+
+        return result
+
+
+class MasterTagsGET(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    @staticmethod
+    def get(ecosystem):
+        if not ecosystem:
+            raise HTTPError(400, error="Expected ecosystem in the request")
+
+        s3 = StoragePool.get_connected_storage('S3UserIntent')
+
+        # get user data
+        try:
+            result = s3.fetch_master_tags(ecosystem)
+        except botocore.exceptions.ClientError:
+            err_msg = "Failed to fetch master tags for the ecosystem {e}".format(e=ecosystem)
             current_app.logger.exception(err_msg)
             raise HTTPError(404, error=err_msg)
 
@@ -716,6 +737,7 @@ add_resource_no_matter_slashes(StackAnalysesGET, '/stack-analyses/<external_requ
 add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(UserIntent, '/user-intent')
 add_resource_no_matter_slashes(UserIntentGET, '/user-intent/<user>/<ecosystem>')
+add_resource_no_matter_slashes(MasterTagsGET, '/master-tags/<ecosystem>')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',
                                endpoint='get_schemas_by_collection')
