@@ -112,7 +112,7 @@ objects:
     test: false
     triggers:
     - type: ConfigChange
-    replicas: ${REPLICAS}
+    replicas: ${{REPLICAS}}
 - apiVersion: v1
   kind: Service
   metadata:
