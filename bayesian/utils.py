@@ -23,6 +23,10 @@ from .exceptions import HTTPError
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
 
+# TODO remove hardcoded gremlin_url when moving to Production This is just a stop-gap measure for demo
+gremlin_url = "http://{host}:{port}".format(
+        host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
+        port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
 
 def get_recent_analyses(limit=100):
     return rdb.session.query(Analysis).order_by(Analysis.started_at.desc()).limit(limit)
@@ -198,11 +202,6 @@ def generate_recommendation(data, package, version):
 
 
 def search_packages_from_graph(tokens):
-    # TODO remove hardcoded url when moving to Production This is just a stop-gap measure for demo
-    url = "http://{host}:{port}".format(
-           host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
-           port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
-
     # TODO query string for actual STAGE/PROD
     # g.V().has('vertex_label','Package').has('tokens','one').has('tokens','two').
     # out('has_version').valueMap('pecosystem', 'pname', 'version')).limit(5)
@@ -219,7 +218,7 @@ def search_packages_from_graph(tokens):
 
     payload = {'gremlin': qstring}
 
-    response = post(url, data=json.dumps(payload))
+    response = post(gremlin_url, data=json.dumps(payload))
     resp = response.json()
     packages = resp.get('result', {}).get('data', [])
     if not packages:
@@ -242,16 +241,13 @@ def search_packages_from_graph(tokens):
 
 
 def get_analyses_from_graph(ecosystem, package, version):
-    url = "http://{host}:{port}".format(
-             host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
-             port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
     qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
               ".as('package').out('has_version').as('version').select('package','version')." \
               "by(valueMap());"
     payload = {'gremlin': qstring}
     start = datetime.datetime.now()
     try:
-        graph_req = post(url, data=json.dumps(payload))
+        graph_req = post(gremlin_url, data=json.dumps(payload))
     except Exception:
         return None
     finally:
@@ -337,6 +333,35 @@ def build_nested_schema_dict(schema_dict):
         result.setdefault(schema_ref.name, {})
         result[schema_ref.name][schema_ref.version] = schema
     return result
+
+
+def get_next_component_from_graph(ecosystem, user_id):
+    tag_count = 2
+    qstring = "user = g.V().has('userid', '{uid}').next();\
+            g.V(user).as('u').V().has('ecosystem','{e}').has('manual_tagging_required', true).has('tags_count', not(within({tc}))).coalesce(inE('has_tagged').as('pkg').outV().as('b').where('u', neq('b')).outE('has_tagged').inV().as('np').where('pkg', neq('np')), V().has('ecosystem','{e}').has('manual_tagging_required', true).not(inE('has_tagged'))).limit(1).valueMap();".format(
+                    uid=user_id, e=ecosystem, tc=tag_count)
+    payload = {'gremlin': qstring}
+    start = datetime.datetime.now()
+    try:
+        graph_req = post(gremlin_url, data=json.dumps(payload))
+    except Exception as e:
+        current_app.logger.debug(' '.join([type(e), ':', str(e)]))
+        return None
+    finally:
+        elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+        current_app.logger.debug("Gremlin request for next component for ecosystem {e} took {t} seconds.".format(
+            e=ecosystem, t=elapsed_seconds))
+
+    resp = graph_req.json()
+
+    if 'result' not in resp or 'data' not in resp.get('result'):
+        return None
+    if len(resp['result']['data']) == 0:
+        return None
+
+    pkg = resp['result']['data'][0].get('name')
+    return pkg
+
 
 
 class JSONEncoderWithExtraTypes(JSONEncoder):
