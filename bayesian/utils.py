@@ -363,6 +363,29 @@ def get_next_component_from_graph(ecosystem, user_id):
     return pkg
 
 
+def set_tags_to_component(ecosystem, package, tags, user_id, company):
+    qstring = "user = g.V().has('userid','{user_id}').tryNext().orElseGet{{graph.addVertex('vertex_label', 'User', 'userid', '{user_id}', {company})}};\
+            pkg = g.V().has('name','{package}').has('ecosystem','{ecosystem}').next();\
+            g.V(pkg).choose(has('tags_count'),sack(assign).by('tags_count').sack(sum).by(constant(1)).property('tags_count', sack()), property('tags_count', 1)).property('user_tags', '{tags}').iterate(); g.V(user).outE('has_tagged').outV().has('name','{package}').has('ecosystem','{ecosystem}').tryNext().orElseGet{{user.addEdge('has_tagged', pkg)}};".format(
+                    ecosystem=ecosystem,
+                    package=package,
+                    tags=';'.join(tags),
+                    user_id=user_id,
+                    company=['', ", 'company', '{}'".format(company)][int(bool(company))]
+                    )
+
+    payload = {'gremlin': qstring}
+    start = datetime.datetime.now()
+    try:
+        post(gremlin_url, data=json.dumps(payload))
+    except Exception as e:
+        return False, ' '.join([type(e), ':', str(e)])
+    finally:
+        elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+        current_app.logger.debug("Gremlin request for setting tags to component for ecosystem {e} took {t} seconds.".format(
+            e=ecosystem, t=elapsed_seconds))
+    return True, None
+
 
 class JSONEncoderWithExtraTypes(JSONEncoder):
     """JSON Encoder that supports additional types:
