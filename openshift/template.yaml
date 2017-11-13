@@ -25,6 +25,8 @@ objects:
         - env:
           - name: F8A_DEBUG
             value: "true"
+          - name: BAYESIAN_COMPONENT_TAGGED_COUNT
+            value: 2
           - name: DEPLOYMENT_PREFIX
             valueFrom:
               configMapKeyRef:

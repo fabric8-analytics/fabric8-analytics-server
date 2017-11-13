@@ -539,9 +539,12 @@ class GetNextComponent(ResourceWithSchema):
             raise HTTPError(400, error="Expected ecosystem in the request")
 
         decoded = decode_token()
-        email = decoded.get('email')
 
-        pkg = get_next_component_from_graph(ecosystem, email)
+        pkg = get_next_component_from_graph(
+            ecosystem,
+            decoded.get('email'),
+            decoded.get('company'),
+        )
         if pkg:
             return pkg[0]
         else:

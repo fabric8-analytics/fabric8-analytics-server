@@ -19,6 +19,7 @@ from f8a_worker.setup_celery import init_celery
 
 from . import rdb
 from .exceptions import HTTPError
+from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT
 
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
@@ -340,15 +341,20 @@ def build_nested_schema_dict(schema_dict):
     return result
 
 
-def get_next_component_from_graph(ecosystem, user_id):
-    tag_count = 2
-    qstring = ("user = g.V().has('userid', '{uid}').next();"
+def get_next_component_from_graph(ecosystem, user_id, company):
+    qstring = ("user = g.V().has('userid','{uid}').tryNext().orElseGet{{graph.addVertex("
+               "'vertex_label', 'User', 'userid', '{uid}' {company})}};"
                "g.V(user).as('u').V().has('ecosystem','{e}').has('manual_tagging_required', true)"
                ".has('tags_count', not(within({tc}))).coalesce(inE('has_tagged').as('pkg').outV()"
                ".as('b').where('u', neq('b')).outE('has_tagged').inV().as('np').where('pkg',"
                " neq('np')), V().has('ecosystem','{e}').has('manual_tagging_required', true)"
                ".not(inE('has_tagged'))).limit(1).valueMap();"
-               .format(uid=user_id, e=ecosystem, tc=tag_count))
+               .format(
+                   uid=user_id,
+                   e=ecosystem,
+                   tc=BAYESIAN_COMPONENT_TAGGED_COUNT,
+                   company=['', ", 'company', '{}'".format(company)][bool(company)]
+               ))
     payload = {'gremlin': qstring}
     start = datetime.datetime.now()
     try:
@@ -375,7 +381,7 @@ def get_next_component_from_graph(ecosystem, user_id):
 
 def set_tags_to_component(ecosystem, package, tags, user_id, company):
     qstring = ("user = g.V().has('userid','{user_id}').tryNext().orElseGet{{graph.addVertex("
-               "'vertex_label', 'User', 'userid', '{user_id}', {company})}};pkg = g.V().has('name'"
+               "'vertex_label', 'User', 'userid', '{user_id}' {company})}};pkg = g.V().has('name'"
                ",'{package}').has('ecosystem','{ecosystem}').next();g.V(pkg).choose("
                "has('tags_count'),sack(assign).by('tags_count').sack(sum).by(constant(1)).property"
                "('tags_count', sack()), property('tags_count', 1)).property('user_tags', '{tags}')"
@@ -386,7 +392,7 @@ def set_tags_to_component(ecosystem, package, tags, user_id, company):
                    package=package,
                    tags=';'.join(tags),
                    user_id=user_id,
-                   company=['', ", 'company', '{}'".format(company)][int(bool(company))]
+                   company=['', ", 'company', '{}'".format(company)][bool(company)]
                ))
 
     payload = {'gremlin': qstring}
