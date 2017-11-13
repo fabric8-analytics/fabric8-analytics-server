@@ -32,7 +32,7 @@ from .utils import (get_system_version, retrieve_worker_result,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
-                    retrieve_worker_results)
+                    retrieve_worker_results, get_next_component_from_graph, set_tags_to_component)
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -530,6 +530,24 @@ class MasterTagsGET(ResourceWithSchema):
         return result
 
 
+class GetNextComponent(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post(ecosystem):
+        if not ecosystem:
+            raise HTTPError(400, error="Expected ecosystem in the request")
+
+        decoded = decode_token()
+        email = decoded.get('email')
+
+        pkg = get_next_component_from_graph(ecosystem, email)
+        if pkg:
+            return pkg[0]
+        else:
+            raise HTTPError(200, error="No package found for tagging.")
+
+
 class StackAnalyses(ResourceWithSchema):
     method_decorators = [login_required]
 
@@ -746,6 +764,7 @@ add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>',
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>/<version>',
                                endpoint='get_schema_by_name_and_version')
 add_resource_no_matter_slashes(GenerateManifest, '/generate-file')
+add_resource_no_matter_slashes(GetNextComponent, '/get-next-component/<ecosystem>')
 
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
