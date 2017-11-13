@@ -88,4 +88,4 @@ It's possible to access operational data related to a particular stack analysis 
 
 `/api/v1/stack-analyses/<request-id>/_debug`
 
-Note this endpoint is not part of the public API.
+Note this endpoint is not part of the public API. 
