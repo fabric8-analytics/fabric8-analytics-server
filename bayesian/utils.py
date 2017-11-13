@@ -10,8 +10,8 @@ from flask.json import JSONEncoder
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
 
-from f8a_worker.models import (Analysis, Ecosystem, Package, Version, WorkerResult,
-                               StackAnalysisRequest)
+from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
+                               WorkerResult, StackAnalysisRequest)
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 from f8a_worker.setup_celery import init_celery
@@ -23,13 +23,17 @@ from .exceptions import HTTPError
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
 
-# TODO remove hardcoded gremlin_url when moving to Production This is just a stop-gap measure for demo
+# TODO remove hardcoded gremlin_url when moving to Production This is just
+#      a stop-gap measure for demo
+
 gremlin_url = "http://{host}:{port}".format(
-        host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
-        port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
+    host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
+    port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
+
 
 def get_recent_analyses(limit=100):
-    return rdb.session.query(Analysis).order_by(Analysis.started_at.desc()).limit(limit)
+    return rdb.session.query(Analysis).order_by(
+        Analysis.started_at.desc()).limit(limit)
 
 
 def server_run_flow(flow_name, flow_args):
@@ -46,8 +50,8 @@ def server_run_flow(flow_name, flow_args):
     dispacher_id = run_flow(flow_name, flow_args)
 
     elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    current_app.logger.debug("It took {t} seconds to start {f} flow.".format(t=elapsed_seconds,
-                                                                             f=flow_name))
+    current_app.logger.debug("It took {t} seconds to start {f} flow.".format(
+        t=elapsed_seconds, f=flow_name))
     return dispacher_id
 
 
@@ -248,7 +252,8 @@ def get_analyses_from_graph(ecosystem, package, version):
     start = datetime.datetime.now()
     try:
         graph_req = post(gremlin_url, data=json.dumps(payload))
-    except Exception:
+    except Exception as e:
+        current_app.logger.debug(' '.join([type(e), ':', str(e)]))
         return None
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
@@ -337,9 +342,13 @@ def build_nested_schema_dict(schema_dict):
 
 def get_next_component_from_graph(ecosystem, user_id):
     tag_count = 2
-    qstring = "user = g.V().has('userid', '{uid}').next();\
-            g.V(user).as('u').V().has('ecosystem','{e}').has('manual_tagging_required', true).has('tags_count', not(within({tc}))).coalesce(inE('has_tagged').as('pkg').outV().as('b').where('u', neq('b')).outE('has_tagged').inV().as('np').where('pkg', neq('np')), V().has('ecosystem','{e}').has('manual_tagging_required', true).not(inE('has_tagged'))).limit(1).valueMap();".format(
-                    uid=user_id, e=ecosystem, tc=tag_count)
+    qstring = ("user = g.V().has('userid', '{uid}').next();"
+               "g.V(user).as('u').V().has('ecosystem','{e}').has('manual_tagging_required', true)"
+               ".has('tags_count', not(within({tc}))).coalesce(inE('has_tagged').as('pkg').outV()"
+               ".as('b').where('u', neq('b')).outE('has_tagged').inV().as('np').where('pkg',"
+               " neq('np')), V().has('ecosystem','{e}').has('manual_tagging_required', true)"
+               ".not(inE('has_tagged'))).limit(1).valueMap();"
+               .format(uid=user_id, e=ecosystem, tc=tag_count))
     payload = {'gremlin': qstring}
     start = datetime.datetime.now()
     try:
@@ -349,8 +358,9 @@ def get_next_component_from_graph(ecosystem, user_id):
         return None
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        current_app.logger.debug("Gremlin request for next component for ecosystem {e} took {t} seconds.".format(
-            e=ecosystem, t=elapsed_seconds))
+        current_app.logger.debug("Gremlin request for next component for"
+                                 " ecosystem {e} took {t} seconds."
+                                 .format(e=ecosystem, t=elapsed_seconds))
 
     resp = graph_req.json()
 
@@ -364,15 +374,20 @@ def get_next_component_from_graph(ecosystem, user_id):
 
 
 def set_tags_to_component(ecosystem, package, tags, user_id, company):
-    qstring = "user = g.V().has('userid','{user_id}').tryNext().orElseGet{{graph.addVertex('vertex_label', 'User', 'userid', '{user_id}', {company})}};\
-            pkg = g.V().has('name','{package}').has('ecosystem','{ecosystem}').next();\
-            g.V(pkg).choose(has('tags_count'),sack(assign).by('tags_count').sack(sum).by(constant(1)).property('tags_count', sack()), property('tags_count', 1)).property('user_tags', '{tags}').iterate(); g.V(user).outE('has_tagged').outV().has('name','{package}').has('ecosystem','{ecosystem}').tryNext().orElseGet{{user.addEdge('has_tagged', pkg)}};".format(
-                    ecosystem=ecosystem,
-                    package=package,
-                    tags=';'.join(tags),
-                    user_id=user_id,
-                    company=['', ", 'company', '{}'".format(company)][int(bool(company))]
-                    )
+    qstring = ("user = g.V().has('userid','{user_id}').tryNext().orElseGet{{graph.addVertex("
+               "'vertex_label', 'User', 'userid', '{user_id}', {company})}};pkg = g.V().has('name'"
+               ",'{package}').has('ecosystem','{ecosystem}').next();g.V(pkg).choose("
+               "has('tags_count'),sack(assign).by('tags_count').sack(sum).by(constant(1)).property"
+               "('tags_count', sack()), property('tags_count', 1)).property('user_tags', '{tags}')"
+               ".iterate(); g.V(user).outE('has_tagged').outV().has('name','{package}').has("
+               "'ecosystem','{ecosystem}').tryNext().orElseGet{{user.addEdge('has_tagged', pkg)}};"
+               .format(
+                   ecosystem=ecosystem,
+                   package=package,
+                   tags=';'.join(tags),
+                   user_id=user_id,
+                   company=['', ", 'company', '{}'".format(company)][int(bool(company))]
+               ))
 
     payload = {'gremlin': qstring}
     start = datetime.datetime.now()
@@ -382,8 +397,9 @@ def set_tags_to_component(ecosystem, package, tags, user_id, company):
         return False, ' '.join([type(e), ':', str(e)])
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        current_app.logger.debug("Gremlin request for setting tags to component for ecosystem {e} took {t} seconds.".format(
-            e=ecosystem, t=elapsed_seconds))
+        current_app.logger.debug(("Gremlin request for setting tags to component for ecosystem"
+                                  " {e} took {t} seconds."
+                                  .format(e=ecosystem, t=elapsed_seconds)))
     return True, None
 
 
@@ -393,6 +409,7 @@ class JSONEncoderWithExtraTypes(JSONEncoder):
         - date/time objects
         - arbitrary non-mapping iterables
     """
+
     def default(self, obj):
         try:
             if isinstance(obj, datetime.datetime):

@@ -691,9 +691,9 @@ class StackAnalyses(ResourceWithSchema):
             # Just log the exception here for now
             current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
                                          .format(id=request_id))
-            raise HTTPError(500, "Error processing request {t}. manifest files "
-                                 "could not be processed"
-                                 .format(t=request_id)) from exc
+            raise HTTPError(500, ("Error processing request {t}. manifest files "
+                                  "could not be processed"
+                                  .format(t=request_id))) from exc
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
