@@ -32,7 +32,7 @@ from .utils import (get_system_version, retrieve_worker_result,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
-                    retrieve_worker_results)
+                    retrieve_worker_results, get_next_component_from_graph, set_tags_to_component)
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -530,6 +530,58 @@ class MasterTagsGET(ResourceWithSchema):
         return result
 
 
+class GetNextComponent(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post(ecosystem):
+        if not ecosystem:
+            raise HTTPError(400, error="Expected ecosystem in the request")
+
+        decoded = decode_token()
+
+        pkg = get_next_component_from_graph(
+            ecosystem,
+            decoded.get('email'),
+            decoded.get('company'),
+        )
+        if pkg:
+            return pkg[0]
+        else:
+            raise HTTPError(200, error="No package found for tagging.")
+
+
+class SetTagsToComponent(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        input_json = request.get_json()
+        decoded = decode_token()
+
+        if not input_json:
+            raise HTTPError(400, error="Expected JSON request")
+
+        if 'ecosystem' not in input_json:
+            raise HTTPError(400, error="Expected ecosystem in the request")
+
+        if 'component' not in input_json:
+            raise HTTPError(400, error="Expected component in the request")
+
+        if 'tags' not in input_json or not any(input_json.get('tags', [])):
+            raise HTTPError(400, error="Expected some tags in the request")
+
+        status, _error = set_tags_to_component(input_json.get('ecosystem'),
+                                               input_json.get('component'),
+                                               input_json.get('tags'),
+                                               decoded.get('email'),
+                                               decoded.get('company'))
+        if status:
+            return {'status': 'success'}, 200
+        else:
+            raise HTTPError(400, error=_error)
+
+
 class StackAnalyses(ResourceWithSchema):
     method_decorators = [login_required]
 
@@ -642,9 +694,9 @@ class StackAnalyses(ResourceWithSchema):
             # Just log the exception here for now
             current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
                                          .format(id=request_id))
-            raise HTTPError(500, "Error processing request {t}. manifest files "
-                                 "could not be processed"
-                                 .format(t=request_id)) from exc
+            raise HTTPError(500, ("Error processing request {t}. manifest files "
+                                  "could not be processed"
+                                  .format(t=request_id))) from exc
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
@@ -746,6 +798,8 @@ add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>',
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>/<version>',
                                endpoint='get_schema_by_name_and_version')
 add_resource_no_matter_slashes(GenerateManifest, '/generate-file')
+add_resource_no_matter_slashes(GetNextComponent, '/get-next-component/<ecosystem>')
+add_resource_no_matter_slashes(SetTagsToComponent, '/set-tags')
 
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
