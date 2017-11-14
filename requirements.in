@@ -14,3 +14,4 @@ psycopg2
 pycrypto
 pyjwt
 requests-futures
+flask-caching
