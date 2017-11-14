@@ -10,6 +10,7 @@ from flask import url_for
 from flask_appconfig import AppConfig
 from flask_security import SQLAlchemyUserDatastore, Security
 from flask_sqlalchemy import SQLAlchemy
+from flask_cache import Cache
 
 from f8a_worker.setup_celery import init_selinon
 
@@ -25,6 +26,7 @@ def setup_logging(app):
 # we must initialize DB here to not create import loop with .auth...
 #  flask really sucks at this
 rdb = SQLAlchemy()
+cache = Cache(config={'CACHE_TYPE': 'simple'})
 
 
 def create_app(configfile=None):
@@ -34,8 +36,9 @@ def create_app(configfile=None):
     from .exceptions import HTTPError
     from .utils import JSONEncoderWithExtraTypes
     app = Flask(__name__)
-
     AppConfig(app, configfile)
+
+    cache.init_app(app)
 
     # actually init the DB with config values now
     rdb.init_app(app)
