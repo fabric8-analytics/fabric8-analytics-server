@@ -23,7 +23,7 @@ from f8a_worker.utils import (safe_get_latest_version, get_dependents_count,
                               MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
-from . import rdb
+from . import rdb, cache
 from .auth import login_required, decode_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
@@ -513,6 +513,7 @@ class MasterTagsGET(ResourceWithSchema):
     method_decorators = [login_required]
 
     @staticmethod
+    @cache.memoize(timeout=604800)  # 7 days
     def get(ecosystem):
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
@@ -528,6 +529,9 @@ class MasterTagsGET(ResourceWithSchema):
             raise HTTPError(404, error=err_msg)
 
         return result
+
+    def __repr__(self):
+        return "{}({})".format(self.__class__.__name__, self.id)
 
 
 class GetNextComponent(ResourceWithSchema):
