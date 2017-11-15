@@ -352,7 +352,7 @@ def get_next_component_from_graph(ecosystem, user_id, company):
                .format(
                    uid=user_id,
                    e=ecosystem,
-                   tc=BAYESIAN_COMPONENT_TAGGED_COUNT,
+                   tc=int(BAYESIAN_COMPONENT_TAGGED_COUNT),
                    company=['', ", 'company', '{}'".format(company)][bool(company)]
                ))
     payload = {'gremlin': qstring}
