@@ -1,5 +1,5 @@
 directories="bayesian hack tests"
-separate_files="alembic/env.py"
+separate_files="setup.py alembic/env.py"
 fail=0
 
 function prepare_venv() {

@@ -5,13 +5,14 @@ from setuptools import setup, find_packages
 def get_requirements():
     with open('requirements.txt') as fd:
         lines = fd.read().splitlines()
-        r, l = [], []
+        reqs, dep_links = [], []
         for line in lines:
             if line.startswith('git+'):
-                l.append(line)
+                dep_links.append(line)
             else:
-                r.append(line)
-        return r, l
+                reqs.append(line)
+        return reqs, dep_links
+
 
 # pip doesn't install from dependency links by default, so one should install dependencies by
 #  `pip install -r requirements.txt`, not by `pip install .`
