@@ -1,4 +1,4 @@
-directories="bayesian hack tests"
+directories="bayesian hack tests alembic"
 pass=0
 fail=0
 
