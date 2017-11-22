@@ -365,7 +365,7 @@ class StackAnalysesGET(ResourceWithSchema):
                 "result": manifest_response
             }
         for stack in stacks:
-            user_stack_deps = stack.get('user_stack_info', {}).get('dependencies', [])
+            user_stack_deps = stack.get('user_stack_info', {}).get('analyzed_dependencies', [])
             stack_recommendation = get_item_from_list_by_key_value(recommendations,
                                                                    "manifest_file_path",
                                                                    stack.get(
