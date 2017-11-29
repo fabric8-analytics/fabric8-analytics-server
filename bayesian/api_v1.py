@@ -93,13 +93,13 @@ def readiness():
 @api_v1.route('/liveness')
 def liveness():
     # Check database connection
-    current_app.logger.warning("Liveness probe - trying to connect to database "
-                               "and execute a query")
+    current_app.logger.debug("Liveness probe - trying to connect to database "
+                             "and execute a query")
     rdb.session.query(Ecosystem).count()
     # Check broker connection
-    current_app.logger.warning("Liveness probe - trying to schedule the livenessFlow")
+    current_app.logger.debug("Liveness probe - trying to schedule the livenessFlow")
     server_run_flow('livenessFlow', None)
-    current_app.logger.warning("Liveness probe finished")
+    current_app.logger.debug("Liveness probe finished")
     return jsonify({}), 200
 
 
@@ -366,7 +366,7 @@ class StackAnalysesGET(ResourceWithSchema):
                 "result": manifest_response
             }
         for stack in stacks:
-            user_stack_deps = stack.get('user_stack_info', {}).get('dependencies', [])
+            user_stack_deps = stack.get('user_stack_info', {}).get('analyzed_dependencies', [])
             stack_recommendation = get_item_from_list_by_key_value(recommendations,
                                                                    "manifest_file_path",
                                                                    stack.get(

@@ -1,9 +1,9 @@
 FROM registry.centos.org/centos/centos:7
 MAINTAINER Pavel Odvody <podvody@redhat.com>
 ENV LANG=en_US.UTF-8 \
-    F8A_WORKER_VERSION=aa32fa7
+    F8A_WORKER_VERSION=d0e7889
 
-RUN useradd coreapi
+RUN useradd -d /coreapi coreapi
 # python3-pycurl is needed for Amazon SQS (boto lib), we need CentOS' rpm - installing it from pip results in NSS errors
 RUN yum install -y epel-release &&\
     yum install -y gcc patch git python34-pip python34-requests httpd httpd-devel python34-devel postgresql-devel redhat-rpm-config libxml2-devel libxslt-devel python34-pycurl &&\

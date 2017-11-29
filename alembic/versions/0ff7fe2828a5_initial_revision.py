@@ -1,7 +1,7 @@
 """initial revision
 
 Revision ID: 0ff7fe2828a5
-Revises: 
+Revises:
 Create Date: 2016-05-05 16:04:31.142857
 
 """
