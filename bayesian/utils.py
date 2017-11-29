@@ -638,15 +638,12 @@ class RecommendationReason:
         return manifest_response
 
 
-def retrieve_bookkeeping(ecosystem=None, package=None, version=None, user_profile=None):
-    """Create bayesianApiFlow handling analyses for specified EPV
+def retrieve_bookkeeping(ecosystem=None, package=None, version=None):
+    """Retrieve BookKeeping data
 
-    :param ecosystem: ecosystem for which the flow should be run
-    :param package: package for which should be flow run
-    :param version: package version
-    :param force: force run flow even specified EPV exists
-    :param force_graph_sync: force synchronization to graph
-    :return: dispatcher ID handling flow
+    :param ecosystem: ecosystem for which the data should be retrieved
+    :param package: package for which the data should be retrieved
+    :param version: package version for which the data should be retrieved
     """
     db = rdb.session
     result = {}
