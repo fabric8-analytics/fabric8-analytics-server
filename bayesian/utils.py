@@ -11,11 +11,11 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
 
 from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
-                               WorkerResult, StackAnalysisRequest)
+                               WorkerResult, StackAnalysisRequest,
+                               PackageWorkerResult, PackageAnalysis)
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 from f8a_worker.setup_celery import init_celery
-
 
 from . import rdb
 from .exceptions import HTTPError
@@ -247,8 +247,8 @@ def search_packages_from_graph(tokens):
 
 def get_analyses_from_graph(ecosystem, package, version):
     qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
-              ".as('package').out('has_version').as('version').select('package','version')." \
-              "by(valueMap());"
+                                                                                    ".as('package').out('has_version').as('version').select('package','version')." \
+                                                                                    "by(valueMap());"
     payload = {'gremlin': qstring}
     start = datetime.datetime.now()
     try:
@@ -285,12 +285,12 @@ def get_latest_analysis_for(ecosystem, package, version):
     if ecosystem == 'maven':
         package = MavenCoordinates.normalize_str(package)
     try:
-        return rdb.session.query(Analysis).\
-            join(Version).join(Package).join(Ecosystem).\
-            filter(Ecosystem.name == ecosystem).\
-            filter(Package.name == package).\
-            filter(Version.identifier == version).\
-            order_by(Analysis.started_at.desc()).\
+        return rdb.session.query(Analysis). \
+            join(Version).join(Package).join(Ecosystem). \
+            filter(Ecosystem.name == ecosystem). \
+            filter(Package.name == package). \
+            filter(Version.identifier == version). \
+            order_by(Analysis.started_at.desc()). \
             first()
     except SQLAlchemyError:
         rdb.session.rollback()
@@ -304,11 +304,11 @@ def get_latest_analysis_by_hash(algorithm, artifact_hash, projection=None):
 
     contains_dict = {'details': [{"artifact": True, algorithm: artifact_hash}]}
     try:
-        return rdb.session.query(Analysis).\
-            join(WorkerResult).\
-            filter(WorkerResult.worker == 'digests').\
-            filter(WorkerResult.task_result.contains(contains_dict)).\
-            order_by(Analysis.started_at.desc()).\
+        return rdb.session.query(Analysis). \
+            join(WorkerResult). \
+            filter(WorkerResult.worker == 'digests'). \
+            filter(WorkerResult.task_result.contains(contains_dict)). \
+            order_by(Analysis.started_at.desc()). \
             first()
     except SQLAlchemyError:
         rdb.session.rollback()
@@ -349,12 +349,12 @@ def get_next_component_from_graph(ecosystem, user_id, company):
                ".as('b').where('u', neq('b')).outE('has_tagged').inV().as('np').where('pkg',"
                " neq('np')), V().has('ecosystem','{e}').has('manual_tagging_required', true)"
                ".not(inE('has_tagged'))).limit(1).valueMap();"
-               .format(
-                   uid=user_id,
-                   e=ecosystem,
-                   tc=int(BAYESIAN_COMPONENT_TAGGED_COUNT),
-                   company=['', ", 'company', '{}'".format(company)][bool(company)]
-               ))
+        .format(
+        uid=user_id,
+        e=ecosystem,
+        tc=int(BAYESIAN_COMPONENT_TAGGED_COUNT),
+        company=['', ", 'company', '{}'".format(company)][bool(company)]
+    ))
     payload = {'gremlin': qstring}
     start = datetime.datetime.now()
     try:
@@ -387,13 +387,13 @@ def set_tags_to_component(ecosystem, package, tags, user_id, company):
                "('tags_count', sack()), property('tags_count', 1)).property('user_tags', '{tags}')"
                ".iterate(); g.V(user).outE('has_tagged').outV().has('name','{package}').has("
                "'ecosystem','{ecosystem}').tryNext().orElseGet{{user.addEdge('has_tagged', pkg)}};"
-               .format(
-                   ecosystem=ecosystem,
-                   package=package,
-                   tags=';'.join(tags),
-                   user_id=user_id,
-                   company=['', ", 'company', '{}'".format(company)][bool(company)]
-               ))
+        .format(
+        ecosystem=ecosystem,
+        package=package,
+        tags=';'.join(tags),
+        user_id=user_id,
+        company=['', ", 'company', '{}'".format(company)][bool(company)]
+    ))
 
     payload = {'gremlin': qstring}
     start = datetime.datetime.now()
@@ -459,7 +459,7 @@ def retrieve_worker_results(rdb, external_request_id):
     start = datetime.datetime.now()
     try:
         query = rdb.session.query(WorkerResult) \
-                           .filter(WorkerResult.external_request_id == external_request_id)
+            .filter(WorkerResult.external_request_id == external_request_id)
         results = query.all()
     except (NoResultFound, MultipleResultsFound):
         return None
@@ -479,8 +479,8 @@ def retrieve_worker_result(rdb, external_request_id, worker):
     start = datetime.datetime.now()
     try:
         query = rdb.session.query(WorkerResult) \
-                           .filter(WorkerResult.external_request_id == external_request_id,
-                                   WorkerResult.worker == worker)
+            .filter(WorkerResult.external_request_id == external_request_id,
+                    WorkerResult.worker == worker)
         result = query.one()
     except (NoResultFound, MultipleResultsFound):
         return None
@@ -505,8 +505,8 @@ def get_item_from_list_by_key_value(items, key, value):
 
 def get_request_count(rdb, external_request_id):
     try:
-        return rdb.session.query(StackAnalysisRequest)\
-                          .filter(StackAnalysisRequest.id == external_request_id).count()
+        return rdb.session.query(StackAnalysisRequest) \
+            .filter(StackAnalysisRequest.id == external_request_id).count()
     except SQLAlchemyError:
         rdb.session.rollback()
         raise
@@ -632,7 +632,106 @@ class RecommendationReason:
             name = pkg.get("name")
             stack_count = str(pkg.get("cooccurrence_probability"))
             sentence = "Package {} appears in {} different stacks along with the provided input " \
-                       "stack. Do you want to consider adding this Package?"\
+                       "stack. Do you want to consider adding this Package?" \
                 .format(name, stack_count)
             pkg["reason"] = sentence
         return manifest_response
+
+
+def retrieve_bookkeeping(ecosystem=None, package=None, version=None, user_profile=None):
+    """Create bayesianApiFlow handling analyses for specified EPV
+
+    :param ecosystem: ecosystem for which the flow should be run
+    :param package: package for which should be flow run
+    :param version: package version
+    :param force: force run flow even specified EPV exists
+    :param force_graph_sync: force synchronization to graph
+    :return: dispatcher ID handling flow
+    """
+    db = rdb.session
+    result = {}
+    if ecosystem is None:
+        # return all stats from here
+        data = []
+        for e in db.query(Ecosystem).all():
+            entry = {
+                "name": db.query(Ecosystem).get(e.id).name,
+                "package_count": db.query(Package).filter(Package.ecosystem == e).count(),
+                "package_version_count": db.query(Version).join(Package).\
+                    filter(Package.ecosystem == e).count()
+            }
+            data.append(entry)
+
+        result = {"summary": data}
+        return result
+
+    else:
+        e = Ecosystem.by_name(db, ecosystem)
+
+        if package is None:
+            result = {
+                "summary": {
+                    "ecosystem": e.name,
+                    "package_count": db.query(Package).filter(Package.ecosystem == e).count(),
+                    "package_version_count": db.query(Version).join(Package).\
+                        filter(Package.ecosystem == e).count()
+                }
+            }
+            return result
+        else:
+            p = Package.by_name(db, package)
+
+            if version is None:
+                # return package stats
+                version_count = db.query(Version).join(Package).filter(Package.ecosystem == e).\
+                    filter(Version.package == p).count()
+
+                stat = db.query(PackageWorkerResult.worker, PackageWorkerResult.error,
+                                PackageWorkerResult.task_result).join(PackageAnalysis). \
+                    filter(PackageAnalysis.package == p). \
+                    all()
+
+                worker_stats = []
+                for worker_name, has_error, task_result in stat:
+                    entry = {"worker_name": worker_name,
+                             "has_error": has_error,
+                             "task_result": task_result}
+                    worker_stats.append(entry)
+
+                result = {
+                    "summary": {
+                        "ecosystem": e.name,
+                        "package": p.name,
+                        "package_version_count": version_count,
+                        "workers": worker_stats
+                    }
+                }
+                return result
+            else:
+                v = db.query(Version).join(Package).join(Ecosystem). \
+                    filter(Package.ecosystem == e). \
+                    filter(Version.package == p). \
+                    filter(Version.identifier == version).one()
+
+                stat = db.query(WorkerResult.worker, WorkerResult.error, WorkerResult.task_result).\
+                    join(Analysis).join(Version).\
+                    filter(Analysis.version == v).all()
+
+                worker_stats = []
+                for worker_name, has_error, task_result in stat:
+                    entry = {"worker_name": worker_name,
+                             "has_error": has_error,
+                             "task_result": task_result}
+                    worker_stats.append(entry)
+
+                result = {
+                    "summary": {
+                        "ecosystem": e.name,
+                        "package": p.name,
+                        "version": v.identifier,
+                        "workers": worker_stats
+                    }
+                }
+                return result
+
+    return result
