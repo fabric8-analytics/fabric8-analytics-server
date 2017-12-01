@@ -16,12 +16,6 @@ RUN pushd /coreapi && \
     rm requirements.txt && \
     popd
 
-
-# Apply not-yet-upstream-released patches
-RUN mkdir -p /tmp/install_deps/patches/
-COPY hack/patches/* /tmp/install_deps/patches/
-COPY hack/apply_patches.sh /tmp/install_deps/
-
 COPY ./coreapi-httpd.conf /etc/httpd/conf.d/
 
 ENTRYPOINT ["/usr/bin/coreapi-server.sh"]
@@ -40,6 +34,3 @@ COPY .git/ /tmp/.git
 RUN cd /tmp/.git &&\
     git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD | tee /etc/coreapi-release &&\
     rm -rf /tmp/.git/
-
-# Apply patches here to be also able to patch selinon
-RUN cd /tmp/install_deps/ && /tmp/install_deps/apply_patches.sh
