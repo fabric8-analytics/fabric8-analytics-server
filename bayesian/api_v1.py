@@ -32,7 +32,8 @@ from .utils import (get_system_version, retrieve_worker_result,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
-                    retrieve_worker_results, get_next_component_from_graph, set_tags_to_component)
+                    retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
+                    retrieve_bookkeeping)
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -804,6 +805,44 @@ add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>/<
 add_resource_no_matter_slashes(GenerateManifest, '/generate-file')
 add_resource_no_matter_slashes(GetNextComponent, '/get-next-component/<ecosystem>')
 add_resource_no_matter_slashes(SetTagsToComponent, '/set-tags')
+
+
+class BookKeepingAll(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    def get(self):
+        result = retrieve_bookkeeping()
+        return result
+
+
+class BookKeepingEcosystem(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    def get(self, ecosystem):
+        result = retrieve_bookkeeping(ecosystem=ecosystem)
+        return result
+
+
+class BookKeepingEcosystemPackage(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    def get(self, ecosystem, package):
+        result = retrieve_bookkeeping(ecosystem=ecosystem, package=package)
+        return result
+
+
+class BookKeepingEPV(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    def get(self, ecosystem, package, version):
+        result = retrieve_bookkeeping(ecosystem=ecosystem, package=package, version=version)
+        return result
+
+
+add_resource_no_matter_slashes(BookKeepingAll, '/bookkeeping')
+add_resource_no_matter_slashes(BookKeepingEcosystem, '/bookkeeping/<ecosystem>')
+add_resource_no_matter_slashes(BookKeepingEcosystemPackage, '/bookkeeping/<ecosystem>/<package>')
+add_resource_no_matter_slashes(BookKeepingEPV, '/bookkeeping/<ecosystem>/<package>/<version>')
 
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
