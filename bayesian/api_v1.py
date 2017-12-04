@@ -289,7 +289,7 @@ class ComponentAnalyses(ResourceWithSchema):
         else:
             server_create_analysis(ecosystem, package, version, user_profile=decoded,
                                    api_flow=False, force=False, force_graph_sync=True)
-            msg = "No data found for {ecosystem} Package " \
+            msg = "No data found for {ecosystem} package " \
                   "{package}/{version}".format(ecosystem=ecosystem,
                                                package=package, version=version)
             raise HTTPError(404, msg)

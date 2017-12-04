@@ -1,7 +1,7 @@
 FROM registry.centos.org/centos/centos:7
-MAINTAINER Pavel Odvody <podvody@redhat.com>
+
 ENV LANG=en_US.UTF-8 \
-    F8A_WORKER_VERSION=d0e7889
+    F8A_WORKER_VERSION=9e0ac13
 
 RUN useradd -d /coreapi coreapi
 # python3-pycurl is needed for Amazon SQS (boto lib), we need CentOS' rpm - installing it from pip results in NSS errors
@@ -15,12 +15,6 @@ RUN pushd /coreapi && \
     pip3 install -r requirements.txt && \
     rm requirements.txt && \
     popd
-
-
-# Apply not-yet-upstream-released patches
-RUN mkdir -p /tmp/install_deps/patches/
-COPY hack/patches/* /tmp/install_deps/patches/
-COPY hack/apply_patches.sh /tmp/install_deps/
 
 COPY ./coreapi-httpd.conf /etc/httpd/conf.d/
 
@@ -40,6 +34,3 @@ COPY .git/ /tmp/.git
 RUN cd /tmp/.git &&\
     git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD | tee /etc/coreapi-release &&\
     rm -rf /tmp/.git/
-
-# Apply patches here to be also able to patch selinon
-RUN cd /tmp/install_deps/ && /tmp/install_deps/apply_patches.sh
