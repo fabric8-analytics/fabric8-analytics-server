@@ -708,6 +708,127 @@ class StackAnalyses(ResourceWithSchema):
     def get():
         raise HTTPError(404, "Unsupported API endpoint")
 
+class StackAnalyzer(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        decoded = decode_token()
+        github_url = request.form.get("github_url")
+        if github_url is not None:
+            files = GithubRead().get_files_github_url(github_url)
+        else:
+            files = request.files.getlist('manifest[]')
+            filepaths = request.values.getlist('filePath[]')
+            # At least one manifest file path should be present to analyse a stack
+            if not filepaths:
+                raise HTTPError(400, error="Error processing request. "
+                                           "Please send a valid manifest file path.")
+            if len(files) != len(filepaths):
+                raise HTTPError(400, error="Error processing request. "
+                                           "Number of manifests and filePaths must be the same.")
+
+        # At least one manifest file should be present to analyse a stack
+        if not files:
+            raise HTTPError(400, error="Error processing request. "
+                                       "Please upload a valid manifest files.")
+
+        dt = datetime.datetime.now()
+        origin = request.form.get('origin')
+        request_id = uuid.uuid4().hex
+        manifests = []
+        ecosystem = None
+        for index, manifest_file_raw in enumerate(files):
+            if github_url is not None:
+                filename = manifest_file_raw.get('filename', None)
+                filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
+            else:
+                filename = manifest_file_raw.filename
+                filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
+
+            # check if manifest files with given name are supported
+            manifest_descriptor = get_manifest_descriptor_by_filename(filename)
+            if manifest_descriptor is None:
+                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
+                    filename=filename))
+
+            # In memory file to be passed as an API parameter to /appstack
+            manifest_file = StringIO(content)
+
+            # Check if the manifest is valid
+            if not manifest_descriptor.validate(content):
+                raise HTTPError(400, error="Error processing request. Please upload a valid "
+                                           "manifest file '{filename}'".format(filename=filename))
+
+            # appstack API call
+            # Limitation: Currently, appstack can support only package.json
+            #             The following condition is to be reworked
+            appstack_id = ''
+            if 'package.json' in filename:
+                appstack_files = {'packagejson': manifest_file}
+                url = current_app.config["BAYESIAN_ANALYTICS_URL"]
+                endpoint = "{analytics_baseurl}/api/{version}/appstack".format(
+                    analytics_baseurl=url,
+                    version=ANALYTICS_API_VERSION)
+                try:
+                    response = requests.post(endpoint, files=appstack_files)
+                except Exception as exc:
+                    current_app.logger.warn("Analytics query: {}".format(exc))
+                else:
+                    if response.status_code == 200:
+                        resp = response.json()
+                        appstack_id = resp.get('appstack_id', '')
+                    else:
+                        current_app.logger.warn("{status}: {error}".format(
+                            status=response.status_code,
+                            error=response.content))
+
+            # Record the response details for this manifest file
+            manifest = {'filename': filename,
+                        'content': content,
+                        'ecosystem': manifest_descriptor.ecosystem,
+                        'filepath': filepath}
+            if appstack_id != '':
+                manifest['appstack_id'] = appstack_id
+
+            manifests.append(manifest)
+
+        # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies
+        # for a single request
+        try:
+            req = StackAnalysisRequest(
+                id=request_id,
+                submitTime=str(dt),
+                requestJson={'manifest': manifests},
+                origin=origin
+            )
+            rdb.session.add(req)
+            rdb.session.commit()
+        except SQLAlchemyError as e:
+            current_app.logger.exception('Failed to create new analysis request')
+            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
+
+        try:
+            data = {'api_name': 'stack_analyses',
+                    'user_email': decoded.get('email', 'bayesian@redhat.com'),
+                    'user_profile': decoded}
+            args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
+            server_run_flow('stackAnalyzerFlow', args)
+        except Exception as exc:
+            # Just log the exception here for now
+            current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
+                                         .format(id=request_id))
+            raise HTTPError(500, ("Error processing request {t}. manifest files "
+                                  "could not be processed"
+                                  .format(t=request_id))) from exc
+
+        return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
+
+    @staticmethod
+    def get():
+        raise HTTPError(404, "Unsupported API endpoint")
 
 class PublishedSchemas(ResourceWithSchema):
     API_COLLECTION = 'api'
@@ -790,6 +911,7 @@ add_resource_no_matter_slashes(ComponentAnalyses,
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
 add_resource_no_matter_slashes(StackAnalysesGET, '/stack-analyses/<external_request_id>')
+add_resource_no_matter_slashes(StackAnalyzer, '/stack-analyzer')
 add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(UserIntent, '/user-intent')
 add_resource_no_matter_slashes(UserIntentGET, '/user-intent/<user>/<ecosystem>')
