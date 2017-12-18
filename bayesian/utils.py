@@ -31,6 +31,9 @@ gremlin_url = "http://{host}:{port}".format(
     host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
     port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
 
+companion_reason_statement = "along with the provided input stack. " \
+    "Do you want to consider adding this Package?"
+
 
 def get_recent_analyses(limit=100):
     return rdb.session.query(Analysis).order_by(
@@ -624,15 +627,17 @@ class RecommendationReason:
 
     def _companion_reason(self, manifest_response):
         """
-        It will populate the simple reason for each companion package
+        It will populate the simple reason for each companion package.
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for each companion package
         """
         for pkg in manifest_response[0].get("recommendation", {}).get("companion", []):
             name = pkg.get("name")
-            stack_count = str(pkg.get("cooccurrence_probability"))
-            sentence = "Package {} appears in {} different stacks along with the provided input " \
-                       "stack. Do you want to consider adding this Package?"\
-                .format(name, stack_count)
-            pkg["reason"] = sentence
+            stack_confidence = str(pkg.get("cooccurrence_probability"))
+            stack_count = str(pkg.get("cooccurrence_count"))
+            count_sentence = "Package {} appears in {} different stacks".format(
+                name, stack_count)
+            count_sentence += companion_reason_statement
+            pkg["confidence"] = "{} %".format(stack_confidence)
+            pkg["reason"] = count_sentence
         return manifest_response
