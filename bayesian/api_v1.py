@@ -413,7 +413,82 @@ class StackAnalyzerGET(ResourceWithSchema):
                 raise HTTPError(500, 'Invalid manifest file(s) received. '
                                      'Please submit valid manifest files for stack analysis')
 
-        return {'analyzer_data': analyzer['task_result']}
+        analyzer_result = retrieve_worker_result(rdb, external_request_id, "StackAnalyzerTask")
+        stack_result = analyzer_result
+        reco_result = analyzer_result
+
+        if stack_result is None and reco_result is None:
+            raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(
+                t=external_request_id))
+
+        if stack_result == -1 and reco_result == -1:
+            raise HTTPError(404, "Worker result for request ID '{t}' doesn't exist yet".format(
+                t=external_request_id))
+
+        started_at = None
+        finished_at = None
+        version = None
+        release = None
+        manifest_response = []
+        stacks = []
+        recommendations = []
+
+        if stack_result is not None and 'task_result' in stack_result:
+            started_at = stack_result.get("task_result", {}).get("_audit", {}).get("started_at",
+                                                                                   started_at)
+            finished_at = stack_result.get("task_result", {}).get("_audit", {}).get("ended_at",
+                                                                                    finished_at)
+            version = stack_result.get("task_result", {}).get("_audit", {}).get("version",
+                                                                                version)
+            release = stack_result.get("task_result", {}).get("_release", release)
+            stacks = stack_result.get("task_result", {}).get("stack_data", stacks)
+
+        if reco_result is not None and 'task_result' in reco_result:
+            recommendations = reco_result.get("task_result", {}).get("recommendations",
+                                                                     recommendations)
+
+        if not stacks:
+            return {
+                "version": version,
+                "release": release,
+                "started_at": started_at,
+                "finished_at": finished_at,
+                "request_id": external_request_id,
+                "result": manifest_response
+            }
+        for stack in stacks:
+            user_stack_deps = stack.get('user_stack_info', {}).get('analyzed_dependencies', [])
+            stack_recommendation = get_item_from_list_by_key_value(recommendations,
+                                                                   "manifest_file_path",
+                                                                   stack.get(
+                                                                       "manifest_file_path"))
+            for dep in user_stack_deps:
+                # Adding topics from the recommendations
+                if stack_recommendation is not None:
+                    dep["topic_list"] = stack_recommendation.get("input_stack_topics",
+                                                                 {}).get(dep.get('name'), [])
+                else:
+                    dep["topic_list"] = []
+
+        for stack in stacks:
+            stack["recommendation"] = get_item_from_list_by_key_value(
+                recommendations,
+                "manifest_file_path",
+                stack.get("manifest_file_path"))
+            manifest_response.append(stack)
+
+        # Populate reason for alternate and companion recommendation
+        if manifest_response[0].get('recommendation'):
+            manifest_response = RecommendationReason().add_reco_reason(manifest_response)
+
+        return {
+            "version": version,
+            "release": release,
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "request_id": external_request_id,
+            "result": manifest_response
+        }
 
 
 @api_v1.route('/stack-analyzer/<external_request_id>/_debug')
