@@ -41,7 +41,7 @@ def get_recent_analyses(limit=100):
 
 
 def server_run_flow(flow_name, flow_args):
-    """Run a flow
+    """Run a flow.
 
     :param flow_name: name of flow to be run as stated in YAML config file
     :param flow_args: arguments for the flow
@@ -82,7 +82,7 @@ def server_create_component_bookkeeping(ecosystem, name, version, user_profile):
 
 def server_create_analysis(ecosystem, package, version, user_profile,
                            api_flow=True, force=False, force_graph_sync=False):
-    """Create bayesianApiFlow handling analyses for specified EPV
+    """Create bayesianApiFlow handling analyses for specified EPV.
 
     :param ecosystem: ecosystem for which the flow should be run
     :param package: package for which should be flow run
@@ -110,7 +110,7 @@ def server_create_analysis(ecosystem, package, version, user_profile,
 
 
 def do_projection(fields, analysis):
-    """Return filtered dictionary containing model data"""
+    """Return filtered dictionary containing model data."""
     if fields is None or analysis is None:
         try:
             return analysis.to_dict()
@@ -127,7 +127,7 @@ def do_projection(fields, analysis):
 
 
 def has_field(analysis, fields):
-    """Return true or false if given field exists in analysis"""
+    """Return true or false if given field exists in analysis."""
     for field in fields:
         try:
             analysis = analysis[field]
@@ -137,7 +137,7 @@ def has_field(analysis, fields):
 
 
 def add_field(analysis, field, ret):
-    """Adds field from analysis into final dictionary"""
+    """Add field from analysis into final dictionary."""
     for f in field:
         analysis = analysis[f]
         prev_ret = ret
@@ -284,7 +284,7 @@ def get_analyses_from_graph(ecosystem, package, version):
 
 
 def get_latest_analysis_for(ecosystem, package, version):
-    """Note: has to be called inside flask request context"""
+    """Note: has to be called inside flask request context."""
     if ecosystem == 'maven':
         package = MavenCoordinates.normalize_str(package)
     try:
@@ -301,7 +301,7 @@ def get_latest_analysis_for(ecosystem, package, version):
 
 
 def get_latest_analysis_by_hash(algorithm, artifact_hash, projection=None):
-    """Note: has to be called inside flask request context"""
+    """Note: has to be called inside flask request context."""
     if algorithm not in ['sha1', 'sha256', 'md5']:
         return None
 
@@ -334,8 +334,9 @@ def get_system_version():
 
 
 def build_nested_schema_dict(schema_dict):
-    """Accepts a dictionary in form of {SchemaRef(): schema} and returns
-    dictionary in form of {schema_name: {schema_version: schema}}
+    """Accept a dictionary in form of {SchemaRef(): schema}.
+
+    Return a dictionary in form of {schema_name: {schema_version: schema}}
     """
     result = {}
     for schema_ref, schema in schema_dict.items():
@@ -413,10 +414,10 @@ def set_tags_to_component(ecosystem, package, tags, user_id, company):
 
 
 class JSONEncoderWithExtraTypes(JSONEncoder):
-    """JSON Encoder that supports additional types:
+    """JSON Encoder that supports additional types.
 
-        - date/time objects
-        - arbitrary non-mapping iterables
+    - date/time objects
+    - arbitrary non-mapping iterables
     """
 
     def default(self, obj):
@@ -432,7 +433,7 @@ class JSONEncoderWithExtraTypes(JSONEncoder):
 
 
 def fetch_public_key(app):
-    """ Gets public key and caches it on the app object for future use """
+    """Get public key and caches it on the app object for future use."""
     # TODO: even though saving the key on the app object is not very nice,
     #  it's actually safe - the worst thing that can happen is that we will
     #  fetch and save the same value on the app object multiple times
@@ -572,13 +573,11 @@ class GithubRead:
 
 
 class RecommendationReason:
-    """
-    This is used to provide the reason for alternate, and companion package recommendations.
-    """
+    """Provide the reason for alternate, and companion package recommendations."""
 
     def add_reco_reason(self, manifest_response):
-        """
-        It will populate english sentence for the recommendations.
+        """Populate a English sentence for the recommendations.
+
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons
         """
@@ -592,8 +591,8 @@ class RecommendationReason:
         return manifest_response
 
     def _alternate_reason(self, manifest_response):
-        """
-        It will populate simple reason for each alternate package recommendation
+        """Populate simple reason for each alternate package recommendation.
+
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for alternate package
         """
@@ -610,8 +609,8 @@ class RecommendationReason:
         return manifest_response
 
     def _check_usage_outlier(self, pkg_name, manifest_response):
-        """
-        It will check usage outlier a package mentioned by count index
+        """Check usage outlier a package mentioned by count index.
+
         :param pkg_name: Name of the possible usage-outlier package
         :param manifest_response: dict. object having all recommendation elements
         :return: True or False for usage outlier of input package at count index position
@@ -626,18 +625,25 @@ class RecommendationReason:
         return test
 
     def _companion_reason(self, manifest_response):
-        """
-        It will populate the simple reason for each companion package.
+        """Populate the simple reason for each companion package.
+
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for each companion package
         """
+        count_sentence = None
         for pkg in manifest_response[0].get("recommendation", {}).get("companion", []):
             name = pkg.get("name")
-            stack_confidence = str(pkg.get("cooccurrence_probability"))
-            stack_count = str(pkg.get("cooccurrence_count"))
-            count_sentence = "Package {} appears in {} different stacks".format(
-                name, stack_count)
-            count_sentence += companion_reason_statement
-            pkg["confidence"] = "{} %".format(stack_confidence)
+            stack_confidence = pkg.get("cooccurrence_probability")
+            stack_count = pkg.get("cooccurrence_count")
+            # 0% confidence is as good as not showing it on the UI.
+            if stack_confidence == 0:
+                stack_confidence = None
+            # If stack_count is 0 or None, then do not generate the reason.
+            if stack_count:
+                count_sentence = "Package {} appears in {} different stacks".format(
+                    name, str(stack_count))
+                count_sentence += companion_reason_statement
+            pkg["confidence_reason"] = stack_confidence
+            # Count reason
             pkg["reason"] = count_sentence
         return manifest_response
