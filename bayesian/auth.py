@@ -18,6 +18,7 @@ jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
 
 
 def decode_token():
+    """Decode the authorization token read from the request header."""
     token = request.headers.get('Authorization')
     if token is None:
         return {}
@@ -45,6 +46,7 @@ def decode_token():
 
 
 def login_required(view):
+    """Check if the login is required and if the user can be authorized."""
     # NOTE: the actual authentication 401 failures are commented out for now and will be
     # uncommented as soon as we know everything works fine; right now this is purely for
     # being able to tail logs and see if stuff is going fine
@@ -102,7 +104,9 @@ permissions_roles = rdb.Table('permissions_roles',
 
 
 class LazyRowBasedPermission(PrincipalPermission):
-    """This class represents a lazily-checked row-based permission. You'll need to create
+    """This class represents a lazily-checked row-based permission.
+
+    You'll need to create
     a subclass for specific checks. E.g. you may want to create a subclass that will
     express permission based on who created DB object Foo:
 
@@ -163,8 +167,11 @@ class LazyRowBasedPermission(PrincipalPermission):
 
 
 def _check_one_perm(perm, has_perms):
-    """Helper function that evaluates one permission (be it PermEnum instance or
-    LazyRowBasedPermission instance) and returns True/False."""
+    """Check the permission.
+
+    Helper function that evaluates one permission (be it PermEnum instance or
+    LazyRowBasedPermission instance) and returns True/False.
+    """
     if isinstance(perm, enum.Enum):
         return perm.value in has_perms
     elif isinstance(perm, LazyRowBasedPermission):
@@ -175,6 +182,7 @@ def _check_one_perm(perm, has_perms):
 
 def check_permissions_and(needs_perms, has_perms):
     """Checks if all permissions from list `needs_perms` are satisfied.
+
     Returns `None` if check succeeds, raises `HTTPError` with 403 code otherwise (logical "and").
 
     Members of the `needs_perms` list can be:
@@ -197,6 +205,7 @@ def check_permissions_and(needs_perms, has_perms):
 
 def check_permissions_or(needs_perms, has_perms):
     """Checks if at least one permission from list `needs_perms` is satisfied.
+
     Returns `None` if check succeeds, raises `HTTPError` with 403 code otherwise (logical "or").
 
     Members of the `needs_perms` list follow the same rules as for `check_permissions_and`,

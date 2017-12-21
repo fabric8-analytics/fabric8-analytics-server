@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
+
+"""Project setup file for the analytics server project."""
+
 from setuptools import setup, find_packages
 
 
 def get_requirements():
+    """Parse all packages mentioned in the 'requirements.txt' file."""
     with open('requirements.txt') as fd:
         lines = fd.read().splitlines()
         reqs, dep_links = [], []

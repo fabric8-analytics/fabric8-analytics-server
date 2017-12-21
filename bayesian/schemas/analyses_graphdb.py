@@ -1,4 +1,4 @@
-"""JSL schema for component analysis endpoint that interfaces with graphdb"""
+"""JSL schema for component analysis endpoint that interfaces with graphdb."""
 import jsl
 
 from f8a_worker.schemas import JSLSchemaBase, added_in, removed_in

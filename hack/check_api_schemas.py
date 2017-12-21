@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check API endpoints of local instance are schema compliant"""
+"""Check API endpoints of local instance are schema compliant."""
 import requests
 import json
 import jsonschema
@@ -19,6 +19,7 @@ def _get_analysis(api_url, ecosystem, component, version):
 
 
 def get_analysis(analysis_info):
+    """Retrieve the analysis via API."""
     return _get_analysis(_LOCAL_API_ENDPOINT,
                          analysis_info["ecosystem"],
                          analysis_info["package"],
