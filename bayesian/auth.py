@@ -46,7 +46,7 @@ def decode_token():
 
 
 def login_required(view):
-    """Check if the login is required and if the used can be authorized."""
+    """Check if the login is required and if the user can be authorized."""
     # NOTE: the actual authentication 401 failures are commented out for now and will be
     # uncommented as soon as we know everything works fine; right now this is purely for
     # being able to tail logs and see if stuff is going fine
