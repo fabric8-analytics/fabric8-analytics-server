@@ -1,4 +1,4 @@
-"""initial revision
+"""Initial revision.
 
 Revision ID: 0ff7fe2828a5
 Revises:
@@ -17,8 +17,10 @@ import sqlalchemy as sa
 
 
 def upgrade():
+    """Upgrade the database to a newer revision."""
     pass
 
 
 def downgrade():
+    """Downgrade the database to an older revision."""
     pass
