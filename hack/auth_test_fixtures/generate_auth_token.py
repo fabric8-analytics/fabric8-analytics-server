@@ -1,7 +1,7 @@
-'''
-Script to generate an authentication token to be passed as header
-with requests to Bayesian API
-'''
+"""Script to generate an authentication token.
+
+This tokes is to be passed as header with requests to Bayesian API.
+"""
 
 import jwt
 import datetime

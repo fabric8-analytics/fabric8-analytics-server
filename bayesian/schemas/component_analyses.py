@@ -1,4 +1,4 @@
-"""JSL schema for component analysis endpoint"""
+"""JSL schema for component analysis endpoint."""
 import jsl
 
 from f8a_worker.schemas import JSLSchemaBaseWithRelease

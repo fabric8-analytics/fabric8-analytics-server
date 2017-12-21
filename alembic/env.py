@@ -1,3 +1,4 @@
+"""Script to run the database migrations, online or offline."""
 from __future__ import with_statement
 
 import os
