@@ -22,22 +22,18 @@ class DependencyFinder():
             raise FatalTaskError("Dependencies could not be resolved: '{}'" .format(deps)) from exc
         return [{"package": k, "version": v} for k, v in versions.items()]
 
-    def execute(self, arguments):
-        self._strict_assert(arguments.get('data'))
-        self._strict_assert(arguments.get('external_request_id'))
-
-        db = self.storage.session
+    def execute(self, arguments, db):
         try:
             results = db.query(StackAnalysisRequest)\
                         .filter(StackAnalysisRequest.id == arguments.get('external_request_id'))\
                         .first()
         except SQLAlchemyError:
-            db.rollback()
-            raise
+            raise ('Could not find data for request id = %s' % arguments.get('external_request_id'))
 
         manifests = []
         if results is not None:
             row = results.to_dict()
+            print ('RESULT: %r' % row)
             request_json = row.get("requestJson", {})
             manifests = request_json.get('manifest', [])
 
@@ -48,15 +44,20 @@ class DependencyFinder():
                 with open(os.path.join(temp_path, manifest['filename']), 'a+') as fd:
                     fd.write(manifest['content'])
 
+                with open(os.path.join(temp_path, manifest['filename']), 'r') as f1:
+                    print (f1.read())
+
                 # mercator-go does not work if there is no package.json
                 if 'shrinkwrap' in manifest['filename'].lower():
                     with open(os.path.join(temp_path, 'package.json'), 'w') as f:
                         f.write(json.dumps({}))
 
                 # Create instance manually since stack analysis is not handled by dispatcher
-                subtask = MercatorTask.create_test_instance(task_name=self.task_name)
-                arguments['ecosystem'] = manifest['ecosystem']
-                out = subtask.run_mercator(arguments, temp_path)
+                subtask = MercatorTask.create_test_instance(task_name='metadata')
+                arguments['ecosystem'] = 'maven' #manifest['ecosystem']
+                print (temp_path)
+                out = subtask.run_mercator(arguments, temp_path, resolve_poms=False)
+                print (out)
 
             if not out["details"]:
                 raise FatalTaskError("No metadata found processing manifest file '{}'"
