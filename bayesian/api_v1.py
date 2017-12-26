@@ -25,6 +25,8 @@ from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
 from .dependency_finder import DependencyFinder
+from .stack_aggregator import StackAggregator
+from .recommender import RecommendationTask
 from .auth import login_required, decode_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
@@ -807,7 +809,6 @@ class Analytics(ResourceWithSchema):
                                        "Please upload a valid manifest files.")
 
         dt = datetime.datetime.now()
-        origin = request.form.get('origin')
         request_id = uuid.uuid4().hex
         manifests = []
         ecosystem = None
@@ -835,36 +836,11 @@ class Analytics(ResourceWithSchema):
                 raise HTTPError(400, error="Error processing request. Please upload a valid "
                                            "manifest file '{filename}'".format(filename=filename))
 
-            # appstack API call
-            # Limitation: Currently, appstack can support only package.json
-            #             The following condition is to be reworked
-            appstack_id = ''
-            if 'package.json' in filename:
-                appstack_files = {'packagejson': manifest_file}
-                url = current_app.config["BAYESIAN_ANALYTICS_URL"]
-                endpoint = "{analytics_baseurl}/api/{version}/appstack".format(
-                    analytics_baseurl=url,
-                    version=ANALYTICS_API_VERSION)
-                try:
-                    response = requests.post(endpoint, files=appstack_files)
-                except Exception as exc:
-                    current_app.logger.warn("Analytics query: {}".format(exc))
-                else:
-                    if response.status_code == 200:
-                        resp = response.json()
-                        appstack_id = resp.get('appstack_id', '')
-                    else:
-                        current_app.logger.warn("{status}: {error}".format(
-                            status=response.status_code,
-                            error=response.content))
-
             # Record the response details for this manifest file
             manifest = {'filename': filename,
                         'content': content,
                         'ecosystem': manifest_descriptor.ecosystem,
                         'filepath': filepath}
-            if appstack_id != '':
-                manifest['appstack_id'] = appstack_id
 
             manifests.append(manifest)
 
@@ -883,12 +859,22 @@ class Analytics(ResourceWithSchema):
                 'user_email': decoded.get('email', 'bayesian@redhat.com'),
                 'user_profile': decoded}
         args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
-        print ('%r' % args)
 
         try:
             d =  DependencyFinder()
-            out = d.execute(args, rdb.session)
-            current_app.logger.info('OUTPUT of GRAPH AGGREGATOR: %r' % out)
+            deps = d.execute(args, rdb.session)
+            deps['external_request_id'] = request_id
+            current_app.logger.info('OUTPUT of GRAPH AGGREGATOR: %r' % deps)
+
+            '''
+            s = StackAggregator()
+            s_result = s.execute(deps)
+            current_app.logger.info('OUTPUT of STACK AGGREGATOR: %r' % s_result)
+
+            r = RecommendationTask()
+            r_result = r.execute(deps)
+            current_app.logger.info('OUTPUT of RECOMMENDER: %r' % r_result)
+            '''
         except Exception as exc:
             print (exc)
             raise HTTPError(500, ("Could not process {t}. manifest files "

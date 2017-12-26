@@ -33,7 +33,6 @@ class DependencyFinder():
         manifests = []
         if results is not None:
             row = results.to_dict()
-            print ('RESULT: %r' % row)
             request_json = row.get("requestJson", {})
             manifests = request_json.get('manifest', [])
 
@@ -44,9 +43,6 @@ class DependencyFinder():
                 with open(os.path.join(temp_path, manifest['filename']), 'a+') as fd:
                     fd.write(manifest['content'])
 
-                with open(os.path.join(temp_path, manifest['filename']), 'r') as f1:
-                    print (f1.read())
-
                 # mercator-go does not work if there is no package.json
                 if 'shrinkwrap' in manifest['filename'].lower():
                     with open(os.path.join(temp_path, 'package.json'), 'w') as f:
@@ -55,9 +51,7 @@ class DependencyFinder():
                 # Create instance manually since stack analysis is not handled by dispatcher
                 subtask = MercatorTask.create_test_instance(task_name='metadata')
                 arguments['ecosystem'] = 'maven' #manifest['ecosystem']
-                print (temp_path)
                 out = subtask.run_mercator(arguments, temp_path, resolve_poms=False)
-                print (out)
 
             if not out["details"]:
                 raise FatalTaskError("No metadata found processing manifest file '{}'"
