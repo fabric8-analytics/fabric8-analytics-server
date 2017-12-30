@@ -15,6 +15,7 @@ from flask_cors import CORS
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 from selinon import StoragePool
+from requests_futures.sessions import FuturesSession
 
 from f8a_worker.models import Ecosystem, WorkerResult, StackAnalysisRequest
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
@@ -866,6 +867,14 @@ class Analytics(ResourceWithSchema):
             deps['external_request_id'] = request_id
             current_app.logger.info('OUTPUT of GRAPH AGGREGATOR: %r' % deps)
 
+            session = FuturesSession()
+            api_url='http://f8a-server-backbone-miteshpatel-greenfield-test.dev.rdu2c.fabric8.io/api/v1'
+
+            sa_resp = session.post('{}/stack_aggregator'.format(api_url), json=deps)
+            r_resp = session.post('{}/recommender'.format(api_url), json=deps)
+
+            print (sa_resp)
+            print (r_resp)
             '''
             s = StackAggregator()
             s_result = s.execute(deps)
