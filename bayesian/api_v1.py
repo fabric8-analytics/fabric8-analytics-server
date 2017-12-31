@@ -868,13 +868,11 @@ class Analytics(ResourceWithSchema):
             current_app.logger.info('OUTPUT of GRAPH AGGREGATOR: %r' % deps)
 
             session = FuturesSession()
-            api_url='http://f8a-server-backbone-miteshpatel-greenfield-test.dev.rdu2c.fabric8.io/api/v1'
+            api_url=current_app.config['F8_API_BACKBONE_HOST']
 
             sa_resp = session.post('{}/stack_aggregator'.format(api_url), json=deps)
             r_resp = session.post('{}/recommender'.format(api_url), json=deps)
 
-            print (sa_resp)
-            print (r_resp)
             '''
             s = StackAggregator()
             s_result = s.execute(deps)
