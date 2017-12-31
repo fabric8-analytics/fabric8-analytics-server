@@ -862,16 +862,25 @@ class Analytics(ResourceWithSchema):
         args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
 
         try:
+            current_app.logger.info('PERF|API|START|DEPS_FINDER')
             d =  DependencyFinder()
             deps = d.execute(args, rdb.session)
             deps['external_request_id'] = request_id
-            current_app.logger.info('OUTPUT of GRAPH AGGREGATOR: %r' % deps)
+            current_app.logger.info('PERF|API|END|DEPS_FINDER')
 
-            session = FuturesSession()
+            worker_count = int(current_app.config['FUTURES_SESSION_WORKER_COUNT'])
+            session = FuturesSession(max_workers=worker_count)
+
             api_url=current_app.config['F8_API_BACKBONE_HOST']
 
-            sa_resp = session.post('{}/stack_aggregator'.format(api_url), json=deps)
-            r_resp = session.post('{}/recommender'.format(api_url), json=deps)
+            # Two async calls for triggering analytics and stats retrieval for the request
+            current_app.logger.info('PERF|API|START|STACK_AGGREGATOR_CALL')
+            session.post('{}/stack_aggregator'.format(api_url), json=deps)
+            current_app.logger.info('PERF|API|END|STACK_AGGREGATOR_CALL')
+
+            current_app.logger.info('PERF|API|START|RECOMMENDER_CALL')
+            session.post('{}/recommender'.format(api_url), json=deps)
+            current_app.logger.info('PERF|API|END|RECOMMENDER_CALL')
 
             '''
             s = StackAggregator()
