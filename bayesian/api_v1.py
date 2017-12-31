@@ -878,11 +878,11 @@ class Analytics(ResourceWithSchema):
 
             # Two async calls for triggering analytics and stats retrieval for the request
             current_app.logger.info('PERF|API|START|STACK_AGGREGATOR_CALL')
-            session.post('{}/stack_aggregator'.format(api_url), json=deps)
+            session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
             current_app.logger.info('PERF|API|END|STACK_AGGREGATOR_CALL')
 
             current_app.logger.info('PERF|API|START|RECOMMENDER_CALL')
-            session.post('{}/recommender'.format(api_url), json=deps)
+            session.post('{}/api/v1/recommender'.format(api_url), json=deps)
             current_app.logger.info('PERF|API|END|RECOMMENDER_CALL')
 
             '''
