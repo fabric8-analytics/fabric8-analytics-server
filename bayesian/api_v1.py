@@ -873,6 +873,9 @@ class Analytics(ResourceWithSchema):
 
             api_url=current_app.config['F8_API_BACKBONE_HOST']
 
+            current_app.logger.info('URL: {}/stack_aggregator'.format(api_url))
+            current_app.logger.info('URL: {}/recommender'.format(api_url))
+
             # Two async calls for triggering analytics and stats retrieval for the request
             current_app.logger.info('PERF|API|START|STACK_AGGREGATOR_CALL')
             session.post('{}/stack_aggregator'.format(api_url), json=deps)
