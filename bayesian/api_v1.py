@@ -785,7 +785,7 @@ class GenerateManifest(Resource):
             )
 
 class Analytics(ResourceWithSchema):
-    method_decorators = [login_required]
+    #method_decorators = [login_required]
 
     @staticmethod
     def post():
@@ -862,11 +862,11 @@ class Analytics(ResourceWithSchema):
         args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
 
         try:
-            current_app.logger.info('PERF|API|START|DEPS_FINDER')
+            current_app.logger.info('PERF|%s|API|START|DEPS_FINDER' % request_id)
             d =  DependencyFinder()
             deps = d.execute(args, rdb.session)
             deps['external_request_id'] = request_id
-            current_app.logger.info('PERF|API|END|DEPS_FINDER')
+            current_app.logger.info('PERF|%s|API|END|DEPS_FINDER' % request_id)
 
             worker_count = int(current_app.config['FUTURES_SESSION_WORKER_COUNT'])
             session = FuturesSession(max_workers=worker_count)
@@ -877,13 +877,17 @@ class Analytics(ResourceWithSchema):
             current_app.logger.info('URL: {}/recommender'.format(api_url))
 
             # Two async calls for triggering analytics and stats retrieval for the request
-            current_app.logger.info('PERF|API|START|STACK_AGGREGATOR_CALL')
+            current_app.logger.info('PERF|%s|API|START|STACK_AGGREGATOR_CALL' % request_id)
             session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
-            current_app.logger.info('PERF|API|END|STACK_AGGREGATOR_CALL')
+            # resp = requests.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
+            # current_app.logger.info('%d' % resp.status_code)
+            # if resp.status_code == 200:
+            #     current_app.logger.info('%r' % resp.json())
+            current_app.logger.info('PERF|%s|API|END|STACK_AGGREGATOR_CALL' % request_id)
 
-            current_app.logger.info('PERF|API|START|RECOMMENDER_CALL')
+            current_app.logger.info('PERF|%s|API|START|RECOMMENDER_CALL' % request_id)
             session.post('{}/api/v1/recommender'.format(api_url), json=deps)
-            current_app.logger.info('PERF|API|END|RECOMMENDER_CALL')
+            current_app.logger.info('PERF|%s|API|END|RECOMMENDER_CALL' % request_id)
 
             '''
             s = StackAggregator()
