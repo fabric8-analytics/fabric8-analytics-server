@@ -5,6 +5,7 @@ import json
 import requests
 import re
 
+from time import sleep
 from io import StringIO
 
 import botocore
@@ -58,6 +59,8 @@ original_handle_error = rest_api_v1.handle_error
 
 ANALYTICS_API_VERSION = "v1.0"
 
+worker_count = int(current_app.config['FUTURES_SESSION_WORKER_COUNT'])
+_session = FuturesSession(max_workers=worker_count)
 
 # see <dir>.exceptions.HTTPError docstring
 def handle_http_error(e):
@@ -784,8 +787,11 @@ class GenerateManifest(Resource):
                 status=400
             )
 
+def bg_cb(sess, resp):
+    return True
+
 class Analytics(ResourceWithSchema):
-    #method_decorators = [login_required]
+    method_decorators = [login_required]
 
     @staticmethod
     def post():
@@ -868,42 +874,16 @@ class Analytics(ResourceWithSchema):
             deps['external_request_id'] = request_id
             current_app.logger.info('PERF|%s|API|END|DEPS_FINDER' % request_id)
 
-            worker_count = int(current_app.config['FUTURES_SESSION_WORKER_COUNT'])
-            session = FuturesSession(max_workers=worker_count)
-
             api_url=current_app.config['F8_API_BACKBONE_HOST']
+            current_app.logger.info('PERF|%s|API|START|STACK_CALL' % request_id)
 
-            current_app.logger.info('URL: {}/stack_aggregator'.format(api_url))
-            current_app.logger.info('URL: {}/recommender'.format(api_url))
-
-            # Two async calls for triggering analytics and stats retrieval for the request
-            current_app.logger.info('PERF|%s|API|START|STACK_AGGREGATOR_CALL' % request_id)
-            session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
-            # resp = requests.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
-            # current_app.logger.info('%d' % resp.status_code)
-            # if resp.status_code == 200:
-            #     current_app.logger.info('%r' % resp.json())
-            current_app.logger.info('PERF|%s|API|END|STACK_AGGREGATOR_CALL' % request_id)
-
-            current_app.logger.info('PERF|%s|API|START|RECOMMENDER_CALL' % request_id)
-            session.post('{}/api/v1/recommender'.format(api_url), json=deps)
-            current_app.logger.info('PERF|%s|API|END|RECOMMENDER_CALL' % request_id)
-
-            '''
-            s = StackAggregator()
-            s_result = s.execute(deps)
-            current_app.logger.info('OUTPUT of STACK AGGREGATOR: %r' % s_result)
-
-            r = RecommendationTask()
-            r_result = r.execute(deps)
-            current_app.logger.info('OUTPUT of RECOMMENDER: %r' % r_result)
-            '''
+            _session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
+            _session.post('{}/api/v1/recommender'.format(api_url), json=deps)
         except Exception as exc:
             print (exc)
-            raise HTTPError(500, ("Could not process {t}. manifest files "
-                                  "could not be processed"
-                                  .format(t=request_id))) from exc
+            raise HTTPError(500, ("Could not process {t}.".format(t=request_id))) from exc
 
+        current_app.logger.info('PERF|%s|API|END|STACK_CALL' % request_id)
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
     @staticmethod
