@@ -5,7 +5,6 @@ import json
 import requests
 import re
 
-from time import sleep
 from io import StringIO
 
 import botocore
@@ -786,9 +785,6 @@ class GenerateManifest(Resource):
                     input_json['ecosystem'])},
                 status=400
             )
-
-def bg_cb(sess, resp):
-    return True
 
 class Analytics(ResourceWithSchema):
     method_decorators = [login_required]
