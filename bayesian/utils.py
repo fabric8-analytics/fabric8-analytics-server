@@ -1,3 +1,7 @@
+"""Various utility functions."""
+
+# TODO split this module into categories (graph DB, analyses etc.)
+
 import datetime
 import json
 import os
@@ -36,6 +40,7 @@ companion_reason_statement = "along with the provided input stack. " \
 
 
 def get_recent_analyses(limit=100):
+    """Get the recent analyses up to the specified limit."""
     return rdb.session.query(Analysis).order_by(
         Analysis.started_at.desc()).limit(limit)
 
@@ -60,6 +65,7 @@ def server_run_flow(flow_name, flow_args):
 
 
 def get_user_email(user_profile):
+    """Get user e-mail address or the default address if user profile does not exist."""
     default_email = 'bayesian@redhat.com'
     if user_profile is not None:
         return user_profile.get('email', default_email)
@@ -68,6 +74,7 @@ def get_user_email(user_profile):
 
 
 def server_create_component_bookkeeping(ecosystem, name, version, user_profile):
+    """Run the component analysis for given ecosystem+package+version."""
     args = {
         'external_request_id': uuid.uuid4().hex,
         'data': {
@@ -146,6 +153,7 @@ def add_field(analysis, field, ret):
 
 
 def generate_recommendation(data, package, version):
+    """Generate recommendation for the package+version."""
     # Template Dict for recommendation
     reco = {
         'recommendation': {
@@ -210,6 +218,7 @@ def generate_recommendation(data, package, version):
 
 
 def search_packages_from_graph(tokens):
+    """Search for the package in the graph database."""
     # TODO query string for actual STAGE/PROD
     # g.V().has('vertex_label','Package').has('tokens','one').has('tokens','two').
     # out('has_version').valueMap('pecosystem', 'pname', 'version')).limit(5)
@@ -249,6 +258,7 @@ def search_packages_from_graph(tokens):
 
 
 def get_analyses_from_graph(ecosystem, package, version):
+    """Read analysis for given package+version from the graph database."""
     qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
               ".as('package').out('has_version').as('version').select('package','version')." \
               "by(valueMap());"
@@ -319,6 +329,10 @@ def get_latest_analysis_by_hash(algorithm, artifact_hash, projection=None):
 
 
 def get_system_version():
+    """Get the actual version of the server.
+
+    It's usually set up from the F8A_SYSTEM_VERSION environment variable.
+    """
     try:
         with open(current_app.config['SYSTEM_VERSION']) as f:
             lines = f.readlines()
@@ -346,6 +360,8 @@ def build_nested_schema_dict(schema_dict):
 
 
 def get_next_component_from_graph(ecosystem, user_id, company):
+    """Read next component from graph database."""
+    # TODO it definitely needs to be refactored
     qstring = ("user = g.V().has('userid','{uid}').tryNext().orElseGet{{graph.addVertex("
                "'vertex_label', 'User', 'userid', '{uid}' {company})}};"
                "g.V(user).as('u').V().has('ecosystem','{e}').has('manual_tagging_required', true)"
@@ -384,6 +400,8 @@ def get_next_component_from_graph(ecosystem, user_id, company):
 
 
 def set_tags_to_component(ecosystem, package, tags, user_id, company):
+    """Set tags to given package stored in the graph database."""
+    # TODO it needs to be refactored
     qstring = ("user = g.V().has('userid','{user_id}').tryNext().orElseGet{{graph.addVertex("
                "'vertex_label', 'User', 'userid', '{user_id}' {company})}};pkg = g.V().has('name'"
                ",'{package}').has('ecosystem','{ecosystem}').next();g.V(pkg).choose("
@@ -420,7 +438,9 @@ class JSONEncoderWithExtraTypes(JSONEncoder):
     - arbitrary non-mapping iterables
     """
 
+    # TODO I already seen similar implementation elsewhere, probably a candidate for a package?
     def default(self, obj):
+        """Implement the custom JSON encoder."""
         try:
             if isinstance(obj, datetime.datetime):
                 return json_serial(obj)
@@ -460,6 +480,7 @@ def fetch_public_key(app):
 
 
 def retrieve_worker_results(rdb, external_request_id):
+    """Retrieve results for all workers from RDB."""
     start = datetime.datetime.now()
     try:
         query = rdb.session.query(WorkerResult) \
@@ -480,6 +501,7 @@ def retrieve_worker_results(rdb, external_request_id):
 
 
 def retrieve_worker_result(rdb, external_request_id, worker):
+    """Retrieve results for selected worker from RDB."""
     start = datetime.datetime.now()
     try:
         query = rdb.session.query(WorkerResult) \
@@ -501,6 +523,7 @@ def retrieve_worker_result(rdb, external_request_id, worker):
 
 
 def get_item_from_list_by_key_value(items, key, value):
+    """Get the item from list containing sequence of dicts."""
     for item in items:
         if item[key] == value:
             return item
@@ -508,6 +531,7 @@ def get_item_from_list_by_key_value(items, key, value):
 
 
 def get_request_count(rdb, external_request_id):
+    """Query number of stack analysis requests for given request id."""
     try:
         return rdb.session.query(StackAnalysisRequest)\
                           .filter(StackAnalysisRequest.id == external_request_id).count()
@@ -517,6 +541,9 @@ def get_request_count(rdb, external_request_id):
 
 
 class GithubRead:
+    """Class with methods to read information about the package from GitHub."""
+
+    # TODO move into its own module
     CLONED_DIR = "/tmp/stack-analyses-repo-folder"
     PREFIX_GIT_URL = "https://github.com/"
     PREFIX_URL = "https://api.github.com/repos/"
@@ -524,6 +551,7 @@ class GithubRead:
     MANIFEST_TYPES = ["pom.xml", "package.json", "requirements.txt"]
 
     def get_manifest_files(self):
+        """Retrieve manifest files from cloned repository."""
         manifest_file_paths = []
         for base, dirs, files in os.walk(self.CLONED_DIR):
             if '.git' in dirs:
@@ -540,6 +568,7 @@ class GithubRead:
         return manifest_file_paths
 
     def get_files_github_url(self, github_url):
+        """Clone the repository from GitHub and retrieve manifest files from it."""
         manifest_data = []
         repo_suffix = parse_gh_repo(github_url)
         try:
@@ -568,6 +597,7 @@ class GithubRead:
         return manifest_data
 
     def del_temp_files(self):
+        """Delete temporary files in the CLONED_DIR repository."""
         if os.path.exists(self.CLONED_DIR):
             shutil.rmtree(self.CLONED_DIR)
 
