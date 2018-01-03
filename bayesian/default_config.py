@@ -1,3 +1,5 @@
+"""Default configuration for all server subsystems and interfaces (databases...)."""
+
 import os
 
 from f8a_worker.utils import json_serial

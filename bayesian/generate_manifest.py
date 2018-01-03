@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
+"""Maven manifest files generator."""
+
 from lxml.etree import SubElement, Element, ElementTree, tostring
 
 
 class PomXMLTemplate:
+    """Maven manifest files generator."""
 
     def __init__(self, json_data):
+        """Initialize the data structure used to generate manifest file and create the manifest."""
         self._data = json_data
         self.root = Element(
             'project',
@@ -16,6 +21,7 @@ class PomXMLTemplate:
         self.create()
 
     def create(self):
+        """Create the manifest file from the JSON data passed to constructor."""
         self._project = self._data.get('project')
         if self._project:
             self._options = self._project.get('options')
@@ -37,6 +43,10 @@ class PomXMLTemplate:
             self.add_dependencies(self._data.get('dependencies'))
 
     def add_framework(self, fw):
+        """Add some framework package into the generated manifest.
+
+        The framework to be added is specified in fw parameter.
+        """
         frameworks = {'springboot': ["org.springframework.boot",
                                      "spring-boot-starter-parent",
                                      self._data.get('version')],
@@ -50,6 +60,7 @@ class PomXMLTemplate:
                 SubElement(self._parent, child).text = data
 
     def add_dependencies(self, dependencies):
+        """Add dependencies into the generated manifest."""
         if dependencies:
             self.dpmanage = SubElement(self.root, "dependencyManagement")
             self.dps = SubElement(self.dpmanage, "dependencies")
@@ -60,5 +71,6 @@ class PomXMLTemplate:
                     SubElement(dp, child).text = data
 
     def xml_string(self):
+        """Generate pretty-printed XML representation of data that should be part of manifest."""
         return tostring(self.root, encoding='utf-8',
                         xml_declaration=True, pretty_print=True)
