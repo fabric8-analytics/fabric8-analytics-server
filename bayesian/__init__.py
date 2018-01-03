@@ -1,3 +1,5 @@
+"""Module with the declaration of web application and its basic endpoints."""
+
 import logging
 import os
 
@@ -16,6 +18,7 @@ from f8a_worker.setup_celery import init_selinon
 
 
 def setup_logging(app):
+    """Set up logger, the log level is read from the environment variable."""
     if not app.debug:
         handler = logging.StreamHandler()
         log_level = os.environ.get('FLASK_LOGGING_LEVEL', logging.getLevelName(logging.WARNING))
@@ -30,6 +33,7 @@ cache = Cache(config={'CACHE_TYPE': 'simple'})
 
 
 def create_app(configfile=None):
+    """Create the web application and define basic endpoints."""
     # do the imports here to not shadow e.g. "import bayesian.frontend.api_v1"
     # by Blueprint imported here
     from .api_v1 import api_v1
