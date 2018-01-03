@@ -155,7 +155,7 @@ parameters:
   displayName: Docker image
   required: true
   name: DOCKER_IMAGE
-  value: "bayesian/bayesian-api"
+  value: "fabric8-analytics/bayesian-api"
 
 - description: Image tag
   displayName: Image tag

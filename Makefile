@@ -1,5 +1,5 @@
 REGISTRY?=registry.devshift.net
-REPOSITORY?=bayesian/bayesian-api
+REPOSITORY?=fabric8-analytics/bayesian-api
 DEFAULT_TAG=latest
 
 .PHONY: all docker-build fast-docker-build test get-image-name get-image-repository docker-build-tests fast-docker-build-tests

@@ -1,4 +1,4 @@
-FROM registry.devshift.net/bayesian/bayesian-api
+FROM registry.devshift.net/fabric8-analytics/bayesian-api
 MAINTAINER Slavek Kabrda <slavek@redhat.com>
 
 RUN pip3 install alembic
