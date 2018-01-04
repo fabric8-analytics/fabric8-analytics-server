@@ -1,3 +1,5 @@
+"""Tests for functions and classes implemented in 'utils' module."""
+
 import datetime
 import pytest
 
@@ -11,6 +13,7 @@ later = now + datetime.timedelta(minutes=10)
 
 @pytest.fixture
 def analyses(app):
+    """Prepare the known set of data used by tests."""
     e1 = Ecosystem(name='npm', backend=EcosystemBackend.npm)
     p1 = Package(ecosystem=e1, name='arrify')
     v1 = Version(package=p1, identifier='1.0.1')
@@ -46,15 +49,17 @@ def analyses(app):
 
 @pytest.mark.usefixtures('rdb')
 class TestDoProjection(object):
+    """Tests for the function 'do_projection' implemented in 'utils' module."""
+
     def test_empty_projection(self, analyses):
-        """In this case no fields should be returned"""
+        """Test that no fields are returned for empty projection."""
         projection = []
         expected = {}
         result = do_projection(projection, analyses[0])
         assert expected == result
 
     def test_simple_projection(self, analyses):
-        """Test simple projection of 2 simple arguments"""
+        """Test simple projection of 2 simple arguments."""
         projection = ['ecosystem', 'package']
         # pypi has order 1
         expected = {'ecosystem': 'npm', 'package': 'arrify'}
@@ -62,14 +67,14 @@ class TestDoProjection(object):
         assert expected == returned
 
     def test_none_projection(self, analyses):
-        """If projection is None original model should be returned"""
+        """Check that original model is returned it projection is None."""
         projection = None
         returned = do_projection(projection, analyses[0])
         expected = analyses[0].to_dict()
         assert expected == returned
 
     def test_nested_projection(self, analyses):
-        """Test whether filtering of nested JSON returns just desired field"""
+        """Test whether filtering of nested JSON returns just desired field."""
         projection = ['analyses.digests']
         expected = {'analyses': {'digests': {'details':
                                              [{'artifact': True, 'sha1':
@@ -78,7 +83,7 @@ class TestDoProjection(object):
         assert expected == result
 
     def test_combined_projection(self, analyses):
-        """Combining simple fields with nested fields"""
+        """Combining simple fields with nested fields."""
         projection = ['analyses.digests', 'analyses.a', 'package']
         expected = {'analyses': {'a': 'b', 'digests': {
             'details': [{'artifact': True, 'sha1': '6be7ae55bae2372c7be490321bbe5ead278bb51b'}]}},
@@ -87,7 +92,7 @@ class TestDoProjection(object):
         assert expected == result
 
     def test_three_level_fields(self, analyses):
-        """Testing third level of nested JSON"""
+        """Testing third level of nested JSON."""
         projection = ['analyses.digests.details', 'audit.audit.audit']
         expected = {'audit': {'audit': {'audit': 'audit'}},
                     'analyses':
