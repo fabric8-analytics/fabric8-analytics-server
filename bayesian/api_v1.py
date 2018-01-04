@@ -4,6 +4,7 @@ import uuid
 import json
 import requests
 import re
+import time
 
 from io import StringIO
 
@@ -58,8 +59,8 @@ original_handle_error = rest_api_v1.handle_error
 
 ANALYTICS_API_VERSION = "v1.0"
 
-worker_count = int(current_app.config['FUTURES_SESSION_WORKER_COUNT'])
-_session = FuturesSession(max_workers=worker_count)
+#worker_count = int(current_app.config['FUTURES_SESSION_WORKER_COUNT'])
+_session = FuturesSession(max_workers=100)
 
 # see <dir>.exceptions.HTTPError docstring
 def handle_http_error(e):
@@ -798,6 +799,10 @@ class Analytics(ResourceWithSchema):
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')
+
+            current_app.logger.info('%r' % files)
+            current_app.logger.info('%r' % filepaths)
+
             # At least one manifest file path should be present to analyse a stack
             if not filepaths:
                 raise HTTPError(400, error="Error processing request. "
@@ -813,6 +818,10 @@ class Analytics(ResourceWithSchema):
 
         dt = datetime.datetime.now()
         request_id = uuid.uuid4().hex
+
+        iso = datetime.datetime.utcnow().isoformat()
+        print('%s|%s|PERF|COREAPI|START|' % request_id, iso)
+
         manifests = []
         ecosystem = None
         for index, manifest_file_raw in enumerate(files):
@@ -864,14 +873,20 @@ class Analytics(ResourceWithSchema):
         args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
 
         try:
-            current_app.logger.info('PERF|%s|API|START|DEPS_FINDER' % request_id)
-            d =  DependencyFinder()
-            deps = d.execute(args, rdb.session)
-            deps['external_request_id'] = request_id
-            current_app.logger.info('PERF|%s|API|END|DEPS_FINDER' % request_id)
-
             api_url=current_app.config['F8_API_BACKBONE_HOST']
             current_app.logger.info('PERF|%s|API|START|STACK_CALL' % request_id)
+
+            #mercator_call_interval = float(os.getenv('MARCATOR_CALL_INTERVAL', '0.1'))
+            #print ('Mercator Call Interval: %d' % mercator_call_interval)
+            #time.sleep(mercator_call_interval)
+
+            #resp = requests.post('http://mercator-api-schoudhu-greenfield-test.dev.rdu2c.fabric8.io/api/v1/mercator', json=args)
+            #if resp.status_code == 200:
+            #deps = resp.json()
+
+            d = DependencyFinder()
+            deps = d.execute(args, rdb.session)
+            deps['external_request_id'] = request_id
 
             _session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
             _session.post('{}/api/v1/recommender'.format(api_url), json=deps)
@@ -886,6 +901,17 @@ class Analytics(ResourceWithSchema):
     def get():
         raise HTTPError(404, "Unsupported API endpoint")
 
+class Mercator(ResourceWithSchema):
+    @staticmethod
+    def post():
+        input_json = request.get_json()
+        current_app.logger.info('INPUT JSON: %r' % input_json)
+
+        d = DependencyFinder()
+        deps = d.execute(input_json, rdb.session)
+        current_app.logger.info('DEPS: %r' % deps)
+        # deps = {'external_request_id': request_id, 'result': [{'status': 'success', 'details': [{'devel_dependencies': ['io.vertx:vertx-web-client ', 'junit:junit 4.12', 'com.jayway.restassured:rest-assured 2.9.0', 'com.jayway.awaitility:awaitility 1.7.0', 'io.vertx:vertx-unit ', 'org.assertj:assertj-core 3.6.2'], 'dependencies': ['io.vertx:vertx-core ', 'io.vertx:vertx-web '], 'declared_licenses': [], 'manifest_file': 'pom.xml', '_resolved': [{'version': '', 'package': 'io.vertx:vertx-core'}, {'version': '', 'package': 'io.vertx:vertx-web'}], 'name': 'Vert.x - HTTP', 'version': '1.0.0-SNAPSHOT', 'homepage': None, 'description': 'Exposes an HTTP API using Vert.x', 'manifest_file_path': '/home/JohnDoe', 'ecosystem': 'maven'}], 'summary': []}]}
+        return deps
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(Analytics, '/analytics')
@@ -901,6 +927,7 @@ add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(UserIntent, '/user-intent')
 add_resource_no_matter_slashes(UserIntentGET, '/user-intent/<user>/<ecosystem>')
 add_resource_no_matter_slashes(MasterTagsGET, '/master-tags/<ecosystem>')
+add_resource_no_matter_slashes(Mercator, '/mercator')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',
                                endpoint='get_schemas_by_collection')

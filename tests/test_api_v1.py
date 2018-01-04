@@ -123,6 +123,7 @@ class TestApiV1Root(object):
             "/api/v1/generate-file",
             "/api/v1/get-next-component/<ecosystem>",
             "/api/v1/master-tags/<ecosystem>",
+            "/api/v1/mercator",
             "/api/v1/schemas",
             "/api/v1/schemas/<collection>",
             "/api/v1/schemas/<collection>/<name>",
