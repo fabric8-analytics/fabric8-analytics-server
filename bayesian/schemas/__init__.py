@@ -1,3 +1,5 @@
+"""JSL schemas for various endpoints (stack analysis, component analysis, ...)."""
+
 from f8a_worker.schemas import BundledDynamicSchemaLibrary
 
 _server_schemas_lib = BundledDynamicSchemaLibrary(__name__)

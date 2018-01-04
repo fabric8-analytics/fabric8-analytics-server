@@ -21,7 +21,11 @@ ROLE_TITLE = jsl.roles.Var({
 
 
 class AnalysisSet(jsl.Document):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options(object):
+        """A container for options."""
+
         definition_id = "analysis_set"
         description = "Set of named component analyses"
 
@@ -44,7 +48,11 @@ class AnalysisSet(jsl.Document):
 
 
 class ComponentAnalysis(JSLSchemaBaseWithRelease):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options(object):
+        """A container for options."""
+
         definition_id = "component_analysis"
         description = "Software component analysis"
 
