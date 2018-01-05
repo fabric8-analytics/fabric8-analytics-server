@@ -21,4 +21,6 @@ exec mod_wsgi-express start-server \
                       --python-eggs /home/coreapi \
                       --include-file /etc/httpd/conf.d/coreapi-httpd.conf \
                       --modules-directory /usr/lib64/httpd/modules \
-                      --header-buffer-size 65500
+                      --header-buffer-size 65500 \
+                      --queue-timeout 600 \
+                      --socket-timeout 600 \

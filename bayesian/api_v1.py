@@ -6,6 +6,7 @@ import uuid
 import json
 import requests
 import re
+import time
 
 from io import StringIO
 
@@ -17,6 +18,7 @@ from flask_cors import CORS
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 from selinon import StoragePool
+from requests_futures.sessions import FuturesSession
 
 from f8a_worker.models import Ecosystem, WorkerResult, StackAnalysisRequest
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
@@ -26,6 +28,9 @@ from f8a_worker.utils import (safe_get_latest_version, get_dependents_count,
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
+from .dependency_finder import DependencyFinder
+from .stack_aggregator import StackAggregator
+from .recommender import RecommendationTask
 from .auth import login_required, decode_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
@@ -56,6 +61,8 @@ original_handle_error = rest_api_v1.handle_error
 
 ANALYTICS_API_VERSION = "v1.0"
 
+#worker_count = int(current_app.config['FUTURES_SESSION_WORKER_COUNT'])
+_session = FuturesSession(max_workers=100)
 
 # see <dir>.exceptions.HTTPError docstring
 def handle_http_error(e):
@@ -839,8 +846,134 @@ class GenerateManifest(Resource):
                 status=400
             )
 
+class Analytics(ResourceWithSchema):
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        decoded = decode_token()
+        github_url = request.form.get("github_url")
+        if github_url is not None:
+            files = GithubRead().get_files_github_url(github_url)
+        else:
+            files = request.files.getlist('manifest[]')
+            filepaths = request.values.getlist('filePath[]')
+
+            current_app.logger.info('%r' % files)
+            current_app.logger.info('%r' % filepaths)
+
+            # At least one manifest file path should be present to analyse a stack
+            if not filepaths:
+                raise HTTPError(400, error="Error processing request. "
+                                           "Please send a valid manifest file path.")
+            if len(files) != len(filepaths):
+                raise HTTPError(400, error="Error processing request. "
+                                           "Number of manifests and filePaths must be the same.")
+
+        # At least one manifest file should be present to analyse a stack
+        if not files:
+            raise HTTPError(400, error="Error processing request. "
+                                       "Please upload a valid manifest files.")
+
+        dt = datetime.datetime.now()
+        request_id = uuid.uuid4().hex
+
+        iso = datetime.datetime.utcnow().isoformat()
+        print('%s|%s|PERF|COREAPI|START|' % request_id, iso)
+
+        manifests = []
+        ecosystem = None
+        for index, manifest_file_raw in enumerate(files):
+            if github_url is not None:
+                filename = manifest_file_raw.get('filename', None)
+                filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
+            else:
+                filename = manifest_file_raw.filename
+                filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
+
+            # check if manifest files with given name are supported
+            manifest_descriptor = get_manifest_descriptor_by_filename(filename)
+            if manifest_descriptor is None:
+                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
+                    filename=filename))
+
+            # In memory file to be passed as an API parameter to /appstack
+            manifest_file = StringIO(content)
+
+            # Check if the manifest is valid
+            if not manifest_descriptor.validate(content):
+                raise HTTPError(400, error="Error processing request. Please upload a valid "
+                                           "manifest file '{filename}'".format(filename=filename))
+
+            # Record the response details for this manifest file
+            manifest = {'filename': filename,
+                        'content': content,
+                        'ecosystem': manifest_descriptor.ecosystem,
+                        'filepath': filepath}
+
+            manifests.append(manifest)
+
+        try:
+            req = StackAnalysisRequest(
+                id=request_id,
+                submitTime=str(dt),
+                requestJson={'manifest': manifests},
+            )
+            rdb.session.add(req)
+            rdb.session.commit()
+        except SQLAlchemyError as e:
+            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
+
+        data = {'api_name': 'stack_analyses',
+                'user_email': decoded.get('email', 'bayesian@redhat.com'),
+                'user_profile': decoded}
+        args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
+
+        try:
+            api_url=current_app.config['F8_API_BACKBONE_HOST']
+            current_app.logger.info('PERF|%s|API|START|STACK_CALL' % request_id)
+
+            #mercator_call_interval = float(os.getenv('MARCATOR_CALL_INTERVAL', '0.1'))
+            #print ('Mercator Call Interval: %d' % mercator_call_interval)
+            #time.sleep(mercator_call_interval)
+
+            #resp = requests.post('http://mercator-api-schoudhu-greenfield-test.dev.rdu2c.fabric8.io/api/v1/mercator', json=args)
+            #if resp.status_code == 200:
+            #deps = resp.json()
+
+            d = DependencyFinder()
+            deps = d.execute(args, rdb.session)
+            deps['external_request_id'] = request_id
+
+            _session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
+            _session.post('{}/api/v1/recommender'.format(api_url), json=deps)
+        except Exception as exc:
+            print (exc)
+            raise HTTPError(500, ("Could not process {t}.".format(t=request_id))) from exc
+
+        current_app.logger.info('PERF|%s|API|END|STACK_CALL' % request_id)
+        return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
+
+    @staticmethod
+    def get():
+        raise HTTPError(404, "Unsupported API endpoint")
+
+class Mercator(ResourceWithSchema):
+    @staticmethod
+    def post():
+        input_json = request.get_json()
+        current_app.logger.info('INPUT JSON: %r' % input_json)
+
+        d = DependencyFinder()
+        deps = d.execute(input_json, rdb.session)
+        current_app.logger.info('DEPS: %r' % deps)
+        # deps = {'external_request_id': request_id, 'result': [{'status': 'success', 'details': [{'devel_dependencies': ['io.vertx:vertx-web-client ', 'junit:junit 4.12', 'com.jayway.restassured:rest-assured 2.9.0', 'com.jayway.awaitility:awaitility 1.7.0', 'io.vertx:vertx-unit ', 'org.assertj:assertj-core 3.6.2'], 'dependencies': ['io.vertx:vertx-core ', 'io.vertx:vertx-web '], 'declared_licenses': [], 'manifest_file': 'pom.xml', '_resolved': [{'version': '', 'package': 'io.vertx:vertx-core'}, {'version': '', 'package': 'io.vertx:vertx-web'}], 'name': 'Vert.x - HTTP', 'version': '1.0.0-SNAPSHOT', 'homepage': None, 'description': 'Exposes an HTTP API using Vert.x', 'manifest_file_path': '/home/JohnDoe', 'ecosystem': 'maven'}], 'summary': []}]}
+        return deps
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
+add_resource_no_matter_slashes(Analytics, '/analytics')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
 add_resource_no_matter_slashes(ComponentAnalyses,
@@ -853,6 +986,7 @@ add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(UserIntent, '/user-intent')
 add_resource_no_matter_slashes(UserIntentGET, '/user-intent/<user>/<ecosystem>')
 add_resource_no_matter_slashes(MasterTagsGET, '/master-tags/<ecosystem>')
+add_resource_no_matter_slashes(Mercator, '/mercator')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',
                                endpoint='get_schemas_by_collection')

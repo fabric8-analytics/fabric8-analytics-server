@@ -127,11 +127,13 @@ class TestApiV1Root(object):
     api_root = {
         "paths": [
             "/api/v1",
+            "/api/v1/analytics",
             "/api/v1/component-analyses/<ecosystem>/<package>/<version>",
             "/api/v1/component-search/<package>",
             "/api/v1/generate-file",
             "/api/v1/get-next-component/<ecosystem>",
             "/api/v1/master-tags/<ecosystem>",
+            "/api/v1/mercator",
             "/api/v1/schemas",
             "/api/v1/schemas/<collection>",
             "/api/v1/schemas/<collection>/<name>",
