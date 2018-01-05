@@ -67,7 +67,7 @@ class TestDoProjection(object):
         assert expected == returned
 
     def test_none_projection(self, analyses):
-        """Check that original model is returned it projection is None."""
+        """Check that original model is returned if projection is None."""
         projection = None
         returned = do_projection(projection, analyses[0])
         expected = analyses[0].to_dict()

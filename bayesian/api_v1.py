@@ -599,7 +599,7 @@ class GetNextComponent(ResourceWithSchema):
 
 
 class SetTagsToComponent(ResourceWithSchema):
-    """Implementation of all /stack-analyses REST API calls."""
+    """Implementation of all /set-tags REST API calls."""
 
     method_decorators = [login_required]
 
