@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+"""Schema files generator."""
+
 from collections import OrderedDict
 import json
 import os

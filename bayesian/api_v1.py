@@ -1,3 +1,5 @@
+"""Definition of all REST API endpoints of the server module."""
+
 import datetime
 import functools
 import uuid
@@ -57,6 +59,7 @@ ANALYTICS_API_VERSION = "v1.0"
 
 # see <dir>.exceptions.HTTPError docstring
 def handle_http_error(e):
+    """Handle HTTPError exceptions."""
     if isinstance(e, HTTPError):
         res = jsonify({'error': e.error})
         res.status_code = e.status_code
@@ -67,7 +70,7 @@ def handle_http_error(e):
 
 @api_v1.route('/_error')
 def error():
-    """This endpoint is used by httpd, which redirects its errors to it."""
+    """Implement the endpoint used by httpd, which redirects its errors to it."""
     try:
         status = int(request.environ['REDIRECT_STATUS'])
     except Exception:
@@ -86,11 +89,13 @@ def error():
 
 @api_v1.route('/readiness')
 def readiness():
+    """Handle the /readiness REST API call."""
     return jsonify({}), 200
 
 
 @api_v1.route('/liveness')
 def liveness():
+    """Handle the /liveness REST API call."""
     # Check database connection
     current_app.logger.debug("Liveness probe - trying to connect to database "
                              "and execute a query")
@@ -108,22 +113,27 @@ rest_api_v1.handle_error = handle_http_error
 
 
 def get_item_skip(page, per_page):
+    """Get the number of items to skip for the first page-1 pages."""
     return per_page * page
 
 
 def get_item_relative_limit(page, per_page):
+    """Get the maximum possible number of items on one page."""
     return per_page
 
 
 def get_item_absolute_limit(page, per_page):
+    """Get the total possible number of items."""
     return per_page * (page + 1)
 
 
 def get_items_for_page(items, page, per_page):
+    """Get all items for specified page and number of items to be used per page."""
     return items[get_item_skip(page, per_page):get_item_absolute_limit(page, per_page)]
 
 
 def paginated(func):
+    """Provide paginated output for longer responses."""
     @functools.wraps(func)
     def inner(*args, **kwargs):
         func_res = func(*args, **kwargs)
@@ -167,8 +177,7 @@ _resource_paths = []
 
 
 def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None):
-    """Adds a resource for both trailing slash and no trailing slash to prevent redirects.
-    """
+    """Add a resource for both trailing slash and no trailing slash to prevent redirects."""
     slashless = route.rstrip('/')
     _resource_paths.append(api_v1.url_prefix + slashless)
     slashful = route + '/'
@@ -198,7 +207,9 @@ class ResourceWithSchema(Resource):
     """
 
     def add_schema(self, response, status_code, method):
-        """Add schema to response. The schema must be dict containing 3 string values:
+        """Add schema to response.
+
+        The schema must be dict containing 3 string values:
         name, version and url (representing name and version of the schema and its
         full url).
 
@@ -217,6 +228,7 @@ class ResourceWithSchema(Resource):
         return response
 
     def dispatch_request(self, *args, **kwargs):
+        """Perform the request dispatching based on the standard Flask dispatcher."""
         response = super().dispatch_request(*args, **kwargs)
 
         method = request.method
@@ -235,20 +247,29 @@ class ResourceWithSchema(Resource):
 
 
 class ApiEndpoints(ResourceWithSchema):
+    """Implementation of / REST API call."""
+
     def get(self):
+        """Handle the GET REST API call."""
         return {'paths': sorted(_resource_paths)}
 
 
 class SystemVersion(ResourceWithSchema):
+    """Implementation of /system/version REST API call."""
+
     @staticmethod
     def get():
+        """Handle the GET REST API call."""
         return get_system_version()
 
 
 class ComponentSearch(ResourceWithSchema):
+    """Implementation of /component-search REST API call."""
+
     method_decorators = [login_required]
 
     def get(self, package):
+        """Handle the GET REST API call."""
         if not package:
             msg = "Please enter a valid search term"
             raise HTTPError(202, msg)
@@ -259,12 +280,15 @@ class ComponentSearch(ResourceWithSchema):
 
 
 class ComponentAnalyses(ResourceWithSchema):
+    """Implementation of all /component-analyses REST API calls."""
+
     method_decorators = [login_required]
 
     schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
 
     @staticmethod
     def get(ecosystem, package, version):
+        """Handle the GET REST API call."""
         decoded = decode_token()
         package = urllib.parse.unquote(package)
         if ecosystem == 'maven':
@@ -296,6 +320,7 @@ class ComponentAnalyses(ResourceWithSchema):
 
     @staticmethod
     def post(ecosystem, package, version):
+        """Handle the POST REST API call."""
         decoded = decode_token()
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
@@ -308,11 +333,14 @@ class ComponentAnalyses(ResourceWithSchema):
 
 
 class StackAnalysesGET(ResourceWithSchema):
+    """Implementation of the /stack-analyses GET REST API call method."""
+
     method_decorators = [login_required]
     # schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
     def get(external_request_id):
+        """Handle the GET REST API call."""
         if get_request_count(rdb, external_request_id) < 1:
             raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
 
@@ -409,7 +437,6 @@ def stack_analyses_debug(external_request_id):
     Note the existence of the data is not guaranteed,
     therefore the endpoint can return 404 even for valid request IDs.
     """
-
     results = retrieve_worker_results(rdb, external_request_id)
     if not results:
         return jsonify(error='No operational data for the request ID'), 404
@@ -427,6 +454,8 @@ def stack_analyses_debug(external_request_id):
 
 
 class UserFeedback(ResourceWithSchema):
+    """Implementation of /user-feedback POST REST API call."""
+
     method_decorators = [login_required]
     _ANALYTICS_BUCKET_NAME = "{}-{}".format(
         os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
@@ -434,6 +463,7 @@ class UserFeedback(ResourceWithSchema):
 
     @staticmethod
     def post():
+        """Handle the POST REST API call."""
         input_json = request.get_json()
 
         if not request.json or 'request_id' not in input_json:
@@ -452,10 +482,13 @@ class UserFeedback(ResourceWithSchema):
 
 
 class UserIntent(ResourceWithSchema):
+    """Implementation of /user-intent POST REST API call."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def post():
+        """Handle the POST REST API call."""
         input_json = request.get_json()
 
         if not input_json:
@@ -486,10 +519,13 @@ class UserIntent(ResourceWithSchema):
 
 
 class UserIntentGET(ResourceWithSchema):
+    """Implementation of /user-intent GET REST API call."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def get(user, ecosystem):
+        """Handle the GET REST API call."""
         if not user:
             raise HTTPError(400, error="Expected user name in the request")
 
@@ -510,11 +546,14 @@ class UserIntentGET(ResourceWithSchema):
 
 
 class MasterTagsGET(ResourceWithSchema):
+    """Implementation of /master-tags REST API call."""
+
     method_decorators = [login_required]
 
     @staticmethod
     @cache.memoize(timeout=604800)  # 7 days
     def get(ecosystem):
+        """Handle the GET REST API call."""
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
@@ -531,14 +570,18 @@ class MasterTagsGET(ResourceWithSchema):
         return result
 
     def __repr__(self):
+        """Return textual representatin of classname + the id."""
         return "{}({})".format(self.__class__.__name__, self.id)
 
 
 class GetNextComponent(ResourceWithSchema):
+    """Implementation of all /get-next-component REST API call."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def post(ecosystem):
+        """Handle the POST REST API call."""
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
@@ -556,10 +599,13 @@ class GetNextComponent(ResourceWithSchema):
 
 
 class SetTagsToComponent(ResourceWithSchema):
+    """Implementation of all /set-tags REST API calls."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def post():
+        """Handle the POST REST API call."""
         input_json = request.get_json()
         decoded = decode_token()
 
@@ -587,10 +633,13 @@ class SetTagsToComponent(ResourceWithSchema):
 
 
 class StackAnalyses(ResourceWithSchema):
+    """Implementation of all /stack-analyses REST API calls."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def post():
+        """Handle the POST REST API call."""
         decoded = decode_token()
         github_url = request.form.get("github_url")
         if github_url is not None:
@@ -706,10 +755,13 @@ class StackAnalyses(ResourceWithSchema):
 
     @staticmethod
     def get():
+        """Handle the GET REST API call."""
         raise HTTPError(404, "Unsupported API endpoint")
 
 
 class PublishedSchemas(ResourceWithSchema):
+    """Implementation of all /schemas REST API calls."""
+
     API_COLLECTION = 'api'
     COMPONENT_ANALYSES_COLLECTION = 'component_analyses'
     schema_collections = {
@@ -718,6 +770,7 @@ class PublishedSchemas(ResourceWithSchema):
     }
 
     def __init__(self):
+        """Construct PublishedSchemas class instance and initialize id attribute for all schemas."""
         super(PublishedSchemas, self).__init__()
         for collection, schemas in self.schema_collections.items():
             for name, versions in schemas.items():
@@ -726,6 +779,7 @@ class PublishedSchemas(ResourceWithSchema):
                     schema["id"] = url
 
     def get(self, collection=None, name=None, version=None):
+        """Get the schema for specified collection, name, and version."""
         # Boring if statement instead of clever loop because Nick is no fun
         result = self.schema_collections
         if collection is not None:
@@ -749,19 +803,24 @@ class PublishedSchemas(ResourceWithSchema):
 
     @classmethod
     def get_api_schema_url(cls, name, version):
+        """Get the URL to given schema URL with the specified version."""
         return cls._get_schema_url(collection=cls.API_COLLECTION, name=name, version=version)
 
     @classmethod
     def get_component_analysis_schema_url(cls, name, version):
+        """Get the URL to component analysis schema."""
         return cls._get_schema_url(collection=cls.COMPONENT_ANALYSES_COLLECTION,
                                    name=name, version=version)
 
 
 class GenerateManifest(Resource):
+    """Implementation of the /generate-file REST API call."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def post():
+        """Handle the POST REST API call with the manifest file."""
         input_json = request.get_json()
         if 'ecosystem' not in input_json:
             raise HTTPError(400, "Must provide an ecosystem")
@@ -810,4 +869,5 @@ add_resource_no_matter_slashes(SetTagsToComponent, '/set-tags')
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined after this
 @api_v1.route('/<path:invalid_path>')
 def api_404_handler(*args, **kwargs):
+    """Handle all other routes not defined above."""
     return jsonify(error='Cannot match given query to any API v1 endpoint'), 404

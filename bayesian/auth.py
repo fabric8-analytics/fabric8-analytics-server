@@ -1,3 +1,5 @@
+"""Authorization token handling."""
+
 import datetime
 import enum
 
@@ -87,7 +89,10 @@ def login_required(view):
 
 
 class APIUser(UserMixin):
+    """Structure representing user accessing the API."""
+
     def __init__(self, email):
+        """Construct the instance of APIUsed class and initialize the 'email' attribute."""
         self.email = email
 
 
@@ -146,19 +151,22 @@ class LazyRowBasedPermission(PrincipalPermission):
     This implementation uses one of the proposals for flask-principal lazy permissions as a base:
         https://github.com/mattupstate/flask-principal/issues/6#issuecomment-24750550
     """
+
     name = 'modify row {arg}'
     view_arg = None
 
     def __init__(self, need=None, view_arg=None):
+        """Construct the instance of LazyRowBasedPermission class."""
         super().__init__(self, *[need])
         self.only_need = need  # we only assume one need for our permissions ATM
         self.view_arg = view_arg or type(self).view_arg
 
     def get_arg(self):
-        """Get the arg from self.only_need or from request"""
+        """Get the arg from self.only_need or from request."""
         return self.only_need or request.view_args.get(self.view_arg)
 
     def __str__(self):
+        """Return the 'informal' string representation of an LazyRowBasedPermission instance."""
         try:
             arg = self.get_arg()
         except Exception:
@@ -181,7 +189,7 @@ def _check_one_perm(perm, has_perms):
 
 
 def check_permissions_and(needs_perms, has_perms):
-    """Checks if all permissions from list `needs_perms` are satisfied.
+    """Check if all permissions from list `needs_perms` are satisfied.
 
     Returns `None` if check succeeds, raises `HTTPError` with 403 code otherwise (logical "and").
 
@@ -204,7 +212,7 @@ def check_permissions_and(needs_perms, has_perms):
 
 
 def check_permissions_or(needs_perms, has_perms):
-    """Checks if at least one permission from list `needs_perms` is satisfied.
+    """Check if at least one permission from list `needs_perms` is satisfied.
 
     Returns `None` if check succeeds, raises `HTTPError` with 403 code otherwise (logical "or").
 
@@ -230,7 +238,9 @@ def check_permissions_or(needs_perms, has_perms):
 
 
 def require_permissions(*needs_perms):
-    """View decorator which checks that current user has sufficient permissions to access
+    """Check user permissions.
+
+    View decorator which checks that current user has sufficient permissions to access
     the decorated view. Raises HTTPError with 403 status code if not.
 
     User's permissions are
@@ -289,18 +299,25 @@ def require_permissions(*needs_perms):
 
 
 class PermEnum(enum.Enum):
+    """Possible permissions."""
+
     # NOTE: when adding/changing/deleting these, you need to manually create a migration that
     #   adds/updates/deletes the appropriate Permission row in DB
     def __str__(self):
+        """Return the 'informal' string representation of an PermEnum instance."""
         return self.value
 
 
 class Permission(rdb.Model):
+    """Data structure representing permission (assigned to role)."""
+
     id = rdb.Column(rdb.Integer(), primary_key=True)
     name = rdb.Column(rdb.String(80), unique=True)
 
 
 class Role(rdb.Model, RoleMixin):
+    """Data structure representing role (assigned to user)."""
+
     id = rdb.Column(rdb.Integer(), primary_key=True)
     name = rdb.Column(rdb.String(80), unique=True)
     description = rdb.Column(rdb.String(255))
@@ -309,6 +326,8 @@ class Role(rdb.Model, RoleMixin):
 
 
 class User(rdb.Model, UserMixin):
+    """Structure representing user accessing the system using its security token ."""
+
     id = rdb.Column(rdb.Integer(), primary_key=True)
     login = rdb.Column(rdb.String(255), unique=True)
     email = rdb.Column(rdb.String(255))
@@ -320,7 +339,10 @@ class User(rdb.Model, UserMixin):
     token_expires = rdb.Column(rdb.DateTime())
 
     def generate_auth_token(self, expiration=None):
-        """Note: calling this automatically rewrites (== revokes) previous token."""
+        """Generate new security token.
+
+        Note: calling this automatically rewrites (== revokes) previous token.
+        """
         expires_in = expiration or current_app.config['API_TOKEN_LIFETIME']
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'],
                                             expires_in=expires_in)
@@ -336,6 +358,7 @@ class User(rdb.Model, UserMixin):
         return self.token, self.token_expires
 
     def revoke_auth_token(self):
+        """Revoke security token."""
         self.token = None
         self.token_expires = None
         rdb.session.add(self)
@@ -343,6 +366,7 @@ class User(rdb.Model, UserMixin):
 
     @classmethod
     def get_by_token(cls, token):
+        """Find the owner of given security token."""
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
         # may raise BadSignature or SignatureExpired
         data = s.loads(token)

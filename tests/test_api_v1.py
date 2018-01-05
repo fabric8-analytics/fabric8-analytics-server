@@ -1,3 +1,5 @@
+"""Unit tests for the REST API module."""
+
 import datetime
 import json
 import time
@@ -23,10 +25,13 @@ from f8a_worker.schemas import load_all_worker_schemas
 
 
 def api_route_for(route):
+    """Construct an URL to the endpoint for given route."""
     return '/api/v1' + route
 
 
 def assert_pages(response, p=None, n=None):
+    """Check the 'paginated' output."""
+    # TODO can not find any usage of this function
     pgs = []
     if p:
         pgs.append({'url': p, 'rel': 'prev'})
@@ -45,6 +50,8 @@ even_later = now + datetime.timedelta(minutes=10)
 
 @pytest.fixture
 def fill_analyses(app):
+    """Prepare static data used by unit tests."""
+    # TODO can not find any usage of this function
     ecosystems = [
         Ecosystem(name='pypi', backend=EcosystemBackend.pypi, url='https://pypi.python.org/',
                   fetch_url='https://pypi.python.org/pypi'),
@@ -103,6 +110,7 @@ def fill_analyses(app):
 
 @pytest.fixture
 def fill_packages_for_paging(app, request):
+    """Create and store set of packages used by unit tests."""
     e = Ecosystem(name='pypi', backend=EcosystemBackend.pypi)
     app.rdb.session.add(e)
     for p in range(0, 11):
@@ -114,6 +122,8 @@ def fill_packages_for_paging(app, request):
 
 @pytest.mark.usefixtures('client_class')
 class TestApiV1Root(object):
+    """Basic tests if all endpoints are accessible."""
+
     api_root = {
         "paths": [
             "/api/v1",
@@ -137,6 +147,7 @@ class TestApiV1Root(object):
     }
 
     def test_api_root(self, accept_json):
+        """Basic tests if all endpoints are accessible."""
         res = self.client.get(api_route_for('/'), headers=accept_json)
         assert res.status_code == 200
         assert res.json == self.api_root
@@ -144,12 +155,17 @@ class TestApiV1Root(object):
 
 @pytest.mark.usefixtures('client_class', 'rdb')
 class TestUser(object):
+    """Tests for /api/v1/user* endpoints."""
+
     pass  # TODO
 
 
 @pytest.mark.usefixtures('client_class')
 class TestApiV1SystemVersion(object):
+    """Tests for the /api/v1/system/version endpoint."""
+
     def test_get_system_version(self, accept_json):
+        """Test for the /api/v1/system/version endpoint."""
         res = self.client.get(api_route_for('/system/version/'), headers=accept_json)
         assert res.status_code == 200
         assert set(res.json.keys()) == {'committed_at', 'commit_hash'}
@@ -157,13 +173,15 @@ class TestApiV1SystemVersion(object):
 
 @pytest.mark.usefixtures('client_class', 'rdb')
 class TestApiV1Schemas(object):
+    """Tests for the /api/v1/schemas endpoints."""
 
     def _check_schema_id(self, received_schema, expected_path):
-        """Helper to check schema ID added by the API server"""
+        """Check schema ID added by the API server."""
         expected_id = 'http://localhost' + expected_path + '/'
         assert received_schema['id'] == expected_id
 
     def test_get_all_schemas(self, accept_json):
+        """Test for the /api/v1/schemas endpoint."""
         query_path = api_route_for('/schemas')
         res = self.client.get(query_path, headers=accept_json)
         assert res.status_code == 200
@@ -178,6 +196,7 @@ class TestApiV1Schemas(object):
                     self._check_schema_id(schema, version_path)
 
     def test_get_schemas_by_collection(self, accept_json):
+        """Test for the /api/v1/schemas/api endpoint."""
         collection_path = api_route_for('/schemas/api')
         res = self.client.get(collection_path, headers=accept_json)
         assert res.status_code == 200
@@ -194,6 +213,7 @@ class TestApiV1Schemas(object):
         assert res.status_code == 404
 
     def test_get_schemas_by_collection_and_name(self, accept_json):
+        """Test for the /api/v1/schemas/api/component_analyses endpoint."""
         schema_path = api_route_for('/schemas/api/component_analyses')
         res = self.client.get(schema_path, headers=accept_json)
         assert res.status_code == 200
@@ -209,6 +229,7 @@ class TestApiV1Schemas(object):
         assert res.status_code == 404
 
     def test_get_schema_by_collection_and_name_and_version(self, accept_json):
+        """Test for the /api/v1/schemas/api/component_analyses endpoint."""
         version_path = api_route_for('/schemas/api/component_analyses/1-0-0')
         res = self.client.get(version_path, headers=accept_json)
         assert res.status_code == 200
@@ -223,7 +244,7 @@ class TestApiV1Schemas(object):
         assert res.status_code == 404
 
     def test_get_server_schemas(self, accept_json):
-        # test all server schemas are provided in all versions through the API
+        """Test that all server schemas are provided in all versions through the API."""
         for schema_ref, _ in load_all_server_schemas().items():
             path = api_route_for('/schemas/api/{}/{}'.format(schema_ref.name,
                                                              schema_ref.version))
@@ -241,7 +262,7 @@ class TestApiV1Schemas(object):
                 assert received_schema == json.load(f)
 
     def test_get_worker_schemas(self, accept_json):
-        # test all worker schemas are provided in all versions through the API
+        """Test that all worker schemas are provided in all versions through the API."""
         for schema_ref, json_schema in load_all_worker_schemas().items():
             path = api_route_for('/schemas/component_analyses/{}/{}'.
                                  format(schema_ref.name, schema_ref.version))
