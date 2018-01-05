@@ -139,6 +139,8 @@ class TestApiV1Root(object):
             "/api/v1/set-tags",
             "/api/v1/stack-analyses",
             "/api/v1/stack-analyses/<external_request_id>",
+            "/api/v1/stack-analyzer",
+            "/api/v1/stack-analyzer/<external_request_id>",
             "/api/v1/system/version",
             "/api/v1/user-feedback",
             "/api/v1/user-intent",
