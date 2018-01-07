@@ -34,6 +34,10 @@ objects:
                 key: deployment-prefix
           - name: WORKER_ADMINISTRATION_REGION
             value: "api"
+          - name: F8_API_BACKBONE_HOST
+            value: "http://f8a-server-backbone"
+          - name: FUTURES_SESSION_WORKER_COUNT
+            value: "100"
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
           - name: ANITYA_SERVICE_HOST
