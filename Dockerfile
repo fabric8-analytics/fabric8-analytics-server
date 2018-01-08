@@ -6,11 +6,12 @@ ENV LANG=en_US.UTF-8 \
 RUN useradd -d /coreapi coreapi
 
 # https://copr.fedorainfracloud.org/coprs/fche/pcp/
-COPY hack/_copr_fche_pcp.repo /etc/yum.repos.d/
+# https://copr.fedorainfracloud.org/coprs/jpopelka/mercator/
+COPY hack/_copr_fche_pcp.repo hack/_copr_jpopelka-mercator.repo /etc/yum.repos.d/
 
 # python3-pycurl is needed for Amazon SQS (boto lib), we need CentOS' rpm - installing it from pip results in NSS errors
 RUN yum install -y epel-release &&\
-    yum install -y gcc patch git python34-pip python34-requests httpd httpd-devel python34-devel postgresql-devel redhat-rpm-config libxml2-devel libxslt-devel python34-pycurl pcp &&\
+    yum install -y gcc patch git python34-pip python34-requests httpd httpd-devel python34-devel postgresql-devel redhat-rpm-config libxml2-devel libxslt-devel python34-pycurl pcp mercator &&\
     yum clean all
 
 RUN mkdir -p /coreapi
@@ -40,8 +41,7 @@ COPY .git/ /tmp/.git
 # date and hash of last commit
 RUN cd /tmp/.git &&\
     git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD | tee /etc/coreapi-release &&\
-    rm -rf /tmp/.git/ &&\
-    yum install -y https://copr-be.cloud.fedoraproject.org/results/jpopelka/mercator-test/epel-7-x86_64/00690070-mercator/mercator-1-24.el7.centos.x86_64.rpm
+    rm -rf /tmp/.git/
 
 COPY hack/coreapi-server.sh hack/server+pmcd.sh /usr/bin/
 
