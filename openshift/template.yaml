@@ -35,7 +35,7 @@ objects:
           - name: WORKER_ADMINISTRATION_REGION
             value: "api"
           - name: F8_API_BACKBONE_HOST
-            value: "http://f8a-server-backbone"
+            value: "http://f8a-server-backbone:5000"
           - name: FUTURES_SESSION_WORKER_COUNT
             value: "100"
           - name: PGBOUNCER_SERVICE_HOST
