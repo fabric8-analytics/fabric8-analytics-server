@@ -33,4 +33,5 @@ COPY .git/ /tmp/.git
 # date and hash of last commit
 RUN cd /tmp/.git &&\
     git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD | tee /etc/coreapi-release &&\
-    rm -rf /tmp/.git/
+    rm -rf /tmp/.git/ &&\
+    yum install -y https://copr-be.cloud.fedoraproject.org/results/jpopelka/mercator-test/epel-7-x86_64/00690070-mercator/mercator-1-24.el7.centos.x86_64.rpm

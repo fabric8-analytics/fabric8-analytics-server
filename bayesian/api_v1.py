@@ -10,6 +10,7 @@ import re
 from io import StringIO
 
 import botocore
+from requests_futures.sessions import FuturesSession
 from flask import Blueprint, current_app, request, url_for, Response
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
@@ -26,6 +27,7 @@ from f8a_worker.utils import (safe_get_latest_version, get_dependents_count,
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
+from .dependency_finder import DependencyFinder
 from .auth import login_required, decode_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
@@ -55,6 +57,9 @@ TOTAL_COUNT_KEY = 'total_count'
 original_handle_error = rest_api_v1.handle_error
 
 ANALYTICS_API_VERSION = "v1.0"
+
+worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
+_session = FuturesSession(max_workers=worker_count)
 
 
 # see <dir>.exceptions.HTTPError docstring
@@ -840,7 +845,115 @@ class GenerateManifest(Resource):
             )
 
 
+class Analytics(ResourceWithSchema):
+    """Implementation of all /analyses REST API calls."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        decoded = decode_token()
+        github_url = request.form.get("github_url")
+        if github_url is not None:
+            files = GithubRead().get_files_github_url(github_url)
+        else:
+            files = request.files.getlist('manifest[]')
+            filepaths = request.values.getlist('filePath[]')
+
+            current_app.logger.info('%r' % files)
+            current_app.logger.info('%r' % filepaths)
+
+            # At least one manifest file path should be present to analyse a stack
+            if not filepaths:
+                raise HTTPError(400, error="Error processing request. "
+                                           "Please send a valid manifest file path.")
+            if len(files) != len(filepaths):
+                raise HTTPError(400, error="Error processing request. "
+                                           "Number of manifests and filePaths must be the same.")
+
+        # At least one manifest file should be present to analyse a stack
+        if not files:
+            raise HTTPError(400, error="Error processing request. "
+                                       "Please upload a valid manifest files.")
+
+        dt = datetime.datetime.now()
+        request_id = uuid.uuid4().hex
+
+        iso = datetime.datetime.utcnow().isoformat()
+
+        manifests = []
+        ecosystem = None
+        for index, manifest_file_raw in enumerate(files):
+            if github_url is not None:
+                filename = manifest_file_raw.get('filename', None)
+                filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
+            else:
+                filename = manifest_file_raw.filename
+                filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
+
+            # check if manifest files with given name are supported
+            manifest_descriptor = get_manifest_descriptor_by_filename(filename)
+            if manifest_descriptor is None:
+                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
+                    filename=filename))
+
+            # In memory file to be passed as an API parameter to /appstack
+            manifest_file = StringIO(content)
+
+            # Check if the manifest is valid
+            if not manifest_descriptor.validate(content):
+                raise HTTPError(400, error="Error processing request. Please upload a valid "
+                                           "manifest file '{filename}'".format(filename=filename))
+
+            # Record the response details for this manifest file
+            manifest = {'filename': filename,
+                        'content': content,
+                        'ecosystem': manifest_descriptor.ecosystem,
+                        'filepath': filepath}
+
+            manifests.append(manifest)
+
+        try:
+            req = StackAnalysisRequest(
+                id=request_id,
+                submitTime=str(dt),
+                requestJson={'manifest': manifests},
+            )
+            rdb.session.add(req)
+            rdb.session.commit()
+        except SQLAlchemyError as e:
+            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
+
+        data = {'api_name': 'stack_analyses',
+                'user_email': decoded.get('email', 'bayesian@redhat.com'),
+                'user_profile': decoded}
+        args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
+
+        try:
+            api_url = current_app.config['F8_API_BACKBONE_HOST']
+
+            d = DependencyFinder()
+            deps = d.execute(args, rdb.session)
+            deps['external_request_id'] = request_id
+
+            _session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
+            _session.post('{}/api/v1/recommender'.format(api_url), json=deps)
+        except Exception as exc:
+            raise HTTPError(500, ("Could not process {t}.".format(t=request_id))) from exc
+
+        return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
+
+    @staticmethod
+    def get():
+        """Handle the GET REST API call."""
+        raise HTTPError(404, "Unsupported API endpoint")
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
+add_resource_no_matter_slashes(Analytics, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
 add_resource_no_matter_slashes(ComponentAnalyses,
