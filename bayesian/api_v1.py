@@ -942,7 +942,6 @@ class Analytics(ResourceWithSchema):
             _session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
             _session.post('{}/api/v1/recommender'.format(api_url), json=deps)
         except Exception as exc:
-            print(exc)
             raise HTTPError(500, ("Could not process {t}.".format(t=request_id))) from exc
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
