@@ -21,7 +21,7 @@ from selinon import StoragePool
 
 from f8a_worker.models import Ecosystem, WorkerResult, StackAnalysisRequest
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
-from f8a_worker.utils import (safe_get_latest_version, get_dependents_count,
+from f8a_worker.utils import (get_dependents_count,
                               get_component_percentile_rank, usage_rank2str,
                               MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
