@@ -40,8 +40,6 @@ objects:
             value: "100"
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
-          - name: ANITYA_SERVICE_HOST
-            value: bayesian-anitya
           - name: BAYESIAN_FETCH_PUBLIC_KEY
             valueFrom:
               configMapKeyRef:
