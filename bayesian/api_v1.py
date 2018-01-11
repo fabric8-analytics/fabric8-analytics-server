@@ -37,7 +37,8 @@ from .utils import (get_system_version, retrieve_worker_result,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
-                    retrieve_worker_results, get_next_component_from_graph, set_tags_to_component)
+                    retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
+                    is_valid)
 
 import os
 from f8a_worker.storages import AmazonS3
