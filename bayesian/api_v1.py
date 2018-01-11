@@ -19,7 +19,8 @@ from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 from selinon import StoragePool
 
-from f8a_worker.models import Ecosystem, WorkerResult, StackAnalysisRequest
+from f8a_worker.models import (
+    Ecosystem, WorkerResult, StackAnalysisRequest, RecommendationFeedback)
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
 from f8a_worker.utils import (get_dependents_count,
                               get_component_percentile_rank, usage_rank2str,
@@ -36,7 +37,9 @@ from .utils import (get_system_version, retrieve_worker_result,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
-                    retrieve_worker_results, get_next_component_from_graph, set_tags_to_component)
+                    retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
+                    is_valid)
+
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -952,6 +955,51 @@ class StackAnalyses(ResourceWithSchema):
         raise HTTPError(404, "Unsupported API endpoint")
 
 
+class SubmitFeedback(ResourceWithSchema):
+    """Implementation of /submit-feedback POST REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        input_json = request.get_json()
+        if not request.json:
+            raise HTTPError(400, error="Expected JSON request")
+
+        stack_id = input_json.get('stack_id')
+        recommendation_type = input_json.get('recommendation_type')
+        package_name = input_json.get('package_name')
+        feedback_type = input_json.get('feedback_type')
+        ecosystem_name = input_json.get('ecosystem')
+        conditions = [is_valid(stack_id),
+                      is_valid(recommendation_type),
+                      is_valid(package_name),
+                      is_valid(feedback_type),
+                      is_valid(ecosystem_name)]
+        if not all(conditions):
+            raise HTTPError(400, error="Expected parameters missing")
+        # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies
+        # for a single request
+        try:
+            ecosystem_obj = Ecosystem.by_name(rdb.session, ecosystem_name)
+            req = RecommendationFeedback(
+                stack_id=stack_id,
+                package_name=package_name,
+                recommendation_type=recommendation_type,
+                feedback_type=feedback_type,
+                ecosystem_id=ecosystem_obj.id
+            )
+            rdb.session.add(req)
+            rdb.session.commit()
+            return {'status': 'success'}
+        except SQLAlchemyError as e:
+            current_app.logger.exception(
+                'Failed to create new analysis request')
+            raise HTTPError(
+                500, "Error inserting log for request {t}".format(t=request_id)) from e
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(StackAnalysesV2, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
@@ -974,12 +1022,16 @@ add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>',
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>/<version>',
                                endpoint='get_schema_by_name_and_version')
 add_resource_no_matter_slashes(GenerateManifest, '/generate-file')
-add_resource_no_matter_slashes(GetNextComponent, '/get-next-component/<ecosystem>')
+add_resource_no_matter_slashes(
+    GetNextComponent, '/get-next-component/<ecosystem>')
 add_resource_no_matter_slashes(SetTagsToComponent, '/set-tags')
-
+add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
-# NOTE: this *must* come in the end, unless it'll overwrite rules defined after this
+# NOTE: this *must* come in the end, unless it'll overwrite rules defined
+# after this
+
+
 @api_v1.route('/<path:invalid_path>')
 def api_404_handler(*args, **kwargs):
     """Handle all other routes not defined above."""
