@@ -970,7 +970,7 @@ class SubmitFeedback(ResourceWithSchema):
         recommendation_type = input_json.get('recommendation_type')
         package_name = input_json.get('package_name')
         feedback_type = input_json.get('feedback_type')
-        ecosystem = input_json.get('ecoystem')
+        ecosystem = input_json.get('ecosystem')
         if not is_valid(stack_id) and \
                 not is_valid(recommendation_type) and not is_valid(package_name) \
                 and not is_valid(feedback_type) and not is_valid(ecosystem):
@@ -985,6 +985,8 @@ class SubmitFeedback(ResourceWithSchema):
                 feedback_type=feedback_type,
                 ecosystem=ecosystem
             )
+            current_app.logger.info(
+                'The recommendation Feedback request is : {}'.format(req))
             rdb.session.add(req)
             rdb.session.commit()
             return {'status': 'success'}
@@ -992,7 +994,7 @@ class SubmitFeedback(ResourceWithSchema):
             current_app.logger.exception(
                 'Failed to create new analysis request')
             raise HTTPError(
-                500, "Error inserting log for request {t}".format(t=request_id)) from e
+                500, "Error inserting log for request {t}".format(t=stack_id)) from e
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
