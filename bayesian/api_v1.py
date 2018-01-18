@@ -970,20 +970,21 @@ class SubmitFeedback(ResourceWithSchema):
         recommendation_type = input_json.get('recommendation_type')
         package_name = input_json.get('package_name')
         feedback_type = input_json.get('feedback_type')
-        ecosystem = input_json.get('ecosystem')
+        ecosystem_name = input_json.get('ecosystem')
         if not is_valid(stack_id) and \
                 not is_valid(recommendation_type) and not is_valid(package_name) \
-                and not is_valid(feedback_type) and not is_valid(ecosystem):
+                and not is_valid(feedback_type) and not is_valid(ecosystem_name):
             raise HTTPError(400, error="Expected parameters missing")
         # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies
         # for a single request
         try:
+            ecosystem_obj = Ecosystem.by_name(rdb.session, ecosystem_name)
             req = RecommendationFeedback(
                 stack_id=stack_id,
                 package_name=package_name,
                 recommendation_type=recommendation_type,
                 feedback_type=feedback_type,
-                ecosystem=ecosystem
+                ecosystem_id=ecosystem_obj.id
             )
             current_app.logger.info(
                 'The recommendation Feedback request is : {}'.format(req))
