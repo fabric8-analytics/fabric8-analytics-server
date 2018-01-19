@@ -677,3 +677,8 @@ class RecommendationReason:
             # Count reason
             pkg["reason"] = count_sentence
         return manifest_response
+
+
+def is_valid(param):
+    """Return true is the param is not a null value."""
+    return param is not None
