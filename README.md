@@ -1,4 +1,4 @@
-# Fabric8-Analytics Core API Documentation
+# Fabric8-Analytics Core API Documentation 
 
 The Fabric8-Analytics API is a microservice that is responsible for:
 
