@@ -637,7 +637,7 @@ class SetTagsToComponent(ResourceWithSchema):
             raise HTTPError(400, error=_error)
 
 
-class StackAnalyses(ResourceWithSchema):
+class StackAnalysesV2(ResourceWithSchema):
     """Implementation of all /stack-analyses REST API calls."""
 
     method_decorators = [login_required]
@@ -845,8 +845,8 @@ class GenerateManifest(Resource):
             )
 
 
-class Analytics(ResourceWithSchema):
-    """Implementation of all /analyses REST API calls."""
+class StackAnalyses(ResourceWithSchema):
+    """Implementation of all /stack-analyses REST API calls."""
 
     method_decorators = [login_required]
 
@@ -953,7 +953,7 @@ class Analytics(ResourceWithSchema):
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
-add_resource_no_matter_slashes(Analytics, '/analyse')
+add_resource_no_matter_slashes(StackAnalysesV2, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
 add_resource_no_matter_slashes(ComponentAnalyses,
