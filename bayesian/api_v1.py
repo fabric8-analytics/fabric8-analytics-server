@@ -982,7 +982,7 @@ class SubmitFeedback(ResourceWithSchema):
         # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies
         # for a single request
         try:
-            ecosystem_obj = Ecosystem.by_name(rdb.session, ecosystem_name)
+            ecosystem_obj = Ecosystem.by_name(rdb.session, name=ecosystem_name)
             req = RecommendationFeedback(
                 stack_id=stack_id,
                 package_name=package_name,
@@ -997,7 +997,7 @@ class SubmitFeedback(ResourceWithSchema):
             current_app.logger.exception(
                 'Failed to create new analysis request')
             raise HTTPError(
-                500, "Error inserting log for request {t}".format(t=request_id)) from e
+                500, "Error inserting log for request {t}".format(t=stack_id)) from e
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
