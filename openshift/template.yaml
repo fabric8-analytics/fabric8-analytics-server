@@ -169,7 +169,7 @@ parameters:
   displayName: Number of deployment replicas
   required: true
   name: REPLICAS
-  value: "1"
+  value: "3"
 
 - description: "Flask logging level (see: https://docs.python.org/3/library/logging.html#levels)"
   displayName: Flask logging level
