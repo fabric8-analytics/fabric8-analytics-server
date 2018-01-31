@@ -108,10 +108,6 @@ def liveness():
     current_app.logger.debug("Liveness probe - trying to connect to database "
                              "and execute a query")
     rdb.session.query(Ecosystem).count()
-    # Check broker connection
-    current_app.logger.debug("Liveness probe - trying to schedule the livenessFlow")
-    server_run_flow('livenessFlow', None)
-    current_app.logger.debug("Liveness probe finished")
     return jsonify({}), 200
 
 
