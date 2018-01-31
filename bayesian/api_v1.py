@@ -853,6 +853,8 @@ class StackAnalyses(ResourceWithSchema):
     def post():
         """Handle the POST REST API call."""
         decoded = decode_token()
+        persist = request.args.get('persist', 'true') == 'true'
+        sid = request.args.get('requestId')
         github_url = request.form.get("github_url")
         if github_url is not None:
             files = GithubRead().get_files_github_url(github_url)
@@ -877,7 +879,10 @@ class StackAnalyses(ResourceWithSchema):
                                        "Please upload a valid manifest files.")
 
         dt = datetime.datetime.now()
-        request_id = uuid.uuid4().hex
+        if not sid:
+            request_id = uuid.uuid4().hex
+        else:
+            request_id = sid
 
         iso = datetime.datetime.utcnow().isoformat()
 
@@ -915,35 +920,53 @@ class StackAnalyses(ResourceWithSchema):
 
             manifests.append(manifest)
 
-        try:
-            req = StackAnalysisRequest(
-                id=request_id,
-                submitTime=str(dt),
-                requestJson={'manifest': manifests},
-            )
-            rdb.session.add(req)
-            rdb.session.commit()
-        except SQLAlchemyError as e:
-            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
-
         data = {'api_name': 'stack_analyses',
                 'user_email': decoded.get('email', 'bayesian@redhat.com'),
                 'user_profile': decoded}
-        args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
+        args = {'external_request_id': request_id,
+                'ecosystem': ecosystem, 'data': data}
 
         try:
             api_url = current_app.config['F8_API_BACKBONE_HOST']
 
             d = DependencyFinder()
-            deps = d.execute(args, rdb.session)
+            deps = d.execute(args, rdb.session, manifests)
             deps['external_request_id'] = request_id
 
             _session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
             _session.post('{}/api/v1/recommender'.format(api_url), json=deps)
         except Exception as exc:
             raise HTTPError(500, ("Could not process {t}.".format(t=request_id))) from exc
-
-        return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
+        if persist:
+            if sid:
+                try:
+                    result = rdb.session.query(StackAnalysisRequest)\
+                            .filter_by(id=sid)\
+                            .first()
+                    if result:
+                        result.dep_snapshot = dict(result.dep_snapshot, **{'modified': deps})
+                        rdb.session.commit()
+                        return {"status": "success", "submitted_at": str(dt), "id": str(sid)}
+                    else:
+                        raise HTTPError(500, "No entry exist for request id {t}".format(t=sid))
+                except SQLAlchemyError as e:
+                    raise HTTPError(500, "Error updating log for request {t}".format(t=sid)) from e
+            else:
+                try:
+                    req = StackAnalysisRequest(
+                        id=request_id,
+                        submitTime=str(dt),
+                        requestJson={'manifest': manifests},
+                        dep_snapshot={'original': deps}
+                    )
+                    rdb.session.add(req)
+                    rdb.session.commit()
+                    return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
+                except SQLAlchemyError as e:
+                    raise HTTPError(500, "Error inserting log for request {t}".format(
+                        t=request_id)) from e
+        else:
+            return {"status": "success", "submitted_at": str(dt)}
 
     @staticmethod
     def get():
