@@ -12,8 +12,8 @@ exec mod_wsgi-express start-server \
                       --port 5000 \
                       --user coreapi \
                       --group coreapi \
-                      --processes 1 \
-                      --threads 1\
+                      --processes 4 \
+                      --threads 10 \
                       ${!F8A_DEBUG:---reload-on-changes} \
                       --access-log \
                       --access-log-format "%h %l %u %t \"%r\" %>s %b %{Referer}i \"%{User-agent}i\"" \
