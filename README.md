@@ -13,8 +13,11 @@ See our [contributing guidelines](https://github.com/fabric8-analytics/common/bl
 
 The API details are provided as a [RAML file](../docs/api/raml/api.raml).
 
-A [JSON schema definition](schemas/generated/component-analysis-v1-0-0.schema.json)
+A [JSON schema definition](tests/data/schemas/component_analyses-v1-1-3.schema.json)
 is provided for the component analysis endpoint.
+
+Additionaly [JSON schema definition](tests/data/schemas/stack_analyses-v2-2-0.schema.json)
+is provided for the stack analysis endpoint as well.
 
 ## Core API Access Logs
 
