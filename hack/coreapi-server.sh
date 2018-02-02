@@ -13,7 +13,7 @@ exec mod_wsgi-express start-server \
                       --user coreapi \
                       --group coreapi \
                       --processes 3 \
-                      --threads 1\
+                      --threads 1 \
                       ${!F8A_DEBUG:---reload-on-changes} \
                       --access-log \
                       --access-log-format "%h %l %u %t \"%r\" %>s %b %{Referer}i \"%{User-agent}i\"" \
