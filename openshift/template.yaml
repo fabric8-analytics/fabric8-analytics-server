@@ -89,22 +89,22 @@ objects:
           ports:
           - containerPort: 5000
             protocol: TCP
-          livenessProbe:
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            timeoutSeconds: 10
-            failureThreshold: 3
-            successThreshold: 1
-            tcpSocket:
-              port: 5000
           readinessProbe:
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            failureThreshold: 3
-            successThreshold: 1
-            tcpSocket:
+            httpGet:
+              path: /api/v1/readiness
               port: 5000
-            timeoutSeconds: 10
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 120
+            timeoutSeconds: 120
+          livenessProbe:
+            httpGet:
+              path: /api/v1/liveness
+              port: 5000
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 120
+            timeoutSeconds: 120
           resources:
             requests:
               memory: "512Mi"
