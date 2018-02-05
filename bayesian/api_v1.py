@@ -17,6 +17,7 @@ from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.dialects.postgresql import insert
 from selinon import StoragePool
 
 from f8a_worker.models import (
@@ -853,8 +854,7 @@ class StackAnalyses(ResourceWithSchema):
     def post():
         """Handle the POST REST API call."""
         decoded = decode_token()
-        persist = request.args.get('persist', 'true') == 'true'
-        sid = request.args.get('requestId')
+        sid = request.args.get('sid')
         github_url = request.form.get("github_url")
         if github_url is not None:
             files = GithubRead().get_files_github_url(github_url)
@@ -879,10 +879,12 @@ class StackAnalyses(ResourceWithSchema):
                                        "Please upload a valid manifest files.")
 
         dt = datetime.datetime.now()
-        if not sid:
-            request_id = uuid.uuid4().hex
-        else:
+        if sid:
             request_id = sid
+            is_modified_flag = {'is_modified': True}
+        else:
+            request_id = uuid.uuid4().hex
+            is_modified_flag = {'is_modified': False}
 
         iso = datetime.datetime.utcnow().isoformat()
 
@@ -932,41 +934,30 @@ class StackAnalyses(ResourceWithSchema):
             d = DependencyFinder()
             deps = d.execute(args, rdb.session, manifests)
             deps['external_request_id'] = request_id
+            deps.update(is_modified_flag)
 
             _session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
             _session.post('{}/api/v1/recommender'.format(api_url), json=deps)
+
         except Exception as exc:
-            raise HTTPError(500, ("Could not process {t}.".format(t=request_id))) from exc
-        if persist:
-            if sid:
-                try:
-                    result = rdb.session.query(StackAnalysisRequest)\
-                            .filter_by(id=sid)\
-                            .first()
-                    if result:
-                        result.dep_snapshot = dict(result.dep_snapshot, **{'modified': deps})
-                        rdb.session.commit()
-                        return {"status": "success", "submitted_at": str(dt), "id": str(sid)}
-                    else:
-                        raise HTTPError(500, "No entry exist for request id {t}".format(t=sid))
-                except SQLAlchemyError as e:
-                    raise HTTPError(500, "Error updating log for request {t}".format(t=sid)) from e
-            else:
-                try:
-                    req = StackAnalysisRequest(
-                        id=request_id,
-                        submitTime=str(dt),
-                        requestJson={'manifest': manifests},
-                        dep_snapshot={'original': deps}
-                    )
-                    rdb.session.add(req)
-                    rdb.session.commit()
-                    return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
-                except SQLAlchemyError as e:
-                    raise HTTPError(500, "Error inserting log for request {t}".format(
-                        t=request_id)) from e
-        else:
-            return {"status": "success", "submitted_at": str(dt)}
+            raise HTTPError(500, ("Could not process {t}."
+                                  .format(t=request_id))) from exc
+        try:
+            insert_stmt = insert(StackAnalysisRequest).values(
+                id=request_id,
+                submitTime=str(dt),
+                requestJson={'manifest': manifests},
+                dep_snapshot=deps
+            )
+            do_update_stmt = insert_stmt.on_conflict_do_update(
+                index_elements=['id'],
+                set_=dict(dep_snapshot=deps)
+            )
+            rdb.session.execute(do_update_stmt)
+            rdb.session.commit()
+            return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
+        except SQLAlchemyError as e:
+            raise HTTPError(500, "Error updating log for request {t}".format(t=sid)) from e
 
     @staticmethod
     def get():
