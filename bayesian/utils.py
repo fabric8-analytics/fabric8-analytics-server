@@ -662,7 +662,7 @@ class RecommendationReason:
         """
         for pkg in manifest_response[0].get("recommendation", {}).get("companion", []):
             name = pkg.get("name")
-            current_app.logger.error("Name ----- {}".format(name))
+            print("Name ----- {}".format(name))
             stack_confidence = pkg.get("cooccurrence_probability")
             stack_count = pkg.get("cooccurrence_count")
             count_sentence = None
@@ -677,7 +677,7 @@ class RecommendationReason:
             pkg["confidence_reason"] = stack_confidence
             # Count reason
             pkg["reason"] = count_sentence
-            current_app.logger.error("Updated pkg---------.{}".format(pkg))
+            print("Updated pkg---------.{}".format(pkg))
         return manifest_response
 
 
