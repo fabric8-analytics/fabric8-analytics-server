@@ -17,6 +17,7 @@ from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.dialects.postgresql import insert
 from selinon import StoragePool
 
 from f8a_worker.models import (
@@ -853,6 +854,7 @@ class StackAnalyses(ResourceWithSchema):
     def post():
         """Handle the POST REST API call."""
         decoded = decode_token()
+        sid = request.args.get('sid')
         github_url = request.form.get("github_url")
         if github_url is not None:
             files = GithubRead().get_files_github_url(github_url)
@@ -877,7 +879,12 @@ class StackAnalyses(ResourceWithSchema):
                                        "Please upload a valid manifest files.")
 
         dt = datetime.datetime.now()
-        request_id = uuid.uuid4().hex
+        if sid:
+            request_id = sid
+            is_modified_flag = {'is_modified': True}
+        else:
+            request_id = uuid.uuid4().hex
+            is_modified_flag = {'is_modified': False}
 
         iso = datetime.datetime.utcnow().isoformat()
 
@@ -915,35 +922,42 @@ class StackAnalyses(ResourceWithSchema):
 
             manifests.append(manifest)
 
-        try:
-            req = StackAnalysisRequest(
-                id=request_id,
-                submitTime=str(dt),
-                requestJson={'manifest': manifests},
-            )
-            rdb.session.add(req)
-            rdb.session.commit()
-        except SQLAlchemyError as e:
-            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
-
         data = {'api_name': 'stack_analyses',
                 'user_email': decoded.get('email', 'bayesian@redhat.com'),
                 'user_profile': decoded}
-        args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
+        args = {'external_request_id': request_id,
+                'ecosystem': ecosystem, 'data': data}
 
         try:
             api_url = current_app.config['F8_API_BACKBONE_HOST']
 
             d = DependencyFinder()
-            deps = d.execute(args, rdb.session)
+            deps = d.execute(args, rdb.session, manifests)
             deps['external_request_id'] = request_id
+            deps.update(is_modified_flag)
 
             _session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
             _session.post('{}/api/v1/recommender'.format(api_url), json=deps)
-        except Exception as exc:
-            raise HTTPError(500, ("Could not process {t}.".format(t=request_id))) from exc
 
-        return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
+        except Exception as exc:
+            raise HTTPError(500, ("Could not process {t}."
+                                  .format(t=request_id))) from exc
+        try:
+            insert_stmt = insert(StackAnalysisRequest).values(
+                id=request_id,
+                submitTime=str(dt),
+                requestJson={'manifest': manifests},
+                dep_snapshot=deps
+            )
+            do_update_stmt = insert_stmt.on_conflict_do_update(
+                index_elements=['id'],
+                set_=dict(dep_snapshot=deps)
+            )
+            rdb.session.execute(do_update_stmt)
+            rdb.session.commit()
+            return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
+        except SQLAlchemyError as e:
+            raise HTTPError(500, "Error updating log for request {t}".format(t=sid)) from e
 
     @staticmethod
     def get():
