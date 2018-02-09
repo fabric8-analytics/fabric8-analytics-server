@@ -678,6 +678,67 @@ class RecommendationReason:
             pkg["reason"] = count_sentence
         return manifest_response
 
+def get_cve_data(input_json):
+    ecosystem = input_json.get('ecosystem')
+    req_id = input_json.get('request_id')
+    deps = input_json.get('_resolved', [])
+
+    pkg_list = [itm['package'] for itm in deps]
+    ver_list = [itm['version'] for itm in deps]
+
+    str_gremlin = "g.V().has('pecosystem','" + ecosystem + "').has('pname', within(pkg_list))." \
+                  "has('version', within(ver_list)).has('cve_ids')." \
+                  "valueMap('pecosystem', 'pname', 'version', 'cve_ids');"
+
+    payload = {
+        'gremlin': str_gremlin,
+        'bindings': {
+            'ecosystem': ecosystem,
+            'pkg_list': pkg_list,
+            'ver_list': ver_list
+        }
+    }
+
+    resp = post(gremlin_url, json=payload)
+    jsn = resp.json()
+
+    data = jsn.get('result', {}).get('data', [])
+
+    result = []
+    for itm in deps:
+        cve_dict = {
+            'ecosystem': ecosystem,
+            'package': itm['package'],
+            'version': itm['version'],
+            'cve': None
+        }
+        # if there is any EPV with CVE, modify the cve details
+        if data:
+            for cve_itm in data:
+                conditions = [ecosystem == cve_itm['pecosystem'][0],
+                             itm['package'] == cve_itm['pname'][0],
+                             itm['version'] == cve_itm['version'][0]]
+                if all(conditions):
+                    details = []
+                    highest_cvss = -1
+                    for cve in cve_itm['cve_ids']:
+                        id, cvss = cve.split(':')
+                        highest_cvss = float(cvss) if float(cvss) > highest_cvss else highest_cvss
+                        details.append({
+                            'cve_id': id,
+                            'cvss': cvss
+                        })
+                    cve_dict['cve'] = {
+                        'highest_cvss': highest_cvss,
+                        'details': details
+                    }
+
+        result.append(cve_dict)
+
+    return {
+        "request_id": req_id,
+        "result": result
+    }
 
 def is_valid(param):
     """Return true is the param is not a null value."""
