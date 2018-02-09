@@ -33,7 +33,7 @@ from .dependency_finder import DependencyFinder
 from .auth import login_required, decode_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
-from .utils import (get_system_version, retrieve_worker_result,
+from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     server_create_component_bookkeeping, build_nested_schema_dict,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count,
@@ -1010,6 +1010,24 @@ class SubmitFeedback(ResourceWithSchema):
                 500, "Error inserting log for request {t}".format(t=stack_id)) from e
 
 
+class DepEditorCVEAnalyses(ResourceWithSchema):
+    """Implementation of /depeditor-cve-analyses POST REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        input_json = request.get_json()
+
+        if not request.json or 'request_id' not in input_json:
+            raise HTTPError(400, error="Expected JSON request and request_id")
+
+        if '_resolved' not in input_json or 'ecosystem' not in input_json:
+            raise HTTPError(400, error="Expected _resolved and ecosystem in request")
+        response = get_cve_data(input_json)
+        return response, 200
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(StackAnalysesV2, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
@@ -1036,6 +1054,7 @@ add_resource_no_matter_slashes(
     GetNextComponent, '/get-next-component/<ecosystem>')
 add_resource_no_matter_slashes(SetTagsToComponent, '/set-tags')
 add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
+add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined
