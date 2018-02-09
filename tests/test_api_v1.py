@@ -130,6 +130,8 @@ class TestApiV1Root(object):
             "/api/v1/analyse",
             "/api/v1/component-analyses/<ecosystem>/<package>/<version>",
             "/api/v1/component-search/<package>",
+            "/api/v1/depeditor-analyses",
+            "/api/v1/depeditor-cve-analyses",
             "/api/v1/generate-file",
             "/api/v1/get-next-component/<ecosystem>",
             "/api/v1/master-tags/<ecosystem>",

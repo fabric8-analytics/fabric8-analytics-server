@@ -742,7 +742,7 @@ def get_cve_data(input_json):
     return {
         "request_id": req_id,
         "result": result,
-        "highest_stack_cvss": highest_stack_cvss
+        "stack_highest_cvss": highest_stack_cvss
     }
 
 
