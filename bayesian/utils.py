@@ -678,7 +678,9 @@ class RecommendationReason:
             pkg["reason"] = count_sentence
         return manifest_response
 
+
 def get_cve_data(input_json):
+    """Get CVEs for list of packages."""
     ecosystem = input_json.get('ecosystem')
     req_id = input_json.get('request_id')
     deps = input_json.get('_resolved', [])
@@ -716,14 +718,14 @@ def get_cve_data(input_json):
         if data:
             for cve_itm in data:
                 conditions = [ecosystem == cve_itm['pecosystem'][0],
-                             itm['package'] == cve_itm['pname'][0],
-                             itm['version'] == cve_itm['version'][0]]
+                              itm['package'] == cve_itm['pname'][0],
+                              itm['version'] == cve_itm['version'][0]]
                 if all(conditions):
                     details = []
                     highest_cvss = -1
                     for cve in cve_itm['cve_ids']:
                         id, cvss = cve.split(':')
-                        highest_cvss = float(cvss) if float(cvss) > highest_cvss else highest_cvss
+                        highest_cvss = max(float(cvss), highest_cvss)
                         details.append({
                             'cve_id': id,
                             'cvss': cvss
@@ -739,6 +741,7 @@ def get_cve_data(input_json):
         "request_id": req_id,
         "result": result
     }
+
 
 def is_valid(param):
     """Return true is the param is not a null value."""

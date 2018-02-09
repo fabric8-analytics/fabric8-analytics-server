@@ -1010,6 +1010,117 @@ class SubmitFeedback(ResourceWithSchema):
                 500, "Error inserting log for request {t}".format(t=stack_id)) from e
 
 
+class DepEditorAnalyses(ResourceWithSchema):
+    """Implementation of /depeditor-analyses POST REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        manifest_file = {
+            'maven': 'pom.xml',
+            'node': 'package.json',
+            'pypi': 'requirements.txt'
+        }
+
+        input_json = request.get_json()
+        persist = request.args.get('persist', 'false') == 'true'
+
+        if not request.json or 'request_id' not in input_json:
+            raise HTTPError(400, error="Expected JSON request and request_id")
+
+        if '_resolved' not in input_json or 'ecosystem' not in input_json:
+            raise HTTPError(400, error="Expected _resolved and ecosystem in request")
+
+        request_obj = {
+            "external_request_id": input_json.get('request_id'),
+            "result": [{
+                "details": [{
+                    "ecosystem": input_json.get('ecosystem'),
+                    "_resolved": input_json.get('_resolved', []),
+                    "manifest_file_path": input_json.get('manifest_file_path', '/path'),
+                    "manifest_file": manifest_file.get(input_json.get('ecosystem'))
+                }],
+            }]
+        }
+
+        api_url = current_app.config['F8_API_BACKBONE_HOST']
+        response = requests.post('{}/api/v1/stack-recommender'.format(api_url), json=request_obj,
+                                 params={'persist': str(persist).lower()})
+        if response.status_code == 200:
+            data = json.loads(response.text)
+            started_at = None
+            finished_at = None
+            version = None
+            release = None
+            manifest_response = []
+            stacks = []
+            recommendations = []
+            stack_result = data.get('stack_aggregator')
+            reco_result = data.get('recommender')
+            external_request_id = reco_result.get('external_request_id')
+            if stack_result is not None and 'result' in stack_result:
+                started_at = stack_result.get("result", {}).get("_audit", {}).get("started_at",
+                                                                                  started_at)
+                finished_at = stack_result.get("result", {}).get("_audit", {}).get("ended_at",
+                                                                                   finished_at)
+                version = stack_result.get("result", {}).get("_audit", {}).get("version",
+                                                                               version)
+                release = stack_result.get("result", {}).get("_release", release)
+                stacks = stack_result.get("result", {}).get("stack_data", stacks)
+
+            if reco_result is not None and 'result' in reco_result:
+                recommendations = reco_result.get("result", {}).get("recommendations",
+                                                                    recommendations)
+
+            if not stacks:
+                return {
+                    "version": version,
+                    "release": release,
+                    "started_at": started_at,
+                    "finished_at": finished_at,
+                    "request_id": external_request_id,
+                    "result": manifest_response
+                }
+            for stack in stacks:
+                user_stack_deps = stack.get('user_stack_info', {}).get('analyzed_dependencies', [])
+                stack_recommendation = get_item_from_list_by_key_value(recommendations,
+                                                                       "manifest_file_path",
+                                                                       stack.get(
+                                                                           "manifest_file_path"))
+                for dep in user_stack_deps:
+                    # Adding topics from the recommendations
+                    if stack_recommendation is not None:
+                        dep["topic_list"] = stack_recommendation.get("input_stack_topics",
+                                                                     {}).get(dep.get('name'), [])
+                    else:
+                        dep["topic_list"] = []
+
+            for stack in stacks:
+                stack["recommendation"] = get_item_from_list_by_key_value(
+                    recommendations,
+                    "manifest_file_path",
+                    stack.get("manifest_file_path"))
+                manifest_response.append(stack)
+
+            # Populate reason for alternate and companion recommendation
+            if manifest_response[0].get('recommendation'):
+                manifest_response = RecommendationReason().add_reco_reason(manifest_response)
+
+            return {
+                "version": version,
+                "release": release,
+                "started_at": started_at,
+                "finished_at": finished_at,
+                "request_id": external_request_id,
+                "result": manifest_response
+            }
+        else:
+            return {'status': 'failure',
+                    'error': response.text}, response.status_code
+
+
 class DepEditorCVEAnalyses(ResourceWithSchema):
     """Implementation of /depeditor-cve-analyses POST REST API call."""
 
@@ -1017,6 +1128,7 @@ class DepEditorCVEAnalyses(ResourceWithSchema):
 
     @staticmethod
     def post():
+        """Handle the POST REST API call."""
         input_json = request.get_json()
 
         if not request.json or 'request_id' not in input_json:
@@ -1054,6 +1166,7 @@ add_resource_no_matter_slashes(
     GetNextComponent, '/get-next-component/<ecosystem>')
 add_resource_no_matter_slashes(SetTagsToComponent, '/set-tags')
 add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
+add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
 add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
