@@ -1027,7 +1027,7 @@ class DepEditorAnalyses(ResourceWithSchema):
         input_json = request.get_json()
         persist = request.args.get('persist', 'false') == 'true'
 
-        if not request.json or 'request_id' not in input_json:
+        if not input_json or 'request_id' not in input_json:
             raise HTTPError(400, error="Expected JSON request and request_id")
 
         if '_resolved' not in input_json or 'ecosystem' not in input_json:
@@ -1049,7 +1049,7 @@ class DepEditorAnalyses(ResourceWithSchema):
         response = requests.post('{}/api/v1/stack-recommender'.format(api_url), json=request_obj,
                                  params={'persist': str(persist).lower()})
         if response.status_code == 200:
-            data = json.loads(response.text)
+            data = response.json()
             started_at = None
             finished_at = None
             version = None
@@ -1114,7 +1114,8 @@ class DepEditorAnalyses(ResourceWithSchema):
                 "started_at": started_at,
                 "finished_at": finished_at,
                 "request_id": external_request_id,
-                "result": manifest_response
+                "result": manifest_response,
+                "dep_snapshot": input_json
             }
         else:
             return {'status': 'failure',
