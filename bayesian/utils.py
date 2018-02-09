@@ -707,6 +707,7 @@ def get_cve_data(input_json):
     data = jsn.get('result', {}).get('data', [])
 
     result = []
+    highest_stack_cvss = -1
     for itm in deps:
         cve_dict = {
             'ecosystem': ecosystem,
@@ -726,6 +727,7 @@ def get_cve_data(input_json):
                     for cve in cve_itm['cve_ids']:
                         id, cvss = cve.split(':')
                         highest_cvss = max(float(cvss), highest_cvss)
+                        highest_stack_cvss = max(highest_stack_cvss, highest_cvss)
                         details.append({
                             'cve_id': id,
                             'cvss': cvss
@@ -739,7 +741,8 @@ def get_cve_data(input_json):
 
     return {
         "request_id": req_id,
-        "result": result
+        "result": result,
+        "highest_stack_cvss": highest_stack_cvss
     }
 
 
