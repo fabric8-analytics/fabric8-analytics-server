@@ -660,11 +660,12 @@ class RecommendationReason:
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for each companion package
         """
-        count_sentence = None
         for pkg in manifest_response[0].get("recommendation", {}).get("companion", []):
             name = pkg.get("name")
+            print("Name ----- {}".format(name))
             stack_confidence = pkg.get("cooccurrence_probability")
             stack_count = pkg.get("cooccurrence_count")
+            count_sentence = None
             # 0% confidence is as good as not showing it on the UI.
             if stack_confidence == 0:
                 stack_confidence = None
@@ -676,6 +677,7 @@ class RecommendationReason:
             pkg["confidence_reason"] = stack_confidence
             # Count reason
             pkg["reason"] = count_sentence
+            print("Updated pkg---------.{}".format(pkg))
         return manifest_response
 
 
