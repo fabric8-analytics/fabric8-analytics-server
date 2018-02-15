@@ -660,14 +660,25 @@ class RecommendationReason:
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for each companion package
         """
-        count_sentence = None
         for pkg in manifest_response[0].get("recommendation", {}).get("companion", []):
+            count_sentence = None
             name = pkg.get("name")
             stack_confidence = pkg.get("cooccurrence_probability")
             stack_count = pkg.get("cooccurrence_count")
+            if stack_confidence is None:
+                """
+                Log the value of zero confidence, so that it can be matched
+                against Kronos output for validation.
+                This should track any future occurence of this[1] error:
+                Error:https://github.com/openshiftio/openshift.io/issues/2167
+                """
+                current_app.logger.error(
+                    "Stack Count for {} when confidence=None is {}".format(name, stack_count))
+
             # 0% confidence is as good as not showing it on the UI.
             if stack_confidence == 0:
                 stack_confidence = None
+
             # If stack_count is 0 or None, then do not generate the reason.
             if stack_count:
                 count_sentence = "Package {} appears in {} different stacks".format(
