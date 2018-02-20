@@ -8,6 +8,7 @@ import requests
 import re
 
 from io import StringIO
+from collections import defaultdict
 
 import botocore
 from requests_futures.sessions import FuturesSession
@@ -39,7 +40,7 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     search_packages_from_graph, get_request_count,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
-                    is_valid)
+                    is_valid, select_latest_version, get_categories_data)
 
 
 import os
@@ -1141,6 +1142,42 @@ class DepEditorCVEAnalyses(ResourceWithSchema):
         return response, 200
 
 
+class CategoryService(ResourceWithSchema):
+    """Implementation of Dependency editor category service GET REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def get(runtime):
+        categories = defaultdict(lambda: {'pkg_count': 0, 'packages': list()})
+        gremlin_resp = get_categories_data(runtime)
+        response = {
+            'categories': dict(),
+            'request_id': gremlin_resp.get('requestId')
+        }
+        if 'result' in gremlin_resp and 'requestId' in gremlin_resp:
+            data = gremlin_resp.get('result')
+            if 'data' in data and data['data']:
+                for items in data.get('data'):
+                    category = items.get('category')
+                    package = items.get('package')
+                    if category and package:
+                        pkg_count = category.get('category_deps_count', [0])[0]
+                        _category = category.get('ctname', [''])[0]
+                        pkg_name = package.get('name', [''])[0]
+                        libio_version = package.get('libio_latest_version', [''])[0]
+                        version = package.get('latest_version', [''])[0]
+                        latest_version = select_latest_version(version, libio_version)
+                        categories[_category]['pkg_count'] = pkg_count
+                        categories[_category]['packages'].append({
+                            'name': pkg_name,
+                            'version': latest_version,
+                            'category': _category
+                        })
+                response['categories'] = categories
+        return response, 200
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(StackAnalysesV2, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
@@ -1166,6 +1203,7 @@ add_resource_no_matter_slashes(GenerateManifest, '/generate-file')
 add_resource_no_matter_slashes(
     GetNextComponent, '/get-next-component/<ecosystem>')
 add_resource_no_matter_slashes(SetTagsToComponent, '/set-tags')
+add_resource_no_matter_slashes(CategoryService, '/categories/<runtime>')
 add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
 add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
 add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
