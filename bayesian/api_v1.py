@@ -1176,7 +1176,8 @@ class CategoryService(ResourceWithSchema):
                             'category': _category
                         })
                 response['categories'] = categories
-        return response, 200
+        response = dict(response)
+        return response
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
