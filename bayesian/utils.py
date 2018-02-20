@@ -760,7 +760,6 @@ def get_cve_data(input_json):
 
 def get_categories_data(runtime):
     """Get categories for based on runtime."""
-
     qstring = "g.V().has('category_runtime', runtime).as('category')."\
         "in('belongs_to_category').as('package').select('category', 'package').by(valueMap());"
 
@@ -775,8 +774,7 @@ def get_categories_data(runtime):
 
 
 def convert_version_to_proper_semantic(version):
-    """Needed for maven version like 1.5.2.RELEASE to be converted to
-    1.5.2-RELEASE for semantic version to work."""
+    """Versions to be converted in proper format for semantic version to work."""
     version = version.replace('.', '-', 3)
     version = version.replace('-', '.', 2)
     return version
