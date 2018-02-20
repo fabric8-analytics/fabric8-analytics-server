@@ -1149,6 +1149,7 @@ class CategoryService(ResourceWithSchema):
 
     @staticmethod
     def get(runtime):
+        """Handle the GET REST API call."""
         categories = defaultdict(lambda: {'pkg_count': 0, 'packages': list()})
         gremlin_resp = get_categories_data(runtime)
         response = {
