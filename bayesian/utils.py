@@ -11,6 +11,7 @@ import shutil
 from selinon import run_flow
 from flask import current_app
 from flask.json import JSONEncoder
+import semantic_version as sv
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
 
@@ -755,6 +756,49 @@ def get_cve_data(input_json):
         "result": result,
         "stack_highest_cvss": highest_stack_cvss
     }
+
+
+def get_categories_data(runtime):
+    """Get categories for based on runtime."""
+    qstring = "g.V().has('category_runtime', runtime).as('category')."\
+        "in('belongs_to_category').as('package').select('category', 'package').by(valueMap());"
+
+    payload = {
+        'gremlin': qstring,
+        'bindings': {
+            'runtime': runtime
+        }
+    }
+    resp = post(gremlin_url, json=payload)
+    return resp.json()
+
+
+def convert_version_to_proper_semantic(version):
+    """Versions to be converted in proper format for semantic version to work."""
+    version = version.replace('.', '-', 3)
+    version = version.replace('-', '.', 2)
+    return version
+
+
+def select_latest_version(latest_version='', libio_version=''):
+    """Retruns the latest version among current latest version and libio version."""
+    return_version = ''
+    if latest_version in ('-1', ''):
+        latest_version = '0.0.0'
+    if libio_version in ('-1', ''):
+        libio_version = '0.0.0'
+    if latest_version == '0.0.0' and libio_version == '0.0.0':
+        return return_version
+    libio_version = convert_version_to_proper_semantic(libio_version)
+    latest_version = convert_version_to_proper_semantic(latest_version)
+    try:
+        return_version = libio_version
+        if sv.SpecItem('<' + latest_version).match(sv.Version(libio_version)):
+            return_version = latest_version
+    except ValueError:
+        # In case of failure let's not show any latest version at all
+        pass
+    return return_version
 
 
 def is_valid(param):
