@@ -423,7 +423,7 @@ class StackAnalysesGET(ResourceWithSchema):
         if manifest_response[0].get('recommendation'):
             manifest_response = RecommendationReason().add_reco_reason(manifest_response)
 
-        resp = flask.make_response({
+        resp = jsonify({
             "version": version,
             "release": release,
             "started_at": started_at,
