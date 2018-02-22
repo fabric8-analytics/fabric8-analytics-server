@@ -14,8 +14,7 @@ RUN yum install -y epel-release &&\
     yum install -y gcc patch git python34-pip python34-requests httpd httpd-devel python34-devel postgresql-devel redhat-rpm-config libxml2-devel libxslt-devel python34-pycurl pcp mercator &&\
     yum clean all
 
-RUN mkdir -p /coreapi
-COPY ./requirements.txt /coreapi
+COPY ./requirements.txt /coreapi/
 RUN pushd /coreapi && \
     pip3 install -r requirements.txt && \
     rm requirements.txt && \
