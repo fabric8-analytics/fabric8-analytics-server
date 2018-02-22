@@ -423,15 +423,15 @@ class StackAnalysesGET(ResourceWithSchema):
         if manifest_response[0].get('recommendation'):
             manifest_response = RecommendationReason().add_reco_reason(manifest_response)
 
-        resp = jsonify({
+        resp = {
             "version": version,
             "release": release,
             "started_at": started_at,
             "finished_at": finished_at,
             "request_id": external_request_id,
             "result": manifest_response
-        })
-        resp.headers.add('Access-Control-Allow-Origin', '*')
+        }
+
         return resp
 
 
