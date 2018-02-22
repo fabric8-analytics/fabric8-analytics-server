@@ -90,7 +90,8 @@ def create_app(configfile=None):
     def access_control_allow_origin(response):
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "authorization, content-type"
-        response.headers["Access-Control-Allow-Methods"] = "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT"
+        response.headers["Access-Control-Allow-Methods"] = "DELETE, GET, HEAD, OPTIONS,"\
+            "PATCH, POST, PUT"
         response.headers["Allow"] = "GET, HEAD, OPTIONS, PATCH, POST, PUT"
         return response
 
