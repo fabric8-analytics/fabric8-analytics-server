@@ -15,7 +15,7 @@ from requests_futures.sessions import FuturesSession
 from flask import Blueprint, current_app, request, url_for, Response
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
-from flask_cors import CORS
+#from flask_cors import CORS
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
@@ -50,7 +50,7 @@ import urllib
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 rest_api_v1 = Api(api_v1)
-CORS(api_v1, resources={r"/api/v1/*": {"origins": "*", "allow_headers": "*"}})
+#CORS(api_v1, resources={r"/api/v1/*": {"origins": "*", "allow_headers": "*"}})
 
 pagination_parser = reqparse.RequestParser()
 pagination_parser.add_argument('page', type=int, default=0)
