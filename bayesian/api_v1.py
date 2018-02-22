@@ -50,7 +50,7 @@ import urllib
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 rest_api_v1 = Api(api_v1)
-CORS(api_v1)
+CORS(api_v1, resources={r"/api/v1/*": {"origins": "*", "allow_headers": "*"}})
 
 pagination_parser = reqparse.RequestParser()
 pagination_parser.add_argument('page', type=int, default=0)
@@ -423,14 +423,16 @@ class StackAnalysesGET(ResourceWithSchema):
         if manifest_response[0].get('recommendation'):
             manifest_response = RecommendationReason().add_reco_reason(manifest_response)
 
-        return {
+        resp = flask.make_response({
             "version": version,
             "release": release,
             "started_at": started_at,
             "finished_at": finished_at,
             "request_id": external_request_id,
             "result": manifest_response
-        }
+        })
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        return resp
 
 
 @api_v1.route('/stack-analyses/<external_request_id>/_debug')
