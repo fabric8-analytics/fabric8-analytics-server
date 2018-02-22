@@ -86,6 +86,11 @@ def create_app(configfile=None):
     def set_current_user():
         g.current_user = None
 
+    @app.after_request
+    def access_control_allow_origin(response):
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
+
     return app
 
 
