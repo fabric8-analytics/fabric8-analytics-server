@@ -223,18 +223,17 @@ def search_packages_from_graph(tokens):
     # TODO query string for actual STAGE/PROD
     # g.V().has('vertex_label','Package').has('tokens','one').has('tokens','two').
     # out('has_version').valueMap('pecosystem', 'pname', 'version')).limit(5)
-    qstring = "g.V()"
-    # qstring = "g.V()"
+    qstring = ["g.V()"]
+    tkn_string = ".has('token', '{t}' )"
     for tkn in tokens:
         if tkn:
             # TODO Change qstring
-            qstring += ".has('tokens', '" + tkn + "')"
-            # qstring += ".has('alias', '" + tkn + "')"
+            qstring.append(tkn_string.format(t=tkn))
 
-    # qstring += ".has('version').valueMap('pecosystem', 'pname', 'version').limit(5)"
-    qstring += ".out('has_version').valueMap('pecosystem', 'pname', 'version').dedup().limit(5)"
+    qstring.append(".valueMap('ecosystem', 'name', 'libio_latest_version', 'latest_version')"
+                   ".dedup().limit(5)")
 
-    payload = {'gremlin': qstring}
+    payload = {'gremlin': ''.join(qstring)}
 
     response = post(gremlin_url, data=json.dumps(payload))
     resp = response.json()
@@ -244,14 +243,15 @@ def search_packages_from_graph(tokens):
 
     pkg_list = []
     for pkg in packages:
-        condition = [pkg['pecosystem'][0] is not None,
-                     pkg['pname'][0] is not None,
-                     pkg['version'][0] is not None]
-        if all(condition):
+        eco = pkg.get('ecosystem', [''])[0]
+        name = pkg.get('name', [''])[0]
+        version = select_latest_version(pkg.get('latest_version', [''])[0],
+                                        pkg.get('libio_latest_version', [''])[0])
+        if all((eco, name, version)):
             pkg_map = {
-                'ecosystem': pkg['pecosystem'][0],
-                'name': pkg['pname'][0],
-                'version': pkg['version'][0]
+                'ecosystem': eco,
+                'name': name,
+                'version': version
             }
             pkg_list.append(pkg_map)
 
@@ -783,9 +783,9 @@ def convert_version_to_proper_semantic(version):
 def select_latest_version(latest_version='', libio_version=''):
     """Retruns the latest version among current latest version and libio version."""
     return_version = ''
-    if latest_version in ('-1', ''):
+    if latest_version in ('-1', '', None):
         latest_version = '0.0.0'
-    if libio_version in ('-1', ''):
+    if libio_version in ('-1', '', None):
         libio_version = '0.0.0'
     if latest_version == '0.0.0' and libio_version == '0.0.0':
         return return_version
