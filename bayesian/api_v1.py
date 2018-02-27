@@ -451,10 +451,10 @@ def stack_analyses_debug(external_request_id):
     for result in results:
         op_data = result.to_dict()
         audit = op_data.get('task_result', {}).get('_audit', {})
-        task_data = {'task_name': op_data.get('worker')}
-        task_data['started_at'] = audit.get('started_at')
-        task_data['ended_at'] = audit.get('ended_at')
-        task_data['error'] = op_data.get('error')
+        task_data = {'task_name': op_data.get('worker'),
+                     'started_at': audit.get('started_at'),
+                     'ended_at': audit.get('ended_at'),
+                     'error': op_data.get('error')}
         response['tasks'].append(task_data)
     return jsonify(response), 200
 
