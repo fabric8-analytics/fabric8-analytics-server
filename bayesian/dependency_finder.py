@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 from f8a_worker.models import StackAnalysisRequest, Ecosystem
 from f8a_worker.solver import get_ecosystem_solver
-from f8a_worker.utils import tempdir
+from tempfile import TemporaryDirectory
 from f8a_worker.workers.mercator import MercatorTask
 
 
@@ -46,7 +46,7 @@ class DependencyFinder():
         # If we receive a manifest file we need to save it first
         result = []
         for manifest in manifests:
-            with tempdir() as temp_path:
+            with TemporaryDirectory() as temp_path:
                 with open(os.path.join(temp_path, manifest['filename']), 'a+') as fd:
                     fd.write(manifest['content'])
 
