@@ -34,23 +34,30 @@ def extract_licenses(license_files):
         for f_no, _file in enumerate(license_files, 1):
             license_key = None
             try:
+                # remove all the unnecessary chars ',', \n, space
                 content = _file.read().decode('utf-8')
                 content = ' '.join(content.split())
                 content = content.replace(',', '').lower()
                 _result = defaultdict(list)
                 for lic in lic_syn:
                     license = lic.replace(',', '').lower()
+                    # find the license names with their position in file content
                     index = content.find(license)
                     if index != -1:
+                        # condition to check that license name is not a substring of a word
+                        # ex: limit contains MIT as substring
                         if ((index == 0 or not content[index - 1].isalpha()) and
                             (index + len(license) == len(content) or not
                              content[index + len(license)].isalpha())):
                             _result[index].append(lic)
                 if _result:
+                    # get the name of the license which comes first in the file.
                     _temp = _result.get(min(_result.keys()))
                     if _temp:
                         license_key = max(_temp, key=len)
                 response[f_no] = lic_syn.get(license_key, 'unknown')
             except Exception as e:
                 current_app.logger.error('{time} {msg}'.format(time=dt.now(), msg=str(e)))
+    else:
+        get_license_synonyms.cache.clear()
     return response
