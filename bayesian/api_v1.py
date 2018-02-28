@@ -952,6 +952,17 @@ class Analytics(ResourceWithSchema):
         raise HTTPError(404, "Unsupported API endpoint")
 
 
+@api_v1.route('/test-dependency-ingester')
+def test_dependency_parser_flow():
+    dummy_payload = {
+            "github_repo": "https://github.com/jitpack/maven-simple",
+            "github_sha": "20e9cf2f612be4095d4b09fc4d7312544d0a1775",
+            "email_ids": "dummy@dummy.com"
+                              }
+    server_run_flow('osioAnalysisFlow',dummy_payload)
+    return jsonify(message="See the console for output")
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(Analytics, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
@@ -984,3 +995,5 @@ add_resource_no_matter_slashes(SetTagsToComponent, '/set-tags')
 def api_404_handler(*args, **kwargs):
     """Handle all other routes not defined above."""
     return jsonify(error='Cannot match given query to any API v1 endpoint'), 404
+
+
