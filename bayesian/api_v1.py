@@ -138,6 +138,7 @@ def get_items_for_page(items, page, per_page):
 
 def paginated(func):
     """Provide paginated output for longer responses."""
+
     @functools.wraps(func)
     def inner(*args, **kwargs):
         func_res = func(*args, **kwargs)
@@ -340,6 +341,7 @@ class StackAnalysesGET(ResourceWithSchema):
     """Implementation of the /stack-analyses GET REST API call method."""
 
     method_decorators = [login_required]
+
     # schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
@@ -755,7 +757,7 @@ class StackAnalysesV2(ResourceWithSchema):
                                          .format(id=request_id))
             raise HTTPError(500, ("Error processing request {t}. manifest files "
                                   "could not be processed"
-                                  .format(t=request_id))) from exc
+                .format(t=request_id))) from exc
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
@@ -948,7 +950,7 @@ class StackAnalyses(ResourceWithSchema):
 
         except Exception as exc:
             raise HTTPError(500, ("Could not process {t}."
-                                  .format(t=request_id))) from exc
+                .format(t=request_id))) from exc
         try:
             insert_stmt = insert(StackAnalysisRequest).values(
                 id=request_id,
@@ -970,6 +972,8 @@ class StackAnalyses(ResourceWithSchema):
     def get():
         """Handle the GET REST API call."""
         raise HTTPError(404, "Unsupported API endpoint")
+
+<< << << < HEAD
 
 
 class SubmitFeedback(ResourceWithSchema):
@@ -1184,6 +1188,17 @@ class CategoryService(ResourceWithSchema):
         return response, 200
 
 
+@api_v1.route('/test-dependency-ingester')
+def test_dependency_parser_flow():
+    dummy_payload = {
+        "github_repo": "https://github.com/jitpack/maven-simple",
+        "github_sha": "20e9cf2f612be4095d4b09fc4d7312544d0a1775",
+        "email_ids": "dummy@dummy.com"
+    }
+    server_run_flow('osioAnalysisFlow', dummy_payload)
+    return jsonify(message="See the console for output")
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(StackAnalysesV2, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
@@ -1213,6 +1228,7 @@ add_resource_no_matter_slashes(CategoryService, '/categories/<runtime>')
 add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
 add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
 add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
+
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined
