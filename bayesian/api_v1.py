@@ -36,7 +36,7 @@ from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     server_create_component_bookkeeping, build_nested_schema_dict,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
-                    search_packages_from_graph, get_request_count,
+                    search_packages_from_graph, get_request_count, fetch_pom_from_github,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data)
@@ -859,7 +859,7 @@ class StackAnalyses(ResourceWithSchema):
         check_license = request.args.get('check_license', 'false') == 'true'
         github_url = request.form.get("github_url")
         if github_url is not None:
-            files = GithubRead().get_files_github_url(github_url)
+            files = fetch_pom_from_github(github_url)
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')

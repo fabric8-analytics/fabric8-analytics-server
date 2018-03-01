@@ -799,6 +799,32 @@ def select_latest_version(latest='', libio=''):
     return return_version
 
 
+def fetch_pom_from_github(url):
+    """Fetch pom.xml from github url."""
+    base_url = 'https://raw.githubusercontent.com'
+    branch = 'master'
+    filename = 'pom.xml'
+    try:
+        if url.endswith('.git'):
+            url = url[:-len('.git')]
+
+        user, repo = url.split('/')[-2:]
+        user = user.split(':')[-1]
+
+        response = get('/'.join([base_url, user, repo, branch, filename]))
+        if response.status_code != 200:
+            raise ValueError
+        return [{
+            'filename': 'pom.xml',
+            'filepath': '/path',
+            'content': response.content.decode('utf-8')
+        }]
+    except ValueError:
+        current_app.logger.error('Error fetching file from given url')
+    except Exception as e:
+        current_app.logger.error('ERROR: {}'.format(str(e)))
+
+
 def is_valid(param):
     """Return true is the param is not a null value."""
     return param is not None
