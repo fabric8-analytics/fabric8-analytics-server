@@ -75,6 +75,17 @@ def handle_http_error(e):
         return original_handle_error(e)
 
 
+@api_v1.route('/test-dependency-ingest')
+def test_dependency_parser_flow():
+    dummy_payload = {
+        "github_repo": "https://github.com/jitpack/maven-simple",
+        "github_sha": "20e9cf2f612be4095d4b09fc4d7312544d0a1775",
+        "email_ids": "dummy@dummy.com"
+    }
+    server_run_flow('osioAnalysisFlow', dummy_payload)
+    return jsonify(message="See the console for output")
+
+
 @api_v1.route('/_error')
 def error():
     """Implement the endpoint used by httpd, which redirects its errors to it."""
@@ -966,8 +977,6 @@ class StackAnalyses(ResourceWithSchema):
         """Handle the GET REST API call."""
         raise HTTPError(404, "Unsupported API endpoint")
 
-<< << << < HEAD
-
 
 class SubmitFeedback(ResourceWithSchema):
     """Implementation of /submit-feedback POST REST API call."""
@@ -1180,17 +1189,6 @@ class CategoryService(ResourceWithSchema):
                         })
                 response['categories'] = categories
         return response, 200
-
-
-@api_v1.route('/test-dependency-ingester')
-def test_dependency_parser_flow():
-    dummy_payload = {
-        "github_repo": "https://github.com/jitpack/maven-simple",
-        "github_sha": "20e9cf2f612be4095d4b09fc4d7312544d0a1775",
-        "email_ids": "dummy@dummy.com"
-    }
-    server_run_flow('osioAnalysisFlow', dummy_payload)
-    return jsonify(message="See the console for output")
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
