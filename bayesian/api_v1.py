@@ -978,6 +978,7 @@ class StackAnalyses(ResourceWithSchema):
         raise HTTPError(404, "Unsupported API endpoint")
 
 
+
 class SubmitFeedback(ResourceWithSchema):
     """Implementation of /submit-feedback POST REST API call."""
 
@@ -1190,7 +1191,6 @@ class CategoryService(ResourceWithSchema):
                 response['categories'] = categories
         return response, 200
 
-
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(StackAnalysesV2, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
@@ -1231,3 +1231,5 @@ add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 def api_404_handler(*args, **kwargs):
     """Handle all other routes not defined above."""
     return jsonify(error='Cannot match given query to any API v1 endpoint'), 404
+
+
