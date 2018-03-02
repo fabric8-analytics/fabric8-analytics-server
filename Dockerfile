@@ -1,8 +1,7 @@
 FROM registry.centos.org/centos/centos:7
 
 ENV LANG=en_US.UTF-8 \
-    F8A_WORKER_VERSION=f60a624
-
+    F8A_WORKER_VERSION=6b9dd98
 
 RUN useradd -d /coreapi coreapi
 
@@ -35,7 +34,7 @@ RUN pushd /coreapi && \
     # needed for DB migrations
     find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
 
-RUN pip3 install git+https://github.com/vasulakkaraju/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
+RUN pip3 install git+https://github.com/abs51295/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
 
 COPY .git/ /tmp/.git
 # date and hash of last commit
