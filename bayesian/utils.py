@@ -11,6 +11,7 @@ import shutil
 from selinon import run_flow
 from flask import current_app
 from flask.json import JSONEncoder
+import semantic_version as sv
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
 
@@ -222,18 +223,17 @@ def search_packages_from_graph(tokens):
     # TODO query string for actual STAGE/PROD
     # g.V().has('vertex_label','Package').has('tokens','one').has('tokens','two').
     # out('has_version').valueMap('pecosystem', 'pname', 'version')).limit(5)
-    qstring = "g.V()"
-    # qstring = "g.V()"
+    qstring = ["g.V()"]
+    tkn_string = ".has('token', '{t}' )"
     for tkn in tokens:
         if tkn:
             # TODO Change qstring
-            qstring += ".has('tokens', '" + tkn + "')"
-            # qstring += ".has('alias', '" + tkn + "')"
+            qstring.append(tkn_string.format(t=tkn))
 
-    # qstring += ".has('version').valueMap('pecosystem', 'pname', 'version').limit(5)"
-    qstring += ".out('has_version').valueMap('pecosystem', 'pname', 'version').dedup().limit(5)"
+    qstring.append(".valueMap('ecosystem', 'name', 'libio_latest_version', 'latest_version')"
+                   ".dedup().limit(5)")
 
-    payload = {'gremlin': qstring}
+    payload = {'gremlin': ''.join(qstring)}
 
     response = post(gremlin_url, data=json.dumps(payload))
     resp = response.json()
@@ -243,14 +243,15 @@ def search_packages_from_graph(tokens):
 
     pkg_list = []
     for pkg in packages:
-        condition = [pkg['pecosystem'][0] is not None,
-                     pkg['pname'][0] is not None,
-                     pkg['version'][0] is not None]
-        if all(condition):
+        eco = pkg.get('ecosystem', [''])[0]
+        name = pkg.get('name', [''])[0]
+        version = select_latest_version(pkg.get('latest_version', [''])[0],
+                                        pkg.get('libio_latest_version', [''])[0])
+        if all((eco, name, version)):
             pkg_map = {
-                'ecosystem': pkg['pecosystem'][0],
-                'name': pkg['pname'][0],
-                'version': pkg['version'][0]
+                'ecosystem': eco,
+                'name': name,
+                'version': version
             }
             pkg_list.append(pkg_map)
 
@@ -660,14 +661,25 @@ class RecommendationReason:
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for each companion package
         """
-        count_sentence = None
         for pkg in manifest_response[0].get("recommendation", {}).get("companion", []):
+            count_sentence = None
             name = pkg.get("name")
             stack_confidence = pkg.get("cooccurrence_probability")
             stack_count = pkg.get("cooccurrence_count")
+            if stack_confidence is None:
+                """
+                Log the value of zero confidence, so that it can be matched
+                against Kronos output for validation.
+                This should track any future occurence of this[1] error:
+                Error:https://github.com/openshiftio/openshift.io/issues/2167
+                """
+                current_app.logger.error(
+                    "Stack Count for {} when confidence=None is {}".format(name, stack_count))
+
             # 0% confidence is as good as not showing it on the UI.
             if stack_confidence == 0:
                 stack_confidence = None
+
             # If stack_count is 0 or None, then do not generate the reason.
             if stack_count:
                 count_sentence = "Package {} appears in {} different stacks".format(
@@ -677,3 +689,118 @@ class RecommendationReason:
             # Count reason
             pkg["reason"] = count_sentence
         return manifest_response
+
+
+def get_cve_data(input_json):
+    """Get CVEs for list of packages."""
+    ecosystem = input_json.get('ecosystem')
+    req_id = input_json.get('request_id')
+    deps = input_json.get('_resolved', [])
+
+    pkg_list = [itm['package'] for itm in deps]
+    ver_list = [itm['version'] for itm in deps]
+
+    str_gremlin = "g.V().has('pecosystem','" + ecosystem + "').has('pname', within(pkg_list))." \
+                  "has('version', within(ver_list)).has('cve_ids')." \
+                  "valueMap('pecosystem', 'pname', 'version', 'cve_ids');"
+
+    payload = {
+        'gremlin': str_gremlin,
+        'bindings': {
+            'ecosystem': ecosystem,
+            'pkg_list': pkg_list,
+            'ver_list': ver_list
+        }
+    }
+
+    resp = post(gremlin_url, json=payload)
+    jsn = resp.json()
+
+    data = jsn.get('result', {}).get('data', [])
+
+    result = []
+    highest_stack_cvss = -1
+    for itm in deps:
+        cve_dict = {
+            'ecosystem': ecosystem,
+            'package': itm['package'],
+            'version': itm['version'],
+            'cve': None
+        }
+        # if there is any EPV with CVE, modify the cve details
+        if data:
+            for cve_itm in data:
+                conditions = [ecosystem == cve_itm['pecosystem'][0],
+                              itm['package'] == cve_itm['pname'][0],
+                              itm['version'] == cve_itm['version'][0]]
+                if all(conditions):
+                    details = []
+                    highest_cvss = -1
+                    for cve in cve_itm['cve_ids']:
+                        id, cvss = cve.split(':')
+                        highest_cvss = max(float(cvss), highest_cvss)
+                        highest_stack_cvss = max(highest_stack_cvss, highest_cvss)
+                        details.append({
+                            'cve_id': id,
+                            'cvss': cvss
+                        })
+                    cve_dict['cve'] = {
+                        'highest_cvss': highest_cvss,
+                        'details': details
+                    }
+
+        result.append(cve_dict)
+
+    return {
+        "request_id": req_id,
+        "result": result,
+        "stack_highest_cvss": highest_stack_cvss
+    }
+
+
+def get_categories_data(runtime):
+    """Get categories for based on runtime."""
+    qstring = "g.V().has('category_runtime', runtime).as('category')."\
+        "in('belongs_to_category').as('package').select('category', 'package').by(valueMap());"
+
+    payload = {
+        'gremlin': qstring,
+        'bindings': {
+            'runtime': runtime
+        }
+    }
+    resp = post(gremlin_url, json=payload)
+    return resp.json()
+
+
+def convert_version_to_proper_semantic(version):
+    """Versions to be converted in proper format for semantic version to work."""
+    version = version.replace('.', '-', 3)
+    version = version.replace('-', '.', 2)
+    return version
+
+
+def select_latest_version(latest_version='', libio_version=''):
+    """Retruns the latest version among current latest version and libio version."""
+    return_version = ''
+    if latest_version in ('-1', '', None):
+        latest_version = '0.0.0'
+    if libio_version in ('-1', '', None):
+        libio_version = '0.0.0'
+    if latest_version == '0.0.0' and libio_version == '0.0.0':
+        return return_version
+    libio_version = convert_version_to_proper_semantic(libio_version)
+    latest_version = convert_version_to_proper_semantic(latest_version)
+    try:
+        return_version = libio_version
+        if sv.SpecItem('<' + latest_version).match(sv.Version(libio_version)):
+            return_version = latest_version
+    except ValueError:
+        # In case of failure let's not show any latest version at all
+        pass
+    return return_version
+
+
+def is_valid(param):
+    """Return true is the param is not a null value."""
+    return param is not None

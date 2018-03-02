@@ -78,7 +78,7 @@ docker run -t \
   -e PGBOUNCER_SERVICE_HOST=${DB_CONTAINER_NAME} \
   -e DEPLOYMENT_PREFIX='test' \
   -e WORKER_ADMINISTRATION_REGION='api' \
-  $TEST_IMAGE_NAME $@ tests/
+  -e SENTRY_DSN='' \
+  ${TEST_IMAGE_NAME} /bayesian/hack/exec_tests.sh $@ /bayesian/tests/
 
 echo "Test suite passed \\o/"
-

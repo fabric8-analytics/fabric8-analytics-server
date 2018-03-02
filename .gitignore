@@ -74,3 +74,6 @@ worker/
 
 #editor
 .vscode
+
+# patches
+*.patch
