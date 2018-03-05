@@ -1029,7 +1029,7 @@ class DepEditorAnalyses(ResourceWithSchema):
 
         input_json = request.get_json()
         persist = request.args.get('persist', 'false') == 'true'
-
+        check_license = request.args.get('check_license', 'false') == 'true'
         if not input_json or 'request_id' not in input_json:
             raise HTTPError(400, error="Expected JSON request and request_id")
 
@@ -1050,7 +1050,9 @@ class DepEditorAnalyses(ResourceWithSchema):
 
         api_url = current_app.config['F8_API_BACKBONE_HOST']
         response = requests.post('{}/api/v1/stack-recommender'.format(api_url), json=request_obj,
-                                 params={'persist': str(persist).lower()})
+                                 params={'persist': str(persist).lower(),
+                                         'check_license': str(check_license).lower()})
+
         if response.status_code == 200:
             data = response.json()
             started_at = None
