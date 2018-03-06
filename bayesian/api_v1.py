@@ -41,7 +41,6 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data)
 
-
 import os
 from f8a_worker.storages import AmazonS3
 from .generate_manifest import PomXMLTemplate
@@ -74,6 +73,17 @@ def handle_http_error(e):
         return res
     else:
         return original_handle_error(e)
+
+
+@api_v1.route('/test-dependency-ingest')
+def test_dependency_parser_flow():
+    dummy_payload = {
+        "github_repo": "https://github.com/jitpack/maven-simple",
+        "github_sha": "20e9cf2f612be4095d4b09fc4d7312544d0a1775",
+        "email_ids": "dummy@dummy.com"
+    }
+    server_run_flow('osioAnalysisFlow', dummy_payload)
+    return jsonify(message="See the console for output")
 
 
 @api_v1.route('/_error')
@@ -138,6 +148,7 @@ def get_items_for_page(items, page, per_page):
 
 def paginated(func):
     """Provide paginated output for longer responses."""
+
     @functools.wraps(func)
     def inner(*args, **kwargs):
         func_res = func(*args, **kwargs)
@@ -340,6 +351,7 @@ class StackAnalysesGET(ResourceWithSchema):
     """Implementation of the /stack-analyses GET REST API call method."""
 
     method_decorators = [login_required]
+
     # schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
@@ -755,7 +767,7 @@ class StackAnalysesV2(ResourceWithSchema):
                                          .format(id=request_id))
             raise HTTPError(500, ("Error processing request {t}. manifest files "
                                   "could not be processed"
-                                  .format(t=request_id))) from exc
+                .format(t=request_id))) from exc
 
         return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
 
@@ -942,7 +954,7 @@ class StackAnalyses(ResourceWithSchema):
 
         except Exception as exc:
             raise HTTPError(500, ("Could not process {t}."
-                                  .format(t=request_id))) from exc
+                .format(t=request_id))) from exc
         try:
             insert_stmt = insert(StackAnalysisRequest).values(
                 id=request_id,
@@ -964,6 +976,7 @@ class StackAnalyses(ResourceWithSchema):
     def get():
         """Handle the GET REST API call."""
         raise HTTPError(404, "Unsupported API endpoint")
+
 
 
 class SubmitFeedback(ResourceWithSchema):
@@ -1178,7 +1191,6 @@ class CategoryService(ResourceWithSchema):
                 response['categories'] = categories
         return response, 200
 
-
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(StackAnalysesV2, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
@@ -1209,6 +1221,7 @@ add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
 add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
 add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 
+
 # workaround https://github.com/mitsuhiko/flask/issues/1498
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined
 # after this
@@ -1218,3 +1231,5 @@ add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 def api_404_handler(*args, **kwargs):
     """Handle all other routes not defined above."""
     return jsonify(error='Cannot match given query to any API v1 endpoint'), 404
+
+
