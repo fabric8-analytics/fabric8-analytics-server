@@ -856,6 +856,7 @@ class StackAnalyses(ResourceWithSchema):
         """Handle the POST REST API call."""
         decoded = decode_token()
         sid = request.args.get('sid')
+        check_license = request.args.get('check_license', 'false') == 'true'
         github_url = request.form.get("github_url")
         if github_url is not None:
             files = GithubRead().get_files_github_url(github_url)
@@ -939,8 +940,11 @@ class StackAnalyses(ResourceWithSchema):
             deps['current_stack_license'] = extract_licenses(license_files)
             deps.update(is_modified_flag)
 
-            _session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
-            _session.post('{}/api/v1/recommender'.format(api_url), json=deps)
+            _session.post(
+                '{}/api/v1/stack_aggregator'.format(api_url), json=deps,
+                params={'check_license': str(check_license).lower()})
+            _session.post('{}/api/v1/recommender'.format(api_url), json=deps,
+                          params={'check_license': str(check_license).lower()})
 
         except Exception as exc:
             raise HTTPError(500, ("Could not process {t}."
@@ -1029,7 +1033,6 @@ class DepEditorAnalyses(ResourceWithSchema):
 
         input_json = request.get_json()
         persist = request.args.get('persist', 'false') == 'true'
-        check_license = request.args.get('check_license', 'false') == 'true'
         if not input_json or 'request_id' not in input_json:
             raise HTTPError(400, error="Expected JSON request and request_id")
 
@@ -1050,9 +1053,7 @@ class DepEditorAnalyses(ResourceWithSchema):
 
         api_url = current_app.config['F8_API_BACKBONE_HOST']
         response = requests.post('{}/api/v1/stack-recommender'.format(api_url), json=request_obj,
-                                 params={'persist': str(persist).lower(),
-                                         'check_license': str(check_license).lower()})
-
+                                 params={'persist': str(persist).lower()})
         if response.status_code == 200:
             data = response.json()
             started_at = None
