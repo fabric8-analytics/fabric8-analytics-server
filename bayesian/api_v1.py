@@ -40,6 +40,7 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data)
+from .license_extractor import extract_licenses
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -874,6 +875,7 @@ class StackAnalyses(ResourceWithSchema):
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')
+            license_files = request.files.getlist('license[]')
 
             current_app.logger.info('%r' % files)
             current_app.logger.info('%r' % filepaths)
@@ -947,6 +949,7 @@ class StackAnalyses(ResourceWithSchema):
             d = DependencyFinder()
             deps = d.execute(args, rdb.session, manifests)
             deps['external_request_id'] = request_id
+            deps['current_stack_license'] = extract_licenses(license_files)
             deps.update(is_modified_flag)
 
             _session.post('{}/api/v1/stack_aggregator'.format(api_url), json=deps)
