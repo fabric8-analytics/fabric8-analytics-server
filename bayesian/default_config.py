@@ -24,6 +24,13 @@ SECRET_KEY = 'devkey'
 # length of token life in seconds
 API_TOKEN_LIFETIME = 3600
 
+# license synonyms
+# /<url>/<org>/<repo>/<branch>/<dir/file>
+LIC_SYNONYMS_URL = '/'.join(['https://raw.githubusercontent.com', 'fabric8-analytics',
+                             'fabric8-analytics-license-analysis', 'master',
+                             'tests/synonyms/license_synonyms.json'])
+
+
 # Info about deployed version
 SYSTEM_VERSION = os.getenv('F8A_SYSTEM_VERSION', default='/etc/coreapi-release')
 
