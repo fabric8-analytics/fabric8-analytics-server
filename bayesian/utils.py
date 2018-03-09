@@ -163,8 +163,6 @@ def generate_recommendation(data, package, input_version):
         }
     }
     if data:
-        # Get the Latest Version
-        # latest_version = data[0].get('package', {}).get('latest_version', [None])[0]
         message = ''
         max_cvss = 0.0
         higher_version = ''
@@ -200,27 +198,22 @@ def generate_recommendation(data, package, input_version):
                     reco['recommendation'] = {}
                     return {"result": reco}
 
-        # check if latest version exists or current version is latest version
-        # if not latest_version or latest_version == '' or version == latest_version:
-        #     if message != '':
-        #         reco['recommendation']['message'] = message
-        #     return {"result": reco}
-        # check if latest version has lower CVEs or no CVEs than current version
         for records in data:
             ver = records['version']
             graph_version = ver.get('version', [''])[0]
             graph_ver = convert_version_to_proper_semantic(graph_version)
+
             # Check for next best higher version than input version without any CVE's
-            if ver.get('cve_ids', [''])[0] != '' \
+            if (ver.get('cve_ids', [''])[0] != '' or 'cve_ids' not in ver) \
                     and sv.Version(graph_ver) > sv.Version(ip_ver):
                 if not higher_version:
                     higher_version = graph_ver
                 if sv.Version(higher_version) > sv.Version(graph_ver):
                     higher_version = graph_ver
 
-                message += '\n It is recommended to use Version - ' + higher_version
+                recommendation_message = '\n It is recommended to use Version - ' + higher_version
                 reco['recommendation']['change_to'] = higher_version
-                reco['recommendation']['message'] = message
+                reco['recommendation']['message'] = message + recommendation_message
     return {"result": reco}
 
 
@@ -267,8 +260,8 @@ def search_packages_from_graph(tokens):
 def get_analyses_from_graph(ecosystem, package, version):
     """Read analysis for given package+version from the graph database."""
     qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
-              ".as('package').out('has_version').as('version').select('package','version')." \
-              "by(valueMap());"
+              ".as('package').out('has_version').as('version').dedup()." \
+              "select('package', 'version').by(valueMap());"
     payload = {'gremlin': qstring}
     start = datetime.datetime.now()
     try:
