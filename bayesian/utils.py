@@ -211,7 +211,7 @@ def generate_recommendation(data, package, input_version):
             graph_version = ver.get('version', [''])[0]
             graph_ver = convert_version_to_proper_semantic(graph_version)
             # Check for next best higher version than input version without any CVE's
-            if graph_ver.get('cve_ids', [''])[0] != '' \
+            if ver.get('cve_ids', [''])[0] != '' \
                     and sv.Version(graph_ver) > sv.Version(ip_ver):
                 if not higher_version:
                     higher_version = graph_ver
