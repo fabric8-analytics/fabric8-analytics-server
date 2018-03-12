@@ -153,8 +153,9 @@ def add_field(analysis, field, ret):
     prev_ret[f] = analysis
 
 
-def generate_recommendation(data, package, version):
+def generate_recommendation(data, package, input_version):
     """Generate recommendation for the package+version."""
+    ip_ver = convert_version_to_proper_semantic(input_version)
     # Template Dict for recommendation
     reco = {
         'recommendation': {
@@ -162,14 +163,13 @@ def generate_recommendation(data, package, version):
         }
     }
     if data:
-        # Get the Latest Version
-        latest_version = data[0].get('package', {}).get('latest_version', [None])[0]
         message = ''
         max_cvss = 0.0
+        higher_version = ''
         # check if given version has a CVE or not
         for records in data:
             ver = records['version']
-            if version == ver.get('version', [''])[0]:
+            if input_version == ver.get('version', [''])[0]:
                 records_arr = []
                 records_arr.append(records)
                 reco['data'] = records_arr
@@ -177,7 +177,7 @@ def generate_recommendation(data, package, version):
                 cve_maps = []
                 if ver.get('cve_ids', [''])[0] != '':
                     message = 'CVE/s found for Package - ' + package + ', Version - ' + \
-                              version + '\n'
+                              input_version + '\n'
                     # for each CVE get cve_id and cvss scores
                     for cve in ver.get('cve_ids'):
                         cve_id = cve.split(':')[0]
@@ -198,23 +198,21 @@ def generate_recommendation(data, package, version):
                     reco['recommendation'] = {}
                     return {"result": reco}
 
-        # check if latest version exists or current version is latest version
-        if not latest_version or latest_version == '' or version == latest_version:
-            if message != '':
-                reco['recommendation']['message'] = message
-            return {"result": reco}
-        # check if latest version has lower CVEs or no CVEs than current version
         for records in data:
             ver = records['version']
-            if latest_version == ver.get('version', [''])[0]:
-                if ver.get('cve_ids', [''])[0] != '':
-                    for cve in ver.get('cve_ids'):
-                        cvss = float(cve.split(':')[1])
-                        if cvss >= max_cvss:
-                            break
-                message += '\n It is recommended to use Version - ' + latest_version
-                reco['recommendation']['change_to'] = latest_version
-                reco['recommendation']['message'] = message
+            graph_version = ver.get('version', [''])[0]
+            graph_ver = convert_version_to_proper_semantic(graph_version)
+
+            # Check for next best higher version than input version without any CVE's
+            if not ver.get('cve_ids') and sv.Version(graph_ver) > sv.Version(ip_ver):
+                if not higher_version:
+                    higher_version = graph_ver
+                if sv.Version(higher_version) > sv.Version(graph_ver):
+                    higher_version = graph_ver
+
+                recommendation_message = '\n It is recommended to use Version - ' + higher_version
+                reco['recommendation']['change_to'] = higher_version
+                reco['recommendation']['message'] = message + recommendation_message
     return {"result": reco}
 
 
@@ -261,8 +259,8 @@ def search_packages_from_graph(tokens):
 def get_analyses_from_graph(ecosystem, package, version):
     """Read analysis for given package+version from the graph database."""
     qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
-              ".as('package').out('has_version').as('version').select('package','version')." \
-              "by(valueMap());"
+              ".as('package').out('has_version').as('version').dedup()." \
+              "select('package', 'version').by(valueMap());"
     payload = {'gremlin': qstring}
     start = datetime.datetime.now()
     try:
@@ -780,21 +778,21 @@ def convert_version_to_proper_semantic(version):
     return version
 
 
-def select_latest_version(latest_version='', libio_version=''):
+def select_latest_version(latest='', libio=''):
     """Retruns the latest version among current latest version and libio version."""
     return_version = ''
-    if latest_version in ('-1', '', None):
+    if latest in ('-1', ''):
         latest_version = '0.0.0'
-    if libio_version in ('-1', '', None):
+    if libio in ('-1', ''):
         libio_version = '0.0.0'
     if latest_version == '0.0.0' and libio_version == '0.0.0':
         return return_version
-    libio_version = convert_version_to_proper_semantic(libio_version)
-    latest_version = convert_version_to_proper_semantic(latest_version)
+    libio_version = convert_version_to_proper_semantic(libio)
+    latest_version = convert_version_to_proper_semantic(latest)
     try:
-        return_version = libio_version
+        return_version = libio
         if sv.SpecItem('<' + latest_version).match(sv.Version(libio_version)):
-            return_version = latest_version
+            return_version = latest
     except ValueError:
         # In case of failure let's not show any latest version at all
         pass
