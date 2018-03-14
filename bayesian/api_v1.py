@@ -27,6 +27,8 @@ from f8a_worker.utils import (get_dependents_count,
                               get_component_percentile_rank, usage_rank2str,
                               MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
+from f8a_worker.graphutils import LICENSE_SCORING_URL_REST
+
 
 from . import rdb, cache
 from .dependency_finder import DependencyFinder
@@ -41,6 +43,7 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data)
 from .license_extractor import extract_licenses
+from .repr_license_finder_go import get_repr_license
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -109,6 +112,17 @@ def liveness():
                              "and execute a query")
     rdb.session.query(Ecosystem).count()
     return jsonify({}), 200
+
+
+@api_v1.route('/repr_licesne')
+def test_repr_license():
+    """ Handle the POST REST API call."""
+    args = get.input_json()
+    if args['ecosystem'] == 'go' :
+        rep_license=get_repr_license(args['ecosystem'],args['url'],LICENSE_SCORING_URL_REST)
+        return rep_license.execute()
+    else:
+        print("Currently only go lang repositories are supported!!")
 
 
 api_v1.coreapi_http_error_handler = handle_http_error
