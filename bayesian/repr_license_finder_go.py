@@ -1,25 +1,27 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+"""Identifies representative license for go eco repo by considering all the dependencies."""
 
-
+from __future__ import division
 from flask import current_app
 from requests import get, post, exceptions
-from __future__ import division
 import json
-from f8a_worker.graphutils import GREMLIN_SERVER_URL_REST
-from f8a_worker.graphutils import LICENSE_SCORING_URL_REST
-from f8a_worker.base import BaseTask
+from .utils import GREMLIN_SERVER_URL_REST
 from f8a_worker.utils import get_session_retry
+from .utils import fetch_file_from_github
 import requests
 import logging
 import traceback
 
 
-# Returns glide.lock file content as  a string for the github url given
+class GetReprLicense():
+    """Summary.
 
-class get_repr_license(object):
+    input:url:repo url to find repr_license
+    ecosystem:ecosystem of the repo
+    output:repr_license.
+    """
 
     def __init__(self, url, ecosystem, license_api):
+        """Get all the inputs required to the class."""
         self.url = url
         self.ecosystem = ecosystem
         self.license_api = license_api
@@ -51,7 +53,7 @@ class get_repr_license(object):
             print('ERROR: {}'.format(str(e)))
 
     def godep_extractor(self, response_glide_pkg):
-
+        """Fetch go dependencies by parsing glide.lock file."""
         result = {}
         pkg_result = response_glide_pkg[0]['content']
         pkg_list = pkg_result.splitlines()
@@ -63,6 +65,7 @@ class get_repr_license(object):
         return result
 
     def fetch_license_from_graph(self, **a):
+        """Fetch license from grph for all go deps."""
         license_dict_list = []
         license_dict_modify = []
         dep_pkg_list_known = []
@@ -90,16 +93,18 @@ class get_repr_license(object):
                         license_dict_modify.append({"package": name, "version": version,
                                                     "licenses": [license_val]})
                 else:
-                    license_dict_modify.append({"package": name, "version": version, "licenses": []})
+                    license_dict_modify.append({"package": name, "version": version,
+                                                "licenses": []})
                     dep_pkg_list_unknown.append(self.ecosystem + ":" + name + ":" + version)
                     continue
 
         return {"packages": license_dict_modify}
 
     def caller(self):
+        """Execute method for all the above functions."""
         try:
             r = requests.post(self.license_api, json=self.fetch_license_from_graph(
-                **(self.godep_extractor(self.fetch_go_deps_from_github()))))
+                **(self.godep_extractor(fetch_file_from_github(self.url, 'glide.lock')))))
             json_out = r.json()
             if json_out['stack_license'] is None:
                 json_out['stack_license'] = 'Unknown'

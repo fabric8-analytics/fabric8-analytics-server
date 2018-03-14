@@ -32,9 +32,14 @@ from sqlalchemy.exc import SQLAlchemyError
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
 
-gremlin_url = "http://{host}:{port}".format(
-    host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
-    port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
+GREMLIN_SERVER_URL_REST = "http://{host}:{port}".format(
+    host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST"),
+    port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT"))
+
+LICENSE_SCORING_URL_REST = "https://{host}:{port}".format(
+    host=os.environ.get("LICENSE_SERVICE_HOST"),
+    port=os.environ.get("LICENSE_SERVICE_PORT"))
+
 
 companion_reason_statement = "along with the provided input stack. " \
     "Do you want to consider adding this Package?"
