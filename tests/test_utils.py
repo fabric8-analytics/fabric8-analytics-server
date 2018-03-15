@@ -3,9 +3,10 @@
 import datetime
 import pytest
 
-from bayesian.utils import do_projection
+from bayesian.utils import do_projection, fetch_file_from_github
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
+from urllib.request import urlopen
 
 now = datetime.datetime.now()
 later = now + datetime.timedelta(minutes=10)
@@ -101,3 +102,30 @@ class TestDoProjection(object):
                                      'sha1': '6be7ae55bae2372c7be490321bbe5ead278bb51b'}]}}}
         result = do_projection(projection, analyses[2])
         assert expected == result
+
+
+class TestFetchFileFromGithub:
+    """Tests for the function 'fetch_file_from_github' implemented in 'utils' module."""
+
+    __url = 'https://github.com/ravsa/testManifest'
+
+    def test_github_url_exist_or_not(self):
+        """Check for github repo exist or not."""
+        assert urlopen(
+            self.__url).code == 200, "Not able to access the url {}".format(self.__url)
+
+    def test_repo_with_file_exist(self):
+        """Check wheather file exist in github repo."""
+        file_name = 'pom.xml'
+        result = fetch_file_from_github(self.__url, file_name)
+        assert not bool(
+            {'filename', 'filepath', 'content'}.symmetric_difference(result[0].keys()))
+
+    def test_repo_file_in_diff_branch(self):
+        """Check for file exist in specific branch or not."""
+        file_name = 'pom.xml'
+        branch_name = 'dev-test-branch'
+        result = fetch_file_from_github(
+            self.__url, file_name, branch=branch_name)
+        assert not bool(
+            {'filename', 'filepath', 'content'}.symmetric_difference(result[0].keys()))
