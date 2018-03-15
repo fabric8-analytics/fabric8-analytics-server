@@ -799,11 +799,9 @@ def select_latest_version(latest='', libio=''):
     return return_version
 
 
-def fetch_pom_from_github(url):
-    """Fetch pom.xml from github url."""
+def fetch_file_from_github(url, filename, branch='master'):
+    """Fetch file from github url."""
     base_url = 'https://raw.githubusercontent.com'
-    branch = 'master'
-    filename = 'pom.xml'
     try:
         if url.endswith('.git'):
             url = url[:-len('.git')]
@@ -815,7 +813,7 @@ def fetch_pom_from_github(url):
         if response.status_code != 200:
             raise ValueError
         return [{
-            'filename': 'pom.xml',
+            'filename': filename,
             'filepath': '/path',
             'content': response.content.decode('utf-8')
         }]
