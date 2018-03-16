@@ -1052,7 +1052,7 @@ class DepEditorAnalyses(ResourceWithSchema):
         }
 
         api_url = current_app.config['F8_API_BACKBONE_HOST']
-        response = requests.post('{}/api/v1/stack-recommender'.format(api_url), json=request_obj,
+        response = requests.post('{}/api/v1/dep-editor'.format(api_url), json=request_obj,
                                  params={'persist': str(persist).lower()})
         if response.status_code == 200:
             data = response.json()
