@@ -136,6 +136,7 @@ class TestApiV1Root(object):
             "/api/v1/generate-file",
             "/api/v1/get-next-component/<ecosystem>",
             "/api/v1/master-tags/<ecosystem>",
+            "/api/v1/repr-license-fetcher",
             "/api/v1/schemas",
             "/api/v1/schemas/<collection>",
             "/api/v1/schemas/<collection>/<name>",
@@ -147,7 +148,7 @@ class TestApiV1Root(object):
             "/api/v1/system/version",
             "/api/v1/user-feedback",
             "/api/v1/user-intent",
-            "/api/v1/user-intent/<user>/<ecosystem>"
+            "/api/v1/user-intent/<user>/<ecosystem>",
         ]
     }
 
