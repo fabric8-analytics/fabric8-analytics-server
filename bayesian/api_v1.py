@@ -1052,10 +1052,13 @@ class DepEditorAnalyses(ResourceWithSchema):
         }
 
         api_url = current_app.config['F8_API_BACKBONE_HOST']
-        response = requests.post('{}/api/v1/dep-editor'.format(api_url), json=request_obj,
-                                 params={'persist': str(persist).lower()})
-        if response.status_code == 200:
-            data = response.json()
+        stack_agg_resp = _session.post('{}/api/v1/stack_aggregator'.format(api_url),
+                                       json=request_obj, params={'persist': str(persist).lower()})
+        recommender_resp = _session.post('{}/api/v1/recommender'.format(api_url),
+                                         json=request_obj, params={'persist': str(persist).lower()})
+        stack_agg_result = stack_agg_resp.result()
+        recommender_result = recommender_resp.result()
+        if stack_agg_result.status_code == 200 or recommender_result.status_code == 200:
             started_at = None
             finished_at = None
             version = None
@@ -1063,8 +1066,11 @@ class DepEditorAnalyses(ResourceWithSchema):
             manifest_response = []
             stacks = []
             recommendations = []
-            stack_result = data.get('stack_aggregator')
-            reco_result = data.get('recommender')
+            stack_result = reco_result = dict()
+            if stack_agg_result.status_code == 200:
+                stack_result = stack_agg_result.json()
+            if recommender_result.status_code == 200:
+                reco_result = recommender_result.json()
             external_request_id = reco_result.get('external_request_id')
             if stack_result is not None and 'result' in stack_result:
                 started_at = stack_result.get("result", {}).get("_audit", {}).get("started_at",
