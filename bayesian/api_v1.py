@@ -1056,82 +1056,77 @@ class DepEditorAnalyses(ResourceWithSchema):
                                        json=request_obj, params={'persist': str(persist).lower()})
         recommender_resp = _session.post('{}/api/v1/recommender'.format(api_url),
                                          json=request_obj, params={'persist': str(persist).lower()})
-        stack_agg_result = stack_agg_resp.result()
         recommender_result = recommender_resp.result()
-        if stack_agg_result.status_code == 200 or recommender_result.status_code == 200:
-            started_at = None
-            finished_at = None
-            version = None
-            release = None
-            manifest_response = []
-            stacks = []
-            recommendations = []
-            stack_result = reco_result = dict()
-            if stack_agg_result.status_code == 200:
-                stack_result = stack_agg_result.json()
-            if recommender_result.status_code == 200:
-                reco_result = recommender_result.json()
-            external_request_id = reco_result.get('external_request_id')
-            if stack_result is not None and 'result' in stack_result:
-                started_at = stack_result.get("result", {}).get("_audit", {}).get("started_at",
-                                                                                  started_at)
-                finished_at = stack_result.get("result", {}).get("_audit", {}).get("ended_at",
-                                                                                   finished_at)
-                version = stack_result.get("result", {}).get("_audit", {}).get("version",
-                                                                               version)
-                release = stack_result.get("result", {}).get("_release", release)
-                stacks = stack_result.get("result", {}).get("stack_data", stacks)
+        stack_agg_result = stack_agg_resp.result()
+        started_at = None
+        finished_at = None
+        version = None
+        release = None
+        manifest_response = []
+        stacks = []
+        recommendations = []
+        stack_result = reco_result = dict()
+        if stack_agg_result.status_code == 200:
+            stack_result = stack_agg_result.json()
+        if recommender_result.status_code == 200:
+            reco_result = recommender_result.json()
+        external_request_id = reco_result.get('external_request_id')
+        if stack_result is not None and 'result' in stack_result:
+            started_at = stack_result.get("result", {}).get(
+                "_audit", {}).get("started_at", started_at)
+            finished_at = stack_result.get("result", {}).get(
+                "_audit", {}).get("ended_at", finished_at)
+            version = stack_result.get("result", {}).get("_audit", {}).get("version", version)
+            release = stack_result.get("result", {}).get("_release", release)
+            stacks = stack_result.get("result", {}).get("stack_data", stacks)
 
-            if reco_result is not None and 'result' in reco_result:
-                recommendations = reco_result.get("result", {}).get("recommendations",
-                                                                    recommendations)
+        if reco_result is not None and 'result' in reco_result:
+            recommendations = reco_result.get("result", {}).get("recommendations",
+                                                                recommendations)
 
-            if not stacks:
-                return {
-                    "version": version,
-                    "release": release,
-                    "started_at": started_at,
-                    "finished_at": finished_at,
-                    "request_id": external_request_id,
-                    "result": manifest_response
-                }
-            for stack in stacks:
-                user_stack_deps = stack.get('user_stack_info', {}).get('analyzed_dependencies', [])
-                stack_recommendation = get_item_from_list_by_key_value(recommendations,
-                                                                       "manifest_file_path",
-                                                                       stack.get(
-                                                                           "manifest_file_path"))
-                for dep in user_stack_deps:
-                    # Adding topics from the recommendations
-                    if stack_recommendation is not None:
-                        dep["topic_list"] = stack_recommendation.get("input_stack_topics",
-                                                                     {}).get(dep.get('name'), [])
-                    else:
-                        dep["topic_list"] = []
-
-            for stack in stacks:
-                stack["recommendation"] = get_item_from_list_by_key_value(
-                    recommendations,
-                    "manifest_file_path",
-                    stack.get("manifest_file_path"))
-                manifest_response.append(stack)
-
-            # Populate reason for alternate and companion recommendation
-            if manifest_response[0].get('recommendation'):
-                manifest_response = RecommendationReason().add_reco_reason(manifest_response)
-
+        if not stacks:
             return {
                 "version": version,
                 "release": release,
                 "started_at": started_at,
                 "finished_at": finished_at,
                 "request_id": external_request_id,
-                "result": manifest_response,
-                "dep_snapshot": input_json
+                "result": manifest_response
             }
-        else:
-            return {'status': 'failure',
-                    'error': response.text}, response.status_code
+        for stack in stacks:
+            user_stack_deps = stack.get('user_stack_info', {}).get('analyzed_dependencies', [])
+            stack_recommendation = get_item_from_list_by_key_value(recommendations,
+                                                                   "manifest_file_path",
+                                                                   stack.get(
+                                                                        "manifest_file_path"))
+            for dep in user_stack_deps:
+                # Adding topics from the recommendations
+                if stack_recommendation is not None:
+                    dep["topic_list"] = stack_recommendation.get("input_stack_topics",
+                                                                 {}).get(dep.get('name'), [])
+                else:
+                    dep["topic_list"] = []
+
+        for stack in stacks:
+            stack["recommendation"] = get_item_from_list_by_key_value(
+                recommendations,
+                "manifest_file_path",
+                stack.get("manifest_file_path"))
+            manifest_response.append(stack)
+
+        # Populate reason for alternate and companion recommendation
+        if manifest_response[0].get('recommendation'):
+            manifest_response = RecommendationReason().add_reco_reason(manifest_response)
+
+        return {
+            "version": version,
+            "release": release,
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "request_id": external_request_id,
+            "result": manifest_response,
+            "dep_snapshot": input_json
+        }
 
 
 class DepEditorCVEAnalyses(ResourceWithSchema):
