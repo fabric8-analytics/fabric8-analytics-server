@@ -781,14 +781,17 @@ def convert_version_to_proper_semantic(version):
 def select_latest_version(latest='', libio=''):
     """Retruns the latest version among current latest version and libio version."""
     return_version = ''
-    if latest in ('-1', ''):
+    if latest in ('-1', '', None):
         latest_version = '0.0.0'
-    if libio in ('-1', ''):
+    else:
+        latest_version = convert_version_to_proper_semantic(latest)
+    if libio in ('-1', '', None):
         libio_version = '0.0.0'
+    else:
+        libio_version = convert_version_to_proper_semantic(libio)
+
     if latest_version == '0.0.0' and libio_version == '0.0.0':
         return return_version
-    libio_version = convert_version_to_proper_semantic(libio)
-    latest_version = convert_version_to_proper_semantic(latest)
     try:
         return_version = libio
         if sv.SpecItem('<' + latest_version).match(sv.Version(libio_version)):
