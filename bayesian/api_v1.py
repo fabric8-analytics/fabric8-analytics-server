@@ -856,10 +856,16 @@ class StackAnalyses(ResourceWithSchema):
         """Handle the POST REST API call."""
         decoded = decode_token()
         sid = request.args.get('sid')
+        license_files = list()
         check_license = request.args.get('check_license', 'false') == 'true'
         github_url = request.form.get("github_url")
         if github_url is not None:
             files = fetch_file_from_github(github_url, 'pom.xml')
+            license = fetch_file_from_github(github_url, 'LICENSE')
+            if license:
+                license_content = license[0].get('content')
+                if license_content:
+                    license_files = [StringIO(license_content)]
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')
