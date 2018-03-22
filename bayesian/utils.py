@@ -222,7 +222,7 @@ def search_packages_from_graph(tokens):
     # g.V().has('vertex_label','Package').has('tokens','one').has('tokens','two').
     # out('has_version').valueMap('pecosystem', 'pname', 'version')).limit(5)
     qstring = ["g.V()"]
-    tkn_string = ".has('token', '{t}' )"
+    tkn_string = ".has('tokens', '{t}' )"
     for tkn in tokens:
         if tkn:
             # TODO Change qstring
