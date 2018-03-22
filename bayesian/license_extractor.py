@@ -35,7 +35,9 @@ def extract_licenses(license_files):
             license_key = None
             try:
                 # remove all the unnecessary chars ',', \n, space
-                content = _file.read().decode('utf-8')
+                content = _file.read()
+                if isinstance(content, (bytes, bytearray)):
+                    content = content.decode('utf-8')
                 content = ' '.join(content.split())
                 content = content.replace(',', '').lower()
                 _result = defaultdict(list)
