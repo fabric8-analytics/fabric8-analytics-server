@@ -1219,7 +1219,9 @@ class FetchReprLicense(ResourceWithSchema):
                                          LICENSE_SCORING_URL_REST)
             return rep_license.caller()
         else:
-            current_app.logger.info("Currently only go lang repositories are supported!!")
+            return {"Result": current_app.logger.info("Currently only"
+                                                      " go lang repositories are supported!!")
+                    }
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')

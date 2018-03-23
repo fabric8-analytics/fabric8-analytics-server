@@ -12,45 +12,21 @@ import logging
 import traceback
 
 
-class GetReprLicense():
-    """Summary.
-
-    input:url:repo url to find repr_license
-    ecosystem:ecosystem of the repo
-    output:repr_license.
-    """
+class GetReprLicense:
+    """Returns representative license for given github url and ecosystem."""
 
     def __init__(self, url, ecosystem, license_api):
-        """Get all the inputs required to the class."""
+        """Summary.
+
+        input:url:repo url to find repr_license
+        ecosystem:ecosystem of the repo
+        output:repr_license. Calculates the representative license at
+        the stack level by considering the license info of all the dependencies
+        and transitive dependencies.Currently supports only go ecosystem
+        """
         self.url = url
         self.ecosystem = ecosystem
         self.license_api = license_api
-
-    def fetch_go_deps_from_github(self):
-        """Fetch glide.lock from github url."""
-        base_url = 'https://raw.githubusercontent.com'
-        branch = 'master'
-        filename = 'glide.lock'
-
-        try:
-            if self.url.endswith('.git'):
-                self.url = self.url[:-len('.git')]
-
-            user, repo = self.url.split('/')[-2:]
-            user = user.split(':')[-1]
-
-            response = get('/'.join([base_url, user, repo, branch, filename]))
-            if response.status_code != 200:
-                raise ValueError
-            return [{
-                'filename': 'glide.lock',
-                'filepath': '/path',
-                'content': response.content.decode('utf-8')
-            }]
-        except ValueError:
-            print('Error fetching file from given url')
-        except Exception as e:
-            print('ERROR: {}'.format(str(e)))
 
     def godep_extractor(self, response_glide_pkg):
         """Fetch go dependencies by parsing glide.lock file."""
@@ -103,8 +79,10 @@ class GetReprLicense():
     def caller(self):
         """Execute method for all the above functions."""
         try:
-            r = requests.post(self.license_api, json=self.fetch_license_from_graph(
-                **(self.godep_extractor(fetch_file_from_github(self.url, 'glide.lock')))))
+            glide_data = fetch_file_from_github(self.url, 'glide.lock')
+            extracted_info = self.godep_extractor(glide_data)
+            license_json = self.fetch_license_from_graph(**extracted_info)
+            r = requests.post(self.license_api, json=license_json)
             json_out = r.json()
             if json_out['stack_license'] is None:
                 json_out['stack_license'] = 'Unknown'
