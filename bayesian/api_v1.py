@@ -859,6 +859,7 @@ class StackAnalyses(ResourceWithSchema):
         license_files = list()
         check_license = request.args.get('check_license', 'false') == 'true'
         github_url = request.form.get("github_url")
+        source = request.form.get('source')
         if github_url is not None:
             files = fetch_file_from_github(github_url, 'pom.xml')
             license = fetch_file_from_github(github_url, 'LICENSE')
@@ -941,7 +942,7 @@ class StackAnalyses(ResourceWithSchema):
             api_url = current_app.config['F8_API_BACKBONE_HOST']
 
             d = DependencyFinder()
-            deps = d.execute(args, rdb.session, manifests)
+            deps = d.execute(args, rdb.session, manifests, source)
             deps['external_request_id'] = request_id
             deps['current_stack_license'] = extract_licenses(license_files)
             deps.update(is_modified_flag)
