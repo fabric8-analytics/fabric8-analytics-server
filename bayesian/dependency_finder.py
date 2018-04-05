@@ -101,7 +101,7 @@ class DependencyFinder():
                 out["details"][0]['_resolved'] = resolved_deps
             result.append(out)
 
-        if source == 'osio':$
+        if source == 'osio':
             pom_hash[content_hash] = result
 
         return {'result': result}
