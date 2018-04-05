@@ -15,6 +15,7 @@ from .utils import generate_content_hash
 
 pom_hash = {}
 
+
 class DependencyFinder():
     """Implementation of methods to find dependencies from manifest file."""
 
