@@ -11,6 +11,9 @@ from f8a_worker.solver import get_ecosystem_solver
 from tempfile import TemporaryDirectory
 from f8a_worker.workers.mercator import MercatorTask
 
+from .utils import generate_content_hash
+
+pom_hash = {}
 
 class DependencyFinder():
     """Implementation of methods to find dependencies from manifest file."""
@@ -27,25 +30,19 @@ class DependencyFinder():
             raise FatalTaskError("Dependencies could not be resolved: '{}'" .format(deps)) from exc
         return [{"package": k, "version": v} for k, v in versions.items()]
 
-    def execute(self, arguments, db, manifests):
+    def execute(self, arguments, db, manifests, source=None):
         """Dependency finder logic."""
-        #  try:
-        #      results = db.query(StackAnalysisRequest)\
-        #                  .filter(StackAnalysisRequest.id == arguments.get('external_request_id'))\
-        #                  .first()
-        #  except SQLAlchemyError:
-        #   raise ('Could not find data for request id = %s' % arguments.get(
-        #       'external_request_id'))
-        #
-        #  manifests = []
-        #  if results is not None:
-        #      row = results.to_dict()
-        #      request_json = row.get("requestJson", {})
-        #      manifests = request_json.get('manifest', [])
-
         # If we receive a manifest file we need to save it first
         result = []
         for manifest in manifests:
+            resolve_poms = False
+            if source == 'osio':
+                content_hash = generate_content_hash(manifest['content'])
+                if pom_hash.get(content_hash) is not None:
+                    return {'result': pom_hash.get(content_hash)}
+                else:
+                    resolve_poms = True
+
             with TemporaryDirectory() as temp_path:
                 with open(os.path.join(temp_path, manifest['filename']), 'a+') as fd:
                     fd.write(manifest['content'])
@@ -58,7 +55,7 @@ class DependencyFinder():
                 # Create instance manually since stack analysis is not handled by dispatcher
                 subtask = MercatorTask.create_test_instance(task_name='metadata')
                 arguments['ecosystem'] = manifest['ecosystem']
-                out = subtask.run_mercator(arguments, temp_path, resolve_poms=False)
+                out = subtask.run_mercator(arguments, temp_path, resolve_poms=resolve_poms)
 
             if not out["details"]:
                 raise FatalTaskError("No metadata found processing manifest file '{}'"
@@ -103,5 +100,8 @@ class DependencyFinder():
                         out["details"][0]["dependencies"])
                 out["details"][0]['_resolved'] = resolved_deps
             result.append(out)
+
+        if source == 'osio':$
+            pom_hash[content_hash] = result
 
         return {'result': result}

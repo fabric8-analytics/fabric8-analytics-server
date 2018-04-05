@@ -7,6 +7,7 @@ import json
 import os
 import uuid
 import shutil
+import hashlib
 
 from selinon import run_flow
 from flask import current_app
@@ -829,3 +830,7 @@ def fetch_file_from_github(url, filename, branch='master'):
 def is_valid(param):
     """Return true is the param is not a null value."""
     return param is not None
+
+def generate_content_hash(content):
+    hash_object = hashlib.sha1(content.encode('utf-8'))
+    return hash_object.hexdigest()
