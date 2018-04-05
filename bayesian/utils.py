@@ -867,6 +867,7 @@ def is_valid(param):
     """Return true is the param is not a null value."""
     return param is not None
 
+
 def generate_content_hash(content):
     """Return the sha1 digest of a string."""
     hash_object = hashlib.sha1(content.encode('utf-8'))
