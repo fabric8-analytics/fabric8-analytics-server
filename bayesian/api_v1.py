@@ -64,6 +64,7 @@ ANALYTICS_API_VERSION = "v1.0"
 worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
 _session = FuturesSession(max_workers=worker_count)
 
+
 # see <dir>.exceptions.HTTPError docstring
 def handle_http_error(e):
     """Handle HTTPError exceptions."""
