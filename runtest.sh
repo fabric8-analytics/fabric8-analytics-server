@@ -16,6 +16,7 @@ CONTAINER_NAME="server-tests-${TIMESTAMP}"
 IMAGE_NAME=${IMAGE_NAME:-registry.devshift.net/bayesian/bayesian-api}
 TEST_IMAGE_NAME="coreapi-server-tests"
 POSTGRES_IMAGE_NAME="registry.centos.org/centos/postgresql-94-centos7:latest"
+DOCKER_NETWORK="F8aServerTest"
 
 gc() {
   retval=$?
@@ -24,6 +25,8 @@ gc() {
   docker stop ${DB_CONTAINER_NAME} ${CONTAINER_NAME} || :
   echo "Removing containers"
   docker rm ${DB_CONTAINER_NAME} ${CONTAINER_NAME} || :
+  echo "Removing network ${DOCKER_NETWORK}"
+  docker network rm ${DOCKER_NETWORK} || :
   exit $retval
 }
 
@@ -43,12 +46,16 @@ if [ "$REBUILD" == "1" ] || \
   docker build -f Dockerfile.tests --tag=$TEST_IMAGE_NAME .
 fi
 
+echo "Creating network ${DOCKER_NETWORK}"
+docker network create ${DOCKER_NETWORK}
+
 echo "Starting/creating containers:"
 # NOTE: we omit pgbouncer while running tests
-docker run -d --env-file tests/postgres.env --name ${DB_CONTAINER_NAME} ${POSTGRES_IMAGE_NAME}
-# find out some network the container is connected to
-NETWORK=`docker inspect --format '{{.NetworkSettings.Networks}}' ${DB_CONTAINER_NAME} | awk -F '[:[]' '{print $2}'`
-DB_CONTAINER_IP=`docker inspect --format '{{.NetworkSettings.IPAddress}}' ${DB_CONTAINER_NAME}`
+docker run -d \
+    --env-file tests/postgres.env \
+    --network ${DOCKER_NETWORK} \
+    --name ${DB_CONTAINER_NAME} ${POSTGRES_IMAGE_NAME}
+DB_CONTAINER_IP=`docker inspect --format "{{.NetworkSettings.Networks.${DOCKER_NETWORK}.IPAddress}}" ${DB_CONTAINER_NAME}`
 
 echo "Waiting for postgres to fully initialize"
 set +x
@@ -72,8 +79,7 @@ echo "Starting test suite"
 docker run -t \
   -v "${here}:/bayesian:ro,Z" \
   ${f8a_worker_vol:+-v} ${f8a_worker_vol:-} \
-  --link=${DB_CONTAINER_NAME} \
-  --net=${NETWORK} \
+  --network ${DOCKER_NETWORK} \
   --name=${CONTAINER_NAME} \
   -e PGBOUNCER_SERVICE_HOST=${DB_CONTAINER_NAME} \
   -e DEPLOYMENT_PREFIX='test' \
