@@ -243,8 +243,10 @@ def search_packages_from_graph(tokens):
     for pkg in packages:
         eco = pkg.get('ecosystem', [''])[0]
         name = pkg.get('name', [''])[0]
-        version = select_latest_version(pkg.get('latest_version', [''])[0],
-                                        pkg.get('libio_latest_version', [''])[0])
+        version = select_latest_version(
+            pkg.get('latest_version', [''])[0],
+            pkg.get('libio_latest_version', [''])[0],
+            name)
         if all((eco, name, version)):
             pkg_map = {
                 'ecosystem': eco,
@@ -772,34 +774,62 @@ def get_categories_data(runtime):
 
 
 def convert_version_to_proper_semantic(version):
-    """Versions to be converted in proper format for semantic version to work."""
+    """Perform Semantic versioning.
+
+    : type version: string
+    : param version: The raw input version that needs to be converted.
+    : type return: semantic_version.base.Version
+    : return: The semantic version of raw input version.
+    """
+    if version in ('', '-1', None):
+        version = '0.0.0'
+    """Needed for maven version like 1.5.2.RELEASE to be converted to
+    1.5.2 - RELEASE for semantic version to work."""
     version = version.replace('.', '-', 3)
     version = version.replace('-', '.', 2)
-    return version
+    # Needed to add this so that -RELEASE is account as a Version.build
+    version = version.replace('-', '+', 3)
+    return sv.Version.coerce(version)
 
 
-def select_latest_version(latest='', libio=''):
+def version_info_tuple(version):
+    """Return the version information in form of (major, minor, patch, build) for a given sem Version.
+
+    : type version: semantic_version.base.Version
+    : param version: The semantic version whole details are needed.
+    : return: A tuple in form of Version.(major, minor, patch, build)
+    """
+    if type(version) == sv.base.Version:
+        return(version.major,
+               version.minor,
+               version.patch,
+               version.build)
+    return (0, 0, 0, tuple())
+
+
+def select_latest_version(latest='', libio='', package_name=None):
     """Retruns the latest version among current latest version and libio version."""
     return_version = ''
-    if latest in ('-1', '', None):
-        latest_version = '0.0.0'
-    else:
-        latest_version = convert_version_to_proper_semantic(latest)
-    if libio in ('-1', '', None):
-        libio_version = '0.0.0'
-    else:
-        libio_version = convert_version_to_proper_semantic(libio)
+    latest_sem_version = convert_version_to_proper_semantic(latest)
+    libio_sem_version = convert_version_to_proper_semantic(libio)
 
-    if latest_version == '0.0.0' and libio_version == '0.0.0':
+    if str(latest_sem_version) == '0.0.0' and str(libio_sem_version) == '0.0.0':
         return return_version
     try:
         return_version = libio
-        if sv.SpecItem('<' + latest_version).match(sv.Version(libio_version)):
+        if version_info_tuple(latest_sem_version) >= version_info_tuple(libio_sem_version):
             return_version = latest
     except ValueError:
-        # In case of failure let's not show any latest version at all
+        """In case of failure let's not show any latest version at all.
+        Also, no generation of stack trace,
+        as we are only intersted in the package that is causing the error."""
+        current_app.logger.info(
+            "Unexpected ValueError while selecting latest version for package {}!"
+            .format(package_name))
+        return_version = ''
         pass
-    return return_version
+    finally:
+        return return_version
 
 
 def fetch_file_from_github(url, filename, branch='master'):
