@@ -14,6 +14,9 @@ from f8a_worker.workers.mercator import MercatorTask
 from .utils import generate_content_hash
 
 
+pom_hash = {}
+
+
 class DependencyFinder():
     """Implementation of methods to find dependencies from manifest file."""
 
@@ -54,7 +57,7 @@ class DependencyFinder():
             if source == 'osio':
                 content_hash = generate_content_hash(manifest['content'])
                 if pom_hash.get(content_hash) is not None:
-                	hashed_data = pom_hash.get(content_hash)
+                    hashed_data = pom_hash.get(content_hash)
                 else:
                     resolve_poms = True
 
@@ -78,31 +81,31 @@ class DependencyFinder():
                                          .format(manifest['filename']))
 
                 if 'dependencies' not in out['details'][0] and out.get('status', None) == 'success':
-                    raise FatalTaskError("Dependencies could not be resolved from manifest file '{}'"
-                                         .format(manifest['filename']))
+                    raise FatalTaskError("Dependencies could not be resolved from manifest file"
+                                         "'{}'".format(manifest['filename']))
 
                 out["details"][0]['manifest_file'] = manifest['filename']
                 out["details"][0]['ecosystem'] = manifest['ecosystem']
                 out["details"][0]['manifest_file_path'] = manifest.get('filepath',
                                                                        'File path not available')
 
-                # If we're handling an external request we need to convert dependency specifications to
-                # concrete versions that we can query later on in the `AggregatorTask`
+                # Convert dependency specifications for external requests.
                 manifest_descriptor = get_manifest_descriptor_by_filename(manifest['filename'])
                 if 'external_request_id' in arguments:
                     manifest_dependencies = []
                     if manifest_descriptor.has_resolved_deps:  # npm-shrinkwrap.json, pom.xml
                         if "_dependency_tree_lock" in out["details"][0]:  # npm-shrinkwrap.json
                             if 'dependencies' in out['details'][0]["_dependency_tree_lock"]:
-                                manifest_dependencies = out["details"][0]["_dependency_tree_lock"].get(
-                                    "dependencies", [])
+                                manifest_dependencies = out["details"][0]["_dependency_tree_lock"]\
+                                    .get("dependencies", [])
                         else:  # pom.xml
                             if 'dependencies' in out['details'][0]:
                                 manifest_dependencies = out["details"][0].get("dependencies", [])
                         if manifest_descriptor.has_recursive_deps:  # npm-shrinkwrap.json
                             def _flatten(deps, collect):
                                 for dep in deps:
-                                    collect.append({'package': dep['name'], 'version': dep['version']})
+                                    collect.append({'package': dep['name'],
+                                                    'version': dep['version']})
                                     _flatten(dep['dependencies'], collect)
                             resolved_deps = []
                             _flatten(manifest_dependencies, resolved_deps)
