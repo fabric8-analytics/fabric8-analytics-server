@@ -7,6 +7,7 @@ import semantic_version as sv
 from bayesian.utils import (
     do_projection,
     fetch_file_from_github,
+    is_valid, has_field, get_user_email,
     convert_version_to_proper_semantic as cvs,
     version_info_tuple as vt)
 from f8a_worker.enums import EcosystemBackend
