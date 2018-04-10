@@ -14,10 +14,6 @@ from f8a_worker.workers.mercator import MercatorTask
 
 from .utils import generate_content_hash
 
-_ANALYTICS_BUCKET_NAME = 'boosters-manifest'
-_S3 = AmazonS3(bucket_name=_ANALYTICS_BUCKET_NAME)
-_S3.connect()
-
 
 class DependencyFinder():
     """Implementation of methods to find dependencies from manifest file."""
@@ -57,7 +53,10 @@ class DependencyFinder():
             if source == 'osio':
                 content_hash = generate_content_hash(manifest['content'])
                 print("{} file digest is {}".format(manifest['filename'], content_hash))
-                manifest['content'] = _S3.retrieve_blob(content_hash).decode('utf-8')
+
+                s3 = AmazonS3(bucket_name='boosters-manifest')
+                s3.connect()
+                manifest['content'] = s3.retrieve_blob(content_hash).decode('utf-8')
 
             with TemporaryDirectory() as temp_path:
                 with open(os.path.join(temp_path, manifest['filename']), 'a+') as fd:
