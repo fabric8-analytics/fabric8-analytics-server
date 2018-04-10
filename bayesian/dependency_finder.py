@@ -56,7 +56,7 @@ class DependencyFinder():
             content_hash = None
             if source == 'osio':
                 content_hash = generate_content_hash(manifest['content'])
-                print ("#################### {} file digest is {}".format(manifest['filename'], content_hash))
+                print("{} file digest is {}".format(manifest['filename'], content_hash))
                 manifest['content'] = _S3.retrieve_blob(content_hash).decode('utf-8')
 
             with TemporaryDirectory() as temp_path:
