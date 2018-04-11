@@ -7,6 +7,7 @@ import semantic_version as sv
 from bayesian.utils import (
     do_projection,
     fetch_file_from_github,
+    is_valid, has_field, get_user_email,
     convert_version_to_proper_semantic as cvs,
     version_info_tuple as vt)
 from f8a_worker.enums import EcosystemBackend
@@ -173,3 +174,28 @@ def test_version_info_tuple():
     assert version_info[1] == 0
     assert version_info[2] == 0
     assert version_info[3] == tuple()
+
+
+def test_get_user_email():
+    """Check the function get_user_email()."""
+    assert get_user_email(None) == 'bayesian@redhat.com'
+
+    user_profile = {'email': 'xyzzy'}
+    assert get_user_email(user_profile) == 'xyzzy'
+
+    user_profile = {'not-email': 'xyzzy'}
+    assert get_user_email(user_profile) == 'bayesian@redhat.com'
+
+
+def test_has_field():
+    """Check the function has_field()."""
+    assert has_field({}, [])
+    assert not has_field({}, ["field1", "field2"])
+    assert has_field({"field1": 42}, ["field1"])
+    assert has_field({"field1": {"field2": 42}}, ["field1", "field2"])
+
+
+def test_is_valid():
+    """Check the function is_valid()."""
+    assert not is_valid(None)
+    assert is_valid("parameter")
