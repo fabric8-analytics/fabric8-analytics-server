@@ -206,17 +206,19 @@ def generate_recommendation(data, package, input_version):
             # Check for next best higher version than input version without any
             # CVE's
             if not ver.get('cve_ids') \
-                    and version_info_tuple(sv.Version(graph_ver)) \
-                    > version_info_tuple(sv.Version(ip_ver)):
+                    and version_info_tuple(graph_ver) \
+                    > version_info_tuple(ip_ver):
                 if not higher_version:
                     higher_version = graph_ver
-                if version_info_tuple(sv.Version(higher_version)) \
-                        > version_info_tuple(sv.Version(graph_ver)):
+                if version_info_tuple(higher_version) \
+                        > version_info_tuple(graph_ver):
                     higher_version = graph_ver
 
-                recommendation_message = '\n It is recommended to use Version - ' + higher_version
-                reco['recommendation']['change_to'] = higher_version
-                reco['recommendation']['message'] = message + recommendation_message
+                recommendation_message = '\n It is recommended to use Version - ' + \
+                    str(higher_version)
+                reco['recommendation']['change_to'] = str(higher_version)
+                reco['recommendation']['message'] = message + \
+                    recommendation_message
     return {"result": reco}
 
 
