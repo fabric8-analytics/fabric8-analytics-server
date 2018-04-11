@@ -793,7 +793,7 @@ def convert_version_to_proper_semantic(version):
 
 
 def version_info_tuple(version):
-    """Return the version information in form of (major, minor, patch, build) for a given sem Version.
+    """Return version information in form of (major, minor, patch, build) for a given sem Version.
 
     : type version: semantic_version.base.Version
     : param version: The semantic version whole details are needed.
