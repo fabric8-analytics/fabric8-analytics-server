@@ -279,7 +279,7 @@ class ComponentSearch(ResourceWithSchema):
             raise HTTPError(202, msg)
 
         # Tokenize the search term before calling graph search
-        result = search_packages_from_graph(re.split('\W+', package))
+        result = search_packages_from_graph(re.split(r'\W+', package))
         return result
 
 
