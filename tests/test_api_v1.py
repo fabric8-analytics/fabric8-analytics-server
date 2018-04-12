@@ -185,7 +185,7 @@ class TestCommonEndpoints(object):
     def test_stack_analyses(self, accept_json):
         """Test the /stack-analyses endpoint for GET."""
         res = self.client.get(api_route_for('/stack-analyses'), headers=accept_json)
-        assert res.status_code == 400
+        assert res.status_code == 400 or res.status_code == 401
 
 
 @pytest.mark.usefixtures('client_class', 'rdb')
@@ -351,5 +351,5 @@ def test_paginated():
 
 def test_handle_http_error():
     """Test the function handle_http_error()."""
-    res = handle_http_error(Exception("my exception"))
+    res = api_v1.handle_http_error(Exception("my exception"))
     assert res
