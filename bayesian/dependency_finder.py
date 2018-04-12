@@ -29,7 +29,7 @@ class DependencyFinder():
         try:
             versions = solver.solve(deps)
         except Exception as exc:
-            current_app.logger.error("Dependencies could not be resolved: '{}'" .format(deps)) from exc
+            current_app.logger.error("Dependencies could not be resolved: '{}'" .format(deps))
             raise
         return [{"package": k, "version": v} for k, v in versions.items()]
 
@@ -41,7 +41,8 @@ class DependencyFinder():
             content_hash = None
             if source == 'osio':
                 content_hash = generate_content_hash(manifest['content'])
-                current_app.logger.info("{} file digest is {}".format(manifest['filename'], content_hash))
+                current_app.logger.info("{} file digest is {}".format(manifest['filename'],
+                                                                      content_hash))
 
                 s3 = AmazonS3(bucket_name='boosters-manifest')
                 try:
