@@ -127,6 +127,8 @@ class TestApiV1Root(object):
     api_root = {
         "paths": [
             "/api/v1",
+            "/api/v1/readiness",
+            "/api/v1/liveness",
             "/api/v1/analyse",
             "/api/v1/categories/<runtime>",
             "/api/v1/component-analyses/<ecosystem>/<package>/<version>",
