@@ -11,6 +11,7 @@ from f8a_worker.solver import get_ecosystem_solver
 from f8a_worker.storages import AmazonS3
 from tempfile import TemporaryDirectory
 from f8a_worker.workers.mercator import MercatorTask
+from botocore.exceptions import ClientError
 
 from .utils import generate_content_hash
 
@@ -55,8 +56,11 @@ class DependencyFinder():
                 print("{} file digest is {}".format(manifest['filename'], content_hash))
 
                 s3 = AmazonS3(bucket_name='boosters-manifest')
-                s3.connect()
-                manifest['content'] = s3.retrieve_blob(content_hash).decode('utf-8')
+                try:
+                    s3.connect()
+                    manifest['content'] = s3.retrieve_blob(content_hash).decode('utf-8')
+                except ClientError as e:
+                    print("Unexpected error while retrieving S3 data: %s" % e)
 
             with TemporaryDirectory() as temp_path:
                 with open(os.path.join(temp_path, manifest['filename']), 'a+') as fd:
