@@ -306,7 +306,7 @@ class TestApiV1Schemas(object):
 
 def test_get_item_skip():
     """Test the function get_item_skip()."""
-    assert api_v1.get_item_skip(0, 0) == 1
+    assert api_v1.get_item_skip(0, 0) == 0
     assert api_v1.get_item_skip(1, 1) == 1
     assert api_v1.get_item_skip(3, 1) == 3
     assert api_v1.get_item_skip(1, 4) == 4
@@ -332,6 +332,13 @@ def test_get_item_absolute_limit():
 
 def test_get_items_for_page():
     """Test the function get_items_for_page()."""
-    assert api_v1.get_items_for_page(["one", "two"], 0, 1) == "one"
-    assert api_v1.get_items_for_page(["one", "two"], 1, 1) == "two"
-    assert api_v1.get_items_for_page(["one", "two"], 1, 2) == ["one", "two"]
+    assert api_v1.get_items_for_page(["one", "two"], 0, 1) == ["one"]
+    assert api_v1.get_items_for_page(["one", "two"], 1, 1) == ["two"]
+    assert api_v1.get_items_for_page(["one", "two"], 0, 2) == ["one", "two"]
+    assert api_v1.get_items_for_page(["one", "two"], 1, 2) == []
+
+
+def test_paginated():
+    """Test the function paginated()."""
+    f = api_v1.paginated(None)
+    assert f
