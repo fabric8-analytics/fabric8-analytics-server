@@ -127,8 +127,6 @@ class TestApiV1Root(object):
     api_root = {
         "paths": [
             "/api/v1",
-            "/api/v1/readiness",
-            "/api/v1/liveness",
             "/api/v1/analyse",
             "/api/v1/categories/<runtime>",
             "/api/v1/component-analyses/<ecosystem>/<package>/<version>",
@@ -158,6 +156,26 @@ class TestApiV1Root(object):
         res = self.client.get(api_route_for('/'), headers=accept_json)
         assert res.status_code == 200
         assert res.json == self.api_root
+
+
+@pytest.mark.usefixtures('client_class')
+class TestCommonEndpoints(object):
+    """Basic tests for several endpoints."""
+
+    def test_readiness(self, accept_json):
+        """Test the /readiness endpoint."""
+        res = self.client.get(api_route_for('/readiness'), headers=accept_json)
+        assert res.status_code == 200
+
+    def test_liveness(self, accept_json):
+        """Test the /liveness endpoint."""
+        res = self.client.get(api_route_for('/liveness'), headers=accept_json)
+        assert res.status_code == 200
+
+    def test_error(self, accept_json):
+        """Test the /_error endpoint."""
+        res = self.client.get(api_route_for('/_error'), headers=accept_json)
+        assert res.status_code == 404
 
 
 @pytest.mark.usefixtures('client_class', 'rdb')
