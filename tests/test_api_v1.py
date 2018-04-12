@@ -177,6 +177,11 @@ class TestCommonEndpoints(object):
         res = self.client.get(api_route_for('/_error'), headers=accept_json)
         assert res.status_code == 404
 
+    def test_system_version(self, accept_json):
+        """Test the /system/version endpoint."""
+        res = self.client.get(api_route_for('/system/version'), headers=accept_json)
+        assert res.status_code == 200
+
 
 @pytest.mark.usefixtures('client_class', 'rdb')
 class TestUser(object):
@@ -301,32 +306,32 @@ class TestApiV1Schemas(object):
 
 def test_get_item_skip():
     """Test the function get_item_skip()."""
-    assert get_item_skip(0, 0) == 1
-    assert get_item_skip(1, 1) == 1
-    assert get_item_skip(3, 1) == 3
-    assert get_item_skip(1, 4) == 4
-    assert get_item_skip(3, 4) == 12
-    assert get_item_skip(100, 100) == 10000
+    assert api_v1.get_item_skip(0, 0) == 1
+    assert api_v1.get_item_skip(1, 1) == 1
+    assert api_v1.get_item_skip(3, 1) == 3
+    assert api_v1.get_item_skip(1, 4) == 4
+    assert api_v1.get_item_skip(3, 4) == 12
+    assert api_v1.get_item_skip(100, 100) == 10000
 
 
 def test_get_item_relative_limit():
     """Test the function get_item_relative_limit()."""
-    assert get_item_relative_limit(1, 1) == 1
-    assert get_item_relative_limit(3, 1) == 1
-    assert get_item_relative_limit(1, 4) == 4
-    assert get_item_relative_limit(3, 4) == 4
+    assert api_v1.get_item_relative_limit(1, 1) == 1
+    assert api_v1.get_item_relative_limit(3, 1) == 1
+    assert api_v1.get_item_relative_limit(1, 4) == 4
+    assert api_v1.get_item_relative_limit(3, 4) == 4
 
 
 def test_get_item_absolute_limit():
     """Test the function get_item_absolute_limit()."""
-    assert get_item_absolute_limit(0, 0) == 0
-    assert get_item_absolute_limit(1, 1) == 2
-    assert get_item_absolute_limit(3, 1) == 4
-    assert get_item_absolute_limit(3, 4) == 16
+    assert api_v1.get_item_absolute_limit(0, 0) == 0
+    assert api_v1.get_item_absolute_limit(1, 1) == 2
+    assert api_v1.get_item_absolute_limit(3, 1) == 4
+    assert api_v1.get_item_absolute_limit(3, 4) == 16
 
 
 def test_get_items_for_page():
     """Test the function get_items_for_page()."""
-    assert get_items_for_page(["one", "two"], 0, 1) == "one"
-    assert get_items_for_page(["one", "two"], 1, 1) == "two"
-    assert get_items_for_page(["one", "two"], 1, 2) == ["one", "two"]
+    assert api_v1.get_items_for_page(["one", "two"], 0, 1) == "one"
+    assert api_v1.get_items_for_page(["one", "two"], 1, 1) == "two"
+    assert api_v1.get_items_for_page(["one", "two"], 1, 2) == ["one", "two"]
