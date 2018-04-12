@@ -3,14 +3,15 @@
 import os
 import json
 from selinon import FatalTaskError
-from sqlalchemy.exc import SQLAlchemyError
 
+from flask import current_app
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 from f8a_worker.models import StackAnalysisRequest, Ecosystem
 from f8a_worker.solver import get_ecosystem_solver
 from f8a_worker.storages import AmazonS3
 from tempfile import TemporaryDirectory
 from f8a_worker.workers.mercator import MercatorTask
+
 from botocore.exceptions import ClientError
 
 from .utils import generate_content_hash
@@ -28,39 +29,27 @@ class DependencyFinder():
         try:
             versions = solver.solve(deps)
         except Exception as exc:
-            raise FatalTaskError("Dependencies could not be resolved: '{}'" .format(deps)) from exc
+            current_app.logger.error("Dependencies could not be resolved: '{}'" .format(deps)) from exc
+            raise
         return [{"package": k, "version": v} for k, v in versions.items()]
 
     def execute(self, arguments, db, manifests, source=None):
         """Dependency finder logic."""
-        #  try:
-        #      results = db.query(StackAnalysisRequest)\
-        #                  .filter(StackAnalysisRequest.id == arguments.get('external_request_id'))\
-        #                  .first()
-        #  except SQLAlchemyError:
-        #   raise ('Could not find data for request id = %s' % arguments.get(
-        #       'external_request_id'))
-        #
-        #  manifests = []
-        #  if results is not None:
-        #      row = results.to_dict()
-        #      request_json = row.get("requestJson", {})
-        #      manifests = request_json.get('manifest', [])
-
         # If we receive a manifest file we need to save it first
         result = []
         for manifest in manifests:
             content_hash = None
             if source == 'osio':
                 content_hash = generate_content_hash(manifest['content'])
-                print("{} file digest is {}".format(manifest['filename'], content_hash))
+                current_app.logger.info("{} file digest is {}".format(manifest['filename'], content_hash))
 
                 s3 = AmazonS3(bucket_name='boosters-manifest')
                 try:
                     s3.connect()
                     manifest['content'] = s3.retrieve_blob(content_hash).decode('utf-8')
                 except ClientError as e:
-                    print("Unexpected error while retrieving S3 data: %s" % e)
+                    current_app.logger.error("Unexpected error while retrieving S3 data: %s" % e)
+                    raise
 
             with TemporaryDirectory() as temp_path:
                 with open(os.path.join(temp_path, manifest['filename']), 'a+') as fd:
@@ -114,9 +103,13 @@ class DependencyFinder():
                             [{'package': x.split(' ')[0], 'version': x.split(' ')[1]}
                              for x in manifest_dependencies]
                 else:  # package.json, requirements.txt
-                    resolved_deps = self._handle_external_deps(
-                        Ecosystem.by_name(db, arguments['ecosystem']),
-                        out["details"][0]["dependencies"])
+                    try:
+                        resolved_deps = self._handle_external_deps(
+                            Ecosystem.by_name(db, arguments['ecosystem']),
+                            out["details"][0]["dependencies"])
+                    except Exception as exc:
+                        raise
+
                 out["details"][0]['_resolved'] = resolved_deps
             result.append(out)
 
