@@ -55,6 +55,9 @@ class DependencyFinder():
             with TemporaryDirectory() as temp_path:
                 with open(os.path.join(temp_path, manifest['filename']), 'a+') as fd:
                     fd.write(manifest['content'])
+                if manifest['ecosystem'] == 'go':
+                    with open(os.path.join(temp_path, 'glide.yaml'), 'w'):
+                        pass
 
                 # mercator-go does not work if there is no package.json
                 if 'shrinkwrap' in manifest['filename'].lower():
@@ -64,7 +67,8 @@ class DependencyFinder():
                 # Create instance manually since stack analysis is not handled by dispatcher
                 subtask = MercatorTask.create_test_instance(task_name='metadata')
                 arguments['ecosystem'] = manifest['ecosystem']
-                out = subtask.run_mercator(arguments, temp_path, resolve_poms=False)
+                out = subtask.run_mercator(arguments, temp_path,
+                                           outermost_only=False, resolve_poms=False)
 
             if not out["details"]:
                 raise FatalTaskError("No metadata found processing manifest file '{}'"
@@ -96,7 +100,8 @@ class DependencyFinder():
                         def _flatten(deps, collect):
                             for dep in deps:
                                 collect.append({'package': dep['name'], 'version': dep['version']})
-                                _flatten(dep['dependencies'], collect)
+                                if 'dependencies' in dep:
+                                    _flatten(dep['dependencies'], collect)
                         resolved_deps = []
                         _flatten(manifest_dependencies, resolved_deps)
                     else:  # pom.xml

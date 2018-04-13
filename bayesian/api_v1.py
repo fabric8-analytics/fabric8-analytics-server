@@ -6,6 +6,7 @@ import uuid
 import json
 import requests
 import re
+import sys
 
 from io import StringIO
 from collections import defaultdict
@@ -19,6 +20,7 @@ from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
 from selinon import StoragePool
+from f8a_worker.graphutils import LICENSE_SCORING_URL_REST
 
 from f8a_worker.models import (
     Ecosystem, WorkerResult, StackAnalysisRequest, RecommendationFeedback)
@@ -41,6 +43,7 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data)
 from .license_extractor import extract_licenses
+from .repr_license_finder import GetReprLicense
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -63,6 +66,7 @@ ANALYTICS_API_VERSION = "v1.0"
 
 worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
 _session = FuturesSession(max_workers=worker_count)
+LICENSE_SCORING_URL_REST = LICENSE_SCORING_URL_REST + "/api/v1/stack_license"
 
 
 # see <dir>.exceptions.HTTPError docstring
@@ -1193,6 +1197,34 @@ class CategoryService(ResourceWithSchema):
         return response, 200
 
 
+class FetchReprLicense(ResourceWithSchema):
+    """Implementation of /user-intent POST REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        input_json = request.get_json()
+
+        if not input_json:
+            raise HTTPError(400, error="Expected JSON request")
+
+        if 'url' not in input_json:
+            raise HTTPError(400, error="Expected url in the request")
+        if 'ecosystem' not in input_json:
+                raise HTTPError(400, error="Expected ecosystem in the request")
+
+        if input_json.get('ecosystem') == "go":
+            rep_license = GetReprLicense(input_json['url'],
+                                         input_json['ecosystem'],
+                                         input_json['external_request_id'],
+                                         LICENSE_SCORING_URL_REST)
+            return rep_license.caller()
+        else:
+            return current_app.logger.info("Currently only go repositories are supported!!")
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(StackAnalysesV2, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
@@ -1222,6 +1254,7 @@ add_resource_no_matter_slashes(CategoryService, '/categories/<runtime>')
 add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
 add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
 add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
+add_resource_no_matter_slashes(FetchReprLicense, '/repr-license-fetcher')
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined
