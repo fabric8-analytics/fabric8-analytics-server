@@ -36,6 +36,9 @@ RUN pushd /coreapi && \
 
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
 
+# Required by the solver task in worker to resolve dependencies from package.json
+RUN npm install -g semver-ranger
+
 COPY .git/ /tmp/.git
 # date and hash of last commit
 RUN cd /tmp/.git &&\
