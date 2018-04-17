@@ -56,7 +56,7 @@ about mismatched locations in compiled files. Those can be deleted using:
 
     $ find -name *.pyc -delete
 
-NOTE: Running the container based tests is likely to cause any already
+_NOTE_: Running the container based tests is likely to cause any already
 running local core API instance launched via Docker Compose to fall over due to
 changes in the SELinux labels on mounted volumes, and may also cause
 spurious test failures.
