@@ -25,10 +25,13 @@ class DependencyFinder():
         """Resolve external dependency specifications."""
         if not ecosystem or not deps:
             return []
+        current_app.logger.warning("Trying for ecosystem: {}".format(ecosystem))
         solver = get_ecosystem_solver(ecosystem)
         try:
             versions = solver.solve(deps)
+            current_app.logger.warning("Got versions: {}".format(versions))
         except Exception as exc:
+            current_app.logger.error("Got exception: {}".format(exc))
             current_app.logger.error("Dependencies could not be resolved: '{}'" .format(deps))
             raise
         return [{"package": k, "version": v} for k, v in versions.items()]
