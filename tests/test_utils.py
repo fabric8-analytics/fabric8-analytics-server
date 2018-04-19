@@ -9,7 +9,8 @@ from bayesian.utils import (
     fetch_file_from_github,
     is_valid, has_field, get_user_email,
     convert_version_to_proper_semantic as cvs,
-    version_info_tuple as vt)
+    version_info_tuple as vt,
+    select_latest_version as slv)
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
 from urllib.request import urlopen
@@ -139,28 +140,30 @@ class TestFetchFileFromGithub:
 
 def test_semantic_versioning():
     """Check the function cvs()."""
+    package_name = "test_package"
     version = "-1"
-    assert cvs(version) == sv.Version("0.0.0")
+    assert cvs(version, package_name) == sv.Version("0.0.0")
     version = ""
-    assert cvs(version) == sv.Version("0.0.0")
+    assert cvs(version, package_name) == sv.Version("0.0.0")
     version = None
-    assert cvs(version) == sv.Version("0.0.0")
+    assert cvs(version, package_name) == sv.Version("0.0.0")
     version = "1.5.2.RELEASE"
-    assert cvs(version) == sv.Version("1.5.2+RELEASE")
+    assert cvs(version, package_name) == sv.Version("1.5.2+RELEASE")
     version = "1.5-2.RELEASE"
-    assert cvs(version) == sv.Version("1.5.2+RELEASE")
+    assert cvs(version, package_name) == sv.Version("1.5.2+RELEASE")
     version = "2"
-    assert cvs(version) == sv.Version("2.0.0")
+    assert cvs(version, package_name) == sv.Version("2.0.0")
     version = "2.3"
-    assert cvs(version) == sv.Version("2.3.0")
+    assert cvs(version, package_name) == sv.Version("2.3.0")
     version = "2.0.rc1"
-    assert cvs(version) == sv.Version("2.0.0+rc1")
+    assert cvs(version, package_name) == sv.Version("2.0.0+rc1")
 
 
 def test_version_info_tuple():
     """Check the function vt()."""
     version_str = "2.0.rc1"
-    version_obj = cvs(version_str)
+    package_name = "test_package"
+    version_obj = cvs(version_str, package_name)
     version_info = vt(version_obj)
     assert len(version_info) == 4
     assert version_info[0] == version_obj.major
@@ -174,6 +177,19 @@ def test_version_info_tuple():
     assert version_info[1] == 0
     assert version_info[2] == 0
     assert version_info[3] == tuple()
+
+
+def test_select_latest_version():
+    """Check fucntion slv()."""
+    latest = "1.2.2"
+    libio = "1.2.3"
+    package_name = "test_package"
+    result_version = slv(input_version, libio, anitya, package_name)
+    assert result_version == libio
+    latest = ""
+    libio = ""
+    result_version = slv(input_version, libio, anitya, package_name)
+    assert result_version == ""
 
 
 def test_get_user_email():
