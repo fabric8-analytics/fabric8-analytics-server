@@ -9,15 +9,24 @@ ROLE_v1_2_0 = "v1-2-0"
 
 
 class ResultData(JSLSchemaBase):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options(object):
+        """A container for options."""
+
         definition_id = "result_data"
         description = "Result data"
+
     package = jsl.DictField(additional_properties=True)
     version = jsl.DictField(additional_properties=True)
 
 
 class ResultInner(JSLSchemaBase):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options(object):
+        """A container for options."""
+
         definition_id = "result_inner"
         description = "Set of Result inner"
     with removed_in(ROLE_v1_2_0) as removed_in_v1_2_0:
@@ -31,7 +40,11 @@ class ResultInner(JSLSchemaBase):
 
 
 class Status(JSLSchemaBase):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options(object):
+        """A container for options."""
+
         definition_id = "status"
         description = "Component analyses response status"
     attributes = jsl.DictField(additional_properties=True)
@@ -40,7 +53,11 @@ class Status(JSLSchemaBase):
 
 
 class AnalysesGraphDB(JSLSchemaBase):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options(object):
+        """A container for options."""
+
         definition_id = "analyses_graphdb"
         description = "Component Analysis from GraphDB"
 

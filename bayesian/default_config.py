@@ -24,6 +24,13 @@ SECRET_KEY = 'devkey'
 # length of token life in seconds
 API_TOKEN_LIFETIME = 3600
 
+# license synonyms
+# /<url>/<org>/<repo>/<branch>/<dir/file>
+LIC_SYNONYMS_URL = '/'.join(['https://raw.githubusercontent.com', 'fabric8-analytics',
+                             'fabric8-analytics-license-analysis', 'master',
+                             'tests/synonyms/license_synonyms.json'])
+
+
 # Info about deployed version
 SYSTEM_VERSION = os.getenv('F8A_SYSTEM_VERSION', default='/etc/coreapi-release')
 
@@ -36,3 +43,5 @@ BAYESIAN_FETCH_PUBLIC_KEY = os.getenv('BAYESIAN_FETCH_PUBLIC_KEY', None)
 BAYESIAN_PUBLIC_KEY = os.getenv('BAYESIAN_AUTH_KEY', '')
 BAYESIAN_JWT_AUDIENCE = os.getenv('BAYESIAN_JWT_AUDIENCE', None)
 BAYESIAN_COMPONENT_TAGGED_COUNT = os.getenv('BAYESIAN_COMPONENT_TAGGED_COUNT', 2)
+
+F8_API_BACKBONE_HOST = os.getenv('F8_API_BACKBONE_HOST', 'http://f8a-server-backbone')

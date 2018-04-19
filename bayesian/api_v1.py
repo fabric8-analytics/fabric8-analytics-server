@@ -1,3 +1,5 @@
+"""Definition of all REST API endpoints of the server module."""
+
 import datetime
 import functools
 import uuid
@@ -6,33 +8,39 @@ import requests
 import re
 
 from io import StringIO
+from collections import defaultdict
 
 import botocore
+from requests_futures.sessions import FuturesSession
 from flask import Blueprint, current_app, request, url_for, Response
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
-from flask_cors import CORS
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.dialects.postgresql import insert
 from selinon import StoragePool
 
-from f8a_worker.models import Ecosystem, WorkerResult, StackAnalysisRequest
+from f8a_worker.models import (
+    Ecosystem, WorkerResult, StackAnalysisRequest, RecommendationFeedback)
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
-from f8a_worker.utils import (safe_get_latest_version, get_dependents_count,
+from f8a_worker.utils import (get_dependents_count,
                               get_component_percentile_rank, usage_rank2str,
                               MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
+from .dependency_finder import DependencyFinder
 from .auth import login_required, decode_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
-from .utils import (get_system_version, retrieve_worker_result,
+from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     server_create_component_bookkeeping, build_nested_schema_dict,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
-                    search_packages_from_graph, get_request_count,
+                    search_packages_from_graph, get_request_count, fetch_file_from_github,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
-                    retrieve_worker_results, get_next_component_from_graph, set_tags_to_component)
+                    retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
+                    is_valid, select_latest_version, get_categories_data)
+from .license_extractor import extract_licenses
 
 import os
 from f8a_worker.storages import AmazonS3
@@ -41,7 +49,6 @@ import urllib
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 rest_api_v1 = Api(api_v1)
-CORS(api_v1)
 
 pagination_parser = reqparse.RequestParser()
 pagination_parser.add_argument('page', type=int, default=0)
@@ -54,9 +61,13 @@ original_handle_error = rest_api_v1.handle_error
 
 ANALYTICS_API_VERSION = "v1.0"
 
+worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
+_session = FuturesSession(max_workers=worker_count)
+
 
 # see <dir>.exceptions.HTTPError docstring
 def handle_http_error(e):
+    """Handle HTTPError exceptions."""
     if isinstance(e, HTTPError):
         res = jsonify({'error': e.error})
         res.status_code = e.status_code
@@ -67,7 +78,7 @@ def handle_http_error(e):
 
 @api_v1.route('/_error')
 def error():
-    """This endpoint is used by httpd, which redirects its errors to it."""
+    """Implement the endpoint used by httpd, which redirects its errors to it."""
     try:
         status = int(request.environ['REDIRECT_STATUS'])
     except Exception:
@@ -86,19 +97,17 @@ def error():
 
 @api_v1.route('/readiness')
 def readiness():
+    """Handle the /readiness REST API call."""
     return jsonify({}), 200
 
 
 @api_v1.route('/liveness')
 def liveness():
+    """Handle the /liveness REST API call."""
     # Check database connection
     current_app.logger.debug("Liveness probe - trying to connect to database "
                              "and execute a query")
     rdb.session.query(Ecosystem).count()
-    # Check broker connection
-    current_app.logger.debug("Liveness probe - trying to schedule the livenessFlow")
-    server_run_flow('livenessFlow', None)
-    current_app.logger.debug("Liveness probe finished")
     return jsonify({}), 200
 
 
@@ -108,22 +117,27 @@ rest_api_v1.handle_error = handle_http_error
 
 
 def get_item_skip(page, per_page):
+    """Get the number of items to skip for the first page-1 pages."""
     return per_page * page
 
 
 def get_item_relative_limit(page, per_page):
+    """Get the maximum possible number of items on one page."""
     return per_page
 
 
 def get_item_absolute_limit(page, per_page):
+    """Get the total possible number of items."""
     return per_page * (page + 1)
 
 
 def get_items_for_page(items, page, per_page):
+    """Get all items for specified page and number of items to be used per page."""
     return items[get_item_skip(page, per_page):get_item_absolute_limit(page, per_page)]
 
 
 def paginated(func):
+    """Provide paginated output for longer responses."""
     @functools.wraps(func)
     def inner(*args, **kwargs):
         func_res = func(*args, **kwargs)
@@ -167,8 +181,7 @@ _resource_paths = []
 
 
 def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None):
-    """Adds a resource for both trailing slash and no trailing slash to prevent redirects.
-    """
+    """Add a resource for both trailing slash and no trailing slash to prevent redirects."""
     slashless = route.rstrip('/')
     _resource_paths.append(api_v1.url_prefix + slashless)
     slashful = route + '/'
@@ -198,7 +211,9 @@ class ResourceWithSchema(Resource):
     """
 
     def add_schema(self, response, status_code, method):
-        """Add schema to response. The schema must be dict containing 3 string values:
+        """Add schema to response.
+
+        The schema must be dict containing 3 string values:
         name, version and url (representing name and version of the schema and its
         full url).
 
@@ -217,6 +232,7 @@ class ResourceWithSchema(Resource):
         return response
 
     def dispatch_request(self, *args, **kwargs):
+        """Perform the request dispatching based on the standard Flask dispatcher."""
         response = super().dispatch_request(*args, **kwargs)
 
         method = request.method
@@ -235,36 +251,48 @@ class ResourceWithSchema(Resource):
 
 
 class ApiEndpoints(ResourceWithSchema):
+    """Implementation of / REST API call."""
+
     def get(self):
+        """Handle the GET REST API call."""
         return {'paths': sorted(_resource_paths)}
 
 
 class SystemVersion(ResourceWithSchema):
+    """Implementation of /system/version REST API call."""
+
     @staticmethod
     def get():
+        """Handle the GET REST API call."""
         return get_system_version()
 
 
 class ComponentSearch(ResourceWithSchema):
+    """Implementation of /component-search REST API call."""
+
     method_decorators = [login_required]
 
     def get(self, package):
+        """Handle the GET REST API call."""
         if not package:
             msg = "Please enter a valid search term"
             raise HTTPError(202, msg)
 
         # Tokenize the search term before calling graph search
-        result = search_packages_from_graph(re.split('\W+', package))
+        result = search_packages_from_graph(re.split(r'\W+', package))
         return result
 
 
 class ComponentAnalyses(ResourceWithSchema):
+    """Implementation of all /component-analyses REST API calls."""
+
     method_decorators = [login_required]
 
     schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
 
     @staticmethod
     def get(ecosystem, package, version):
+        """Handle the GET REST API call."""
         decoded = decode_token()
         package = urllib.parse.unquote(package)
         if ecosystem == 'maven':
@@ -296,6 +324,7 @@ class ComponentAnalyses(ResourceWithSchema):
 
     @staticmethod
     def post(ecosystem, package, version):
+        """Handle the POST REST API call."""
         decoded = decode_token()
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
@@ -308,11 +337,14 @@ class ComponentAnalyses(ResourceWithSchema):
 
 
 class StackAnalysesGET(ResourceWithSchema):
+    """Implementation of the /stack-analyses GET REST API call method."""
+
     method_decorators = [login_required]
     # schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
     def get(external_request_id):
+        """Handle the GET REST API call."""
         if get_request_count(rdb, external_request_id) < 1:
             raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
 
@@ -389,7 +421,7 @@ class StackAnalysesGET(ResourceWithSchema):
         if manifest_response[0].get('recommendation'):
             manifest_response = RecommendationReason().add_reco_reason(manifest_response)
 
-        return {
+        resp = {
             "version": version,
             "release": release,
             "started_at": started_at,
@@ -397,6 +429,8 @@ class StackAnalysesGET(ResourceWithSchema):
             "request_id": external_request_id,
             "result": manifest_response
         }
+
+        return resp
 
 
 @api_v1.route('/stack-analyses/<external_request_id>/_debug')
@@ -409,7 +443,6 @@ def stack_analyses_debug(external_request_id):
     Note the existence of the data is not guaranteed,
     therefore the endpoint can return 404 even for valid request IDs.
     """
-
     results = retrieve_worker_results(rdb, external_request_id)
     if not results:
         return jsonify(error='No operational data for the request ID'), 404
@@ -418,15 +451,17 @@ def stack_analyses_debug(external_request_id):
     for result in results:
         op_data = result.to_dict()
         audit = op_data.get('task_result', {}).get('_audit', {})
-        task_data = {'task_name': op_data.get('worker')}
-        task_data['started_at'] = audit.get('started_at')
-        task_data['ended_at'] = audit.get('ended_at')
-        task_data['error'] = op_data.get('error')
+        task_data = {'task_name': op_data.get('worker'),
+                     'started_at': audit.get('started_at'),
+                     'ended_at': audit.get('ended_at'),
+                     'error': op_data.get('error')}
         response['tasks'].append(task_data)
     return jsonify(response), 200
 
 
 class UserFeedback(ResourceWithSchema):
+    """Implementation of /user-feedback POST REST API call."""
+
     method_decorators = [login_required]
     _ANALYTICS_BUCKET_NAME = "{}-{}".format(
         os.environ.get('DEPLOYMENT_PREFIX', 'unknown'),
@@ -434,6 +469,7 @@ class UserFeedback(ResourceWithSchema):
 
     @staticmethod
     def post():
+        """Handle the POST REST API call."""
         input_json = request.get_json()
 
         if not request.json or 'request_id' not in input_json:
@@ -452,10 +488,13 @@ class UserFeedback(ResourceWithSchema):
 
 
 class UserIntent(ResourceWithSchema):
+    """Implementation of /user-intent POST REST API call."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def post():
+        """Handle the POST REST API call."""
         input_json = request.get_json()
 
         if not input_json:
@@ -486,10 +525,13 @@ class UserIntent(ResourceWithSchema):
 
 
 class UserIntentGET(ResourceWithSchema):
+    """Implementation of /user-intent GET REST API call."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def get(user, ecosystem):
+        """Handle the GET REST API call."""
         if not user:
             raise HTTPError(400, error="Expected user name in the request")
 
@@ -510,11 +552,14 @@ class UserIntentGET(ResourceWithSchema):
 
 
 class MasterTagsGET(ResourceWithSchema):
+    """Implementation of /master-tags REST API call."""
+
     method_decorators = [login_required]
 
     @staticmethod
     @cache.memoize(timeout=604800)  # 7 days
     def get(ecosystem):
+        """Handle the GET REST API call."""
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
@@ -531,14 +576,18 @@ class MasterTagsGET(ResourceWithSchema):
         return result
 
     def __repr__(self):
+        """Return textual representatin of classname + the id."""
         return "{}({})".format(self.__class__.__name__, self.id)
 
 
 class GetNextComponent(ResourceWithSchema):
+    """Implementation of all /get-next-component REST API call."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def post(ecosystem):
+        """Handle the POST REST API call."""
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
@@ -556,10 +605,13 @@ class GetNextComponent(ResourceWithSchema):
 
 
 class SetTagsToComponent(ResourceWithSchema):
+    """Implementation of all /set-tags REST API calls."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def post():
+        """Handle the POST REST API call."""
         input_json = request.get_json()
         decoded = decode_token()
 
@@ -586,11 +638,14 @@ class SetTagsToComponent(ResourceWithSchema):
             raise HTTPError(400, error=_error)
 
 
-class StackAnalyses(ResourceWithSchema):
+class StackAnalysesV2(ResourceWithSchema):
+    """Implementation of all /stack-analyses REST API calls."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def post():
+        """Handle the POST REST API call."""
         decoded = decode_token()
         github_url = request.form.get("github_url")
         if github_url is not None:
@@ -706,10 +761,13 @@ class StackAnalyses(ResourceWithSchema):
 
     @staticmethod
     def get():
+        """Handle the GET REST API call."""
         raise HTTPError(404, "Unsupported API endpoint")
 
 
 class PublishedSchemas(ResourceWithSchema):
+    """Implementation of all /schemas REST API calls."""
+
     API_COLLECTION = 'api'
     COMPONENT_ANALYSES_COLLECTION = 'component_analyses'
     schema_collections = {
@@ -718,6 +776,7 @@ class PublishedSchemas(ResourceWithSchema):
     }
 
     def __init__(self):
+        """Construct PublishedSchemas class instance and initialize id attribute for all schemas."""
         super(PublishedSchemas, self).__init__()
         for collection, schemas in self.schema_collections.items():
             for name, versions in schemas.items():
@@ -726,6 +785,7 @@ class PublishedSchemas(ResourceWithSchema):
                     schema["id"] = url
 
     def get(self, collection=None, name=None, version=None):
+        """Get the schema for specified collection, name, and version."""
         # Boring if statement instead of clever loop because Nick is no fun
         result = self.schema_collections
         if collection is not None:
@@ -749,19 +809,24 @@ class PublishedSchemas(ResourceWithSchema):
 
     @classmethod
     def get_api_schema_url(cls, name, version):
+        """Get the URL to given schema URL with the specified version."""
         return cls._get_schema_url(collection=cls.API_COLLECTION, name=name, version=version)
 
     @classmethod
     def get_component_analysis_schema_url(cls, name, version):
+        """Get the URL to component analysis schema."""
         return cls._get_schema_url(collection=cls.COMPONENT_ANALYSES_COLLECTION,
                                    name=name, version=version)
 
 
 class GenerateManifest(Resource):
+    """Implementation of the /generate-file REST API call."""
+
     method_decorators = [login_required]
 
     @staticmethod
     def post():
+        """Handle the POST REST API call with the manifest file."""
         input_json = request.get_json()
         if 'ecosystem' not in input_json:
             raise HTTPError(400, "Must provide an ecosystem")
@@ -781,7 +846,355 @@ class GenerateManifest(Resource):
             )
 
 
+class StackAnalyses(ResourceWithSchema):
+    """Implementation of all /stack-analyses REST API calls."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        decoded = decode_token()
+        sid = request.args.get('sid')
+        license_files = list()
+        check_license = request.args.get('check_license', 'false') == 'true'
+        github_url = request.form.get("github_url")
+        source = request.form.get('source')
+        if github_url is not None:
+            files = fetch_file_from_github(github_url, 'pom.xml')
+            license = fetch_file_from_github(github_url, 'LICENSE')
+            if license:
+                license_content = license[0].get('content')
+                if license_content:
+                    license_files = [StringIO(license_content)]
+        else:
+            files = request.files.getlist('manifest[]')
+            filepaths = request.values.getlist('filePath[]')
+            license_files = request.files.getlist('license[]')
+
+            current_app.logger.info('%r' % files)
+            current_app.logger.info('%r' % filepaths)
+
+            # At least one manifest file path should be present to analyse a stack
+            if not filepaths:
+                raise HTTPError(400, error="Error processing request. "
+                                           "Please send a valid manifest file path.")
+            if len(files) != len(filepaths):
+                raise HTTPError(400, error="Error processing request. "
+                                           "Number of manifests and filePaths must be the same.")
+
+        # At least one manifest file should be present to analyse a stack
+        if not files:
+            raise HTTPError(400, error="Error processing request. "
+                                       "Please upload a valid manifest files.")
+
+        dt = datetime.datetime.now()
+        if sid:
+            request_id = sid
+            is_modified_flag = {'is_modified': True}
+        else:
+            request_id = uuid.uuid4().hex
+            is_modified_flag = {'is_modified': False}
+
+        iso = datetime.datetime.utcnow().isoformat()
+
+        manifests = []
+        ecosystem = None
+        for index, manifest_file_raw in enumerate(files):
+            if github_url is not None:
+                filename = manifest_file_raw.get('filename', None)
+                filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
+            else:
+                filename = manifest_file_raw.filename
+                filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
+
+            # check if manifest files with given name are supported
+            manifest_descriptor = get_manifest_descriptor_by_filename(filename)
+            if manifest_descriptor is None:
+                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
+                    filename=filename))
+
+            # In memory file to be passed as an API parameter to /appstack
+            manifest_file = StringIO(content)
+
+            # Check if the manifest is valid
+            if not manifest_descriptor.validate(content):
+                raise HTTPError(400, error="Error processing request. Please upload a valid "
+                                           "manifest file '{filename}'".format(filename=filename))
+
+            # Record the response details for this manifest file
+            manifest = {'filename': filename,
+                        'content': content,
+                        'ecosystem': manifest_descriptor.ecosystem,
+                        'filepath': filepath}
+
+            manifests.append(manifest)
+
+        data = {'api_name': 'stack_analyses',
+                'user_email': decoded.get('email', 'bayesian@redhat.com'),
+                'user_profile': decoded}
+        args = {'external_request_id': request_id,
+                'ecosystem': ecosystem, 'data': data}
+
+        try:
+            api_url = current_app.config['F8_API_BACKBONE_HOST']
+
+            d = DependencyFinder()
+            deps = d.execute(args, rdb.session, manifests, source)
+            deps['external_request_id'] = request_id
+            deps['current_stack_license'] = extract_licenses(license_files)
+            deps.update(is_modified_flag)
+
+            _session.post(
+                '{}/api/v1/stack_aggregator'.format(api_url), json=deps,
+                params={'check_license': str(check_license).lower()})
+            _session.post('{}/api/v1/recommender'.format(api_url), json=deps,
+                          params={'check_license': str(check_license).lower()})
+
+        except Exception as exc:
+            raise HTTPError(500, ("Could not process {t}."
+                                  .format(t=request_id))) from exc
+        try:
+            insert_stmt = insert(StackAnalysisRequest).values(
+                id=request_id,
+                submitTime=str(dt),
+                requestJson={'manifest': manifests},
+                dep_snapshot=deps
+            )
+            do_update_stmt = insert_stmt.on_conflict_do_update(
+                index_elements=['id'],
+                set_=dict(dep_snapshot=deps)
+            )
+            rdb.session.execute(do_update_stmt)
+            rdb.session.commit()
+            return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
+        except SQLAlchemyError as e:
+            raise HTTPError(500, "Error updating log for request {t}".format(t=sid)) from e
+
+    @staticmethod
+    def get():
+        """Handle the GET REST API call."""
+        raise HTTPError(404, "Unsupported API endpoint")
+
+
+class SubmitFeedback(ResourceWithSchema):
+    """Implementation of /submit-feedback POST REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        input_json = request.get_json()
+        if not request.json:
+            raise HTTPError(400, error="Expected JSON request")
+
+        stack_id = input_json.get('stack_id')
+        recommendation_type = input_json.get('recommendation_type')
+        package_name = input_json.get('package_name')
+        feedback_type = input_json.get('feedback_type')
+        ecosystem_name = input_json.get('ecosystem')
+        conditions = [is_valid(stack_id),
+                      is_valid(recommendation_type),
+                      is_valid(package_name),
+                      is_valid(feedback_type),
+                      is_valid(ecosystem_name)]
+        if not all(conditions):
+            raise HTTPError(400, error="Expected parameters missing")
+        # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies
+        # for a single request
+        try:
+            ecosystem_obj = Ecosystem.by_name(rdb.session, name=ecosystem_name)
+            req = RecommendationFeedback(
+                stack_id=stack_id,
+                package_name=package_name,
+                recommendation_type=recommendation_type,
+                feedback_type=feedback_type,
+                ecosystem_id=ecosystem_obj.id
+            )
+            rdb.session.add(req)
+            rdb.session.commit()
+            return {'status': 'success'}
+        except SQLAlchemyError as e:
+            current_app.logger.exception(
+                'Failed to create new analysis request')
+            raise HTTPError(
+                500, "Error inserting log for request {t}".format(t=stack_id)) from e
+
+
+class DepEditorAnalyses(ResourceWithSchema):
+    """Implementation of /depeditor-analyses POST REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        manifest_file = {
+            'maven': 'pom.xml',
+            'node': 'package.json',
+            'pypi': 'requirements.txt'
+        }
+
+        input_json = request.get_json()
+        persist = request.args.get('persist', 'false') == 'true'
+        if not input_json or 'request_id' not in input_json:
+            raise HTTPError(400, error="Expected JSON request and request_id")
+
+        if '_resolved' not in input_json or 'ecosystem' not in input_json:
+            raise HTTPError(400, error="Expected _resolved and ecosystem in request")
+
+        request_obj = {
+            "external_request_id": input_json.get('request_id'),
+            "result": [{
+                "details": [{
+                    "ecosystem": input_json.get('ecosystem'),
+                    "_resolved": input_json.get('_resolved', []),
+                    "manifest_file_path": input_json.get('manifest_file_path', '/path'),
+                    "manifest_file": manifest_file.get(input_json.get('ecosystem'))
+                }],
+            }]
+        }
+
+        api_url = current_app.config['F8_API_BACKBONE_HOST']
+        stack_agg_resp = _session.post('{}/api/v1/stack_aggregator'.format(api_url),
+                                       json=request_obj, params={'persist': str(persist).lower()})
+        recommender_resp = _session.post('{}/api/v1/recommender'.format(api_url),
+                                         json=request_obj, params={'persist': str(persist).lower()})
+        recommender_result = recommender_resp.result()
+        stack_agg_result = stack_agg_resp.result()
+        started_at = None
+        finished_at = None
+        version = None
+        release = None
+        manifest_response = []
+        stacks = []
+        recommendations = []
+        stack_result = reco_result = dict()
+        if stack_agg_result.status_code == 200:
+            stack_result = stack_agg_result.json()
+        if recommender_result.status_code == 200:
+            reco_result = recommender_result.json()
+        external_request_id = reco_result.get('external_request_id')
+        if stack_result is not None and 'result' in stack_result:
+            started_at = stack_result.get("result", {}).get(
+                "_audit", {}).get("started_at", started_at)
+            finished_at = stack_result.get("result", {}).get(
+                "_audit", {}).get("ended_at", finished_at)
+            version = stack_result.get("result", {}).get("_audit", {}).get("version", version)
+            release = stack_result.get("result", {}).get("_release", release)
+            stacks = stack_result.get("result", {}).get("stack_data", stacks)
+
+        if reco_result is not None and 'result' in reco_result:
+            recommendations = reco_result.get("result", {}).get("recommendations",
+                                                                recommendations)
+
+        if not stacks:
+            return {
+                "version": version,
+                "release": release,
+                "started_at": started_at,
+                "finished_at": finished_at,
+                "request_id": external_request_id,
+                "result": manifest_response
+            }
+        for stack in stacks:
+            user_stack_deps = stack.get('user_stack_info', {}).get('analyzed_dependencies', [])
+            stack_recommendation = get_item_from_list_by_key_value(recommendations,
+                                                                   "manifest_file_path",
+                                                                   stack.get(
+                                                                        "manifest_file_path"))
+            for dep in user_stack_deps:
+                # Adding topics from the recommendations
+                if stack_recommendation is not None:
+                    dep["topic_list"] = stack_recommendation.get("input_stack_topics",
+                                                                 {}).get(dep.get('name'), [])
+                else:
+                    dep["topic_list"] = []
+
+        for stack in stacks:
+            stack["recommendation"] = get_item_from_list_by_key_value(
+                recommendations,
+                "manifest_file_path",
+                stack.get("manifest_file_path"))
+            manifest_response.append(stack)
+
+        # Populate reason for alternate and companion recommendation
+        if manifest_response[0].get('recommendation'):
+            manifest_response = RecommendationReason().add_reco_reason(manifest_response)
+
+        return {
+            "version": version,
+            "release": release,
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "request_id": external_request_id,
+            "result": manifest_response,
+            "dep_snapshot": input_json
+        }
+
+
+class DepEditorCVEAnalyses(ResourceWithSchema):
+    """Implementation of /depeditor-cve-analyses POST REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        input_json = request.get_json()
+
+        if not request.json or 'request_id' not in input_json:
+            raise HTTPError(400, error="Expected JSON request and request_id")
+
+        if '_resolved' not in input_json or 'ecosystem' not in input_json:
+            raise HTTPError(400, error="Expected _resolved and ecosystem in request")
+        response = get_cve_data(input_json)
+        return response, 200
+
+
+class CategoryService(ResourceWithSchema):
+    """Implementation of Dependency editor category service GET REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def get(runtime):
+        """Handle the GET REST API call."""
+        categories = defaultdict(lambda: {'pkg_count': 0, 'packages': list()})
+        gremlin_resp = get_categories_data(runtime)
+        response = {
+            'categories': dict(),
+            'request_id': gremlin_resp.get('requestId')
+        }
+        if 'result' in gremlin_resp and 'requestId' in gremlin_resp:
+            data = gremlin_resp.get('result')
+            if 'data' in data and data['data']:
+                for items in data.get('data'):
+                    category = items.get('category')
+                    package = items.get('package')
+                    if category and package:
+                        pkg_count = category.get('category_deps_count', [0])[0]
+                        _category = category.get('ctname', [''])[0]
+                        pkg_name = package.get('name', [''])[0]
+                        libio_version = package.get('libio_latest_version', [''])[0]
+                        version = package.get('latest_version', [''])[0]
+                        latest_version = select_latest_version(
+                            version, libio_version, pkg_name)
+                        categories[_category]['pkg_count'] = pkg_count
+                        categories[_category]['packages'].append({
+                            'name': pkg_name,
+                            'version': latest_version,
+                            'category': _category
+                        })
+                response['categories'] = categories
+        return response, 200
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
+add_resource_no_matter_slashes(StackAnalysesV2, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
 add_resource_no_matter_slashes(ComponentAnalyses,
@@ -802,12 +1215,20 @@ add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>',
 add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>/<version>',
                                endpoint='get_schema_by_name_and_version')
 add_resource_no_matter_slashes(GenerateManifest, '/generate-file')
-add_resource_no_matter_slashes(GetNextComponent, '/get-next-component/<ecosystem>')
+add_resource_no_matter_slashes(
+    GetNextComponent, '/get-next-component/<ecosystem>')
 add_resource_no_matter_slashes(SetTagsToComponent, '/set-tags')
-
+add_resource_no_matter_slashes(CategoryService, '/categories/<runtime>')
+add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
+add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
+add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
-# NOTE: this *must* come in the end, unless it'll overwrite rules defined after this
+# NOTE: this *must* come in the end, unless it'll overwrite rules defined
+# after this
+
+
 @api_v1.route('/<path:invalid_path>')
 def api_404_handler(*args, **kwargs):
+    """Handle all other routes not defined above."""
     return jsonify(error='Cannot match given query to any API v1 endpoint'), 404

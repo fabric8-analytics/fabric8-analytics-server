@@ -13,8 +13,11 @@ See our [contributing guidelines](https://github.com/fabric8-analytics/common/bl
 
 The API details are provided as a [RAML file](../docs/api/raml/api.raml).
 
-A [JSON schema definition](schemas/generated/component-analysis-v1-0-0.schema.json)
+A [JSON schema definition](tests/data/schemas/component_analyses-v1-1-3.schema.json)
 is provided for the component analysis endpoint.
+
+Additionaly [JSON schema definition](tests/data/schemas/stack_analyses-v2-2-0.schema.json)
+is provided for the stack analysis endpoint as well.
 
 ## Core API Access Logs
 
@@ -53,7 +56,7 @@ about mismatched locations in compiled files. Those can be deleted using:
 
     $ find -name *.pyc -delete
 
-NOTE: Running the container based tests is likely to cause any already
+_NOTE_: Running the container based tests is likely to cause any already
 running local core API instance launched via Docker Compose to fall over due to
 changes in the SELinux labels on mounted volumes, and may also cause
 spurious test failures.
@@ -89,3 +92,19 @@ It's possible to access operational data related to a particular stack analysis 
 `/api/v1/stack-analyses/<request-id>/_debug`
 
 Note this endpoint is not part of the public API. 
+
+### Footnotes
+
+## Coding standards
+
+
+- You can use scripts `run-linter.sh` and `check-docstyle.sh` to check if the code follows [PEP 8](https://www.python.org/dev/peps/pep-0008/) and [PEP 257](https://www.python.org/dev/peps/pep-0257/) coding standards. These scripts can be run w/o any arguments:
+
+```
+./run-linter.sh
+./check-docstyle.sh
+```
+
+The first script checks the indentation, line lengths, variable names, white space around operators etc. The second
+script checks all documentation strings - its presence and format. Please fix any warnings and errors reported by these
+scripts.

@@ -1,3 +1,4 @@
+"""JSL schemas for stack analysis endpoint."""
 import jsl
 
 from f8a_worker.schemas import JSLSchemaBase, added_in, removed_in
@@ -19,7 +20,11 @@ ROLE_v2_2_0 = "v2_2_0"
 
 
 class BlackduckLicenseDetails(jsl.Document):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options:
+        """A container for options."""
+
         description = "Blackduck information about one license for a single component"
         definition_id = "component_blackduck_license_info"
 
@@ -31,7 +36,11 @@ class BlackduckLicenseDetails(jsl.Document):
 
 
 class BlackduckSecurityDetails(jsl.Document):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options:
+        """A container for options."""
+
         description = "Blackduck information about one vulnerability for a single component"
         definition_id = "component_blackduck_security_info"
 
@@ -47,7 +56,11 @@ class BlackduckSecurityDetails(jsl.Document):
 
 
 class BlackduckDetails(jsl.Document):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options:
+        """A container for options."""
+
         description = "Blackduck information for a single component"
         definition_id = "component_blackduck_info"
 
@@ -56,7 +69,11 @@ class BlackduckDetails(jsl.Document):
 
 
 class CVEDetail(jsl.Document):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options:
+        """A container for options."""
+
         description = "Information about one CVE for a single component"
         definition_id = "component_cve_info"
 
@@ -66,21 +83,33 @@ class CVEDetail(jsl.Document):
 
 with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
     class Month(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "GitHub Last Month Metrics"
             definition_id = "github_last_month_metrics"
         opened = jsl.NumberField(required=True)
         closed = jsl.NumberField(required=True)
 
     class Year(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "GitHub Last Year Metrics"
             definition_id = "github_last_year_metrics"
         opened = jsl.NumberField(required=True)
         closed = jsl.NumberField(required=True)
 
     class GithubMetrics(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "GitHub Metrics"
             definition_id = "github_metrics"
         month = jsl.DocumentField(Month, as_ref=True, required=True)
@@ -88,7 +117,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
 
 
 class GithubDetails(jsl.Document):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options:
+        """A container for options."""
+
         description = "Github information for a single component"
         definition_id = "component_github_info"
 
@@ -101,7 +134,11 @@ class GithubDetails(jsl.Document):
 
 with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
     class RegisteredSRPM(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Red Hat internally registered SRPM details a single component"
             definition_id = "component_redhat_registered_srpms"
 
@@ -115,7 +152,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
         release = jsl.StringField(required=True)
 
     class RedHatUsage(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Red Hat internal usage information for a single component"
             definition_id = "component_redhat_usage"
 
@@ -132,7 +173,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
             added_in_v2_1_3.rh_mvn_matched_versions = jsl.ArrayField(jsl.StringField())
 
     class Popularity(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Stack popularity"
             definition_id = "stack_popularity"
         average_forks = jsl.StringField(required=True)
@@ -140,7 +185,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
         low_popularity_components = jsl.NumberField(required=True)
 
     class Usage(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Stack usage"
             definition_id = "stack_usage"
         average_usage = jsl.StringField(required=True)
@@ -149,14 +198,22 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_0) as v2_0_0:
 
 with jsl.Scope(lambda v: v >= ROLE_v2_0_3) as added_in_v2_0_3:
     class ComponentMetadataEngines(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Version of engine/interpreter/package manager"
             definition_id = "component_metadata_engines"
         name = jsl.StringField()
         version = jsl.StringField()
 
     class ComponentMetadata(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Data from metadata file"
             definition_id = "component_metadata"
         tests_implemented = jsl.BooleanField()
@@ -165,7 +222,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_3) as added_in_v2_0_3:
 
 
 class ComponentInfo(jsl.Document):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options:
+        """A container for options."""
+
         description = "Information about a single component"
         definition_id = "component_info"
 
@@ -195,14 +256,22 @@ class ComponentInfo(jsl.Document):
 
 with jsl.Scope(lambda v: v >= ROLE_v2_0_2) as v2_0_2:
     class InputStack(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Input stack for generating recommendations"
             definition_id = "input_stack"
         appstack_id = jsl.StringField(required=True)
         uri = jsl.StringField(required=True)
 
     class SimilarityAnalysis(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Stack Similarity Analysis Result"
             definition_id = "stack_similarity_analysis"
         missing_packages = jsl.ArrayField(jsl.StringField(), required=True)
@@ -211,7 +280,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_2) as v2_0_2:
             v2_1_4.missing_downstream_component = jsl.ArrayField(jsl.StringField(), required=True)
 
     class SimilarStacks(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Stack Similarity Information"
             definition_id = "stack_similarity_information"
         analysis = jsl.DocumentField(SimilarityAnalysis, as_ref=True, required=True)
@@ -224,7 +297,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_2) as v2_0_2:
             v2_1_4.original_score = jsl.NumberField(required=True)
 
     class StackRecommendations(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Stack Recommendations"
             definition_id = "stack_recommendations"
         # TODO: Get more details about component_level. Current example
@@ -234,7 +311,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_2) as v2_0_2:
                                         required=True)
 
     class Recommendation(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Bayesian recommended stacks"
             definition_id = "recommended_stacks"
         input_stack = jsl.DocumentField(InputStack, as_ref=True, Required=True)
@@ -243,7 +324,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_2) as v2_0_2:
 
 with jsl.Scope(lambda v: v >= ROLE_v2_0_3) as added_in_v2_0_3:
     class Metadata(jsl.Document):
+        """Class with the schema definition based on JSL domain specific language."""
+
         class Options:
+            """A container for options."""
+
             description = "Data from metadata file"
             definition_id = "metadata"
         components_with_dependency_lock_file = jsl.NumberField(required=True)
@@ -252,7 +337,11 @@ with jsl.Scope(lambda v: v >= ROLE_v2_0_3) as added_in_v2_0_3:
 
 
 class StackAnalysisReport(jsl.Document):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options:
+        """A container for options."""
+
         description = "Stack analysis report with aggregated data"
         definition_id = "stack_analysis_report"
 
@@ -276,7 +365,11 @@ class StackAnalysisReport(jsl.Document):
 
 
 class StackAnalysisResult(jsl.Document):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options:
+        """A container for options."""
+
         description = "Stack analysis result"
         definition_id = "stack_analysis_result"
 
@@ -284,7 +377,11 @@ class StackAnalysisResult(jsl.Document):
 
 
 class StackAnalysisResponse(JSLSchemaBase):
+    """Class with the schema definition based on JSL domain specific language."""
+
     class Options:
+        """A container for options."""
+
         description = "Stack analysis"
         definition_id = "stack_analysis"
 

@@ -23,8 +23,6 @@ objects:
       spec:
         containers:
         - env:
-          - name: F8A_DEBUG
-            value: "true"
           - name: BAYESIAN_COMPONENT_TAGGED_COUNT
             value: "2"
           - name: DEPLOYMENT_PREFIX
@@ -34,10 +32,12 @@ objects:
                 key: deployment-prefix
           - name: WORKER_ADMINISTRATION_REGION
             value: "api"
+          - name: F8_API_BACKBONE_HOST
+            value: "http://f8a-server-backbone:5000"
+          - name: FUTURES_SESSION_WORKER_COUNT
+            value: "100"
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
-          - name: ANITYA_SERVICE_HOST
-            value: bayesian-anitya
           - name: BAYESIAN_FETCH_PUBLIC_KEY
             valueFrom:
               configMapKeyRef:
@@ -45,6 +45,8 @@ objects:
                 key: keycloak-url
           - name: BAYESIAN_JWT_AUDIENCE
             value: "fabric8-online-platform,openshiftio-public"
+          - name: SENTRY_DSN
+            value: "${SENTRY_DSN}"
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
@@ -87,21 +89,21 @@ objects:
           ports:
           - containerPort: 5000
             protocol: TCP
-          readinessProbe:
-            httpGet:
-              path: /api/v1/readiness
-              port: 5000
-              scheme: HTTP
+          livenessProbe:
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /api/v1/liveness
+            failureThreshold: 3
+            successThreshold: 1
+            tcpSocket:
               port: 5000
-              scheme: HTTP
+          readinessProbe:
             initialDelaySeconds: 30
             periodSeconds: 60
+            failureThreshold: 3
+            successThreshold: 1
+            tcpSocket:
+              port: 5000
             timeoutSeconds: 10
           resources:
             requests:
@@ -174,3 +176,9 @@ parameters:
   required: false
   name: FLASK_LOGGING_LEVEL
   value: "WARNING"
+
+- description: Sentry DSN
+  displayName: Sentry DSN
+  required: false
+  name: SENTRY_DSN
+  value: ""

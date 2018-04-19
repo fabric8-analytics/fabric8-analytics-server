@@ -7,10 +7,12 @@ import json
 import os
 import uuid
 import shutil
+import hashlib
 
 from selinon import run_flow
 from flask import current_app
 from flask.json import JSONEncoder
+import semantic_version as sv
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
 
@@ -152,8 +154,9 @@ def add_field(analysis, field, ret):
     prev_ret[f] = analysis
 
 
-def generate_recommendation(data, package, version):
+def generate_recommendation(data, package, input_version):
     """Generate recommendation for the package+version."""
+    ip_ver = convert_version_to_proper_semantic(input_version)
     # Template Dict for recommendation
     reco = {
         'recommendation': {
@@ -161,14 +164,13 @@ def generate_recommendation(data, package, version):
         }
     }
     if data:
-        # Get the Latest Version
-        latest_version = data[0].get('package', {}).get('latest_version', [None])[0]
         message = ''
         max_cvss = 0.0
+        higher_version = ''
         # check if given version has a CVE or not
         for records in data:
             ver = records['version']
-            if version == ver.get('version', [''])[0]:
+            if input_version == ver.get('version', [''])[0]:
                 records_arr = []
                 records_arr.append(records)
                 reco['data'] = records_arr
@@ -176,7 +178,7 @@ def generate_recommendation(data, package, version):
                 cve_maps = []
                 if ver.get('cve_ids', [''])[0] != '':
                     message = 'CVE/s found for Package - ' + package + ', Version - ' + \
-                              version + '\n'
+                              input_version + '\n'
                     # for each CVE get cve_id and cvss scores
                     for cve in ver.get('cve_ids'):
                         cve_id = cve.split(':')[0]
@@ -197,23 +199,27 @@ def generate_recommendation(data, package, version):
                     reco['recommendation'] = {}
                     return {"result": reco}
 
-        # check if latest version exists or current version is latest version
-        if not latest_version or latest_version == '' or version == latest_version:
-            if message != '':
-                reco['recommendation']['message'] = message
-            return {"result": reco}
-        # check if latest version has lower CVEs or no CVEs than current version
         for records in data:
             ver = records['version']
-            if latest_version == ver.get('version', [''])[0]:
-                if ver.get('cve_ids', [''])[0] != '':
-                    for cve in ver.get('cve_ids'):
-                        cvss = float(cve.split(':')[1])
-                        if cvss >= max_cvss:
-                            break
-                message += '\n It is recommended to use Version - ' + latest_version
-                reco['recommendation']['change_to'] = latest_version
-                reco['recommendation']['message'] = message
+            graph_version = ver.get('version', [''])[0]
+            graph_ver = convert_version_to_proper_semantic(graph_version)
+
+            # Check for next best higher version than input version without any
+            # CVE's
+            if not ver.get('cve_ids') \
+                    and version_info_tuple(graph_ver) \
+                    > version_info_tuple(ip_ver):
+                if not higher_version:
+                    higher_version = graph_ver
+                if version_info_tuple(higher_version) \
+                        > version_info_tuple(graph_ver):
+                    higher_version = graph_ver
+
+                recommendation_message = '\n It is recommended to use Version - ' + \
+                    str(higher_version)
+                reco['recommendation']['change_to'] = str(higher_version)
+                reco['recommendation']['message'] = message + \
+                    recommendation_message
     return {"result": reco}
 
 
@@ -222,18 +228,17 @@ def search_packages_from_graph(tokens):
     # TODO query string for actual STAGE/PROD
     # g.V().has('vertex_label','Package').has('tokens','one').has('tokens','two').
     # out('has_version').valueMap('pecosystem', 'pname', 'version')).limit(5)
-    qstring = "g.V()"
-    # qstring = "g.V()"
+    qstring = ["g.V()"]
+    tkn_string = ".has('tokens', '{t}' )"
     for tkn in tokens:
         if tkn:
             # TODO Change qstring
-            qstring += ".has('tokens', '" + tkn + "')"
-            # qstring += ".has('alias', '" + tkn + "')"
+            qstring.append(tkn_string.format(t=tkn))
 
-    # qstring += ".has('version').valueMap('pecosystem', 'pname', 'version').limit(5)"
-    qstring += ".out('has_version').valueMap('pecosystem', 'pname', 'version').dedup().limit(5)"
+    qstring.append(".valueMap('ecosystem', 'name', 'libio_latest_version', 'latest_version')"
+                   ".dedup().limit(5)")
 
-    payload = {'gremlin': qstring}
+    payload = {'gremlin': ''.join(qstring)}
 
     response = post(gremlin_url, data=json.dumps(payload))
     resp = response.json()
@@ -243,14 +248,17 @@ def search_packages_from_graph(tokens):
 
     pkg_list = []
     for pkg in packages:
-        condition = [pkg['pecosystem'][0] is not None,
-                     pkg['pname'][0] is not None,
-                     pkg['version'][0] is not None]
-        if all(condition):
+        eco = pkg.get('ecosystem', [''])[0]
+        name = pkg.get('name', [''])[0]
+        version = select_latest_version(
+            pkg.get('latest_version', [''])[0],
+            pkg.get('libio_latest_version', [''])[0],
+            name)
+        if all((eco, name, version)):
             pkg_map = {
-                'ecosystem': pkg['pecosystem'][0],
-                'name': pkg['pname'][0],
-                'version': pkg['version'][0]
+                'ecosystem': eco,
+                'name': name,
+                'version': version
             }
             pkg_list.append(pkg_map)
 
@@ -260,8 +268,8 @@ def search_packages_from_graph(tokens):
 def get_analyses_from_graph(ecosystem, package, version):
     """Read analysis for given package+version from the graph database."""
     qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
-              ".as('package').out('has_version').as('version').select('package','version')." \
-              "by(valueMap());"
+              ".as('package').out('has_version').as('version').dedup()." \
+              "select('package', 'version').by(valueMap());"
     payload = {'gremlin': qstring}
     start = datetime.datetime.now()
     try:
@@ -660,14 +668,25 @@ class RecommendationReason:
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for each companion package
         """
-        count_sentence = None
         for pkg in manifest_response[0].get("recommendation", {}).get("companion", []):
+            count_sentence = None
             name = pkg.get("name")
             stack_confidence = pkg.get("cooccurrence_probability")
             stack_count = pkg.get("cooccurrence_count")
+            if stack_confidence is None:
+                """
+                Log the value of zero confidence, so that it can be matched
+                against Kronos output for validation.
+                This should track any future occurence of this[1] error:
+                Error:https://github.com/openshiftio/openshift.io/issues/2167
+                """
+                current_app.logger.error(
+                    "Stack Count for {} when confidence=None is {}".format(name, stack_count))
+
             # 0% confidence is as good as not showing it on the UI.
             if stack_confidence == 0:
                 stack_confidence = None
+
             # If stack_count is 0 or None, then do not generate the reason.
             if stack_count:
                 count_sentence = "Package {} appears in {} different stacks".format(
@@ -677,3 +696,179 @@ class RecommendationReason:
             # Count reason
             pkg["reason"] = count_sentence
         return manifest_response
+
+
+def get_cve_data(input_json):
+    """Get CVEs for list of packages."""
+    ecosystem = input_json.get('ecosystem')
+    req_id = input_json.get('request_id')
+    deps = input_json.get('_resolved', [])
+
+    pkg_list = [itm['package'] for itm in deps]
+    ver_list = [itm['version'] for itm in deps]
+
+    str_gremlin = "g.V().has('pecosystem','" + ecosystem + "').has('pname', within(pkg_list))." \
+                  "has('version', within(ver_list)).has('cve_ids')." \
+                  "valueMap('pecosystem', 'pname', 'version', 'cve_ids');"
+
+    payload = {
+        'gremlin': str_gremlin,
+        'bindings': {
+            'ecosystem': ecosystem,
+            'pkg_list': pkg_list,
+            'ver_list': ver_list
+        }
+    }
+
+    resp = post(gremlin_url, json=payload)
+    jsn = resp.json()
+
+    data = jsn.get('result', {}).get('data', [])
+
+    result = []
+    highest_stack_cvss = -1
+    for itm in deps:
+        cve_dict = {
+            'ecosystem': ecosystem,
+            'package': itm['package'],
+            'version': itm['version'],
+            'cve': None
+        }
+        # if there is any EPV with CVE, modify the cve details
+        if data:
+            for cve_itm in data:
+                conditions = [ecosystem == cve_itm['pecosystem'][0],
+                              itm['package'] == cve_itm['pname'][0],
+                              itm['version'] == cve_itm['version'][0]]
+                if all(conditions):
+                    details = []
+                    highest_cvss = -1
+                    for cve in cve_itm['cve_ids']:
+                        id, cvss = cve.split(':')
+                        highest_cvss = max(float(cvss), highest_cvss)
+                        highest_stack_cvss = max(highest_stack_cvss, highest_cvss)
+                        details.append({
+                            'cve_id': id,
+                            'cvss': cvss
+                        })
+                    cve_dict['cve'] = {
+                        'highest_cvss': highest_cvss,
+                        'details': details
+                    }
+
+        result.append(cve_dict)
+
+    return {
+        "request_id": req_id,
+        "result": result,
+        "stack_highest_cvss": highest_stack_cvss
+    }
+
+
+def get_categories_data(runtime):
+    """Get categories for based on runtime."""
+    qstring = "g.V().has('category_runtime', runtime).as('category')."\
+        "in('belongs_to_category').as('package').select('category', 'package').by(valueMap());"
+
+    payload = {
+        'gremlin': qstring,
+        'bindings': {
+            'runtime': runtime
+        }
+    }
+    resp = post(gremlin_url, json=payload)
+    return resp.json()
+
+
+def convert_version_to_proper_semantic(version):
+    """Perform Semantic versioning.
+
+    : type version: string
+    : param version: The raw input version that needs to be converted.
+    : type return: semantic_version.base.Version
+    : return: The semantic version of raw input version.
+    """
+    if version in ('', '-1', None):
+        version = '0.0.0'
+    """Needed for maven version like 1.5.2.RELEASE to be converted to
+    1.5.2 - RELEASE for semantic version to work."""
+    version = version.replace('.', '-', 3)
+    version = version.replace('-', '.', 2)
+    # Needed to add this so that -RELEASE is account as a Version.build
+    version = version.replace('-', '+', 3)
+    return sv.Version.coerce(version)
+
+
+def version_info_tuple(version):
+    """Return version information in form of (major, minor, patch, build) for a given sem Version.
+
+    : type version: semantic_version.base.Version
+    : param version: The semantic version whole details are needed.
+    : return: A tuple in form of Version.(major, minor, patch, build)
+    """
+    if type(version) == sv.base.Version:
+        return(version.major,
+               version.minor,
+               version.patch,
+               version.build)
+    return (0, 0, 0, tuple())
+
+
+def select_latest_version(latest='', libio='', package_name=None):
+    """Retruns the latest version among current latest version and libio version."""
+    return_version = ''
+    latest_sem_version = convert_version_to_proper_semantic(latest)
+    libio_sem_version = convert_version_to_proper_semantic(libio)
+
+    if str(latest_sem_version) == '0.0.0' and str(libio_sem_version) == '0.0.0':
+        return return_version
+    try:
+        return_version = libio
+        if version_info_tuple(latest_sem_version) >= version_info_tuple(libio_sem_version):
+            return_version = latest
+    except ValueError:
+        """In case of failure let's not show any latest version at all.
+        Also, no generation of stack trace,
+        as we are only intersted in the package that is causing the error."""
+        current_app.logger.info(
+            "Unexpected ValueError while selecting latest version for package {}!"
+            .format(package_name))
+        return_version = ''
+        pass
+    finally:
+        return return_version
+
+
+def fetch_file_from_github(url, filename, branch='master'):
+    """Fetch file from github url."""
+    base_url = 'https://raw.githubusercontent.com'
+    try:
+        if url.endswith('.git'):
+            url = url[:-len('.git')]
+
+        user, repo = url.split('/')[-2:]
+        user = user.split(':')[-1]
+
+        response = get('/'.join([base_url, user, repo, branch, filename]))
+        if response.status_code != 200:
+            raise ValueError
+        return [{
+            'filename': filename,
+            'filepath': '/path',
+            'content': response.content.decode('utf-8')
+        }]
+    except ValueError:
+        current_app.logger.error('Error fetching file from given url')
+    except Exception as e:
+        current_app.logger.error('ERROR: {}'.format(str(e)))
+
+
+def is_valid(param):
+    """Return true is the param is not a null value."""
+    return param is not None
+
+
+def generate_content_hash(content):
+    """Return the sha1 digest of a string."""
+    hash_object = hashlib.sha1(content.encode('utf-8'))
+    return hash_object.hexdigest()
