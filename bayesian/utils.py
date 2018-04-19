@@ -40,6 +40,8 @@ gremlin_url = "http://{host}:{port}".format(
 companion_reason_statement = "along with the provided input stack. " \
     "Do you want to consider adding this Package?"
 
+zero_version = sv.Version("0.0.0")
+
 
 def get_recent_analyses(limit=100):
     """Get the recent analyses up to the specified limit."""
@@ -156,7 +158,8 @@ def add_field(analysis, field, ret):
 
 def generate_recommendation(data, package, input_version):
     """Generate recommendation for the package+version."""
-    ip_ver = convert_version_to_proper_semantic(input_version)
+    ip_ver_tuple = version_info_tuple(
+        convert_version_to_proper_semantic(input_version))
     # Template Dict for recommendation
     reco = {
         'recommendation': {
@@ -201,19 +204,20 @@ def generate_recommendation(data, package, input_version):
 
         for records in data:
             ver = records['version']
-            graph_version = ver.get('version', [''])[0]
-            graph_ver = convert_version_to_proper_semantic(graph_version)
+            graph_version = convert_version_to_proper_semantic(
+                ver.get('version', [''])[0])
+            graph_ver_tuple = version_info_tuple(graph_version)
 
             # Check for next best higher version than input version without any
             # CVE's
             if not ver.get('cve_ids') \
-                    and version_info_tuple(graph_ver) \
-                    > version_info_tuple(ip_ver):
+                    and graph_ver_tuple \
+                    > ip_ver_tuple:
                 if not higher_version:
-                    higher_version = graph_ver
+                    higher_version = graph_version
                 if version_info_tuple(higher_version) \
-                        > version_info_tuple(graph_ver):
-                    higher_version = graph_ver
+                        > graph_ver_tuple:
+                    higher_version = graph_version
 
                 recommendation_message = '\n It is recommended to use Version - ' + \
                     str(higher_version)
@@ -780,7 +784,7 @@ def get_categories_data(runtime):
     return resp.json()
 
 
-def convert_version_to_proper_semantic(version):
+def convert_version_to_proper_semantic(version, package_name=None):
     """Perform Semantic versioning.
 
     : type version: string
@@ -788,15 +792,24 @@ def convert_version_to_proper_semantic(version):
     : type return: semantic_version.base.Version
     : return: The semantic version of raw input version.
     """
-    if version in ('', '-1', None):
-        version = '0.0.0'
-    """Needed for maven version like 1.5.2.RELEASE to be converted to
-    1.5.2 - RELEASE for semantic version to work."""
-    version = version.replace('.', '-', 3)
-    version = version.replace('-', '.', 2)
-    # Needed to add this so that -RELEASE is account as a Version.build
-    version = version.replace('-', '+', 3)
-    return sv.Version.coerce(version)
+    conv_version = sv.Version.coerce('0.0.0')
+    try:
+        if version in ('', '-1', None):
+            version = '0.0.0'
+        """Needed for maven version like 1.5.2.RELEASE to be converted to
+        1.5.2 - RELEASE for semantic version to work."""
+        version = version.replace('.', '-', 3)
+        version = version.replace('-', '.', 2)
+        # Needed to add this so that -RELEASE is account as a Version.build
+        version = version.replace('-', '+', 3)
+        conv_version = sv.Version.coerce(version)
+    except ValueError:
+        current_app.logger.info(
+            "Unexpected ValueError for the package {} due to version {}"
+            .format(package_name, version))
+        pass
+    finally:
+        return conv_version
 
 
 def version_info_tuple(version):
@@ -817,10 +830,11 @@ def version_info_tuple(version):
 def select_latest_version(latest='', libio='', package_name=None):
     """Retruns the latest version among current latest version and libio version."""
     return_version = ''
-    latest_sem_version = convert_version_to_proper_semantic(latest)
-    libio_sem_version = convert_version_to_proper_semantic(libio)
+    latest_sem_version = convert_version_to_proper_semantic(
+        latest, package_name)
+    libio_sem_version = convert_version_to_proper_semantic(libio, package_name)
 
-    if str(latest_sem_version) == '0.0.0' and str(libio_sem_version) == '0.0.0':
+    if latest_sem_version == zero_version and libio_sem_version == zero_version:
         return return_version
     try:
         return_version = libio
@@ -831,8 +845,9 @@ def select_latest_version(latest='', libio='', package_name=None):
         Also, no generation of stack trace,
         as we are only intersted in the package that is causing the error."""
         current_app.logger.info(
-            "Unexpected ValueError while selecting latest version for package {}!"
-            .format(package_name))
+            "Unexpected ValueError while selecting latest version for package {}. Debug:{}"
+            .format(package_name,
+                    {'latest': latest, 'libio': libio}))
         return_version = ''
         pass
     finally:
