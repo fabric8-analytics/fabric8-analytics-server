@@ -689,7 +689,7 @@ class RecommendationReason:
 
             # If stack_count is 0 or None, then do not generate the reason.
             if stack_count:
-                count_sentence = "Package {} appears in {} different stacks".format(
+                count_sentence = "Package {} appears in {} different stacks ".format(
                     name, str(stack_count))
                 count_sentence += companion_reason_statement
             pkg["confidence_reason"] = stack_confidence
