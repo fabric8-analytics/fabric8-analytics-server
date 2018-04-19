@@ -184,11 +184,11 @@ def test_select_latest_version():
     latest = "1.2.2"
     libio = "1.2.3"
     package_name = "test_package"
-    result_version = slv(input_version, libio, anitya, package_name)
+    result_version = slv(latest, libio, package_name)
     assert result_version == libio
     latest = ""
     libio = ""
-    result_version = slv(input_version, libio, anitya, package_name)
+    result_version = slv(latest, libio, package_name)
     assert result_version == ""
 
 
