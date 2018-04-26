@@ -8,15 +8,12 @@ from flask_principal import Permission as PrincipalPermission
 from flask_security import RoleMixin, UserMixin, current_user, login_user
 from itsdangerous import BadSignature, SignatureExpired, TimedJSONWebSignatureSerializer
 import jwt
-from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
 from os import getenv
 from sqlalchemy.exc import SQLAlchemyError
 
 from . import rdb
 from .exceptions import HTTPError
 from .utils import fetch_public_key
-
-jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
 
 
 def decode_token():
@@ -33,7 +30,7 @@ def decode_token():
 
     for aud in audiences:
         try:
-            decoded_token = jwt.decode(token, pub_key, audience=aud)
+            decoded_token = jwt.decode(token, pub_key, algorithms=['RS256'], audience=aud)
         except jwt.InvalidTokenError:
             current_app.logger.error('Auth Token could not be decoded for audience {}'.format(aud))
             decoded_token = None
