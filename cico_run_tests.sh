@@ -8,4 +8,5 @@ build_image
 
 IMAGE_NAME=$(make get-image-name) ./runtest.sh
 
+docker_login
 push_image
