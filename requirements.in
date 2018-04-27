@@ -12,7 +12,7 @@ mod_wsgi!=4.5.4
 psycopg2
 # in order for pyjwt to be able to use RS256 we need pycrypto
 cryptography
-pyjwt>=1.6.1
+pyjwt>=1.5.1
 requests-futures
 Flask-Cache
 semantic_version
