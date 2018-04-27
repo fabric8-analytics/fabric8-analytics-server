@@ -44,3 +44,4 @@ sqlalchemy==1.1.3         # via flask-sqlalchemy
 urllib3==1.21.1           # via requests
 werkzeug==0.12.2          # via flask, flask-wtf
 wtforms==2.1              # via flask-wtf
+radon==2.0.0
