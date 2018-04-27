@@ -45,3 +45,4 @@ BAYESIAN_JWT_AUDIENCE = os.getenv('BAYESIAN_JWT_AUDIENCE', None)
 BAYESIAN_COMPONENT_TAGGED_COUNT = os.getenv('BAYESIAN_COMPONENT_TAGGED_COUNT', 2)
 
 F8_API_BACKBONE_HOST = os.getenv('F8_API_BACKBONE_HOST', 'http://f8a-server-backbone')
+AUTH_URL = os.getenv('AUTH_URL', 'https://auth.openshift.io')

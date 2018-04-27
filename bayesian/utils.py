@@ -29,6 +29,7 @@ from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT
 
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
+from github import Github, BadCredentialsException, GithubException, RateLimitExceededException
 
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
@@ -849,7 +850,6 @@ def select_latest_version(latest='', libio='', package_name=None):
             .format(package_name,
                     {'latest': latest, 'libio': libio}))
         return_version = ''
-        pass
     finally:
         return return_version
 
@@ -876,6 +876,39 @@ def fetch_file_from_github(url, filename, branch='master'):
         current_app.logger.error('Error fetching file from given url')
     except Exception as e:
         current_app.logger.error('ERROR: {}'.format(str(e)))
+
+
+def fetch_file_from_github_release(url, filename, token, ref=None):
+    """Return file content from github release."""
+    if token:
+        try:
+            github_obj = Github(token)
+            if url.endswith('.git'):
+                url = url[:-len('.git')]
+
+            user, repo = url.split('/')[-2:]
+            user = user.split(':')[-1]
+            repository = github_obj.get_repo('/'.join([user, repo]))
+            if ref:
+                file_content = repository.get_file_contents(filename, ref).decoded_content
+            else:
+                file_content = repository.get_file_contents(filename).decoded_content
+            return [{
+                'filename': filename,
+                'filepath': '/path',
+                'content': file_content.decode('utf-8')
+            }]
+        except RateLimitExceededException:
+            HTTPError(403, "Github API rate limit exceeded")
+        except BadCredentialsException:
+            HTTPError(401, "Invalid github access token")
+        except GithubException as e:
+            HTTPError(404, 'Github repository does not exist {}'.format(str(e)))
+        except Exception as e:
+            current_app.logger.error('An Exception occured while fetching file github release {}'
+                                     .format(str(e)))
+    else:
+        current_app.logger.error("Github access token is not provided")
 
 
 def is_valid(param):

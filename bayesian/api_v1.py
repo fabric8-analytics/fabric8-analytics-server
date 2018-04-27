@@ -30,13 +30,13 @@ from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
 from .dependency_finder import DependencyFinder
-from .auth import login_required, decode_token
+from .auth import login_required, decode_token, get_access_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     server_create_component_bookkeeping, build_nested_schema_dict,
                     server_create_analysis, server_run_flow, get_analyses_from_graph,
-                    search_packages_from_graph, get_request_count, fetch_file_from_github,
+                    search_packages_from_graph, get_request_count, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data)
@@ -855,18 +855,25 @@ class StackAnalyses(ResourceWithSchema):
     def post():
         """Handle the POST REST API call."""
         decoded = decode_token()
+        github_token = get_access_token('github')
         sid = request.args.get('sid')
         license_files = list()
         check_license = request.args.get('check_license', 'false') == 'true'
         github_url = request.form.get("github_url")
+        ref = request.form.get('github_ref')
         source = request.form.get('source')
         if github_url is not None:
-            files = fetch_file_from_github(github_url, 'pom.xml')
-            license = fetch_file_from_github(github_url, 'LICENSE')
-            if license:
-                license_content = license[0].get('content')
-                if license_content:
-                    license_files = [StringIO(license_content)]
+            files = fetch_file_from_github_release(url=github_url,
+                                                   filename='pom.xml',
+                                                   token=github_token.get('access_token'),
+                                                   ref=ref)
+
+        # TODO: Enable license when need to analyze current stack license
+            # license = fetch_file_from_github(github_url, 'LICENSE')
+            # if license:
+            #     license_content = license[0].get('content')
+            #     if license_content:
+            #         license_files = [StringIO(license_content)]
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')
