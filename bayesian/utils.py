@@ -159,6 +159,7 @@ def add_field(analysis, field, ret):
 
 def generate_recommendation(data, package, input_version):
     """Generate recommendation for the package+version."""
+    # TODO: reduce cyclomatic complexity
     ip_ver_tuple = version_info_tuple(
         convert_version_to_proper_semantic(input_version))
     # Template Dict for recommendation

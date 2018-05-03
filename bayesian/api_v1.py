@@ -47,6 +47,8 @@ from f8a_worker.storages import AmazonS3
 from .generate_manifest import PomXMLTemplate
 import urllib
 
+# TODO: improve maintainability index
+
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 rest_api_v1 = Api(api_v1)
 
@@ -345,6 +347,7 @@ class StackAnalysesGET(ResourceWithSchema):
     @staticmethod
     def get(external_request_id):
         """Handle the GET REST API call."""
+        # TODO: reduce cyclomatic complexity
         if get_request_count(rdb, external_request_id) < 1:
             raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
 
@@ -646,6 +649,7 @@ class StackAnalysesV2(ResourceWithSchema):
     @staticmethod
     def post():
         """Handle the POST REST API call."""
+        # TODO: reduce cyclomatic complexity
         decoded = decode_token()
         github_url = request.form.get("github_url")
         if github_url is not None:
@@ -854,6 +858,7 @@ class StackAnalyses(ResourceWithSchema):
     @staticmethod
     def post():
         """Handle the POST REST API call."""
+        # TODO: reduce cyclomatic complexity
         decoded = decode_token()
         github_token = get_access_token('github')
         sid = request.args.get('sid')
@@ -1039,6 +1044,7 @@ class DepEditorAnalyses(ResourceWithSchema):
     @staticmethod
     def post():
         """Handle the POST REST API call."""
+        # TODO: reduce cyclomatic complexity
         manifest_file = {
             'maven': 'pom.xml',
             'node': 'package.json',
