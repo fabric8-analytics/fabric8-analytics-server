@@ -65,6 +65,7 @@ def test_get_license_synonyms_wrong_response(mocked_get, mocked_function):
 @patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
 def test_extract_licenses(mocked_object):
     """Test the function extract_licenses()."""
+    # TODO: reduce cyclomatic complexity
     # make sure the LRU cache is clear
     get_license_synonyms.cache.clear()
     get_license_synonyms()
