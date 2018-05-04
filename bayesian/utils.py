@@ -632,9 +632,9 @@ class RecommendationReason:
             if len(manifest.get("recommendation", {}).get("companion", [])) > 0:
                 manifest_response[idx] = self._companion_reason(manifest)
 
-        # Populate reason for each alternate package
-        if len(manifest.get("recommendation", {}).get("alternate", [])) > 0:
-            manifest_response[idx] = self._alternate_reason(manifest)
+            # Populate reason for each alternate package
+            if len(manifest.get("recommendation", {}).get("alternate", [])) > 0:
+                manifest_response[idx] = self._alternate_reason(manifest)
 
         return manifest_response
 
