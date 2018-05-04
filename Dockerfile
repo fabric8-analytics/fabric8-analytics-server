@@ -50,3 +50,4 @@ COPY hack/coreapi-server.sh hack/server+pmcd.sh /usr/bin/
 EXPOSE 44321
 
 CMD ["/usr/bin/server+pmcd.sh"]
+
