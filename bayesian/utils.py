@@ -626,12 +626,16 @@ class RecommendationReason:
         :return: same dict. object with populated reasons
         """
         # Populate reason for each companion package
-        if len(manifest_response[0].get("recommendation", {}).get("companion", [])) > 0:
-            manifest_response = self._companion_reason(manifest_response)
+        for idx, manifest in enumerate(manifest_response):
+            if not manifest.get('recommendation'):
+                continue
+            if len(manifest.get("recommendation", {}).get("companion", [])) > 0:
+                manifest_response[idx] = self._companion_reason(manifest)
 
         # Populate reason for each alternate package
-        if len(manifest_response[0].get("recommendation", {}).get("alternate", [])) > 0:
-            manifest_response = self._alternate_reason(manifest_response)
+        if len(manifest.get("recommendation", {}).get("alternate", [])) > 0:
+            manifest_response[idx] = self._alternate_reason(manifest)
+
         return manifest_response
 
     def _alternate_reason(self, manifest_response):
@@ -640,7 +644,7 @@ class RecommendationReason:
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for alternate package
         """
-        for pkg in manifest_response[0].get("recommendation", {}).get("alternate", []):
+        for pkg in manifest_response.get("recommendation", {}).get("alternate", []):
             name = pkg.get("name")
             replaces = pkg.get("replaces", [])[0].get("name")
             test_usage_outlier = self._check_usage_outlier(replaces, manifest_response)
@@ -674,7 +678,7 @@ class RecommendationReason:
         :param manifest_response: dict. object having all recommendation elements
         :return: same dict. object with populated reasons for each companion package
         """
-        for pkg in manifest_response[0].get("recommendation", {}).get("companion", []):
+        for pkg in manifest_response.get("recommendation", {}).get("companion", []):
             count_sentence = None
             name = pkg.get("name")
             stack_confidence = pkg.get("cooccurrence_probability")
