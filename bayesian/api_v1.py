@@ -421,8 +421,7 @@ class StackAnalysesGET(ResourceWithSchema):
             manifest_response.append(stack)
 
         # Populate reason for alternate and companion recommendation
-        if manifest_response[0].get('recommendation'):
-            manifest_response = RecommendationReason().add_reco_reason(manifest_response)
+        manifest_response = RecommendationReason().add_reco_reason(manifest_response)
 
         resp = {
             "version": version,
