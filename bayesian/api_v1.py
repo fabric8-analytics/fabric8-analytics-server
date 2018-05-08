@@ -911,8 +911,9 @@ class StackAnalyses(ResourceWithSchema):
                     if response.status_code == 200:
                         content = response.text
                 except request.exceptions.RequestException as e:
-                    current_app.logger.warn('contents for manifest file {}/{} could not be downloaded. '\
-                        'continuing with other manifest files in the GitHub repo'.format(filepath,filename))
+                    current_app.logger.warn('contents for manifest file {}/{} could not be '
+                                            'downloaded. continuing with other manifest files '
+                                            'in the GitHub repo'.format(filepath, filename))
                     continue
             else:
                 filename = manifest_file_raw.filename
