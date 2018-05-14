@@ -28,6 +28,7 @@ def get_license_synonyms():
 
 def extract_licenses(license_files):
     """Extract license name from the given license files."""
+    # TODO: reduce cyclomatic complexity
     lic_syn = get_license_synonyms()
     response = dict()
     if lic_syn:

@@ -35,6 +35,7 @@ class DependencyFinder():
 
     def execute(self, arguments, db, manifests, source=None):
         """Dependency finder logic."""
+        # TODO: reduce cyclomatic complexity
         # If we receive a manifest file we need to save it first
         result = []
         for manifest in manifests:

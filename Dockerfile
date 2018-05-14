@@ -1,7 +1,7 @@
 FROM registry.centos.org/centos/centos:7
 
 ENV LANG=en_US.UTF-8 \
-    F8A_WORKER_VERSION=0fad8a2
+    F8A_WORKER_VERSION=3cdfe6c
 
 RUN useradd -d /coreapi coreapi
 
@@ -29,7 +29,7 @@ RUN mkdir -p /etc/pcp /var/run/pcp /var/lib/pcp /var/log/pcp  && \
 
 COPY ./ /coreapi
 RUN pushd /coreapi && \
-    pip3 install . && \
+    pip3 install --upgrade pip>=10.0.0 && pip3 install . &&\
     popd && \
     # needed for DB migrations
     find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
@@ -50,3 +50,4 @@ COPY hack/coreapi-server.sh hack/server+pmcd.sh /usr/bin/
 EXPOSE 44321
 
 CMD ["/usr/bin/server+pmcd.sh"]
+

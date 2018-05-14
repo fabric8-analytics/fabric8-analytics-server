@@ -27,7 +27,7 @@ Core API access logs have following format:
 {remote hostname} {remote logname, default '-'} {username, default '-'} {access time} "{first line of request}" {response status} {response length} {referer, default '-'} "{user agent}"
 ```
 
-In terms of httpd LogFormat option, this is `%h %l %u %t \"%r\" %>s %b %{Referer}i \"%{User-agent}i\"`. See [httpd documentation](http://httpd.apache.org/docs/current/mod/mod_log_config.html#formats) for details
+In terms of httpd LogFormat option, this is `%h %l %u %t \"%r\" %>s %b %{Referer}i \"%{User-agent}i\"`. See [httpd documentation](http://httpd.apache.org/docs/current/mod/mod_log_config.html#formats) for details.
 
 For example:
 
