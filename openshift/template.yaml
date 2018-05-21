@@ -39,7 +39,10 @@ objects:
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
           - name: AUTH_URL
-            value: "https://auth.openshift.io"
+            valueFrom:
+              configMapKeyRef:
+                name: bayesian-config
+                key: auth-url
           - name: BAYESIAN_FETCH_PUBLIC_KEY
             valueFrom:
               configMapKeyRef:
