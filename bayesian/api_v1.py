@@ -948,7 +948,7 @@ class StackAnalyses(ResourceWithSchema):
             manifests.append(manifest)
 
         data = {'api_name': 'stack_analyses',
-                'user_email': userEmail,
+                'user_email': user_email,
                 'user_profile': decoded}
         args = {'external_request_id': request_id,
                 'ecosystem': ecosystem, 'data': data}
