@@ -737,9 +737,9 @@ class StackAnalyses(ResourceWithSchema):
         check_license = request.args.get('check_license', 'false') == 'true'
         github_url = request.form.get("github_url")
         ref = request.form.get('github_ref')
-        userEmail = request.headers.get('UserEmail')
-        if not userEmail:
-            userEmail = decoded.get('email', 'bayesian@redhat.com')
+        user_email = request.headers.get('UserEmail')
+        if not user_email:
+            user_email = decoded.get('email', 'bayesian@redhat.com')
 
         source = request.form.get('source')
         if github_url is not None:
