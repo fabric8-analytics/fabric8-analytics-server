@@ -3,8 +3,6 @@
 import datetime
 import functools
 import uuid
-import json
-import requests
 import re
 
 from io import StringIO
@@ -15,17 +13,14 @@ from requests_futures.sessions import FuturesSession
 from flask import Blueprint, current_app, request, url_for, Response
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
-from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
 from selinon import StoragePool
 
 from f8a_worker.models import (
-    Ecosystem, WorkerResult, StackAnalysisRequest, RecommendationFeedback)
+    Ecosystem, StackAnalysisRequest, RecommendationFeedback)
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
-from f8a_worker.utils import (get_dependents_count,
-                              get_component_percentile_rank, usage_rank2str,
-                              MavenCoordinates, case_sensitivity_transform)
+from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
@@ -35,9 +30,9 @@ from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     server_create_component_bookkeeping, build_nested_schema_dict,
-                    server_create_analysis, server_run_flow, get_analyses_from_graph,
+                    server_create_analysis, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count, fetch_file_from_github_release,
-                    get_item_from_list_by_key_value, GithubRead, RecommendationReason,
+                    get_item_from_list_by_key_value, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data)
 from .license_extractor import extract_licenses
