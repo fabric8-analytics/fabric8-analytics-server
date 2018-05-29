@@ -199,17 +199,6 @@ class TestUser(object):
     pass  # TODO
 
 
-@pytest.mark.usefixtures('client_class')
-class TestApiV1SystemVersion(object):
-    """Tests for the /api/v1/system/version endpoint."""
-
-    def test_get_system_version(self, accept_json):
-        """Test for the /api/v1/system/version endpoint."""
-        res = self.client.get(api_route_for('/system/version/'), headers=accept_json)
-        assert res.status_code == 200
-        assert set(res.json.keys()) == {'committed_at', 'commit_hash'}
-
-
 @pytest.mark.usefixtures('client_class', 'rdb')
 class TestApiV1Schemas(object):
     """Tests for the /api/v1/schemas endpoints."""
