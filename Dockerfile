@@ -39,11 +39,7 @@ RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-work
 # Required by the solver task in worker to resolve dependencies from package.json
 RUN npm install -g semver-ranger
 
-COPY .git/ /tmp/.git
-# date and hash of last commit
-RUN cd /tmp/.git &&\
-    git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD | tee /etc/coreapi-release &&\
-    rm -rf /tmp/.git/
+RUN git ls-remote --heads https://github.com/fabric8-analytics/fabric8-analytics-server/ | grep "refs/heads/master" | cut -f1 | tee /etc/coreapi-release
 
 COPY hack/coreapi-server.sh hack/server+pmcd.sh /usr/bin/
 
