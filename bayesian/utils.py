@@ -8,7 +8,10 @@ import os
 import uuid
 import shutil
 import hashlib
+import re
 
+import xml.etree.ElementTree as ET
+import xml.dom.minidom as minidom
 from selinon import run_flow
 from flask import current_app
 from flask.json import JSONEncoder
@@ -916,6 +919,17 @@ def fetch_file_from_github_release(url, filename, token, ref=None):
         current_app.logger.error("Github access token is not provided")
 
 
+pom_ns = dict(pom='http://maven.apache.org/POM/4.0.0')
+ET.register_namespace('',pom_ns.get('pom'))
+def add_dependencies_to_manifest(filepath, group_id, artifact_id, version):
+    var = get_tree_from_xmlfile(filepath)
+    dep_elem = create_dependency(group_id, artifact_id, version)
+    var1 = add_dependecy(var, dep_elem)
+    file = open('pom.xml', 'w')
+    file.write(elementtree_to_str(var1))
+    file.close()
+
+
 def is_valid(param):
     """Return true is the param is not a null value."""
     return param is not None
@@ -925,3 +939,41 @@ def generate_content_hash(content):
     """Return the sha1 digest of a string."""
     hash_object = hashlib.sha1(content.encode('utf-8'))
     return hash_object.hexdigest()
+
+
+def get_tree_from_xmlfile(filename):
+
+    if os.path.isfile(filename):
+        tree = ET.parse(filename)
+        return tree
+    else:
+        raise Exception("Error opening" + filename)
+
+
+def create_dependency(group_id, artifact_id, version):
+    dep_element = ET.Element("dependency")
+    groupid_element = ET.Element("groupId")
+    groupid_element.text = group_id
+    artifactid_element = ET.Element("artifactId")
+    artifactid_element.text = artifact_id
+    version_element = ET.Element("version")
+    version_element.text = version
+    dep_element.append(groupid_element)
+    dep_element.append(artifactid_element)
+    dep_element.append(version_element)
+    return dep_element
+
+
+def elementtree_to_str(et):
+  root = et.getroot()
+  dom = minidom.parseString(ET.tostring(root))
+  xml = dom.toprettyxml('\t','\n','utf8')
+  xml = xml.decode('utf-8')
+  trails = re.compile(r'\s+\n')
+  xml = re.sub(trails,"\n",xml)
+  return xml
+
+
+def add_dependecy(pom, dependecny_element):
+    pom.find('pom:dependencies',pom_ns).append(dependecny_element)
+    return pom

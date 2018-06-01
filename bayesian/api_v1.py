@@ -39,7 +39,7 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     search_packages_from_graph, get_request_count, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, GithubRead, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
-                    is_valid, select_latest_version, get_categories_data)
+                    is_valid, select_latest_version, get_categories_data, add_dependencies_to_manifest)
 from .license_extractor import extract_licenses
 
 import os
@@ -736,9 +736,12 @@ class StackAnalyses(ResourceWithSchema):
         license_files = list()
         check_license = request.args.get('check_license', 'false') == 'true'
         github_url = request.form.get("github_url")
+        mission = request.form.get("mission")
         ref = request.form.get('github_ref')
         source = request.form.get('source')
-        if github_url is not None:
+        if mission is not None:
+            files = add_dependencies_to_manifest(filepath, x, y, z)
+        elif github_url is not None:
             files = fetch_file_from_github_release(url=github_url,
                                                    filename='pom.xml',
                                                    token=github_token.get('access_token'),
