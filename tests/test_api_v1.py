@@ -2,7 +2,6 @@
 
 import datetime
 import json
-import time
 import os
 try:
     import urlparse
@@ -20,7 +19,7 @@ import jsonschema
 from bayesian import api_v1
 from bayesian.schemas import load_all_server_schemas
 from f8a_worker.enums import EcosystemBackend
-from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult, PackageGHUsage
+from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
 from f8a_worker.schemas import load_all_worker_schemas
 
 
@@ -98,9 +97,6 @@ def fill_analyses(app):
                      task_result={'schema': {'name': 'source_licenses', 'version': '1-0-0'}},
                      analysis=analyses[1])
     ]
-    package_gh_usage = [
-        PackageGHUsage(name='arrify', count=100, ecosystem_backend='npm')
-    ]
     for a in ecosystems + packages + versions + analyses + worker_results + package_gh_usage:
         app.rdb.session.add(a)
         app.rdb.session.commit()
@@ -127,7 +123,6 @@ class TestApiV1Root(object):
     api_root = {
         "paths": [
             "/api/v1",
-            "/api/v1/analyse",
             "/api/v1/categories/<runtime>",
             "/api/v1/component-analyses/<ecosystem>/<package>/<version>",
             "/api/v1/component-search/<package>",

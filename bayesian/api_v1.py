@@ -3,8 +3,6 @@
 import datetime
 import functools
 import uuid
-import json
-import requests
 import re
 
 from io import StringIO
@@ -15,17 +13,14 @@ from requests_futures.sessions import FuturesSession
 from flask import Blueprint, current_app, request, url_for, Response
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
-from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
 from selinon import StoragePool
 
 from f8a_worker.models import (
-    Ecosystem, WorkerResult, StackAnalysisRequest, RecommendationFeedback)
+    Ecosystem, StackAnalysisRequest, RecommendationFeedback)
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
-from f8a_worker.utils import (get_dependents_count,
-                              get_component_percentile_rank, usage_rank2str,
-                              MavenCoordinates, case_sensitivity_transform)
+from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
@@ -35,9 +30,9 @@ from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     server_create_component_bookkeeping, build_nested_schema_dict,
-                    server_create_analysis, server_run_flow, get_analyses_from_graph,
+                    server_create_analysis, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count, fetch_file_from_github_release,
-                    get_item_from_list_by_key_value, GithubRead, RecommendationReason,
+                    get_item_from_list_by_key_value, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data)
 from .license_extractor import extract_licenses
@@ -640,134 +635,6 @@ class SetTagsToComponent(ResourceWithSchema):
             raise HTTPError(400, error=_error)
 
 
-class StackAnalysesV2(ResourceWithSchema):
-    """Implementation of all /stack-analyses REST API calls."""
-
-    method_decorators = [login_required]
-
-    @staticmethod
-    def post():
-        """Handle the POST REST API call."""
-        # TODO: reduce cyclomatic complexity
-        decoded = decode_token()
-        github_url = request.form.get("github_url")
-        if github_url is not None:
-            files = GithubRead().get_files_github_url(github_url)
-        else:
-            files = request.files.getlist('manifest[]')
-            filepaths = request.values.getlist('filePath[]')
-            # At least one manifest file path should be present to analyse a stack
-            if not filepaths:
-                raise HTTPError(400, error="Error processing request. "
-                                           "Please send a valid manifest file path.")
-            if len(files) != len(filepaths):
-                raise HTTPError(400, error="Error processing request. "
-                                           "Number of manifests and filePaths must be the same.")
-
-        # At least one manifest file should be present to analyse a stack
-        if not files:
-            raise HTTPError(400, error="Error processing request. "
-                                       "Please upload a valid manifest files.")
-
-        dt = datetime.datetime.now()
-        origin = request.form.get('origin')
-        request_id = uuid.uuid4().hex
-        manifests = []
-        ecosystem = None
-        for index, manifest_file_raw in enumerate(files):
-            if github_url is not None:
-                filename = manifest_file_raw.get('filename', None)
-                filepath = manifest_file_raw.get('filepath', None)
-                content = manifest_file_raw.get('content')
-            else:
-                filename = manifest_file_raw.filename
-                filepath = filepaths[index]
-                content = manifest_file_raw.read().decode('utf-8')
-
-            # check if manifest files with given name are supported
-            manifest_descriptor = get_manifest_descriptor_by_filename(filename)
-            if manifest_descriptor is None:
-                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
-                    filename=filename))
-
-            # In memory file to be passed as an API parameter to /appstack
-            manifest_file = StringIO(content)
-
-            # Check if the manifest is valid
-            if not manifest_descriptor.validate(content):
-                raise HTTPError(400, error="Error processing request. Please upload a valid "
-                                           "manifest file '{filename}'".format(filename=filename))
-
-            # appstack API call
-            # Limitation: Currently, appstack can support only package.json
-            #             The following condition is to be reworked
-            appstack_id = ''
-            if 'package.json' in filename:
-                appstack_files = {'packagejson': manifest_file}
-                url = current_app.config["BAYESIAN_ANALYTICS_URL"]
-                endpoint = "{analytics_baseurl}/api/{version}/appstack".format(
-                    analytics_baseurl=url,
-                    version=ANALYTICS_API_VERSION)
-                try:
-                    response = requests.post(endpoint, files=appstack_files)
-                except Exception as exc:
-                    current_app.logger.warn("Analytics query: {}".format(exc))
-                else:
-                    if response.status_code == 200:
-                        resp = response.json()
-                        appstack_id = resp.get('appstack_id', '')
-                    else:
-                        current_app.logger.warn("{status}: {error}".format(
-                            status=response.status_code,
-                            error=response.content))
-
-            # Record the response details for this manifest file
-            manifest = {'filename': filename,
-                        'content': content,
-                        'ecosystem': manifest_descriptor.ecosystem,
-                        'filepath': filepath}
-            if appstack_id != '':
-                manifest['appstack_id'] = appstack_id
-
-            manifests.append(manifest)
-
-        # Insert in a single commit. Gains - a) performance, b) avoid insert inconsistencies
-        # for a single request
-        try:
-            req = StackAnalysisRequest(
-                id=request_id,
-                submitTime=str(dt),
-                requestJson={'manifest': manifests},
-                origin=origin
-            )
-            rdb.session.add(req)
-            rdb.session.commit()
-        except SQLAlchemyError as e:
-            current_app.logger.exception('Failed to create new analysis request')
-            raise HTTPError(500, "Error inserting log for request {t}".format(t=request_id)) from e
-
-        try:
-            data = {'api_name': 'stack_analyses',
-                    'user_email': decoded.get('email', 'bayesian@redhat.com'),
-                    'user_profile': decoded}
-            args = {'external_request_id': request_id, 'ecosystem': ecosystem, 'data': data}
-            server_run_flow('stackApiGraphV2Flow', args)
-        except Exception as exc:
-            # Just log the exception here for now
-            current_app.logger.exception('Failed to schedule AggregatingMercatorTask for id {id}'
-                                         .format(id=request_id))
-            raise HTTPError(500, ("Error processing request {t}. manifest files "
-                                  "could not be processed"
-                                  .format(t=request_id))) from exc
-
-        return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
-
-    @staticmethod
-    def get():
-        """Handle the GET REST API call."""
-        raise HTTPError(404, "Unsupported API endpoint")
-
-
 class PublishedSchemas(ResourceWithSchema):
     """Implementation of all /schemas REST API calls."""
 
@@ -1210,7 +1077,6 @@ class CategoryService(ResourceWithSchema):
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
-add_resource_no_matter_slashes(StackAnalysesV2, '/analyse')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
 add_resource_no_matter_slashes(ComponentAnalyses,
