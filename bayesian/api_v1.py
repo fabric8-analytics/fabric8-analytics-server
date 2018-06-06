@@ -732,6 +732,10 @@ class StackAnalyses(ResourceWithSchema):
         check_license = request.args.get('check_license', 'false') == 'true'
         github_url = request.form.get("github_url")
         ref = request.form.get('github_ref')
+        user_email = request.headers.get('UserEmail')
+        if not user_email:
+            user_email = decoded.get('email', 'bayesian@redhat.com')
+
         source = request.form.get('source')
         if github_url is not None:
             files = fetch_file_from_github_release(url=github_url,
@@ -811,7 +815,7 @@ class StackAnalyses(ResourceWithSchema):
             manifests.append(manifest)
 
         data = {'api_name': 'stack_analyses',
-                'user_email': decoded.get('email', 'bayesian@redhat.com'),
+                'user_email': user_email,
                 'user_profile': decoded}
         args = {'external_request_id': request_id,
                 'ecosystem': ecosystem, 'data': data}
