@@ -664,7 +664,7 @@ class RecommendationReason:
         :return: True or False for usage outlier of input package at count index position
         """
         test = False
-        outliers = manifest_response[0].get("recommendation", {}).get("usage_outliers", [])
+        outliers = manifest_response.get("recommendation", {}).get("usage_outliers", [])
         if outliers:
             for outlier in outliers:
                 if pkg_name == outlier.get("package_name"):
