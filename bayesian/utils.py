@@ -10,11 +10,13 @@ import shutil
 import hashlib
 
 from selinon import run_flow
+from lru import lru_cache_function
 from flask import current_app
 from flask.json import JSONEncoder
 import semantic_version as sv
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
+from .default_config import CORE_DEPENDENCIES_REPO_URL
 
 from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
                                WorkerResult, StackAnalysisRequest)
@@ -925,3 +927,11 @@ def generate_content_hash(content):
     """Return the sha1 digest of a string."""
     hash_object = hashlib.sha1(content.encode('utf-8'))
     return hash_object.hexdigest()
+
+
+@lru_cache_function(max_size=2048, expiration=60 * 60 * 24)
+def get_core_dependencies(runtime):
+    fetched_file = fetch_file_from_github_release(CORE_DEPENDENCIES_REPO_URL, 'core.json')
+    dependencies = fetched_file[0].get('content', {})
+    dep_runtime = dependencies[runtime]
+    return dep_runtime
