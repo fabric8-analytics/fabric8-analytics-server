@@ -24,6 +24,7 @@ from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
+from .default_config import CORE_DEPENDENCIES_REPO_URL
 from .dependency_finder import DependencyFinder
 from .auth import login_required, decode_token, get_access_token
 from .exceptions import HTTPError
@@ -1076,6 +1077,37 @@ class CategoryService(ResourceWithSchema):
         return response, 200
 
 
+class CoreDependencies(ResourceWithSchema):
+    """Implementation of Blank booster /get-core-dependencies REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def get(runtime):
+        """Handle the GET REST API call."""
+        try:
+            url = CORE_DEPENDENCIES_REPO_URL
+            resolved = list()
+            fetched_file = fetch_file_from_github_release(url, 'core.json')
+            dependencies = fetched_file[0].get('content', {})
+            request_id = uuid.uuid4().hex
+            for elem in dependencies[runtime]:
+                packages = dict()
+                packages["package"] = elem['groupId'] + ':' + elem['artifactId']
+                packages["version"] = elem['version']
+                if elem.get('scope'):
+                    packages["scope"] = elem['scope']
+                resolved.append(packages)
+            response = {
+                "_resolved": resolved,
+                "ecosystem": "maven",
+                "request_id": request_id
+            }
+            return response, 200
+        except Exception as e:
+            current_app.logger.error('ERROR: {}'.format(str(e)))
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
@@ -1104,6 +1136,7 @@ add_resource_no_matter_slashes(CategoryService, '/categories/<runtime>')
 add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
 add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
 add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
+add_resource_no_matter_slashes(CoreDependencies, '/get-core-dependencies/<runtime>')
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined

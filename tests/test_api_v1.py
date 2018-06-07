@@ -142,7 +142,8 @@ class TestApiV1Root(object):
             "/api/v1/system/version",
             "/api/v1/user-feedback",
             "/api/v1/user-intent",
-            "/api/v1/user-intent/<user>/<ecosystem>"
+            "/api/v1/user-intent/<user>/<ecosystem>",
+            "/api/v1/get-core-dependencies/<runtime>"
         ]
     }
 
