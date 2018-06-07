@@ -24,7 +24,6 @@ from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
-from .default_config import CORE_DEPENDENCIES_REPO_URL
 from .dependency_finder import DependencyFinder
 from .auth import login_required, decode_token, get_access_token
 from .exceptions import HTTPError
@@ -35,7 +34,7 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     search_packages_from_graph, get_request_count, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
-                    is_valid, select_latest_version, get_categories_data)
+                    is_valid, select_latest_version, get_categories_data, get_core_dependencies)
 from .license_extractor import extract_licenses
 
 import os
@@ -1087,10 +1086,9 @@ class CoreDependencies(ResourceWithSchema):
         """Handle the GET REST API call."""
         try:
             resolved = list()
-            fetched_file = fetch_file_from_github_release(CORE_DEPENDENCIES_REPO_URL, 'core.json')
-            dependencies = fetched_file[0].get('content', {})
+            dependencies = get_core_dependencies(runtime)
             request_id = uuid.uuid4().hex
-            for elem in dependencies[runtime]:
+            for elem in dependencies:
                 packages = dict()
                 packages["package"] = elem['groupId'] + ':' + elem['artifactId']
                 packages["version"] = elem['version']
