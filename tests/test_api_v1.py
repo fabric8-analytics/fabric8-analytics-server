@@ -129,6 +129,7 @@ class TestApiV1Root(object):
             "/api/v1/depeditor-analyses",
             "/api/v1/depeditor-cve-analyses",
             "/api/v1/generate-file",
+            "/api/v1/get-core-dependencies/<runtime>",
             "/api/v1/get-next-component/<ecosystem>",
             "/api/v1/master-tags/<ecosystem>",
             "/api/v1/schemas",
@@ -142,8 +143,7 @@ class TestApiV1Root(object):
             "/api/v1/system/version",
             "/api/v1/user-feedback",
             "/api/v1/user-intent",
-            "/api/v1/user-intent/<user>/<ecosystem>",
-            "/api/v1/get-core-dependencies/<runtime>"
+            "/api/v1/user-intent/<user>/<ecosystem>"
         ]
     }
 
