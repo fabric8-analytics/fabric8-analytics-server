@@ -1086,9 +1086,8 @@ class CoreDependencies(ResourceWithSchema):
     def get(runtime):
         """Handle the GET REST API call."""
         try:
-            url = CORE_DEPENDENCIES_REPO_URL
             resolved = list()
-            fetched_file = fetch_file_from_github_release(url, 'core.json')
+            fetched_file = fetch_file_from_github_release(CORE_DEPENDENCIES_REPO_URL, 'core.json')
             dependencies = fetched_file[0].get('content', {})
             request_id = uuid.uuid4().hex
             for elem in dependencies[runtime]:
