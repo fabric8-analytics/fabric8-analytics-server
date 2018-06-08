@@ -5,6 +5,7 @@ import pytest
 import semantic_version as sv
 
 from bayesian.utils import (
+    get_core_dependencies,
     do_projection,
     fetch_file_from_github,
     is_valid, has_field, get_user_email,
@@ -216,3 +217,21 @@ def test_is_valid():
     """Check the function is_valid()."""
     assert not is_valid(None)
     assert is_valid("parameter")
+
+
+def test_get_core_dependencies():
+    """Check the function get_core_dependencies()s"""
+    result = [
+      {
+         "groupId":"io.vertx",
+         "artifactId":"vertx-core",
+         "version":"3.5.0"
+      },
+      {
+         "groupId":"io.vertx",
+         "artifactId":"vertx-unit",
+         "version":"3.5.0"
+      }
+   ]
+    assert get_core_dependencies('vertx') == result
+    assert get_core_dependencies('xyz') == []
