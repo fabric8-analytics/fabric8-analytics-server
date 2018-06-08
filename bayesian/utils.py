@@ -934,5 +934,5 @@ def get_core_dependencies(runtime):
     """Return core dependencies for each runtime."""
     fetched_file = fetch_file_from_github_release(CORE_DEPENDENCIES_REPO_URL, 'core.json')
     dependencies = fetched_file[0].get('content', {})
-    dep_runtime = dependencies[runtime]
+    dep_runtime = dependencies.get(runtime, [])
     return dep_runtime
