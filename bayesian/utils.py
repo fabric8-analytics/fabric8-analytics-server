@@ -932,7 +932,7 @@ def generate_content_hash(content):
 @lru_cache_function(max_size=2048, expiration=60 * 60 * 24)
 def get_core_dependencies(runtime):
     """Return core dependencies for each runtime."""
-    fetched_file = fetch_file_from_github_release(CORE_DEPENDENCIES_REPO_URL, 'core.json')
+    fetched_file = fetch_file_from_github(CORE_DEPENDENCIES_REPO_URL, 'core.json')
     dependencies = fetched_file[0].get('content', {})
     dep_runtime = dependencies.get(runtime, [])
     return dep_runtime
