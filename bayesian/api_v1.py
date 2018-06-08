@@ -1090,10 +1090,11 @@ class CoreDependencies(ResourceWithSchema):
             request_id = uuid.uuid4().hex
             for elem in dependencies:
                 packages = dict()
-                packages["package"] = elem['groupId'] + ':' + elem['artifactId']
-                packages["version"] = elem['version']
+                packages['package'] = elem['groupId'] + ':' + elem['artifactId']
+                if elem.get('version'):
+                    packages['version'] = elem['version']
                 if elem.get('scope'):
-                    packages["scope"] = elem['scope']
+                    packages['scope'] = elem['scope']
                 resolved.append(packages)
             response = {
                 "_resolved": resolved,
