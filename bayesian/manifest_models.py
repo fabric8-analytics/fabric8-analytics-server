@@ -26,19 +26,22 @@ class MavenPom:
 
         try:
             self.root = objectify.fromstring(self.document)
-            if getattr(self.root, 'dependencies', None) is None:
-                # create a dependencies element if doesn't exist
-                _prev = getattr(self.root, 'dependencyManagement', None)\
-                    or getattr(self.root, 'properties', None)\
-                    or getattr(self.root, 'name', None)
-                if _prev is not None:
-                    _prev.addnext(objectify.Element('dependencies'))
-                else:
-                    self.root.dependencies = objectify.ObjectifiedElement()
-                self.root = self._reload(self.root)
-
         except etree.XMLSyntaxError as exc:
             print("Unable to parse xml document:\n {}".format(str(exc)))
+
+        # create a dependencies element if doesn't exist
+        if getattr(self.root, 'dependencies', None) is None:
+            _prev = getattr(self.root, 'dependencyManagement', None)\
+                or getattr(self.root, 'properties', None)\
+                or getattr(self.root, 'name', None)
+            if _prev is not None:
+                _prev.addnext(objectify.Element('dependencies'))
+            else:
+                self.root.dependencies = objectify.ObjectifiedElement()
+            self.root = self._reload(self.root)
+
+        self.dependency_set = set([self.Dependency(d) for d in getattr(
+            self.root.dependencies, 'dependency', [])])
 
     def __getitem__(self, key):
         """TODO: Doc for __getitem__."""
@@ -48,9 +51,9 @@ class MavenPom:
 
     def __setitem__(self, key, value):
         """TODO: Doc for __setitem__."""
-        if key in ('groupId', 'artifactId', 'name', 'version', 'packaging'):
+        _prev = getattr(self.root, 'modelVersion', None)
+        if key in ('groupId', 'artifactId', 'name', 'version', 'packaging') and _prev is not None:
             #  add these tags just after modelVersion tag.
-            _prev = getattr(self.root, 'modelVersion', None)
             element = etree.Element(key)
             element.text = value
             _prev.addnext(element)
@@ -65,9 +68,7 @@ class MavenPom:
         dependency: dict
         return: None
         """
-        self.root.dependencies.append(
-            MavenPom.to_objectify(self.Dependency(dependency)))
-        self.root = self._reload(self.root)
+        self.dependency_set.add(self.Dependency(dependency))
 
     def add_dependencies(self, dependencies):
         """Add dependency to POM.
@@ -75,39 +76,38 @@ class MavenPom:
         dependencies: list
         return: None
         """
-        for dep in dependencies:
-            self.root.dependencies.append(
-                MavenPom.to_objectify(self.Dependency(dep)))
-            self.root = self._reload(self.root)
+        self.dependency_set.update({self.Dependency(dep)
+                                    for dep in dependencies})
 
-    def find_dependency(self, dependency):
-        """Search for dependency and return the first match.
+    def remove_dependency(self, dependency):
+        """Remove dependency to POM.
 
         dependency: dict
-        return: Dependency
+        return: None
         """
-        _dependency = self.Dependency(dependency)
-        for dep in getattr(self.root.dependencies, 'dependency', []):
-            if self.Dependency(dep) == _dependency:
-                return _dependency
+        self.dependency_set.remove(self.Dependency(dependency))
 
-    def is_exist(self, dependency):
+    def __contains__(self, dependency):
         """Check for dependency exists or not.
 
         dependency: dict
         return: bool
         """
-        _dependency = self.Dependency(dependency)
-        return any([_dependency == self.Dependency(dep)
-                    for dep in getattr(self.root.dependencies, 'dependency', [])])
+        return self.Dependency(dependency) in self.dependency_set
 
     def get_dependencies(self):
         """Return list of all the dependencies.
 
         return: generator
         """
-        for dep in getattr(self.root.dependencies, 'dependency', []):
-            yield self.Dependency(dep)
+        for dep in self.dependency_set:
+            yield dep
+
+    def _commit(self):
+        """Commit the changes to the XML root object."""
+        for dep in self.dependency_set:
+            self.root.dependencies.append(MavenPom.to_objectify(dep))
+        self.root = self._reload(self.root)
 
     @staticmethod
     def tostring(obj, decoding=False):
@@ -115,6 +115,9 @@ class MavenPom:
 
         :returns: String
         """
+        if getattr(obj, '_commit', None) is not None:
+            obj._commit()
+
         objectify.deannotate(obj.root, xsi_nil=True,
                              pytype=False, xsi=False, cleanup_namespaces=True)
         _str = etree.tostring(obj.root, pretty_print=True)
@@ -161,14 +164,27 @@ class MavenPom:
                     else:
                         setattr(self.root, k, v)
 
+        def __repr__(self):
+            """TODO: Doc for __repr__."""
+            return "groupId: {}\nartifactId: {}"\
+                .format(self.root.groupId, self.root.artifactId)
+
         def __eq__(self, other):
             """Check equality of dependency object.
 
             other: Dependency
             Return: boolean
             """
-            return self.root.groupId == other.root.groupId\
-                and self.root.artifactId == other.root.artifactId
+            return (self.root.groupId, self.root.artifactId) ==\
+                (other.root.groupId, other.root.artifactId)
+
+        def __ne__(self, other):
+            """Check non-equality of Dependency object.
+
+            other: Dependency
+            Return: boolean
+            """
+            return not self.__eq__(other)
 
         def __getitem__(self, key):
             """TODO: Doc for __getitem__."""
@@ -181,6 +197,10 @@ class MavenPom:
             attr = setattr(self.root, key, value)
             objectify.deannotate(self.root)
             return attr
+
+        def __hash__(self):
+            """TODO: Doc for __hash__."""
+            return hash(self.__repr__())
 
     class Exclusion:
         """Exclusion class of outer class MavenPom."""
@@ -204,8 +224,16 @@ class MavenPom:
             other: Exclusion
             Return: boolean
             """
-            return self.root.groupId == other.groupId\
-                and self.root.artifactId == other.artifactId
+            return (self.root.groupId, self.root.artifactId) ==\
+                (other.root.groupId, other.root.artifactId)
+
+        def __ne__(self, other):
+            """Check non-equality of Exclusion object.
+
+            other: Exclusion
+            Return: boolean
+            """
+            return not self.__eq__(other)
 
         def __getitem__(self, key):
             """TODO: Doc for __getitem__."""
