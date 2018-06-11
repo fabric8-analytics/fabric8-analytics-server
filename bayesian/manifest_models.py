@@ -24,10 +24,7 @@ class MavenPom:
         if not isinstance(self.document, (bytes, bytearray)):
             self.document = self.document.encode()
 
-        try:
-            self.root = objectify.fromstring(self.document)
-        except etree.XMLSyntaxError as exc:
-            print("Unable to parse xml document:\n {}".format(str(exc)))
+        self.root = objectify.fromstring(self.document)
 
         # create a dependencies element if doesn't exist
         if getattr(self.root, 'dependencies', None) is None:
