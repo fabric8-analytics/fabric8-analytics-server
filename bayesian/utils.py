@@ -936,3 +936,45 @@ def get_core_dependencies(runtime):
     dependencies = json.loads(fetched_file[0].get('content', "{}"))
     dep_runtime = dependencies.get(runtime, [])
     return dep_runtime
+def create_directory_structure(root=os.getcwd(), struct=dict()):
+    """Create a directory structure.
+
+    root: String path to root directory
+    struct: Dict object describing dir structure
+        example:
+            {
+                'name': 'parentdir',
+                'type': 'dir',
+                'contains': [
+                    {
+                        'name': 'hello.txt',
+                        'type': 'file',
+                        'contains': "Some text"
+                    },
+                    {
+                        'name': 'childdir',
+                        'type': 'dir',
+                    }
+                ]
+            }
+    """
+    _root = os.path.abspath(root)
+    if isinstance(struct, list):
+        for item in struct:
+            create_directory_structure(_root, item)
+    else:
+        # default type is file if not defined
+        _type = struct.get('type', 'file')
+        _name = struct.get('name')
+        _contains = struct.get('contains', '')
+        if _name:
+            _root = os.path.join(_root, _name)
+            if _type == 'file':
+                with open(_root, 'wb') as _file:
+                    if not isinstance(_contains, (bytes, bytearray)):
+                        _contains = _contains.encode()
+                    _file.write(_contains)
+            else:
+                os.makedirs(_root, exist_ok=True)
+                if isinstance(_contains, (list, dict)):
+                    create_directory_structure(_root, _contains)
