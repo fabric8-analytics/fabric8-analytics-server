@@ -3,6 +3,8 @@
 import datetime
 import pytest
 import semantic_version as sv
+import tempfile
+import os
 
 from bayesian.utils import (
     get_core_dependencies,
@@ -11,7 +13,8 @@ from bayesian.utils import (
     is_valid, has_field, get_user_email,
     convert_version_to_proper_semantic as cvs,
     version_info_tuple as vt,
-    select_latest_version as slv)
+    select_latest_version as slv,
+    create_directory_structure as cds)
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
 from urllib.request import urlopen
@@ -223,3 +226,32 @@ def test_get_core_dependencies():
     """Check the function get_core_dependencies()."""
     assert any(get_core_dependencies('vertx'))
     assert get_core_dependencies('xyz') == []
+
+    
+def test_create_dir_structure():
+    """Check for directory structure.
+
+    parentdir
+    ├── childdir
+    └── hello.txt
+    """
+    dir_struct = {
+        'name': 'parentdir',
+        'type': 'dir',
+        'contains': [
+            {
+                'name': 'hello.txt',
+                'type': 'file',
+                'contains': "Some dummy text"
+            },
+            {
+                'name': 'childdir',
+                'type': 'dir',
+            }
+        ]}
+    root_path = tempfile.TemporaryDirectory().name
+    cds(root_path, dir_struct)
+    assert os.path.exists(root_path)
+    assert os.path.exists(os.path.join(root_path, 'parentdir'))
+    assert os.path.exists(os.path.join(root_path, 'parentdir', 'childdir'))
+    assert os.path.isfile(os.path.join(root_path, 'parentdir', 'hello.txt'))
