@@ -32,6 +32,7 @@ from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
 from github import Github, BadCredentialsException, GithubException, RateLimitExceededException
+from git import Repo, Actor
 
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
@@ -978,3 +979,36 @@ def create_directory_structure(root=os.getcwd(), struct=dict()):
                 os.makedirs(_root, exist_ok=True)
                 if isinstance(_contains, (list, dict)):
                     create_directory_structure(_root, _contains)
+
+
+def push_repo(token, local_repo, remote_repo=None, user=None, organization=None, auto_remove=False):
+    """Initialize a git repo and push the code to the target repo."""
+    commit_msg = 'Initial commit'
+    if not os.path.exists(local_repo):
+        raise ValueError("Directory {} does not exist.".format(local_repo))
+    repo = Repo.init(local_repo)
+    repo.git.add(all=True)
+    committer = Actor(os.getenv("GIT_COMMIT_AUTHOR_NAME", "openshiftio-launchpad"),
+                      os.getenv("GIT_COMMIT_AUTHOR_EMAIL", "obsidian-leadership@redhat.com"))
+
+    if organization is None:
+        try:
+            organization = Github(token).get_user().login
+        except RateLimitExceededException:
+            HTTPError(403, "Github API rate limit exceeded")
+        except BadCredentialsException:
+            HTTPError(401, "Invalid github access token")
+        except Exception as exc:
+            HTTPError(500, "Unable to process request {}".format(str(exc)))
+
+    repo.index.commit(commit_msg, committer=committer, author=committer)
+    remote_uri = 'https://{user}:{token}@github.com/{user}/{remote_repo}'\
+        .format(user=organization, token=token, remote_repo=remote_repo)
+    try:
+        origin = repo.create_remote('origin', remote_uri)
+        origin.push('master')
+    except Exception as exc:
+        HTTPError(500, "Unable to Push the code: {}".format(str(exc.stderr)))
+    finally:
+        if auto_remove and os.path.exists(local_repo):
+            shutil.rmtree(local_repo)
