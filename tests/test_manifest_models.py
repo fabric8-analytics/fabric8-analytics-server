@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """Tests for classes from manifest_models module."""
 
-from models import MavenPom as maven
-from models import PypiRequirements as pypi
-from models import NpmPackage as npm
+from bayesian.manifest_models import MavenPom as maven
+from bayesian.manifest_models import PypiRequirements as pypi
+from bayesian.manifest_models import NpmPackage as npm
 import pytest
 from lxml import etree
 
