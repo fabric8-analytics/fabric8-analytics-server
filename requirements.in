@@ -20,4 +20,4 @@ py_lru_cache
 radon
 pygithub
 lxml
-
+gitpython

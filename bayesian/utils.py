@@ -999,7 +999,7 @@ def push_repo(token, local_repo, remote_repo=None, user=None, organization=None,
         except BadCredentialsException:
             HTTPError(401, "Invalid github access token")
         except Exception as exc:
-            HTTPError(500, "Unable to process request {}".format(str(exc)))
+            HTTPError(500, "Unable to get the username {}".format(str(exc)))
 
     repo.index.commit(commit_msg, committer=committer, author=committer)
     remote_uri = 'https://{user}:{token}@github.com/{user}/{remote_repo}'\

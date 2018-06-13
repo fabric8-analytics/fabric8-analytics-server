@@ -29,6 +29,8 @@ flask-security==1.7.5
 flask-sqlalchemy==2.1
 flask-wtf==0.13.1         # via flask-security
 flask==0.11.1
+gitdb2==2.0.3             # via gitpython
+gitpython==2.1.10
 idna==2.5                 # via cryptography, requests
 imagesize==1.0.0          # via sphinx
 itsdangerous==0.24        # via flask, flask-security
@@ -57,6 +59,7 @@ requests-futures==0.9.7
 requests==2.18.1          # via requests-futures, sphinx
 semantic-version==2.6.0
 six==1.10.0               # via cryptography, flask-appconfig, flask-cors, flask-restful, packaging, python-dateutil, sphinx
+smmap2==2.0.3             # via gitdb2
 snowballstemmer==1.2.1    # via sphinx
 sphinx==1.7.5             # via mando
 sphinxcontrib-websupport==1.0.1  # via sphinx
