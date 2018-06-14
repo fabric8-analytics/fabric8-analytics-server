@@ -981,7 +981,7 @@ def create_directory_structure(root=os.getcwd(), struct=dict()):
                     create_directory_structure(_root, _contains)
 
 
-def push_repo(token, local_repo, remote_repo=None, user=None, organization=None, auto_remove=False):
+def push_repo(token, local_repo, remote_repo, user=None, organization=None, auto_remove=False):
     """Initialize a git repo and push the code to the target repo."""
     commit_msg = 'Initial commit'
     if not os.path.exists(local_repo):
@@ -995,11 +995,11 @@ def push_repo(token, local_repo, remote_repo=None, user=None, organization=None,
         try:
             organization = Github(token).get_user().login
         except RateLimitExceededException:
-            HTTPError(403, "Github API rate limit exceeded")
+            raise HTTPError(403, "Github API rate limit exceeded")
         except BadCredentialsException:
-            HTTPError(401, "Invalid github access token")
+            raise HTTPError(401, "Invalid github access token")
         except Exception as exc:
-            HTTPError(500, "Unable to get the username {}".format(str(exc)))
+            raise HTTPError(500, "Unable to get the username {}".format(str(exc)))
 
     repo.index.commit(commit_msg, committer=committer, author=committer)
     remote_uri = 'https://{user}:{token}@github.com/{user}/{remote_repo}'\
@@ -1008,7 +1008,7 @@ def push_repo(token, local_repo, remote_repo=None, user=None, organization=None,
         origin = repo.create_remote('origin', remote_uri)
         origin.push('master')
     except Exception as exc:
-        HTTPError(500, "Unable to Push the code: {}".format(str(exc.stderr)))
+        raise HTTPError(500, "Unable to Push the code: {}".format(str(exc.stderr)))
     finally:
         if auto_remove and os.path.exists(local_repo):
             shutil.rmtree(local_repo)
