@@ -16,7 +16,11 @@ from flask.json import JSONEncoder
 import semantic_version as sv
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
+<<<<<<< HEAD
 from .default_config import CORE_DEPENDENCIES_REPO_URL
+=======
+from lru import lru_cache_function
+>>>>>>> add caching for pom template and remove DOC string todo
 
 from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
                                WorkerResult, StackAnalysisRequest)
@@ -27,7 +31,7 @@ from f8a_worker.setup_celery import init_celery
 
 from . import rdb
 from .exceptions import HTTPError
-from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT
+from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT, CORE_DEPENDENCIES_REPO_URL
 
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
@@ -981,15 +985,17 @@ def create_directory_structure(root=os.getcwd(), struct=dict()):
                     create_directory_structure(_root, _contains)
 
 
-def push_repo(token, local_repo, remote_repo, user=None, organization=None, auto_remove=False):
+def push_repo(token, local_repo, remote_repo, auther_name=None, author_email=None,
+              user=None, organization=None, auto_remove=False):
     """Initialize a git repo and push the code to the target repo."""
     commit_msg = 'Initial commit'
     if not os.path.exists(local_repo):
         raise ValueError("Directory {} does not exist.".format(local_repo))
     repo = Repo.init(local_repo)
     repo.git.add(all=True)
-    committer = Actor(os.getenv("GIT_COMMIT_AUTHOR_NAME", "openshiftio-launchpad"),
-                      os.getenv("GIT_COMMIT_AUTHOR_EMAIL", "obsidian-leadership@redhat.com"))
+    committer = Actor(auther_name or os.getenv("GIT_COMMIT_AUTHOR_NAME", "openshiftio-launchpad"),
+                      author_email or os.getenv("GIT_COMMIT_AUTHOR_EMAIL",
+                                                "obsidian-leadership@redhat.com"))
 
     if organization is None:
         try:
@@ -1012,3 +1018,17 @@ def push_repo(token, local_repo, remote_repo, user=None, organization=None, auto
     finally:
         if auto_remove and os.path.exists(local_repo):
             shutil.rmtree(local_repo)
+
+
+# caching response for 48 hours
+@lru_cache_function(max_size=2048, expiration=2 * 60 * 60 * 24)
+def get_pom_template():
+    """Return POM template.
+
+    return: String
+    """
+    template = fetch_file_from_github(CORE_DEPENDENCIES_REPO_URL, 'pom.template.xml')
+    if template:
+        return template[0].get('content', '<project/>')
+    else:
+        raise HTTPError(500, "Uable to fetch pom template file.")

@@ -36,14 +36,9 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     search_packages_from_graph, get_request_count, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
-<<<<<<< HEAD
-                    is_valid, select_latest_version, get_categories_data, get_core_dependencies)
-=======
-                    is_valid, select_latest_version, get_categories_data, fetch_file_from_github,
-                    create_directory_structure, push_repo)
->>>>>>> introduce new POST /empty-booster api endpoint.
+                    is_valid, select_latest_version, get_categories_data, get_core_dependencies,
+                    create_directory_structure, push_repo, get_pom_template)
 from .license_extractor import extract_licenses
-from .default_config import CORE_DEPENDENCIES_REPO_URL
 from .manifest_models import MavenPom
 
 import os
@@ -1121,7 +1116,6 @@ class EmptyBooster(ResourceWithSchema):
    
     def post():
         """Handle the POST REST API request."""
-        pom_template = fetch_file_from_github(CORE_DEPENDENCIES_REPO_URL, 'pom.template.xml')
         remote_repo = request.form.get('gitRepository')
         if not remote_repo:
             raise HTTPError(400, error="Expected gitRepository in request")
@@ -1131,41 +1125,39 @@ class EmptyBooster(ResourceWithSchema):
 
         git_org = request.form.get('gitOrganization')
         github_token = get_access_token('github')
+        pom_template = get_pom_template()
 
-        if pom_template:
-            pom_template = pom_template[0].get('content', '')
-            maven_obj = MavenPom(pom_template)
-            maven_obj.add_dependencies(dependencies)
-            dir_struct = {
-                'name': 'booster',
-                'type': 'dir',
-                'contains': [{'name': 'src',
-                              'type': 'dir',
-                              'contains': [
-                                  {'name': 'main/java/io/openshift/booster',
-                                   'type': 'dir',
-                                   'contains': {'name': 'Booster.java',
-                                                'contains': 'package io.openshift.booster;\
-                                                        \n\npublic class Booster { } '}
-                                   },
-                                  {'name': 'test/java/io/openshift/booster',
-                                   'type': 'dir',
-                                   'contains': {'name': 'BoosterTest.java',
-                                                'contains': 'package io.openshift.booster;\
-                                                        \n\npublic class BoosterTest { } '}
-                                   }]},
-                             {'name': 'pom.xml',
-                              'type': 'file',
-                              'contains': MavenPom.tostring(maven_obj)}
-                             ]
-            }
-            booster_dir = tempfile.TemporaryDirectory().name
-            create_directory_structure(booster_dir, dir_struct)
-            push_repo(github_token, os.path.join(booster_dir, dir_struct.get('name')),
-                      remote_repo, organization=git_org, auto_remove=True)
-            return {'status': 'ok'}, 200
-        else:
-            raise HTTPError(500, "Uable to fetch pom template file.")
+        maven_obj = MavenPom(pom_template)
+        maven_obj.add_dependencies(dependencies)
+
+        dir_struct = {
+            'name': 'booster',
+            'type': 'dir',
+            'contains': [{'name': 'src',
+                          'type': 'dir',
+                          'contains': [
+                                {'name': 'main/java/io/openshift/booster',
+                                 'type': 'dir',
+                                 'contains': {'name': 'Booster.java',
+                                              'contains': 'package io.openshift.booster;\
+                                                    \n\npublic class Booster { } '}
+                                 },
+                                {'name': 'test/java/io/openshift/booster',
+                                 'type': 'dir',
+                                 'contains': {'name': 'BoosterTest.java',
+                                              'contains': 'package io.openshift.booster;\
+                                                    \n\npublic class BoosterTest { } '}
+                                 }]},
+                         {'name': 'pom.xml',
+                             'type': 'file',
+                             'contains': MavenPom.tostring(maven_obj)}
+                         ]
+        }
+        booster_dir = tempfile.TemporaryDirectory().name
+        create_directory_structure(booster_dir, dir_struct)
+        push_repo(github_token, os.path.join(booster_dir, dir_struct.get('name')),
+                  remote_repo, organization=git_org, auto_remove=True)
+        return {'status': 'ok'}, 200
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
