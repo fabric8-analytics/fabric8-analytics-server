@@ -1120,8 +1120,7 @@ class EmptyBooster(ResourceWithSchema):
 
    
     def post():
-        """Handle the POST REST API call."""
-
+        """Handle the POST REST API request."""
         pom_template = fetch_file_from_github(CORE_DEPENDENCIES_REPO_URL, 'pom.template.xml')
         remote_repo = request.form.get('gitRepository')
         if not remote_repo:
