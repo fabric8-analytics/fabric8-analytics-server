@@ -1085,11 +1085,11 @@ class CoreDependencies(ResourceWithSchema):
     def get(runtime):
         """Handle the GET REST API call."""
         try:
-            resolved = list()
+            resolved = []
             dependencies = get_core_dependencies(runtime)
             request_id = uuid.uuid4().hex
             for elem in dependencies:
-                packages = dict()
+                packages = {}
                 packages['package'] = elem['groupId'] + ':' + elem['artifactId']
                 if elem.get('version'):
                     packages['version'] = elem['version']
