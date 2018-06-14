@@ -41,13 +41,13 @@ class MavenPom:
             self.root.dependencies, 'dependency', [])])
 
     def __getitem__(self, key):
-        """TODO: Doc for __getitem__."""
+        """Return the value for attr key."""
         attr = getattr(self.root, key, None)
         objectify.deannotate(self.root)
         return attr
 
     def __setitem__(self, key, value):
-        """TODO: Doc for __setitem__."""
+        """Set value for attr key."""
         _prev = getattr(self.root, 'modelVersion', None)
         if key in ('groupId', 'artifactId', 'name', 'version', 'packaging') and _prev is not None:
             #  add these tags just after modelVersion tag.
@@ -162,7 +162,7 @@ class MavenPom:
                         setattr(self.root, k, v)
 
         def __repr__(self):
-            """TODO: Doc for __repr__."""
+            """Representation of an Dependency object in string."""
             return "groupId: {}\nartifactId: {}"\
                 .format(self.root.groupId, self.root.artifactId)
 
@@ -184,19 +184,19 @@ class MavenPom:
             return not self.__eq__(other)
 
         def __getitem__(self, key):
-            """TODO: Doc for __getitem__."""
+            """Return the value for attr key."""
             attr = getattr(self.root, key, None)
             objectify.deannotate(self.root)
             return attr
 
         def __setitem__(self, key, value):
-            """TODO: Doc for __setitem__."""
+            """Set value for attr key."""
             attr = setattr(self.root, key, value)
             objectify.deannotate(self.root)
             return attr
 
         def __hash__(self):
-            """TODO: Doc for __hash__."""
+            """Return hash for String representation of an Dependency object."""
             return hash(self.__repr__())
 
     class Exclusion:
@@ -233,11 +233,11 @@ class MavenPom:
             return not self.__eq__(other)
 
         def __getitem__(self, key):
-            """TODO: Doc for __getitem__."""
+            """Return the value for attr key."""
             return getattr(self.root, key, None)
 
         def __setitem__(self, key, value):
-            """TODO: Doc for __setitem__."""
+            """Set value for attr key."""
             return setattr(self.root, key, value)
 
     class Properties:
