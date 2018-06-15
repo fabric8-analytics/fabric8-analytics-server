@@ -981,7 +981,7 @@ def create_directory_structure(root=os.getcwd(), struct=dict()):
                     create_directory_structure(_root, _contains)
 
 
-def push_repo(token, local_repo, remote_repo, auther_name=None, author_email=None,
+def push_repo(token, local_repo, remote_repo, author_name=None, author_email=None,
               user=None, organization=None, auto_remove=False):
     """Initialize a git repo and push the code to the target repo."""
     commit_msg = 'Initial commit'
@@ -989,7 +989,7 @@ def push_repo(token, local_repo, remote_repo, auther_name=None, author_email=Non
         raise ValueError("Directory {} does not exist.".format(local_repo))
     repo = Repo.init(local_repo)
     repo.git.add(all=True)
-    committer = Actor(auther_name or os.getenv("GIT_COMMIT_AUTHOR_NAME", "openshiftio-launchpad"),
+    committer = Actor(author_name or os.getenv("GIT_COMMIT_AUTHOR_NAME", "openshiftio-launchpad"),
                       author_email or os.getenv("GIT_COMMIT_AUTHOR_EMAIL",
                                                 "obsidian-leadership@redhat.com"))
 

@@ -249,9 +249,17 @@ def test_create_dir_structure():
                 'type': 'dir',
             }
         ]}
-    root_path = tempfile.TemporaryDirectory().name
-    cds(root_path, dir_struct)
+
+    tempdir = tempfile.TemporaryDirectory()
+    root_path = tempdir.name
     assert os.path.exists(root_path)
+
+    assert not os.path.exists(os.path.join(root_path, 'parentdir'))
+    assert not os.path.exists(os.path.join(root_path, 'parentdir', 'childdir'))
+    assert not os.path.isfile(os.path.join(root_path, 'parentdir', 'hello.txt'))
+
+    cds(root_path, dir_struct)
+
     assert os.path.exists(os.path.join(root_path, 'parentdir'))
     assert os.path.exists(os.path.join(root_path, 'parentdir', 'childdir'))
     assert os.path.isfile(os.path.join(root_path, 'parentdir', 'hello.txt'))
