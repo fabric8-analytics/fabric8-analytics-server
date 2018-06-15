@@ -16,12 +16,6 @@ from flask.json import JSONEncoder
 import semantic_version as sv
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
-<<<<<<< HEAD
-from .default_config import CORE_DEPENDENCIES_REPO_URL
-=======
-from lru import lru_cache_function
->>>>>>> add caching for pom template and remove DOC string todo
-
 from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
                                WorkerResult, StackAnalysisRequest)
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
@@ -941,6 +935,8 @@ def get_core_dependencies(runtime):
     dependencies = json.loads(fetched_file[0].get('content', "{}"))
     dep_runtime = dependencies.get(runtime, [])
     return dep_runtime
+
+
 def create_directory_structure(root=os.getcwd(), struct=dict()):
     """Create a directory structure.
 

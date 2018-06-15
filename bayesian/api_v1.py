@@ -1084,36 +1084,37 @@ class CoreDependencies(ResourceWithSchema):
 
     method_decorators = [login_required]
 
-        @staticmethod
-        def get(runtime):
-            """Handle the GET REST API call."""
-            try:
-                resolved = []
-                dependencies = get_core_dependencies(runtime)
-                request_id = uuid.uuid4().hex
-                for elem in dependencies:
-                    packages = {}
-                    packages['package'] = elem['groupId'] + ':' + elem['artifactId']
-                    if elem.get('version'):
-                        packages['version'] = elem['version']
-                    if elem.get('scope'):
-                        packages['scope'] = elem['scope']
-                    resolved.append(packages)
-                response = {
-                    "_resolved": resolved,
-                    "ecosystem": "maven",
-                    "request_id": request_id
-                }
-                return response, 200
-            except Exception as e:
-                current_app.logger.error('ERROR: {}'.format(str(e)))
-    
+    @staticmethod
+    def get(runtime):
+        """Handle the GET REST API call."""
+        try:
+            resolved = []
+            dependencies = get_core_dependencies(runtime)
+            request_id = uuid.uuid4().hex
+            for elem in dependencies:
+                packages = {}
+                packages['package'] = elem['groupId'] + ':' + elem['artifactId']
+                if elem.get('version'):
+                    packages['version'] = elem['version']
+                if elem.get('scope'):
+                    packages['scope'] = elem['scope']
+                resolved.append(packages)
+            response = {
+                "_resolved": resolved,
+                "ecosystem": "maven",
+                "request_id": request_id
+            }
+            return response, 200
+        except Exception as e:
+            current_app.logger.error('ERROR: {}'.format(str(e)))
+
+
 class EmptyBooster(ResourceWithSchema):
     """Implementation of /empty-booster POST REST API call."""
 
     method_decorators = [login_required]
 
-   
+    @staticmethod
     def post():
         """Handle the POST REST API request."""
         remote_repo = request.form.get('gitRepository')
