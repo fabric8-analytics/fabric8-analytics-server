@@ -18,7 +18,7 @@ The API details are provided as a [RAML file](../docs/api/raml/api.raml).
 A [JSON schema definition](tests/data/schemas/component_analyses-v1-1-3.schema.json)
 is provided for the component analysis endpoint.
 
-Additionaly [JSON schema definition](tests/data/schemas/stack_analyses-v2-2-0.schema.json)
+Additionally [JSON schema definition](tests/data/schemas/stack_analyses-v2-2-0.schema.json)
 is provided for the stack analysis endpoint as well.
 
 ## Core API Access Logs
