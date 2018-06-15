@@ -227,7 +227,7 @@ def test_get_core_dependencies():
     assert any(get_core_dependencies('vertx'))
     assert get_core_dependencies('xyz') == []
 
-    
+
 def test_create_dir_structure():
     """Check for directory structure.
 
