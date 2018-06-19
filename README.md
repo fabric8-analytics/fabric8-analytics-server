@@ -64,7 +64,7 @@ changes in the SELinux labels on mounted volumes, and may also cause
 spurious test failures.
 
 
-## Virtualenv based offline testing
+## Virtualenv-based offline testing
 
 Test cases marked with `pytest.mark.offline` may be executed without having a
 Docker daemon running locally.
