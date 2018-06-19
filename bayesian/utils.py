@@ -16,8 +16,6 @@ from flask.json import JSONEncoder
 import semantic_version as sv
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
-from .default_config import CORE_DEPENDENCIES_REPO_URL
-
 from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
                                WorkerResult, StackAnalysisRequest)
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
@@ -27,11 +25,12 @@ from f8a_worker.setup_celery import init_celery
 
 from . import rdb
 from .exceptions import HTTPError
-from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT
+from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT, CORE_DEPENDENCIES_REPO_URL
 
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
 from github import Github, BadCredentialsException, GithubException, RateLimitExceededException
+from git import Repo, Actor
 
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
@@ -936,3 +935,96 @@ def get_core_dependencies(runtime):
     dependencies = json.loads(fetched_file[0].get('content', "{}"))
     dep_runtime = dependencies.get(runtime, [])
     return dep_runtime
+
+
+def create_directory_structure(root=os.getcwd(), struct=dict()):
+    """Create a directory structure.
+
+    root: String path to root directory
+    struct: Dict object describing dir structure
+        example:
+            {
+                'name': 'parentdir',
+                'type': 'dir',
+                'contains': [
+                    {
+                        'name': 'hello.txt',
+                        'type': 'file',
+                        'contains': "Some text"
+                    },
+                    {
+                        'name': 'childdir',
+                        'type': 'dir',
+                    }
+                ]
+            }
+    """
+    _root = os.path.abspath(root)
+    if isinstance(struct, list):
+        for item in struct:
+            create_directory_structure(_root, item)
+    else:
+        # default type is file if not defined
+        _type = struct.get('type', 'file')
+        _name = struct.get('name')
+        _contains = struct.get('contains', '')
+        if _name:
+            _root = os.path.join(_root, _name)
+            if _type == 'file':
+                with open(_root, 'wb') as _file:
+                    if not isinstance(_contains, (bytes, bytearray)):
+                        _contains = _contains.encode()
+                    _file.write(_contains)
+            else:
+                os.makedirs(_root, exist_ok=True)
+                if isinstance(_contains, (list, dict)):
+                    create_directory_structure(_root, _contains)
+
+
+def push_repo(token, local_repo, remote_repo, author_name=None, author_email=None,
+              user=None, organization=None, auto_remove=False):
+    """Initialize a git repo and push the code to the target repo."""
+    commit_msg = 'Initial commit'
+    if not os.path.exists(local_repo):
+        raise ValueError("Directory {} does not exist.".format(local_repo))
+    repo = Repo.init(local_repo)
+    repo.git.add(all=True)
+    committer = Actor(author_name or os.getenv("GIT_COMMIT_AUTHOR_NAME", "openshiftio-launchpad"),
+                      author_email or os.getenv("GIT_COMMIT_AUTHOR_EMAIL",
+                                                "obsidian-leadership@redhat.com"))
+
+    if organization is None:
+        try:
+            organization = Github(token).get_user().login
+        except RateLimitExceededException:
+            raise HTTPError(403, "Github API rate limit exceeded")
+        except BadCredentialsException:
+            raise HTTPError(401, "Invalid github access token")
+        except Exception as exc:
+            raise HTTPError(500, "Unable to get the username {}".format(str(exc)))
+
+    repo.index.commit(commit_msg, committer=committer, author=committer)
+    remote_uri = 'https://{user}:{token}@github.com/{user}/{remote_repo}'\
+        .format(user=organization, token=token, remote_repo=remote_repo)
+    try:
+        origin = repo.create_remote('origin', remote_uri)
+        origin.push('master')
+    except Exception as exc:
+        raise HTTPError(500, "Unable to Push the code: {}".format(str(exc.stderr)))
+    finally:
+        if auto_remove and os.path.exists(local_repo):
+            shutil.rmtree(local_repo)
+
+
+# caching response for 48 hours
+@lru_cache_function(max_size=2048, expiration=2 * 60 * 60 * 24)
+def get_pom_template():
+    """Return POM template.
+
+    return: String
+    """
+    template = fetch_file_from_github(CORE_DEPENDENCIES_REPO_URL, 'pom.template.xml')
+    if template:
+        return template[0].get('content', '<project/>')
+    else:
+        raise HTTPError(500, "Uable to fetch pom template file.")

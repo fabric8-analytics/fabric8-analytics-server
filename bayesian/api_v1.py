@@ -4,6 +4,8 @@ import datetime
 import functools
 import uuid
 import re
+import urllib
+import tempfile
 
 from io import StringIO
 from collections import defaultdict
@@ -34,13 +36,14 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     search_packages_from_graph, get_request_count, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
-                    is_valid, select_latest_version, get_categories_data, get_core_dependencies)
+                    is_valid, select_latest_version, get_categories_data, get_core_dependencies,
+                    create_directory_structure, push_repo, get_pom_template)
 from .license_extractor import extract_licenses
+from .manifest_models import MavenPom
 
 import os
 from f8a_worker.storages import AmazonS3
 from .generate_manifest import PomXMLTemplate
-import urllib
 
 # TODO: improve maintainability index
 
@@ -1106,6 +1109,58 @@ class CoreDependencies(ResourceWithSchema):
             current_app.logger.error('ERROR: {}'.format(str(e)))
 
 
+class EmptyBooster(ResourceWithSchema):
+    """Implementation of /empty-booster POST REST API call."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API request."""
+        remote_repo = request.form.get('gitRepository')
+        if not remote_repo:
+            raise HTTPError(400, error="Expected gitRepository in request")
+
+        dependencies = [dict(zip(['groupId', 'artifactId', 'version'],
+                                 d.split(':'))) for d in request.form.getlist('dependency')]
+
+        git_org = request.form.get('gitOrganization')
+        github_token = get_access_token('github')
+        pom_template = get_pom_template()
+
+        maven_obj = MavenPom(pom_template)
+        maven_obj.add_dependencies(dependencies)
+
+        dir_struct = {
+            'name': 'booster',
+            'type': 'dir',
+            'contains': [{'name': 'src',
+                          'type': 'dir',
+                          'contains': [
+                                {'name': 'main/java/io/openshift/booster',
+                                 'type': 'dir',
+                                 'contains': {'name': 'Booster.java',
+                                              'contains': 'package io.openshift.booster;\
+                                                    \n\npublic class Booster { } '}
+                                 },
+                                {'name': 'test/java/io/openshift/booster',
+                                 'type': 'dir',
+                                 'contains': {'name': 'BoosterTest.java',
+                                              'contains': 'package io.openshift.booster;\
+                                                    \n\npublic class BoosterTest { } '}
+                                 }]},
+                         {'name': 'pom.xml',
+                             'type': 'file',
+                             'contains': MavenPom.tostring(maven_obj)}
+                         ]
+        }
+        booster_dir = tempfile.TemporaryDirectory().name
+        create_directory_structure(booster_dir, dir_struct)
+        push_repo(github_token, os.path.join(booster_dir, dir_struct.get('name')),
+                  remote_repo, organization=git_org, auto_remove=True)
+        return {'status': 'ok'}, 200
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
@@ -1135,6 +1190,7 @@ add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
 add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
 add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 add_resource_no_matter_slashes(CoreDependencies, '/get-core-dependencies/<runtime>')
+add_resource_no_matter_slashes(EmptyBooster, '/empty-booster')
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined
