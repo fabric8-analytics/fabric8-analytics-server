@@ -39,7 +39,7 @@ For example:
 
 Method of accessing logs can vary based on the way the API is deployed. See below for [instructions on accessing logs](#logs).
 
-## Docker based API testing
+## Docker-based API testing
 
 From the top-level git directory, run the tests in a container using the helper
 script:
