@@ -1,21 +1,23 @@
+#!/bin/bash
+
 directories="bayesian hack tests alembic"
 separate_files="setup.py"
 pass=0
 fail=0
 
 function prepare_venv() {
-    VIRTUALENV=`which virtualenv`
+    VIRTUALENV=$(which virtualenv)
     if [ $? -eq 1 ]; then
         # python34 which is in CentOS does not have virtualenv binary
-        VIRTUALENV=`which virtualenv-3`
+        VIRTUALENV=$(which virtualenv-3)
     fi
 
-    ${VIRTUALENV} -p python3 venv && source venv/bin/activate && python3 `which pip3` install pycodestyle
+    ${VIRTUALENV} -p python3 venv && source venv/bin/activate && python3 "$(which pip3)" install pycodestyle
 }
 
 echo "----------------------------------------------------"
 echo "Running Python linter against following directories:"
-echo $directories
+echo "$directories"
 echo "----------------------------------------------------"
 echo
 
@@ -24,12 +26,12 @@ echo
 # checks for the whole directories
 for directory in $directories
 do
-    files=`find $directory -path $directory/venv -prune -o -name '*.py' -print`
+    files=$(find "$directory" -path "$directory/venv" -prune -o -name '*.py' -print)
 
     for source in $files
     do
-        echo $source
-        pycodestyle $source
+        echo "$source"
+        pycodestyle "$source"
         if [ $? -eq 0 ]
         then
             echo "    Pass"
