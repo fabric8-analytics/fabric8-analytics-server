@@ -6,6 +6,7 @@ import uuid
 import re
 import urllib
 import tempfile
+import requests
 
 from io import StringIO
 from collections import defaultdict
@@ -864,6 +865,127 @@ class StackAnalyses(ResourceWithSchema):
         raise HTTPError(404, "Unsupported API endpoint")
 
 
+class ApplicationAnalysis(ResourceWithSchema):
+    """Implementation of all /stack-analyses REST API calls."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        # TODO: reduce cyclomatic complexity
+        decoded = decode_token()
+        github_token = get_access_token('github')
+        sid = request.args.get('sid')
+        license_files = list()
+        check_license = request.args.get('check_license', 'false') == 'true'
+        github_url = request.form.get("github_url")
+        ref = request.form.get('github_ref')
+        user_email = request.headers.get('UserEmail')
+        if not user_email:
+            user_email = decoded.get('email', 'bayesian@redhat.com')
+
+        source = request.form.get('source')
+
+        files = request.files.getlist('manifest[]')
+        filepaths = request.values.getlist('filePath[]')
+        license_files = request.files.getlist('license[]')
+
+        current_app.logger.info('%r' % files)
+        current_app.logger.info('%r' % filepaths)
+
+        # At least one manifest file path should be present to analyse a stack
+        if not filepaths:
+            raise HTTPError(400, error="Error processing request. "
+                                       "Please send a valid manifest file path.")
+        if len(files) != len(filepaths):
+            raise HTTPError(400, error="Error processing request. "
+                                       "Number of manifests and filePaths must be the same.")
+
+        # At least one manifest file should be present to analyse a stack
+        if not files:
+            raise HTTPError(400, error="Error processing request. "
+                                       "Please upload a valid manifest files.")
+
+        dt = datetime.datetime.now()
+        if sid:
+            request_id = sid
+            is_modified_flag = {'is_modified': True}
+        else:
+            request_id = uuid.uuid4().hex
+            is_modified_flag = {'is_modified': False}
+
+        iso = datetime.datetime.utcnow().isoformat()
+
+        manifests = []
+        ecosystem = None
+        for index, manifest_file_raw in enumerate(files):
+            if github_url is not None:
+                filename = manifest_file_raw.get('filename', None)
+                filepath = manifest_file_raw.get('filepath', None)
+                content = manifest_file_raw.get('content')
+            else:
+                filename = manifest_file_raw.filename
+                filepath = filepaths[index]
+                content = manifest_file_raw.read().decode('utf-8')
+
+            # check if manifest files with given name are supported
+            manifest_descriptor = get_manifest_descriptor_by_filename(filename)
+            if manifest_descriptor is None:
+                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
+                    filename=filename))
+
+            # In memory file to be passed as an API parameter to /appstack
+            manifest_file = StringIO(content)
+
+            # Check if the manifest is valid
+            if not manifest_descriptor.validate(content):
+                raise HTTPError(400, error="Error processing request. Please upload a valid "
+                                           "manifest file '{filename}'".format(filename=filename))
+
+            # Record the response details for this manifest file
+            manifest = {'filename': filename,
+                        'content': content,
+                        'ecosystem': manifest_descriptor.ecosystem,
+                        'filepath': filepath}
+
+            manifests.append(manifest)
+
+        data = {'api_name': 'stack_analyses',
+                'user_email': user_email,
+                'user_profile': decoded}
+        args = {'external_request_id': request_id,
+                'ecosystem': ecosystem, 'data': data}
+
+        try:
+            api_url = current_app.config['F8_API_BACKBONE_HOST']
+
+            d = DependencyFinder()
+            deps = d.execute(args, rdb.session, manifests, source)
+            deps['external_request_id'] = request_id
+            deps['current_stack_license'] = extract_licenses(license_files)
+            deps.update(is_modified_flag)
+
+            resp = requests.post(
+                '{}/api/v1/stack_aggregator'.format(api_url), json=deps,
+                params={'check_license': str(check_license).lower()})
+
+        except Exception as exc:
+            raise HTTPError(500, ("Could not process {t}."
+                                  .format(t=request_id))) from exc
+
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            raise HTTPError(500, ("Error processing the request {t}.".
+                                  format(t=request_id)))
+
+    @staticmethod
+    def get():
+        """Handle the GET REST API call."""
+        raise HTTPError(404, "Unsupported API endpoint")
+
+
 class SubmitFeedback(ResourceWithSchema):
     """Implementation of /submit-feedback POST REST API call."""
 
@@ -1162,6 +1284,7 @@ class EmptyBooster(ResourceWithSchema):
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
+add_resource_no_matter_slashes(ApplicationAnalysis, '/application-analysis')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
 add_resource_no_matter_slashes(ComponentAnalyses,
