@@ -46,3 +46,6 @@ BAYESIAN_COMPONENT_TAGGED_COUNT = os.getenv('BAYESIAN_COMPONENT_TAGGED_COUNT', 2
 
 F8_API_BACKBONE_HOST = os.getenv('F8_API_BACKBONE_HOST', 'http://f8a-server-backbone')
 AUTH_URL = os.getenv('AUTH_URL', 'https://auth.openshift.io')
+
+# GEMINI_SERVER_URL = os.getenv('GEMINI_SERVER_URL', 'http://f8a-gemini-server:5000')
+GEMINI_SERVER_URL = 'http://f8a-gemini-server-schoudhu-fabric8-analytics.dev.rdu2c.fabric8.io'
