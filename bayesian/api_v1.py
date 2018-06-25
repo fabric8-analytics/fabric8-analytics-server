@@ -749,7 +749,8 @@ class StackAnalyses(ResourceWithSchema):
                         'email-ids': [user_email]}
                 _session.post('{}/api/v1/user-repo/scan'.format(api_url), json=data)
             except Exception as exc:
-                raise HTTPError(500, ("Could not process the scan endpoint call")) from exc
+                raise HTTPError(500, "Could not process the scan endpoint call") \
+                    from exc
 
         source = request.form.get('source')
         if github_url is not None:
