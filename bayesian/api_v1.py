@@ -45,6 +45,7 @@ from .manifest_models import MavenPom
 import os
 from f8a_worker.storages import AmazonS3
 from .generate_manifest import PomXMLTemplate
+from .default_config import GEMINI_SERVER_URL
 
 # TODO: improve maintainability index
 
@@ -737,8 +738,18 @@ class StackAnalyses(ResourceWithSchema):
         github_url = request.form.get("github_url")
         ref = request.form.get('github_ref')
         user_email = request.headers.get('UserEmail')
+        scan_repo_url = request.headers.get('scan_repo_url')
         if not user_email:
             user_email = decoded.get('email', 'bayesian@redhat.com')
+
+        if scan_repo_url is not None:
+            try:
+                api_url = GEMINI_SERVER_URL
+                data = {'git-url': scan_repo_url,
+                        'email-ids': [user_email]}
+                _session.post('{}/api/v1/user-repo/scan'.format(api_url), json=data)
+            except Exception as exc:
+                raise HTTPError(500, ("Could not process the scan endpoint call")) from exc
 
         source = request.form.get('source')
         if github_url is not None:
