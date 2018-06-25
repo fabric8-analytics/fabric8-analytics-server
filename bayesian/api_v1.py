@@ -1125,7 +1125,7 @@ class EmptyBooster(ResourceWithSchema):
                                  d.split(':'))) for d in request.form.getlist('dependency')]
 
         git_org = request.form.get('gitOrganization')
-        github_token = get_access_token('github')
+        github_token = get_access_token('github').get('access_token', '')
         pom_template = get_pom_template()
 
         maven_obj = MavenPom(pom_template)
