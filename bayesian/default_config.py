@@ -49,3 +49,6 @@ AUTH_URL = os.getenv('AUTH_URL', 'https://auth.openshift.io')
 CORE_DEPENDENCIES_REPO_URL = os.getenv('CORE_DEPENDENCIES_REPO', 'https://github.com/'
                                                                  'fabric8-analytics/'
                                                                  'booster-core-dependencies')
+
+# GEMINI_SERVER_URL = os.getenv('GEMINI_SERVER_URL', 'http://f8a-gemini-server:5000')
+GEMINI_SERVER_URL = 'http://f8a-gemini-server-schoudhu-fabric8-analytics.dev.rdu2c.fabric8.io'
