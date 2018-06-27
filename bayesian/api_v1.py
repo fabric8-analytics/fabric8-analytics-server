@@ -1121,8 +1121,15 @@ class EmptyBooster(ResourceWithSchema):
         if not remote_repo:
             raise HTTPError(400, error="Expected gitRepository in request")
 
+        runtime = request.form.get('runtime')
+        if not runtime:
+            raise HTTPError(400, error="Expected runtime in request")
+
+        core_deps = get_categories_data(runtime)
+
         dependencies = [dict(zip(['groupId', 'artifactId', 'version'],
                                  d.split(':'))) for d in request.form.getlist('dependency')]
+        dependencies += core_deps
 
         git_org = request.form.get('gitOrganization')
         github_token = get_access_token('github').get('access_token', '')
