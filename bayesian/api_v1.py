@@ -1065,6 +1065,7 @@ class CategoryService(ResourceWithSchema):
                         pkg_count = category.get('category_deps_count', [0])[0]
                         _category = category.get('ctname', [''])[0]
                         pkg_name = package.get('name', [''])[0]
+                        pkg_description = package.get('description', [''])[0]
                         libio_version = package.get('libio_latest_version', [''])[0]
                         version = package.get('latest_version', [''])[0]
                         latest_version = select_latest_version(
@@ -1073,6 +1074,7 @@ class CategoryService(ResourceWithSchema):
                         categories[_category]['packages'].append({
                             'name': pkg_name,
                             'version': latest_version,
+                            'description': pkg_description,
                             'category': _category
                         })
                 response['categories'] = categories
