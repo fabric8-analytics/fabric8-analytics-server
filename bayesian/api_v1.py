@@ -1127,7 +1127,7 @@ class EmptyBooster(ResourceWithSchema):
         if not runtime:
             raise HTTPError(400, error="Expected runtime in request")
 
-        core_deps = get_categories_data(runtime)
+        core_deps = get_core_dependencies(runtime)
 
         dependencies = [dict(zip(['groupId', 'artifactId', 'version'],
                                  d.split(':'))) for d in request.form.getlist('dependency')]
