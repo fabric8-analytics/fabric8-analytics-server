@@ -224,7 +224,7 @@ def test_is_valid():
 
 def test_get_core_dependencies():
     """Check the function get_core_dependencies()."""
-    assert any(get_core_dependencies('vertx'))
+    assert any(get_core_dependencies('spring-boot'))
     assert get_core_dependencies('xyz') == []
 
 
