@@ -1138,6 +1138,9 @@ class EmptyBooster(ResourceWithSchema):
         pom_template = get_pom_template()
 
         maven_obj = MavenPom(pom_template)
+        maven_obj['version'] = '1.0.0-SNAPSHOT'
+        maven_obj['artifactId'] = re.sub('[^A-Za-z0-9-]+', '', runtime) + '-application'
+        maven_obj['groupId'] = 'io.openshift.booster'
         maven_obj.add_dependencies(dependencies)
 
         dir_struct = {
