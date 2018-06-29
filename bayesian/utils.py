@@ -8,7 +8,9 @@ import os
 import uuid
 import shutil
 import hashlib
+import zipfile
 
+from io import BytesIO
 from selinon import run_flow
 from lru import lru_cache_function
 from flask import current_app
@@ -1016,15 +1018,24 @@ def push_repo(token, local_repo, remote_repo, author_name=None, author_email=Non
             shutil.rmtree(local_repo)
 
 
-# caching response for 48 hours
 @lru_cache_function(max_size=2048, expiration=2 * 60 * 60 * 24)
-def get_pom_template():
-    """Return POM template.
+def get_booster_core_repo(ref='master'):
+    """Return core booster dependencies repo path."""
+    _base_url = 'https://github.com/{user}/{repo}/archive/{ref}.zip'
+    _url = CORE_DEPENDENCIES_REPO_URL
+    if _url.endswith('.git'):
+        _url = _url[:-len('.git')]
+    user, repo = _url.split('/')[-2:]
+    user = user.split(':')[-1]
 
-    return: String
-    """
-    template = fetch_file_from_github(CORE_DEPENDENCIES_REPO_URL, 'pom.template.xml')
-    if template:
-        return template[0].get('content', '<project/>')
-    else:
-        raise HTTPError(500, "Uable to fetch pom template file.")
+    url = _base_url.format(user=user, repo=repo, ref=ref)
+    resp = get(url, stream=True)
+    repo_path = os.path.abspath(os.path.join('/tmp', '-'.join([repo, ref])))
+    if os.path.exists(repo_path):
+        shutil.rmtree(repo_path)
+    if resp.status_code != 200:
+        raise HTTPError(500, "Unable to access url {} \n STATUS_CODE={}".format(
+            url, resp.status_code))
+    _zip = zipfile.ZipFile(BytesIO(resp.content))
+    _zip = _zip.extractall('/tmp')
+    return repo_path
