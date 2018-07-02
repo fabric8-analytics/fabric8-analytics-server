@@ -6,6 +6,7 @@ import uuid
 import re
 import urllib
 import tempfile
+import json
 
 from io import StringIO
 from collections import defaultdict
@@ -37,7 +38,7 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     get_item_from_list_by_key_value, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data, get_core_dependencies,
-                    create_directory_structure, push_repo, get_pom_template)
+                    create_directory_structure, push_repo, get_booster_core_repo)
 from .license_extractor import extract_licenses
 from .manifest_models import MavenPom
 
@@ -1120,6 +1121,7 @@ class EmptyBooster(ResourceWithSchema):
     def post():
         """Handle the POST REST API request."""
         remote_repo = request.form.get('gitRepository')
+        _exists = os.path.exists
         if not remote_repo:
             raise HTTPError(400, error="Expected gitRepository in request")
 
@@ -1127,21 +1129,35 @@ class EmptyBooster(ResourceWithSchema):
         if not runtime:
             raise HTTPError(400, error="Expected runtime in request")
 
-        core_deps = get_core_dependencies(runtime)
+        booster_core_repo = get_booster_core_repo()
+        if not _exists(booster_core_repo):
+            get_booster_core_repo.cache.clear()
+            booster_core_repo = get_booster_core_repo()
 
+        pom_template = os.path.join(booster_core_repo, 'pom.template.xml')
+        jenkinsfile = os.path.join(booster_core_repo, 'Jenkinsfile')
+        core_json = os.path.join(booster_core_repo, 'core.json')
+
+        if not all(map(_exists, [pom_template, jenkinsfile, core_json])):
+            raise HTTPError(500, "Some necessary files are missing in core dependencies Repository")
+
+        core_deps = json.load(open(core_json))
         dependencies = [dict(zip(['groupId', 'artifactId', 'version'],
                                  d.split(':'))) for d in request.form.getlist('dependency')]
-        dependencies += core_deps
+
+        dependencies += core_deps.get(runtime, [])
 
         git_org = request.form.get('gitOrganization')
         github_token = get_access_token('github').get('access_token', '')
-        pom_template = get_pom_template()
 
-        maven_obj = MavenPom(pom_template)
+        maven_obj = MavenPom(open(pom_template).read())
         maven_obj['version'] = '1.0.0-SNAPSHOT'
         maven_obj['artifactId'] = re.sub('[^A-Za-z0-9-]+', '', runtime) + '-application'
         maven_obj['groupId'] = 'io.openshift.booster'
         maven_obj.add_dependencies(dependencies)
+        build_config = core_deps.get(runtime + '-' + 'build')
+        if build_config:
+            maven_obj.add_element(build_config, 'build', next_to='dependencies')
 
         dir_struct = {
             'name': 'booster',
@@ -1163,7 +1179,9 @@ class EmptyBooster(ResourceWithSchema):
                                  }]},
                          {'name': 'pom.xml',
                              'type': 'file',
-                             'contains': MavenPom.tostring(maven_obj)}
+                             'contains': MavenPom.tostring(maven_obj)},
+                         {'name': "Jenkinsfile",
+                          'contains': open(jenkinsfile).read()}
                          ]
         }
         booster_dir = tempfile.TemporaryDirectory().name

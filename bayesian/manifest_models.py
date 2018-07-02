@@ -59,6 +59,38 @@ class MavenPom:
         objectify.deannotate(self.root)
         self._reload(self.root)
 
+    def add_element(self, data={}, parent=None, next_to=None):
+        """Add element to POM.
+
+        data: dict
+        parent: etree.Element or string
+        return: None
+        """
+        _prev = None
+        if next_to is not None:
+            if isinstance(next_to, (str, bytes)):
+                _prev = getattr(self.root, next_to, None)
+            else:
+                _prev = next_to
+
+        if isinstance(parent, (str, bytes)):
+            if _prev is not None:
+                parent = etree.Element(parent)
+                _prev.addnext(parent)
+            else:
+                parent = etree.SubElement(self.root, parent)
+
+        if isinstance(data, dict):
+            for key, value in data.items():
+                self.add_element(value, etree.SubElement(parent, key))
+        elif isinstance(data, (tuple, list)):
+            for value in data:
+                self.add_element(value, parent)
+        elif isinstance(data, (bytes, bytearray)):
+            parent._setText(data.decode())
+        else:
+            parent._setText(data)
+
     def add_dependency(self, dependency):
         """Add dependency to POM.
 
