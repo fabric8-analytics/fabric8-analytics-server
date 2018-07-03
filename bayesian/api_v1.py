@@ -1079,6 +1079,8 @@ class CategoryService(ResourceWithSchema):
                             'category': _category
                         })
                 response['categories'] = categories
+        else:
+            get_categories_data.clear_cache()
         return response, 200
 
 
