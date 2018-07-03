@@ -11,6 +11,7 @@ import hashlib
 import zipfile
 
 from io import BytesIO
+from functools import lru_cache
 from selinon import run_flow
 from lru import lru_cache_function
 from flask import current_app
@@ -778,6 +779,7 @@ def get_cve_data(input_json):
     }
 
 
+@lru_cache(maxsize=128)
 def get_categories_data(runtime):
     """Get categories for based on runtime."""
     qstring = "g.V().has('category_runtime', runtime).as('category')."\
