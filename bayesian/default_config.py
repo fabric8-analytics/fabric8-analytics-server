@@ -50,6 +50,6 @@ CORE_DEPENDENCIES_REPO_URL = os.getenv('CORE_DEPENDENCIES_REPO', 'https://github
                                                                  'fabric8-analytics/'
                                                                  'booster-core-dependencies')
 
-# GEMINI_SERVER_URL = os.getenv('GEMINI_SERVER_URL', 'http://f8a-gemini-server:5000')
-GEMINI_SERVER_URL = \
-    'http://f8a-gemini-server-schoudhu-fabric8-analytics.dev.rdu2c.fabric8.io'
+GEMINI_SERVER_URL = "http://{host}:{port}".format(
+                     host=os.getenv('F8A_GEMINI_SERVER_SERVICE_HOST'),
+                     port=os.getenv('F8A_GEMINI_SERVER_SERVICE_PORT'))
