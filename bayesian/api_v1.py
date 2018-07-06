@@ -742,7 +742,7 @@ class StackAnalyses(ResourceWithSchema):
         if not user_email:
             user_email = decoded.get('email', 'bayesian@redhat.com')
 
-        if scan_repo_url :
+        if scan_repo_url:
             try:
                 api_url = GEMINI_SERVER_URL
                 data = {'git-url': scan_repo_url,
