@@ -1,11 +1,12 @@
-REGISTRY?=registry.devshift.net
-REPOSITORY?=bayesian/bayesian-api
-DEFAULT_TAG=latest
+REGISTRY ?= quay.io
+DEFAULT_TAG = latest
 
 ifeq ($(TARGET),rhel)
     DOCKERFILE := Dockerfile.rhel
+	REPOSITORY ?= openshiftio/rhel-bayesian-bayesian-api
 else
     DOCKERFILE := Dockerfile
+	REPOSITORY ?= openshiftio/bayesian-bayesian-api
 endif
 
 .PHONY: all docker-build fast-docker-build test get-image-name get-image-repository docker-build-tests fast-docker-build-tests
