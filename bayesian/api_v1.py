@@ -1183,7 +1183,9 @@ class EmptyBooster(ResourceWithSchema):
                                  'type': 'dir',
                                  'contains': {'name': 'Booster.java',
                                               'contains': 'package io.openshift.booster;\
-                                                    \n\npublic class Booster { } '}
+                                                      \npublic class Booster {\
+                                                      \n public static void main(String[] args) { }\
+                                                      \n} '}
                                  },
                                 {'name': 'test/java/io/openshift/booster',
                                  'type': 'dir',
