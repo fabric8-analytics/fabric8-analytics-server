@@ -5,14 +5,8 @@ flask-sqlalchemy
 flask-restful
 flask-cors
 jsl
-# there's a regression in mod_wsgi 4.5.4:
-# https://github.com/GrahamDumpleton/mod_wsgi/issues/147
-# install httpd-devel in order to have apxs command, otherwise build fails
-mod_wsgi!=4.5.4
+mod_wsgi>=4.5.6
 psycopg2>=2.7
-# in order for pyjwt to be able to use RS256 we need pycrypto
-cryptography
-pyjwt>=1.6.1
 requests-futures
 Flask-Cache
 semantic_version

@@ -13,7 +13,7 @@ from collections import defaultdict
 
 import botocore
 from requests_futures.sessions import FuturesSession
-from flask import Blueprint, current_app, request, url_for, Response
+from flask import Blueprint, current_app, request, url_for, Response, g
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
 from sqlalchemy.exc import SQLAlchemyError
@@ -28,7 +28,9 @@ from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
 from .dependency_finder import DependencyFinder
-from .auth import login_required, decode_token, get_access_token
+from fabric8a_auth.auth import login_required, decode_token
+from fabric8a_auth.errors import AuthError
+from .auth import get_access_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
@@ -60,23 +62,11 @@ pagination_parser.add_argument('per_page', type=int, default=50)
 ANALYSIS_ACCESS_COUNT_KEY = 'access_count'
 TOTAL_COUNT_KEY = 'total_count'
 
-original_handle_error = rest_api_v1.handle_error
 
 ANALYTICS_API_VERSION = "v1.0"
 
 worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
 _session = FuturesSession(max_workers=worker_count)
-
-
-# see <dir>.exceptions.HTTPError docstring
-def handle_http_error(e):
-    """Handle HTTPError exceptions."""
-    if isinstance(e, HTTPError):
-        res = jsonify({'error': e.error})
-        res.status_code = e.status_code
-        return res
-    else:
-        return original_handle_error(e)
 
 
 @api_v1.route('/_error')
@@ -112,11 +102,6 @@ def liveness():
                              "and execute a query")
     rdb.session.query(Ecosystem).count()
     return jsonify({}), 200
-
-
-api_v1.coreapi_http_error_handler = handle_http_error
-# work around https://github.com/flask-restful/flask-restful/issues/542
-rest_api_v1.handle_error = handle_http_error
 
 
 def get_item_skip(page, per_page):
@@ -296,7 +281,6 @@ class ComponentAnalyses(ResourceWithSchema):
     @staticmethod
     def get(ecosystem, package, version):
         """Handle the GET REST API call."""
-        decoded = decode_token()
         package = urllib.parse.unquote(package)
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
@@ -305,12 +289,12 @@ class ComponentAnalyses(ResourceWithSchema):
 
         if result is not None:
             # Known component for Bayesian
-            server_create_component_bookkeeping(ecosystem, package, version, decoded)
+            server_create_component_bookkeeping(ecosystem, package, version, g.decoded_token)
             return result
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
             # Enter the unknown path
-            server_create_analysis(ecosystem, package, version, user_profile=decoded,
+            server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
                                    api_flow=True, force=False, force_graph_sync=True)
             msg = "Package {ecosystem}/{package}/{version} is unavailable. " \
                   "The package will be available shortly," \
@@ -318,7 +302,7 @@ class ComponentAnalyses(ResourceWithSchema):
                                                           version=version)
             raise HTTPError(202, msg)
         else:
-            server_create_analysis(ecosystem, package, version, user_profile=decoded,
+            server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
                                    api_flow=False, force=False, force_graph_sync=True)
             msg = "No data found for {ecosystem} package " \
                   "{package}/{version}".format(ecosystem=ecosystem,
@@ -328,13 +312,12 @@ class ComponentAnalyses(ResourceWithSchema):
     @staticmethod
     def post(ecosystem, package, version):
         """Handle the POST REST API call."""
-        decoded = decode_token()
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
         package = case_sensitivity_transform(ecosystem, package)
 
         server_create_analysis(ecosystem, package, version,
-                               user_profile=decoded or {}, api_flow=True, force=True,
+                               user_profile=g.decoded_token or {}, api_flow=True, force=True,
                                force_graph_sync=False)
         return {}, 202
 
@@ -595,12 +578,10 @@ class GetNextComponent(ResourceWithSchema):
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
-        decoded = decode_token()
-
         pkg = get_next_component_from_graph(
             ecosystem,
-            decoded.get('email'),
-            decoded.get('company'),
+            g.decoded_token.get('email'),
+            g.decoded_token.get('company'),
         )
         if pkg:
             return pkg[0]
@@ -617,7 +598,6 @@ class SetTagsToComponent(ResourceWithSchema):
     def post():
         """Handle the POST REST API call."""
         input_json = request.get_json()
-        decoded = decode_token()
 
         if not input_json:
             raise HTTPError(400, error="Expected JSON request")
@@ -634,8 +614,8 @@ class SetTagsToComponent(ResourceWithSchema):
         status, _error = set_tags_to_component(input_json.get('ecosystem'),
                                                input_json.get('component'),
                                                input_json.get('tags'),
-                                               decoded.get('email'),
-                                               decoded.get('company'))
+                                               g.decoded_token.get('email'),
+                                               g.decoded_token.get('company'))
         if status:
             return {'status': 'success'}, 200
         else:
@@ -732,7 +712,6 @@ class StackAnalyses(ResourceWithSchema):
     def post():
         """Handle the POST REST API call."""
         # TODO: reduce cyclomatic complexity
-        decoded = decode_token()
         github_token = get_access_token('github')
         sid = request.args.get('sid')
         license_files = list()
@@ -742,7 +721,7 @@ class StackAnalyses(ResourceWithSchema):
         user_email = request.headers.get('UserEmail')
         scan_repo_url = request.headers.get('ScanRepoUrl')
         if not user_email:
-            user_email = decoded.get('email', 'bayesian@redhat.com')
+            user_email = g.decoded_token.get('email', 'bayesian@redhat.com')
 
         if scan_repo_url:
             try:
@@ -853,7 +832,7 @@ class StackAnalyses(ResourceWithSchema):
 
         data = {'api_name': 'stack_analyses',
                 'user_email': user_email,
-                'user_profile': decoded}
+                'user_profile': g.decoded_token}
         args = {'external_request_id': request_id,
                 'ecosystem': ecosystem, 'data': data}
 
@@ -1283,3 +1262,15 @@ add_resource_no_matter_slashes(RecommendationFeedback, '/recommendation_feedback
 def api_404_handler(*args, **kwargs):
     """Handle all other routes not defined above."""
     return jsonify(error='Cannot match given query to any API v1 endpoint'), 404
+
+
+@api_v1.errorhandler(HTTPError)
+def handle_http_error(err):
+    """Handle HTTPError exceptions."""
+    return jsonify({'error': err.error}), err.status_code
+
+
+@api_v1.errorhandler(AuthError)
+def api_401_handler(err):
+    """Handle AuthError exceptions."""
+    return jsonify(error=err.error), err.status_code
