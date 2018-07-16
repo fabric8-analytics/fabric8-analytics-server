@@ -28,7 +28,7 @@ from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
 from .dependency_finder import DependencyFinder
-from .auth import login_required, decode_token, get_access_token
+from fabric8a_auth.auth import login_required, decode_token, init_service_account_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
@@ -731,7 +731,7 @@ class StackAnalyses(ResourceWithSchema):
         """Handle the POST REST API call."""
         # TODO: reduce cyclomatic complexity
         decoded = decode_token()
-        github_token = get_access_token('github')
+        github_token = init_service_account_token('github')
         sid = request.args.get('sid')
         license_files = list()
         check_license = request.args.get('check_license', 'false') == 'true'
@@ -1162,7 +1162,7 @@ class EmptyBooster(ResourceWithSchema):
         dependencies += core_deps.get(runtime, [])
 
         git_org = request.form.get('gitOrganization')
-        github_token = get_access_token('github').get('access_token', '')
+        github_token = init_service_account_token('github').get('access_token', '')
 
         maven_obj = MavenPom(open(pom_template).read())
         maven_obj['version'] = '1.0.0-SNAPSHOT'

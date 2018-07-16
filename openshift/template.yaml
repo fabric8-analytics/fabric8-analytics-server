@@ -47,7 +47,7 @@ objects:
             valueFrom:
               configMapKeyRef:
                 name: bayesian-config
-                key: keycloak-url
+                key: auth-url
           - name: BAYESIAN_JWT_AUDIENCE
             value: "fabric8-online-platform,openshiftio-public"
           - name: SENTRY_DSN
