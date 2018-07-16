@@ -28,7 +28,7 @@ from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
 from .dependency_finder import DependencyFinder
-from .auth import login_required, decode_token, get_access_token
+from fabric8a_auth.auth import login_required, decode_token, get_access_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
