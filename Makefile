@@ -1,5 +1,6 @@
 REGISTRY ?= quay.io
 DEFAULT_TAG = latest
+TESTS_IMAGE=server-tests
 
 ifeq ($(TARGET),rhel)
     DOCKERFILE := Dockerfile.rhel
@@ -15,15 +16,17 @@ all: fast-docker-build
 
 docker-build:
 	docker build --no-cache -t $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) -f $(DOCKERFILE) .
+	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(TESTS_IMAGE):$(DEFAULT_TAG)
 
 docker-build-tests: docker-build
-	docker build --no-cache -t coreapi-server-tests -f Dockerfile.tests .
+	docker build --no-cache -t $(TESTS_IMAGE) -f Dockerfile.tests .
 
 fast-docker-build:
 	docker build -t $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) -f $(DOCKERFILE) .
+	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(TESTS_IMAGE):$(DEFAULT_TAG)
 
 fast-docker-build-tests:
-	docker build -t coreapi-server-tests -f Dockerfile.tests .
+	docker build -t $(TESTS_IMAGE) -f Dockerfile.tests .
 
 test: fast-docker-build-tests
 	./runtest.sh
