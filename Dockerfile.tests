@@ -1,4 +1,4 @@
-FROM registry.devshift.net/bayesian/bayesian-api
+FROM server-tests
 MAINTAINER Tomas Tomecek <ttomecek@redhat.com>
 
 ENV PYTHONDONTWRITEBYTECODE 1
