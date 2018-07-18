@@ -132,4 +132,3 @@ The script named `check-bashscripts.sh` can be used to check all BASH scripts (i
 ```
 
 Please see [the following link](https://github.com/koalaman/shellcheck) for further explanation, how the ShellCheck works and which issues can be detected.
-
