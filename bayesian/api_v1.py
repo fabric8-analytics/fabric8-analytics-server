@@ -1063,7 +1063,7 @@ class CategoryService(ResourceWithSchema):
     def get(runtime):
         """Handle the GET REST API call."""
         categories = defaultdict(lambda: {'pkg_count': 0, 'packages': list()})
-        gremlin_resp = get_categories_data(runtime)
+        gremlin_resp = get_categories_data(re.sub('[^A-Za-z0-9]+', '', runtime))
         response = {
             'categories': dict(),
             'request_id': gremlin_resp.get('requestId')
