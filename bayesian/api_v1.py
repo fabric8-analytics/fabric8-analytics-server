@@ -747,10 +747,29 @@ class StackAnalyses(ResourceWithSchema):
         if scan_repo_url:
             try:
                 api_url = GEMINI_SERVER_URL
+                dependency_files = request.files.getlist('dependencyFile[]')
+                current_app.logger.info('%r' % dependency_files)
                 data = {'git-url': scan_repo_url,
                         'email-ids': [user_email]}
-                _session.headers['Authorization'] = request.headers.get('Authorization')
-                _session.post('{}/api/v1/user-repo/scan'.format(api_url), json=data)
+                if dependency_files:
+                    files = list()
+                    for dependency_file in dependency_files:
+
+                        # http://docs.python-requests.org/en/master/user/advanced/#post-multiple-multipart-encoded-files
+                        files.append((
+                                dependency_file.name, (
+                                    dependency_file.filename,
+                                    dependency_file.read(),
+                                    'text/plain'
+                                )
+                        ))
+
+                    _session.headers['Authorization'] = request.headers.get('Authorization')
+                    _session.post('{}/api/v1/user-repo/scan/experimental'.format(api_url),
+                                  data=data, files=files)
+                else:
+                    _session.headers['Authorization'] = request.headers.get('Authorization')
+                    _session.post('{}/api/v1/user-repo/scan'.format(api_url), json=data)
             except Exception as exc:
                 raise HTTPError(500, "Could not process the scan endpoint call") \
                     from exc
