@@ -11,6 +11,7 @@ The Fabric8-Analytics API is a microservice that is responsible for:
 
 See our [contributing guidelines](https://github.com/fabric8-analytics/common/blob/master/CONTRIBUTING.md) for more info.
 
+<!--- (Commenting out this section for now. Update this section once specifications for API are updated.)
 ## API definition
 
 The API details are provided as a [RAML file](../docs/api/raml/api.raml).
@@ -20,6 +21,7 @@ is provided for the component analysis endpoint.
 
 Additionally [JSON schema definition](tests/data/schemas/stack_analyses-v2-2-0.schema.json)
 is provided for the stack analysis endpoint as well.
+--->
 
 ## Core API Access Logs
 
@@ -36,8 +38,6 @@ For example:
 ```
 172.19.0.1 - - [18/Mar/2016:07:59:17 +0000] "GET /static/patternfly/css/patternfly.min.css HTTP/1.1" 304 - http://localhost:32000/ "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0"
 ```
-
-Method of accessing logs can vary based on the way the API is deployed. See below for [instructions on accessing logs](#logs).
 
 ## Docker based API testing
 
@@ -93,7 +93,7 @@ It's possible to access operational data related to a particular stack analysis 
 
 `/api/v1/stack-analyses/<request-id>/_debug`
 
-Note this endpoint is not part of the public API. 
+Note this endpoint is not part of the public API.
 
 ### Footnotes
 
