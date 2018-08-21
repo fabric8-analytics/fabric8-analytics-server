@@ -31,7 +31,7 @@ paths:
       tags:
         - Scan Services
       operationId: f8a_scanner.api_v1.component-analyses
-      summary: Get details about a software component
+      summary: Get security and other details about a software component and recommendations to change to a more secured version
       parameters:
         - in: path
           name: ecosystem
