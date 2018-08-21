@@ -1,0 +1,286 @@
+swagger: '2.0'
+info:
+  title: Analytics Core API
+  version: '0.1'
+basePath: /api/v1/
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /liveness:
+    get:
+      tags:
+        - Service settings
+      operationId: f8a_admin.api_v1.get_liveness
+      summary: Get job service liveness
+      responses:
+        '200':
+          description: Service is alive
+  /readiness:
+    get:
+      tags:
+        - Service settings
+      operationId: f8a_admin.api_v1.get_readiness
+      summary: Get job service readiness
+      responses:
+        '200':
+          description: Service is ready
+  '/component-analyses/{ecosystem}/{component}/{version}':
+    get:
+      tags:
+        - Scan Services
+      operationId: f8a_scanner.api_v1.component-analyses
+      summary: Get security and other details about a software component and recommendations to change to a more secured version
+      parameters:
+        - in: path
+          name: ecosystem
+          type: string
+          required: true
+          description: component ecosystem
+        - in: path
+          name: component
+          type: string
+          required: true
+          description: component name
+        - in: path
+          name: version
+          type: string
+          required: true
+          description: component version
+      responses:
+        '200':
+          schema:
+            $ref: "#/definitions/ComponentAnalysesResponse"
+          description: Detailed response for the requested application component
+        '401':
+          description: Request unauthorized
+        '404':
+          description: Data not found
+definitions:
+  Version:
+    title: Component Version Details
+    description: Component version details
+    properties:
+      pecosystem:
+        type: array
+        items:
+          type: string
+      pname:
+        type: array
+        items:
+          type: string
+      version:
+        type: array
+        items:
+          type: string
+      declared_licenses:
+        type: array
+        items:
+          type: string
+      licenses:
+        type: array
+        items:
+          type: string
+      last_updated:
+        type: array
+        items:
+          type: number
+          format: float
+      vertex_label:
+        type: array
+        items:
+          type: string
+      cve_ids:
+        type: array
+        items:
+          type: string
+      description:
+        type: array
+        items:
+          type: string
+      cm_loc:
+        type: array
+        items:
+          type: integer
+      cm_num_files:
+        type: array
+        items:
+          type: integer
+      cm_avg_cyclomatic_complexity:
+        type: array
+        items:
+          type: integer
+      shipped_as_downstream:
+        type: array
+        items:
+          type: boolean
+      dependents_count:
+        type: array
+        items:
+          type: integer
+  Package:
+    title: Component Package Specific Details
+    description: Component package details
+    properties:
+      libio_dependents_repos:
+        type: array
+        items:
+          type: string
+      libio_latest_release:
+        type: array
+        items:
+          type: string
+      gh_prs_last_year_opened:
+        type: array
+        items:
+          type: integer
+      libio_latest_version:
+        type: array
+        items:
+          type: string
+      last_updated:
+        type: array
+        items:
+          type: number
+          format: float
+      gh_subscribers_count:
+        type: array
+        items:
+          type: number
+      gh_stargazers:
+        type: array
+        items:
+          type: number
+      libio_dependents_projects:
+        type: array
+        items:
+          type: string
+      gh_forks:
+        type: array
+        items:
+          type: integer
+      libio_usedby:
+        type: array
+        items:
+          type: string
+      gh_issues_last_month_closed:
+        type: array
+        items:
+          type: integer
+      ecosystem:
+        type: array
+        items:
+          type: string
+      gh_prs_last_year_closed:
+        type: array
+        items:
+          type: integer
+      gh_issues_last_year_opened:
+        type: array
+        items:
+          type: integer
+      gh_prs_last_month_closed:
+        type: array
+        items:
+          type: integer
+      gh_prs_last_month_opened:
+        type: array
+        items:
+          type: integer
+      vertex_label:
+        type: array
+        items:
+          type: string
+      gh_contributors_count:
+        type: array
+        items:
+          type: integer
+      gh_issues_last_month_opened:
+        type: array
+        items:
+          type: integer
+      gh_issues_last_year_closed:
+        type: array
+        items:
+          type: integer
+      latest_version:
+        type: array
+        items:
+          type: integer
+      gh_open_issues_count:
+        type: array
+        items:
+          type: integer
+      name:
+        type: array
+        items:
+          type: string
+      package_relative_used:
+        type: array
+        items:
+          type: string
+      package_dependents_count:
+        type: array
+        items:
+          type: integer
+      libio_total_releases:
+        type: array
+        items:
+          type: string
+      tokens:
+        type: array
+        items:
+          type: string
+  ComponentAnalysesDataDetails:
+    title: Component Analyses Package and Version
+    description: Component analyses data for package and version
+    properties:
+      version:
+        $ref: "#/definitions/Version"
+      package:
+        $ref: "#/definitions/Package"
+  CVE:
+    title: CVE and CVSS information
+    description: CVE details
+    properties:
+      cvss:
+        type: number
+        format: float
+      id:
+        type: string
+  CveDetails:
+    title: CVE Details
+    description: Information of the CVE found
+    properties:
+      cve:
+        type: array
+        items:
+          $ref: "#/definitions/CVE"
+  Recommendation:
+    title: Recommended Version Information
+    description: Recommended version information
+    properties:
+      change_to:
+        type: string
+      component-analyses:
+        $ref: "#/definitions/CveDetails"
+      message:
+        type: string
+  ComponentAnalysesData:
+    title: Component Analyses Data
+    description: Component analyses data
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/ComponentAnalysesDataDetails"
+      recommendation:
+        $ref: "#/definitions/Recommendation"
+  ComponentAnalysesResponse:
+    title: Response of Component Analyses 
+    description: Component analyses response
+    properties:
+      result:
+        $ref: "#/definitions/ComponentAnalysesData"
+
