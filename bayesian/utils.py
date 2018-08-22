@@ -1048,7 +1048,7 @@ def get_recommendation_feedback_by_ecosystem(ecosystem):
     try:
         return rdb.session.query(RecommendationFeedback). \
             join(StackAnalysisRequest).join(Ecosystem). \
-            filter(RecommendationFeedback.ecosystem_id == Ecosystem.by_name(ecosystem).id). \
+            filter(Ecosystem.name == ecosystem). \
             filter(RecommendationFeedback.stack_id == StackAnalysisRequest.id).all()
     except SQLAlchemyError:
         rdb.session.rollback()

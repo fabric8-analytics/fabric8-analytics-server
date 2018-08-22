@@ -23,7 +23,7 @@ from selinon import StoragePool
 from f8a_worker.models import (
     Ecosystem, StackAnalysisRequest, RecommendationFeedback)
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
-from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform, get_recommendation_feedback_by_ecosystem)
+from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
@@ -38,7 +38,8 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     get_item_from_list_by_key_value, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data, get_core_dependencies,
-                    create_directory_structure, push_repo, get_booster_core_repo)
+                    create_directory_structure, push_repo, get_booster_core_repo,
+                    get_recommendation_feedback_by_ecosystem)
 from .license_extractor import extract_licenses
 from .manifest_models import MavenPom
 
@@ -140,6 +141,7 @@ def get_items_for_page(items, page, per_page):
 
 def paginated(func):
     """Provide paginated output for longer responses."""
+
     @functools.wraps(func)
     def inner(*args, **kwargs):
         func_res = func(*args, **kwargs)
@@ -342,6 +344,7 @@ class StackAnalysesGET(ResourceWithSchema):
     """Implementation of the /stack-analyses GET REST API call method."""
 
     method_decorators = [login_required]
+
     # schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
@@ -761,11 +764,11 @@ class StackAnalyses(ResourceWithSchema):
                                                    ref=ref)
 
         # TODO: Enable license when need to analyze current stack license
-            # license = fetch_file_from_github(github_url, 'LICENSE')
-            # if license:
-            #     license_content = license[0].get('content')
-            #     if license_content:
-            #         license_files = [StringIO(license_content)]
+        # license = fetch_file_from_github(github_url, 'LICENSE')
+        # if license:
+        #     license_content = license[0].get('content')
+        #     if license_content:
+        #         license_files = [StringIO(license_content)]
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')
@@ -1004,7 +1007,7 @@ class DepEditorAnalyses(ResourceWithSchema):
             stack_recommendation = get_item_from_list_by_key_value(recommendations,
                                                                    "manifest_file_path",
                                                                    stack.get(
-                                                                        "manifest_file_path"))
+                                                                       "manifest_file_path"))
             for dep in user_stack_deps:
                 # Adding topics from the recommendations
                 if stack_recommendation is not None:
@@ -1179,23 +1182,23 @@ class EmptyBooster(ResourceWithSchema):
             'contains': [{'name': 'src',
                           'type': 'dir',
                           'contains': [
-                                {'name': 'main/java/io/openshift/booster',
-                                 'type': 'dir',
-                                 'contains': {'name': 'Booster.java',
-                                              'contains': 'package io.openshift.booster;\
+                              {'name': 'main/java/io/openshift/booster',
+                               'type': 'dir',
+                               'contains': {'name': 'Booster.java',
+                                            'contains': 'package io.openshift.booster;\
                                                       \npublic class Booster {\
                                                       \n public static void main(String[] args) { }\
                                                       \n} '}
-                                 },
-                                {'name': 'test/java/io/openshift/booster',
-                                 'type': 'dir',
-                                 'contains': {'name': 'BoosterTest.java',
-                                              'contains': 'package io.openshift.booster;\
+                               },
+                              {'name': 'test/java/io/openshift/booster',
+                               'type': 'dir',
+                               'contains': {'name': 'BoosterTest.java',
+                                            'contains': 'package io.openshift.booster;\
                                                     \n\npublic class BoosterTest { } '}
-                                 }]},
+                               }]},
                          {'name': 'pom.xml',
-                             'type': 'file',
-                             'contains': MavenPom.tostring(maven_obj)},
+                          'type': 'file',
+                          'contains': MavenPom.tostring(maven_obj)},
                          {'name': "Jenkinsfile",
                           'contains': open(jenkinsfile).read()}
                          ]
@@ -1206,12 +1209,15 @@ class EmptyBooster(ResourceWithSchema):
                   remote_repo, organization=git_org, auto_remove=True)
         return {'status': 'ok'}, 200
 
-class RecommendationFeedback(ResourceWithSchema):
+
+class RecommendationFeedback(Resource):
     """Implementation of /recommendation_feedback/<ecosystem> API call."""
 
     @staticmethod
     def get(ecosystem):
         """Implements GET method"""
+        if not ecosystem:
+            raise HTTPError(400, error="Expected ecosystem in the request")
 
         result = get_recommendation_feedback_by_ecosystem(ecosystem)
         return jsonify(result)
@@ -1248,6 +1254,7 @@ add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 add_resource_no_matter_slashes(CoreDependencies, '/get-core-dependencies/<runtime>')
 add_resource_no_matter_slashes(EmptyBooster, '/empty-booster')
 add_resource_no_matter_slashes(RecommendationFeedback, '/recommendation_feedback/<ecosystem>')
+
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined
