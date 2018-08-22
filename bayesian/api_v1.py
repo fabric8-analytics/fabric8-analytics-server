@@ -23,7 +23,7 @@ from selinon import StoragePool
 from f8a_worker.models import (
     Ecosystem, StackAnalysisRequest, RecommendationFeedback)
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
-from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
+from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform, get_recommendation_feedback_by_ecosystem)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
@@ -1206,6 +1206,16 @@ class EmptyBooster(ResourceWithSchema):
                   remote_repo, organization=git_org, auto_remove=True)
         return {'status': 'ok'}, 200
 
+class RecommendationFeedback(ResourceWithSchema):
+    """Implementation of /recommendation_feedback/<ecosystem> API call."""
+
+    @staticmethod
+    def get(ecosystem):
+        """Implements GET method"""
+
+        result = get_recommendation_feedback_by_ecosystem(ecosystem)
+        return jsonify(result)
+
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
@@ -1237,6 +1247,7 @@ add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
 add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 add_resource_no_matter_slashes(CoreDependencies, '/get-core-dependencies/<runtime>')
 add_resource_no_matter_slashes(EmptyBooster, '/empty-booster')
+add_resource_no_matter_slashes(RecommendationFeedback, '/recommendation_feedback/<ecosystem>')
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined

@@ -20,7 +20,7 @@ import semantic_version as sv
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
 from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
-                               WorkerResult, StackAnalysisRequest)
+                               WorkerResult, StackAnalysisRequest, RecommendationFeedback)
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 from f8a_worker.setup_celery import init_celery
@@ -1041,3 +1041,15 @@ def get_booster_core_repo(ref='master'):
     _zip = zipfile.ZipFile(BytesIO(resp.content))
     _zip = _zip.extractall('/tmp')
     return repo_path
+
+
+def get_recommendation_feedback_by_ecosystem(ecosystem):
+    """Return json object representing recommendation feedback and list of dependencies for recommendation"""
+    try:
+        return rdb.session.query(RecommendationFeedback). \
+            join(StackAnalysisRequest).join(Ecosystem). \
+            filter(RecommendationFeedback.ecosystem_id == Ecosystem.by_name(ecosystem).id). \
+            filter(RecommendationFeedback.stack_id == StackAnalysisRequest.id).all()
+    except SQLAlchemyError:
+        rdb.session.rollback()
+        raise
