@@ -141,7 +141,6 @@ def get_items_for_page(items, page, per_page):
 
 def paginated(func):
     """Provide paginated output for longer responses."""
-
     @functools.wraps(func)
     def inner(*args, **kwargs):
         func_res = func(*args, **kwargs)
@@ -1215,7 +1214,7 @@ class RecommendationFeedback(Resource):
 
     @staticmethod
     def get(ecosystem):
-        """Implements GET method"""
+        """Implement GET method."""
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 

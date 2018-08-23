@@ -313,8 +313,8 @@ class TestApiV1Schemas(object):
             assert received_schema == json_schema
 
     def test_get_recommendation_feedback(self, accept_json):
-        """Test GET endpoint for /recommendation_feedback/<ecosystem>"""
-        for ecosystem in ['npm','pipy','maven']:
+        """Test GET endpoint for /recommendation_feedback/<ecosystem>."""
+        for ecosystem in ['npm', 'pipy', 'maven']:
             path = api_route_for('/recommendation_feedback/{}'.format(ecosystem))
             res = self.client.get(path, headers=accept_json)
             assert res.status_code == 200

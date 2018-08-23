@@ -1044,7 +1044,7 @@ def get_booster_core_repo(ref='master'):
 
 
 def get_recommendation_feedback_by_ecosystem(ecosystem):
-    """Return json object representing recommendation feedback and list of dependencies for recommendation"""
+    """Return json object representing recommendation feedback."""
     try:
         return rdb.session.query(RecommendationFeedback). \
             join(StackAnalysisRequest).join(Ecosystem). \
