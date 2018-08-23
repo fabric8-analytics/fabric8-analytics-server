@@ -133,6 +133,7 @@ class TestApiV1Root(object):
             "/api/v1/get-core-dependencies/<runtime>",
             "/api/v1/get-next-component/<ecosystem>",
             "/api/v1/master-tags/<ecosystem>",
+            "/api/v1/recommendation_feedback/<ecosystem>",
             "/api/v1/schemas",
             "/api/v1/schemas/<collection>",
             "/api/v1/schemas/<collection>/<name>",
@@ -145,6 +146,7 @@ class TestApiV1Root(object):
             "/api/v1/user-feedback",
             "/api/v1/user-intent",
             "/api/v1/user-intent/<user>/<ecosystem>"
+
         ]
     }
 
@@ -309,6 +311,13 @@ class TestApiV1Schemas(object):
             self._check_schema_id(received_schema, path)
             received_schema.pop('id')
             assert received_schema == json_schema
+
+    def test_get_recommendation_feedback(self, accept_json):
+        """Test GET endpoint for /recommendation_feedback/<ecosystem>."""
+        for ecosystem in ['npm', 'pipy', 'maven']:
+            path = api_route_for('/recommendation_feedback/{}'.format(ecosystem))
+            res = self.client.get(path, headers=accept_json)
+            assert res.status_code == 200
 
 
 def test_get_item_skip():
