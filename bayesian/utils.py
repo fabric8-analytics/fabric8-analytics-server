@@ -1046,10 +1046,21 @@ def get_booster_core_repo(ref='master'):
 def get_recommendation_feedback_by_ecosystem(ecosystem):
     """Return json object representing recommendation feedback."""
     try:
-        return rdb.session.query(RecommendationFeedback). \
+        feedback_list = rdb.session.query(RecommendationFeedback). \
             join(StackAnalysisRequest).join(Ecosystem). \
             filter(Ecosystem.name == ecosystem). \
             filter(RecommendationFeedback.stack_id == StackAnalysisRequest.id).all()
+        result = []
+        for feedback in feedback_list:
+            feedback_dict = {
+                "recommendation_type": feedback.recommendation_type,
+                "recommended_package_name": feedback.package_name,
+                "feedback": feedback.feedback_type,
+                "input_package_list": feedback.stack_request.requestJson
+            }
+            result.append(feedback_dict)
+
+        return result
     except SQLAlchemyError:
         rdb.session.rollback()
         raise
