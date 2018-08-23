@@ -1056,7 +1056,7 @@ def get_recommendation_feedback_by_ecosystem(ecosystem):
                 "recommendation_type": feedback.recommendation_type,
                 "recommended_package_name": feedback.package_name,
                 "feedback": feedback.feedback_type,
-                "input_package_list": feedback.stack_request.requestJson
+                "input_package_list": feedback.stack_request.dep_snapshot
             }
             result.append(feedback_dict)
 
