@@ -1052,11 +1052,19 @@ def get_recommendation_feedback_by_ecosystem(ecosystem):
             filter(RecommendationFeedback.stack_id == StackAnalysisRequest.id).all()
         result = []
         for feedback in feedback_list:
+            if not feedback.stack_request.dep_snapshot:
+                dependencies = []
+            else:
+                dependencies = feedback.stack_request.dep_snapshot.\
+                    get('result', [{}])[0].\
+                    get('details', [{}])[0].\
+                    get('_resolved', [])
+
             feedback_dict = {
                 "recommendation_type": feedback.recommendation_type,
                 "recommended_package_name": feedback.package_name,
                 "feedback": feedback.feedback_type,
-                "input_package_list": feedback.stack_request.dep_snapshot.result.details
+                "input_package_list": dependencies
             }
             result.append(feedback_dict)
 
