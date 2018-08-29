@@ -10,7 +10,6 @@ from flask import redirect
 from flask import request
 from flask import url_for
 from flask_appconfig import AppConfig
-from flask_security import SQLAlchemyUserDatastore, Security
 from flask_sqlalchemy import SQLAlchemy
 from flask_cache import Cache
 

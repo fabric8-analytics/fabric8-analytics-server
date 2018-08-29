@@ -5,7 +5,7 @@ import enum
 
 from flask import current_app, request, g
 from flask_principal import Permission as PrincipalPermission
-from flask_security import RoleMixin, UserMixin, current_user, login_user
+from flask_security import RoleMixin, UserMixin, current_user
 from itsdangerous import BadSignature, SignatureExpired, TimedJSONWebSignatureSerializer
 import jwt
 from os import getenv
@@ -60,7 +60,7 @@ def get_access_token(service_name):
             return {"access_token": response.get('access_token')}
         else:
             return {"access_token": None}
-    except Exception as e:
+    except Exception:
         current_app.logger.error("Unable to connect to Auth service")
 
 

@@ -6,7 +6,7 @@ from selinon import FatalTaskError
 
 from flask import current_app
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
-from f8a_worker.models import StackAnalysisRequest, Ecosystem
+from f8a_worker.models import Ecosystem
 from f8a_worker.solver import get_ecosystem_solver
 from f8a_worker.storages import AmazonS3
 from tempfile import TemporaryDirectory
@@ -28,7 +28,7 @@ class DependencyFinder():
         solver = get_ecosystem_solver(ecosystem)
         try:
             versions = solver.solve(deps)
-        except Exception as exc:
+        except Exception:
             current_app.logger.error("Dependencies could not be resolved: '{}'" .format(deps))
             raise
         return [{"package": k, "version": v} for k, v in versions.items()]
@@ -109,7 +109,7 @@ class DependencyFinder():
                         resolved_deps = self._handle_external_deps(
                             Ecosystem.by_name(db, arguments['ecosystem']),
                             out["details"][0]["dependencies"])
-                    except Exception as exc:
+                    except Exception:
                         raise
 
                 out["details"][0]['_resolved'] = resolved_deps
