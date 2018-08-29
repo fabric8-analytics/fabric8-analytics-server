@@ -1,8 +1,5 @@
 """Tests for JWT authorization."""
 
-import pytest
-from bayesian import auth
-
 
 def test_decode_token():
     """Test for the function decode_token()."""

@@ -1,9 +1,8 @@
 """Tests for functions implemented in the license_extractor module."""
 
-import pytest
-from unittest.mock import *
+from unittest.mock import patch, app
 
-from bayesian.license_extractor import *
+from bayesian.license_extractor import get_license_synonyms, extract_licenses
 
 
 def setUp(self):
