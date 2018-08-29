@@ -3,18 +3,8 @@
 import datetime
 import json
 import os
-try:
-    import urlparse
-except ImportError:
-    import urllib.parse as urlparse
 
-from flask import current_app, url_for
-from flask_security import current_user, AnonymousUser
-import flexmock
-from freezegun import freeze_time
 import pytest
-import requests
-import jsonschema
 
 from bayesian import api_v1
 from bayesian.schemas import load_all_server_schemas
@@ -97,6 +87,10 @@ def fill_analyses(app):
                      task_result={'schema': {'name': 'source_licenses', 'version': '1-0-0'}},
                      analysis=analyses[1])
     ]
+
+    # TODO: just a placeholder, it won't work in real tests!!!
+    package_gh_usage = None
+
     for a in ecosystems + packages + versions + analyses + worker_results + package_gh_usage:
         app.rdb.session.add(a)
         app.rdb.session.commit()

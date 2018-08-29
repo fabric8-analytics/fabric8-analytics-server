@@ -607,7 +607,7 @@ class GithubRead:
                         "content": file_content,
                         "filepath": filepath.replace(self.CLONED_DIR, '')
                     })
-        except Exception as e:
+        except Exception:
             raise HTTPError(500, "Error in reading repo from github.")
         finally:
             self.del_temp_files()

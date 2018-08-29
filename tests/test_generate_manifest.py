@@ -1,7 +1,6 @@
 """Tests for classes from generate_manifest module."""
 
-import pytest
-from bayesian.generate_manifest import *
+from bayesian.generate_manifest import PomXMLTemplate
 
 
 def test_constructor():
