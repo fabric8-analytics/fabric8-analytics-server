@@ -5,7 +5,6 @@ This token is to be passed as header with requests to Bayesian API.
 
 import jwt
 import datetime
-import base64
 
 expiry = datetime.datetime.utcnow() + datetime.timedelta(days=90)
 userid = "testuser"
