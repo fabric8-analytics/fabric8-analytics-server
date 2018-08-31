@@ -384,6 +384,7 @@ class User(rdb.Model, UserMixin):
     @classmethod
     def get_by_token(cls, token):
         """Find the owner of given security token."""
+        assert cls
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
         # may raise BadSignature or SignatureExpired
         data = s.loads(token)

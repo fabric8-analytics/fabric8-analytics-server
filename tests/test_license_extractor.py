@@ -17,13 +17,13 @@ def tearDown(self):
     self.app_context.pop()
 
 
-def current_app_logger(str):
+def current_app_logger(_str):
     """Mock for the logger."""
     pass
 
 
 @patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
-def test_get_license_synonyms(mocked_object):
+def test_get_license_synonyms(_mocked_object):
     """Test the function get_license_synonyms()."""
     # make sure the LRU cache is clear
     get_license_synonyms.cache.clear()
@@ -49,21 +49,23 @@ class _response:
 
 def mocked_requests_get(url):
     """Implement mocked function requests.get()."""
+    assert url
     return _response(404, "Not Found!")
 
 
 @patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
 @patch("bayesian.license_extractor.get", side_effect=mocked_requests_get)
-def test_get_license_synonyms_wrong_response(mocked_get, mocked_function):
+def test_get_license_synonyms_wrong_response(mocked_get, _mocked_function):
     """Test the function get_license_synonyms()."""
     # make sure the LRU cache is clear
     get_license_synonyms.cache.clear()
     result = get_license_synonyms()
     assert not result
+    assert mocked_get.called
 
 
 @patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
-def test_extract_licenses(mocked_object):
+def test_extract_licenses(_mocked_object):
     """Test the function extract_licenses()."""
     # TODO: reduce cyclomatic complexity
     # make sure the LRU cache is clear
@@ -102,10 +104,11 @@ def test_extract_licenses_no_synonyms(mocked_function):
     get_license_synonyms.cache.clear()
     result = extract_licenses([])
     assert not result
+    assert mocked_function.called
 
 
 @patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
-def test_extract_licenses_wrong_file(mocked_function):
+def test_extract_licenses_wrong_file(_mocked_function):
     """Test the function extract_licenses()."""
     # make sure the LRU cache is clear
     get_license_synonyms.cache.clear()
