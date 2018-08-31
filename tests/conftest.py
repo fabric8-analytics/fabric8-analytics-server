@@ -34,6 +34,7 @@ def app():
 @pytest.fixture
 def rdb(app, request):
     """Fixture with static data in RDB."""
+    assert request
     # TODO: we may need to run actual migrations here
     app.rdb.drop_all()
     Base.metadata.drop_all(bind=app.rdb.engine)

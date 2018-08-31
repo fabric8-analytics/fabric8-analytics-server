@@ -17,13 +17,13 @@ def tearDown(self):
     self.app_context.pop()
 
 
-def current_app_logger(str):
+def current_app_logger(_str):
     """Mock for the logger."""
     pass
 
 
 @patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
-def test_get_license_synonyms(mocked_object):
+def test_get_license_synonyms(_mocked_object):
     """Test the function get_license_synonyms()."""
     # make sure the LRU cache is clear
     get_license_synonyms.cache.clear()
@@ -49,6 +49,7 @@ class _response:
 
 def mocked_requests_get(url):
     """Implement mocked function requests.get()."""
+    assert url
     return _response(404, "Not Found!")
 
 

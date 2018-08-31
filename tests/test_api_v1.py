@@ -101,6 +101,7 @@ def fill_analyses(app):
 @pytest.fixture
 def fill_packages_for_paging(app, request):
     """Create and store set of packages used by unit tests."""
+    assert request
     e = Ecosystem(name='pypi', backend=EcosystemBackend.pypi)
     app.rdb.session.add(e)
     for p in range(0, 11):
