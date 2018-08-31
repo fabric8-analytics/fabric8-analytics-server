@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from bayesian.license_extractor import __init__
+from bayesian.__init__ import app
 from bayesian.license_extractor import get_license_synonyms, extract_licenses
 
 
