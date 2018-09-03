@@ -1,4 +1,4 @@
-FROM server-tests
+FROM bayesian-api
 MAINTAINER Tomas Tomecek <ttomecek@redhat.com>
 
 ENV PYTHONDONTWRITEBYTECODE 1

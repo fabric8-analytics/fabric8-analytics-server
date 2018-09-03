@@ -161,6 +161,7 @@ class TestCommonEndpoints(object):
         res = self.client.get(api_route_for('/readiness'), headers=accept_json)
         assert res.status_code == 200
 
+    @pytest.mark.usefixtures('rdb')
     def test_liveness(self, accept_json):
         """Test the /liveness endpoint."""
         res = self.client.get(api_route_for('/liveness'), headers=accept_json)

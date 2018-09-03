@@ -1,5 +1,6 @@
 """Environment configuration for tests."""
 
 
-DEBUG = False
+DEBUG = True
+TESTING = True
 API_TOKEN_LIFETIME = 2

@@ -17,6 +17,7 @@ all: fast-docker-build
 docker-build:
 	docker build --no-cache -t $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) -f $(DOCKERFILE) .
 	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(TESTS_IMAGE):$(DEFAULT_TAG)
+	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) bayesian-api
 
 docker-build-tests: docker-build
 	docker build --no-cache -t $(TESTS_IMAGE) -f Dockerfile.tests .
@@ -24,6 +25,7 @@ docker-build-tests: docker-build
 fast-docker-build:
 	docker build -t $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) -f $(DOCKERFILE) .
 	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(TESTS_IMAGE):$(DEFAULT_TAG)
+	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) bayesian-api
 
 fast-docker-build-tests:
 	docker build -t $(TESTS_IMAGE) -f Dockerfile.tests .
