@@ -13,9 +13,9 @@ here=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
 TIMESTAMP="$(date +%F-%H-%M-%S)"
 DB_CONTAINER_NAME="db-server-tests-${TIMESTAMP}"
 CONTAINER_NAME="server-tests-${TIMESTAMP}"
-IMAGE_NAME=${IMAGE_NAME:-server-tests}
-TEST_IMAGE_NAME="coreapi-server-tests"
-POSTGRES_IMAGE_NAME="registry.centos.org/centos/postgresql-94-centos7:latest"
+IMAGE_NAME=${IMAGE_NAME:-bayesian-api}
+TEST_IMAGE_NAME="server-tests"
+POSTGRES_IMAGE_NAME="registry.centos.org/centos/postgresql-96-centos7:latest"
 DOCKER_NETWORK="F8aServerTest"
 
 gc() {
