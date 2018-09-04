@@ -156,13 +156,13 @@ parameters:
   displayName: Docker registry
   required: true
   name: DOCKER_REGISTRY
-  value: "registry.devshift.net"
+  value: "quay.io"
 
 - description: Docker image to use
   displayName: Docker image
   required: true
   name: DOCKER_IMAGE
-  value: "bayesian/bayesian-api"
+  value: "openshiftio/bayesian-bayesian-api"
 
 - description: Image tag
   displayName: Image tag
