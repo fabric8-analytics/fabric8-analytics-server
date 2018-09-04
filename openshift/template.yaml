@@ -38,7 +38,7 @@ objects:
             value: "100"
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
-          - name: AUTH_URL
+          - name: OSIO_AUTH_URL
             valueFrom:
               configMapKeyRef:
                 name: bayesian-config
