@@ -38,7 +38,7 @@ objects:
             value: "100"
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
-          - name: AUTH_URL
+          - name: OSIO_AUTH_URL
             valueFrom:
               configMapKeyRef:
                 name: bayesian-config
@@ -47,8 +47,8 @@ objects:
             valueFrom:
               configMapKeyRef:
                 name: bayesian-config
-                key: keycloak-url
-          - name: BAYESIAN_JWT_AUDIENCE
+                key: auth-url
+          - name: FABRIC8_ANALYTICS_JWT_AUDIENCE
             value: "fabric8-online-platform,openshiftio-public"
           - name: SENTRY_DSN
             value: "${SENTRY_DSN}"
@@ -156,13 +156,13 @@ parameters:
   displayName: Docker registry
   required: true
   name: DOCKER_REGISTRY
-  value: "registry.devshift.net"
+  value: "quay.io"
 
 - description: Docker image to use
   displayName: Docker image
   required: true
   name: DOCKER_IMAGE
-  value: "bayesian/bayesian-api"
+  value: "openshiftio/bayesian-bayesian-api"
 
 - description: Image tag
   displayName: Image tag
