@@ -8,7 +8,6 @@ import urllib
 import tempfile
 import json
 
-from io import StringIO
 from collections import defaultdict
 
 import botocore
@@ -28,7 +27,7 @@ from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
 from .dependency_finder import DependencyFinder
-from fabric8a_auth.auth import login_required, decode_token
+from fabric8a_auth.auth import login_required
 from .auth import get_access_token
 from .exceptions import HTTPError
 from .schemas import load_all_server_schemas
@@ -794,8 +793,6 @@ class StackAnalyses(ResourceWithSchema):
             request_id = uuid.uuid4().hex
             is_modified_flag = {'is_modified': False}
 
-        iso = datetime.datetime.utcnow().isoformat()
-
         manifests = []
         ecosystem = None
         for index, manifest_file_raw in enumerate(files):
@@ -813,9 +810,6 @@ class StackAnalyses(ResourceWithSchema):
             if manifest_descriptor is None:
                 raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
                     filename=filename))
-
-            # In memory file to be passed as an API parameter to /appstack
-            manifest_file = StringIO(content)
 
             # Check if the manifest is valid
             if not manifest_descriptor.validate(content):
@@ -1207,7 +1201,7 @@ class EmptyBooster(ResourceWithSchema):
         return {'status': 'ok'}, 200
 
 
-class RecommendationFeedback(Resource):
+class RecommendationFB(Resource):
     """Implementation of /recommendation_feedback/<ecosystem> API call."""
 
     @staticmethod
@@ -1250,7 +1244,7 @@ add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
 add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 add_resource_no_matter_slashes(CoreDependencies, '/get-core-dependencies/<runtime>')
 add_resource_no_matter_slashes(EmptyBooster, '/empty-booster')
-add_resource_no_matter_slashes(RecommendationFeedback, '/recommendation_feedback/<ecosystem>')
+add_resource_no_matter_slashes(RecommendationFB, '/recommendation_feedback/<ecosystem>')
 
 
 @api_v1.errorhandler(HTTPError)
