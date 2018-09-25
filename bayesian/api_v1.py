@@ -743,11 +743,8 @@ class StackAnalyses(ResourceWithSchema):
                         ))
 
                     _session.headers['Authorization'] = request.headers.get('Authorization')
-                    _session.post('{}/api/v1/user-repo/scan/experimental'.format(api_url),
+                    _session.post('{}/api/v1/user-repo/scan'.format(api_url),
                                   data=data, files=files)
-                else:
-                    _session.headers['Authorization'] = request.headers.get('Authorization')
-                    _session.post('{}/api/v1/user-repo/scan'.format(api_url), json=data)
             except Exception as exc:
                 raise HTTPError(500, "Could not process the scan endpoint call") \
                     from exc
