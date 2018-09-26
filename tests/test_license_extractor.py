@@ -29,14 +29,14 @@ def test_get_license_synonyms(_mocked_object):
     get_license_synonyms.cache.clear()
     result = get_license_synonyms()
     assert len(result) > 0
-    assert "BSD" in result
-    assert "GPL" in result
+    assert "bsd" in result
+    assert "gpl" in result
 
     # do the same thing (use LRU actually)
     result = get_license_synonyms()
     assert len(result) > 0
-    assert "BSD" in result
-    assert "GPL" in result
+    assert "bsd" in result
+    assert "gpl" in result
 
 
 class _response:
