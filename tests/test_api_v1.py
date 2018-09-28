@@ -124,6 +124,7 @@ class TestApiV1Root(object):
             "/api/v1/depeditor-analyses",
             "/api/v1/depeditor-cve-analyses",
             "/api/v1/empty-booster",
+            "/api/v1/gateway-authorization",
             "/api/v1/generate-file",
             "/api/v1/get-core-dependencies/<runtime>",
             "/api/v1/get-next-component/<ecosystem>",
