@@ -20,7 +20,8 @@ from sqlalchemy.dialects.postgresql import insert
 from selinon import StoragePool
 
 from f8a_worker.models import (
-    Ecosystem, StackAnalysisRequest, RecommendationFeedback)
+        Ecosystem, StackAnalysisRequest, RecommendationFeedback,
+        AuthorizedThreeScaleAccounts)
 from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
 from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
@@ -1211,6 +1212,72 @@ class RecommendationFB(Resource):
         return jsonify(result)
 
 
+class GatewayAuthorization(Resource):
+    """Implementation of 3scale /gateway-authorization API calls."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Implement POST method."""
+        input_json = request.get_json()
+        if not input_json:
+            raise HTTPError(400, error="Expected JSON request")
+
+        if 'account_name' not in input_json:
+            raise HTTPError(400, error="Expected account_name in request")
+
+        if 'account_secret' not in input_json:
+            raise HTTPError(400, error="Expected account_secret in request")
+
+        account_name = input_json.get('account_name')
+        account_secret = input_json.get('account_secret')
+        admin_id = g.decoded_token.get('email')
+
+        try:
+            insert_stmt = AuthorizedThreeScaleAccounts(
+                account_name=account_name,
+                account_secret=account_secret,
+                admin_id=admin_id,
+            )
+            rdb.session.add(insert_stmt)
+            rdb.session.commit()
+            return {"status": "success", "id": insert_stmt.id}
+        except SQLAlchemyError as e:
+            rdb.session.rollback()
+            raise HTTPError(500, "Error inserting log for request") from e
+
+    @staticmethod
+    def delete():
+        """Implement DELETE method."""
+        input_json = request.get_json()
+        if not input_json:
+            raise HTTPError(400, error="Expected JSON request")
+
+        if 'account_name' not in input_json:
+            raise HTTPError(400, error="Expected account_name in request")
+
+        if 'account_secret' not in input_json:
+            raise HTTPError(400, error="Expected account_secret in request")
+
+        account_name = input_json.get('account_name')
+        account_secret = input_json.get('account_secret')
+
+        try:
+            query = rdb.session.query(AuthorizedThreeScaleAccounts).\
+                filter(AuthorizedThreeScaleAccounts.account_secret == account_secret).\
+                filter(AuthorizedThreeScaleAccounts.account_name == account_name).\
+                first()
+            if query:
+                rdb.session.delete(query)
+                rdb.session.commit()
+                return {"status": "success", "id": query.id}
+            return {"status": "No Match found"}
+        except SQLAlchemyError as e:
+            rdb.session.rollback()
+            raise HTTPError(500, "Error deleting log for request") from e
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
@@ -1242,6 +1309,7 @@ add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 add_resource_no_matter_slashes(CoreDependencies, '/get-core-dependencies/<runtime>')
 add_resource_no_matter_slashes(EmptyBooster, '/empty-booster')
 add_resource_no_matter_slashes(RecommendationFB, '/recommendation_feedback/<ecosystem>')
+add_resource_no_matter_slashes(GatewayAuthorization, '/gateway-authorization')
 
 
 @api_v1.errorhandler(HTTPError)
