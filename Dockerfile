@@ -35,7 +35,7 @@ RUN pushd /coreapi && \
     find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
 
 RUN pip3 install git+https://github.com/ravsa/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
-RUN pip3 install git+https://github.com/samuzzal-choudhury/fabric8-analytics-auth.git@ce722e4
+RUN pip3 install git+https://github.com/samuzzal-choudhury/fabric8-analytics-auth.git@cfedd64
 
 # Required by the solver task in worker to resolve dependencies from package.json
 RUN npm install -g semver-ranger
