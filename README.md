@@ -123,6 +123,8 @@ The first script measures cyclomatic complexity of all Python sources found in t
 
 The second script measures maintainability index of all Python sources found in the repository. Please see [the following link](https://radon.readthedocs.io/en/latest/commandline.html#the-mi-command) with explanation of this measurement.
 
+You can specify command line option `--fail-on-error` if you need to use the exit code in your workflow.
+
 #### Dead code detection
 
 The script `detect-dead-code.sh` can be used to detect dead code in the repository. This script can be run w/o any arguments:
