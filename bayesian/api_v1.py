@@ -718,17 +718,21 @@ class StackAnalyses(ResourceWithSchema):
         github_url = request.form.get("github_url")
         ref = request.form.get('github_ref')
         user_email = request.headers.get('UserEmail')
+        # These variables are used for gemini flow.
         scan_repo_url = request.headers.get('ScanRepoUrl')
+        is_scan_enabled = request.headers.get('IsScanEnabled')
+        ecosystem = request.headers.get('Ecosystem')
+
         if not user_email:
             user_email = g.decoded_token.get('email', 'bayesian@redhat.com')
 
-        if scan_repo_url:
+        if is_scan_enabled:
             try:
                 api_url = GEMINI_SERVER_URL
                 dependency_files = request.files.getlist('dependencyFile[]')
                 current_app.logger.info('%r' % dependency_files)
                 data = {'git-url': scan_repo_url,
-                        'email-ids': [user_email]}
+                        'ecosystem': ecosystem}
                 if dependency_files:
                     files = list()
                     for dependency_file in dependency_files:
