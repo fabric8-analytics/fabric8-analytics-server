@@ -1,7 +1,8 @@
 FROM registry.centos.org/centos/centos:7
 
 ENV LANG=en_US.UTF-8 \
-    F8A_WORKER_VERSION=dfd392a
+    F8A_WORKER_VERSION=dfd392a \
+    F8A_AUTH_VERSION=f28dd87
 
 RUN useradd -d /coreapi coreapi
 
@@ -35,7 +36,7 @@ RUN pushd /coreapi && \
     find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
 
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
-RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git
+RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@${F8A_AUTH_VERSION}
 
 # Required by the solver task in worker to resolve dependencies from package.json
 RUN npm install -g semver-ranger
