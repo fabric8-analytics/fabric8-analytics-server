@@ -13,3 +13,13 @@ function prepare_venv() {
 [ "$NOVENV" == "1" ] || prepare_venv || exit 1
 
 radon mi -s -i venv .
+
+if [[ "$1" == "--fail-on-error" ]]
+then
+    defects="$(radon mi -s -n B -i venv . | wc -l)"
+    if [[ $defects -gt 0 ]]
+    then
+        echo "File(s) with too low maintainability index detected!"
+        exit 1
+    fi
+fi
