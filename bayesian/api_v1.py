@@ -717,18 +717,14 @@ class StackAnalyses(ResourceWithSchema):
         check_license = request.args.get('check_license', 'false') == 'true'
         github_url = request.form.get("github_url")
         ref = request.form.get('github_ref')
-        user_email = request.headers.get('UserEmail')
-        scan_repo_url = request.headers.get('ScanRepoUrl')
-        if not user_email:
-            user_email = g.decoded_token.get('email', 'bayesian@redhat.com')
 
+        scan_repo_url = request.headers.get('ScanRepoUrl')
         if scan_repo_url:
             try:
                 api_url = GEMINI_SERVER_URL
                 dependency_files = request.files.getlist('dependencyFile[]')
                 current_app.logger.info('%r' % dependency_files)
-                data = {'git-url': scan_repo_url,
-                        'email-ids': [user_email]}
+                data = {'git-url': scan_repo_url}
                 if dependency_files:
                     files = list()
                     for dependency_file in dependency_files:
@@ -755,13 +751,6 @@ class StackAnalyses(ResourceWithSchema):
                                                    filename='pom.xml',
                                                    token=github_token.get('access_token'),
                                                    ref=ref)
-
-        # TODO: Enable license when need to analyze current stack license
-        # license = fetch_file_from_github(github_url, 'LICENSE')
-        # if license:
-        #     license_content = license[0].get('content')
-        #     if license_content:
-        #         license_files = [StringIO(license_content)]
         else:
             files = request.files.getlist('manifest[]')
             filepaths = request.values.getlist('filePath[]')
@@ -821,12 +810,9 @@ class StackAnalyses(ResourceWithSchema):
 
             manifests.append(manifest)
 
-        data = {'api_name': 'stack_analyses',
-                'user_email': user_email,
-                'user_profile': g.decoded_token}
+        data = {'api_name': 'stack_analyses'}
         args = {'external_request_id': request_id,
                 'ecosystem': ecosystem, 'data': data}
-
         try:
             api_url = current_app.config['F8_API_BACKBONE_HOST']
 
