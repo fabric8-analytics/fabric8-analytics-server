@@ -51,9 +51,15 @@ from fabric8a_auth.errors import AuthError
 
 
 # TODO: improve maintainability index
+errors = {
+        'AuthError': {
+                         'status': 401,
+                         'message': 'Authentication failed',
+                         'some_description': 'Authentication failed'
+                     }}
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
-rest_api_v1 = Api(api_v1)
+rest_api_v1 = Api(api_v1, errors=errors)
 
 pagination_parser = reqparse.RequestParser()
 pagination_parser.add_argument('page', type=int, default=0)
