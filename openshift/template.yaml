@@ -87,6 +87,11 @@ objects:
               secretKeyRef:
                 name: aws
                 key: s3-secret-access-key
+          - name: THREESCALE_ACCOUNT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: 3scale
+                key: three_scale_account_secret
           - name: FLASK_LOGGING_LEVEL
             value: ${FLASK_LOGGING_LEVEL}
           image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
