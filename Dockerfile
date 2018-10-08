@@ -41,12 +41,6 @@ RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-auth
 # Required by the solver task in worker to resolve dependencies from package.json
 RUN npm install -g semver-ranger
 
-COPY .git/ /tmp/.git
-# date and hash of last commit
-RUN cd /tmp/.git &&\
-    git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD | tee /etc/coreapi-release &&\
-    rm -rf /tmp/.git/
-
 COPY hack/coreapi-server.sh hack/server+pmcd.sh /usr/bin/
 
 EXPOSE 44321
