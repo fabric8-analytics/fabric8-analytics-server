@@ -7,7 +7,6 @@ from flask import Flask
 from flask import Response
 from flask import g
 from flask import redirect
-from flask import request
 from flask import url_for
 from flask_appconfig import AppConfig
 from flask_sqlalchemy import SQLAlchemy
@@ -60,24 +59,8 @@ def create_app(configfile=None):
         return redirect(url_for('api_v1.apiendpoints__slashless'))
 
     @app.errorhandler(HTTPError)
-    def handleerrors(e):
-        bp = app.blueprints.get(request.blueprint)
-        # if there's an error pre-request (e.g. during authentication) in non-GET requests,
-        #  request.blueprint is not set yet
-        if not bp:
-            # sort by the length of url_prefix, filter out blueprints without prefix
-            bps = reversed(sorted(
-                [(name, b) for name, b in app.blueprints.items() if b.url_prefix is not None],
-                key=lambda tpl: len(tpl[1].url_prefix)))
-            for bp_name, b in bps:
-                if request.environ['PATH_INFO'].startswith(b.url_prefix):
-                    bp = b
-                    break
-        if bp:
-            handler = getattr(bp, 'coreapi_http_error_handler', None)
-            if handler:
-                return handler(e)
-        return Response(e.error, status=e.status_code)
+    def coreapi_http_error_handler(e):
+        return Response(e.description, status=e.code)
 
     setup_logging(app)
 

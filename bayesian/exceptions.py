@@ -1,7 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """Representation of HTTP error."""
+from werkzeug.exceptions import HTTPException
 
 
-class HTTPError(Exception):
+class HTTPError(HTTPException):
     """Representation of HTTP error.
 
     This is a class that represents an HTTP error that occured somewhere.
@@ -15,6 +19,6 @@ class HTTPError(Exception):
 
     def __init__(self, status_code, error):
         """Call the superclass constructor and set status code and error attributes."""
-        Exception.__init__(self)
-        self.status_code = status_code
-        self.error = error
+        super().__init__(self)
+        self.code = status_code
+        self.description = error
