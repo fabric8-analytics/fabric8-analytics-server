@@ -22,3 +22,4 @@ class HTTPError(HTTPException):
         super().__init__(self)
         self.code = status_code
         self.description = error
+        self.data = {'error': self.description}
