@@ -4,7 +4,6 @@ import logging
 import os
 
 from flask import Flask
-from flask import Response
 from flask import g
 from flask import redirect
 from flask import url_for
@@ -35,7 +34,6 @@ def create_app(configfile=None):
     # do the imports here to not shadow e.g. "import bayesian.frontend.api_v1"
     # by Blueprint imported here
     from .api_v1 import api_v1
-    from .exceptions import HTTPError
     from .utils import JSONEncoderWithExtraTypes
     app = Flask(__name__)
     AppConfig(app, configfile)
@@ -57,10 +55,6 @@ def create_app(configfile=None):
     @app.route('/')
     def base_url():
         return redirect(url_for('api_v1.apiendpoints__slashless'))
-
-    @app.errorhandler(HTTPError)
-    def coreapi_http_error_handler(e):
-        return Response(e.description, status=e.code)
 
     setup_logging(app)
 
