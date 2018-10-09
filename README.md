@@ -123,7 +123,7 @@ The first script measures cyclomatic complexity of all Python sources found in t
 
 The second script measures maintainability index of all Python sources found in the repository. Please see [the following link](https://radon.readthedocs.io/en/latest/commandline.html#the-mi-command) with explanation of this measurement.
 
-You can specify command line option `--fail-on-error` if you need to use the exit code in your workflow.
+You can specify command line option `--fail-on-error` if you need to check and use the exit code in your workflow. In this case the script returns 0 when no failures has been found and non zero value instead.
 
 #### Dead code detection
 
@@ -156,3 +156,4 @@ The script named `check-bashscripts.sh` can be used to check all BASH scripts (i
 ```
 
 Please see [the following link](https://github.com/koalaman/shellcheck) for further explanation, how the ShellCheck works and which issues can be detected.
+
