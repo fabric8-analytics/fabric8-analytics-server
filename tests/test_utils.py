@@ -5,6 +5,7 @@ import pytest
 import semantic_version as sv
 import tempfile
 import os
+import json
 
 from bayesian.utils import (
     get_core_dependencies,
@@ -14,7 +15,9 @@ from bayesian.utils import (
     convert_version_to_proper_semantic as cvs,
     version_info_tuple as vt,
     select_latest_version as slv,
-    create_directory_structure as cds)
+    create_directory_structure as cds,
+    GremlinComponentAnalysisResponse
+)
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
 from urllib.request import urlopen
@@ -263,3 +266,23 @@ def test_create_dir_structure():
     assert os.path.exists(os.path.join(root_path, 'parentdir'))
     assert os.path.exists(os.path.join(root_path, 'parentdir', 'childdir'))
     assert os.path.isfile(os.path.join(root_path, 'parentdir', 'hello.txt'))
+
+
+def test_gremlin_component_analysis_response():
+    """Test GremlinComponentAnalysisResponse."""
+    rest_json_path = os.path.join(
+        os.path.dirname(__file__),
+        'data/gremlin/component_analysis_response'
+    )
+    with open(rest_json_path) as f:
+        resp_json = json.load(f)
+        data = resp_json['result']['data']
+
+        resp = GremlinComponentAnalysisResponse(
+            'commons-fileupload:commons-fileupload', '1.2', data
+        )
+
+        assert resp.has_cves(), str(resp._cves)
+        assert resp.get_max_cvss_score() == 3.3
+        assert resp.get_version_without_cves() == '1.3.3'
+        assert len(resp.get_cve_maps()) == 1
