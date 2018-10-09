@@ -4,7 +4,7 @@ LABEL author "Devtools <devtools@redhat.com>"
 
 ENV LANG=en_US.UTF-8 \
     F8A_WORKER_VERSION=dfd392a \
-    F8A_AUTH_VERSION=491ca6d
+    F8A_AUTH_VERSION=eac41e0
 
 RUN useradd -d /coreapi coreapi
 
