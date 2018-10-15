@@ -2,6 +2,9 @@
 
 # TODO split this module into categories (graph DB, analyses etc.)
 
+# Improve maintainability index
+# TODO: https://github.com/fabric8-analytics/fabric8-analytics-server/issues/373
+
 import datetime
 import json
 import os
