@@ -51,6 +51,8 @@ from fabric8a_auth.errors import AuthError
 
 
 # TODO: improve maintainability index
+# TODO: https://github.com/fabric8-analytics/fabric8-analytics-server/issues/373
+
 errors = {
         'AuthError': {
                          'status': 401,
