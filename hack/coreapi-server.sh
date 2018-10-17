@@ -12,7 +12,7 @@ exec mod_wsgi-express start-server \
                       --port 5000 \
                       --user coreapi \
                       --group coreapi \
-                      --processes 3 \
+                      --processes 1 \
                       --threads 1 \
                       ${!F8A_DEBUG:---reload-on-changes} \
                       --access-log \
