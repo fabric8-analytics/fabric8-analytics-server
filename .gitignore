@@ -78,3 +78,6 @@ worker/
 
 # patches
 *.patch
+
+html/
+latex/
