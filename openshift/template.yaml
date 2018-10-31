@@ -52,6 +52,8 @@ objects:
             value: "fabric8-online-platform,openshiftio-public,https://prod-preview.openshift.io,https://openshift.io"
           - name: SENTRY_DSN
             value: "${SENTRY_DSN}"
+          - name: INVOKE_API_WORKERS
+            value: "1"
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
