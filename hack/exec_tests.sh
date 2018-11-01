@@ -8,12 +8,12 @@ set -e
 echo "*****************************************"
 echo "*** Cyclomatic complexity measurement ***"
 echo "*****************************************"
-radon cc -s -a -i venv /bayesian/bayesian/ $@
+radon cc -s -a -i venv /bayesian/bayesian/
 
 echo "*****************************************"
 echo "*** Maintainability Index measurement ***"
 echo "*****************************************"
-radon mi -s -i venv /bayesian/bayesian/ $@
+radon mi -s -i venv /bayesian/bayesian/
 
 echo "*****************************************"
 echo "*** Unit tests ***"

@@ -164,75 +164,113 @@ def add_field(analysis, field, ret):
     prev_ret[f] = analysis
 
 
+class GremlinComponentAnalysisResponse(object):
+    """Wrapper around Gremlin component analysis response."""
+
+    def __init__(self, package, version, response):
+        """Constructor."""
+        self._package = package
+        self._version = version
+        self._cves = []
+        self._nocve_versions = []
+        self.results = []
+
+        # response from Gremlin is kinda weird...
+        for data in response:
+            this_version = data.get('version', {}).get('version', [None])[0]
+            if this_version == self._version:
+                self.results = data
+                if 'cve' in data:
+                    self._cves.append(data.get('cve'))
+            else:
+                # different version; we can recommend it, if there is no CVE
+                if 'cve' not in data and this_version is not None:
+                    self._nocve_versions.append(this_version)
+
+    def has_cves(self):
+        """Return True if this EPV has CVEs, False otherwise."""
+        return bool(self._cves)
+
+    def get_cve_maps(self):
+        """Get all CVEs for this EPV."""
+        cve_maps = []
+        for cve in self._cves:
+            cve_map = {
+                'id': cve.get('cve_id')[0],
+                'cvss': cve.get('cvss_v2')[0]
+            }
+            cve_maps.append(cve_map)
+
+        return cve_maps
+
+    def get_max_cvss_score(self):
+        """Get highest CVSS score of all CVEs associated with this EPV."""
+        max_cvss = 0.0
+        for cve in self._cves:
+            cvss = cve.get('cvss_v2')[0]
+            try:
+                cvss = float(cvss)
+                if cvss > max_cvss:
+                    max_cvss = cvss
+            except (TypeError, ValueError):
+                # It is possible that some CVEs don't have CVSS score - this is fine
+                pass
+
+        return max_cvss
+
+    def get_version_without_cves(self):
+        """Return higher version which doesn't have any CVEs. None if there is no such version."""
+        input_version_tuple = version_info_tuple(
+            convert_version_to_proper_semantic(self._version)
+        )
+
+        highest_version = ''
+
+        for version in self._nocve_versions:
+            graph_version_tuple = version_info_tuple(
+                convert_version_to_proper_semantic(version)
+            )
+            if graph_version_tuple > input_version_tuple:
+                if not highest_version:
+                    highest_version = version
+                highest_version_tuple = version_info_tuple(
+                    convert_version_to_proper_semantic(highest_version)
+                )
+                if graph_version_tuple > highest_version_tuple:
+                    highest_version = version
+        return highest_version
+
+
 def generate_recommendation(data, package, input_version):
     """Generate recommendation for the package+version."""
-    # TODO: reduce cyclomatic complexity
-    ip_ver_tuple = version_info_tuple(
-        convert_version_to_proper_semantic(input_version))
     # Template Dict for recommendation
     reco = {
         'recommendation': {
             'component-analyses': {},
         }
     }
+
     if data:
-        message = ''
-        max_cvss = 0.0
-        higher_version = ''
-        # check if given version has a CVE or not
-        for records in data:
-            ver = records['version']
-            if input_version == ver.get('version', [''])[0]:
-                records_arr = []
-                records_arr.append(records)
-                reco['data'] = records_arr
-                cve_ids = []
-                cve_maps = []
-                if ver.get('cve_ids', [''])[0] != '':
-                    message = 'CVE/s found for Package - ' + package + ', Version - ' + \
-                              input_version + '\n'
-                    # for each CVE get cve_id and cvss scores
-                    for cve in ver.get('cve_ids'):
-                        cve_id = cve.split(':')[0]
-                        cve_ids.append(cve_id)
-                        cvss = float(cve.split(':')[1])
-                        cve_map = {
-                            'id': cve_id,
-                            'cvss': cvss
-                        }
-                        cve_maps.append(cve_map)
-                        if cvss > max_cvss:
-                            max_cvss = cvss
-                    message += ', '.join(cve_ids)
-                    message += ' with a max cvss score of - ' + str(max_cvss)
-                    reco['recommendation']['component-analyses']['cve'] = cve_maps
-                    break
-                else:
-                    reco['recommendation'] = {}
-                    return {"result": reco}
+        gremlin_resp = GremlinComponentAnalysisResponse(package, input_version, data)
 
-        for records in data:
-            ver = records['version']
-            graph_version = convert_version_to_proper_semantic(
-                ver.get('version', [''])[0])
-            graph_ver_tuple = version_info_tuple(graph_version)
+        reco['data'] = gremlin_resp.results
+        if gremlin_resp.has_cves():
+            message = 'CVE/s found for Package - ' + package + ', Version - ' + \
+                      input_version + '\n'
+            cve_maps = gremlin_resp.get_cve_maps()
+            message += ', '.join([x.get('id') for x in cve_maps])
+            message += ' with a max cvss score of - ' + str(gremlin_resp.get_max_cvss_score())
+            reco['recommendation']['component-analyses']['cve'] = cve_maps
+        else:
+            reco['recommendation'] = {}
+            return {"result": reco}
 
-            # Check for next best higher version than input version without any
-            # CVE's
-            if not ver.get('cve_ids') \
-                    and graph_ver_tuple \
-                    > ip_ver_tuple:
-                if not higher_version:
-                    higher_version = graph_version
-                if version_info_tuple(higher_version) \
-                        > graph_ver_tuple:
-                    higher_version = graph_version
+        nocve_version = gremlin_resp.get_version_without_cves()
+        if nocve_version:
+            recommendation_message = '\n It is recommended to use Version - ' + str(nocve_version)
+            reco['recommendation']['change_to'] = str(nocve_version)
+            reco['recommendation']['message'] = message + recommendation_message
 
-                recommendation_message = '\n It is recommended to use Version - ' + \
-                    str(higher_version)
-                reco['recommendation']['change_to'] = str(higher_version)
-                reco['recommendation']['message'] = message + \
-                    recommendation_message
     return {"result": reco}
 
 
@@ -280,10 +318,21 @@ def search_packages_from_graph(tokens):
 
 def get_analyses_from_graph(ecosystem, package, version):
     """Read analysis for given package+version from the graph database."""
-    qstring = "g.V().has('ecosystem','" + ecosystem + "').has('name','" + package + "')" \
-              ".as('package').out('has_version').as('version').dedup()." \
-              "select('package', 'version').by(valueMap());"
-    payload = {'gremlin': qstring}
+    script = """\
+g.V().has('ecosystem',ecosystem).has('name',name).as('package')\
+.out('has_version').as('version')\
+.coalesce(out('has_cve').as('cve')\
+.select('package','version','cve').by(valueMap()),select('package','version').by(valueMap()));\
+"""
+
+    payload = {
+        'gremlin': script,
+        'bindings': {
+            'ecosystem': ecosystem,
+            'name': package,
+            'version': version
+        }
+    }
     start = datetime.datetime.now()
     try:
         graph_req = post(gremlin_url, data=json.dumps(payload))
