@@ -49,7 +49,7 @@ class DependencyFinder():
                     transitive = []
                     if 'dependencies' in dependencies[key]:
                         transitive = DependencyFinder.get_npm_transitives(transitive,
-                                                              dependencies[key]['dependencies'])
+                                                                          dependencies[key]['dependencies'])
                     tmp_json = {
                         "package": key,
                         "version": version,
@@ -76,7 +76,7 @@ class DependencyFinder():
                 transitive.append(tmp_json)
                 if 'dependencies' in content[key]:
                     transitive = DependencyFinder.get_npm_transitives(transitive,
-                                                          content[key]['dependencies'])
+                                                                      content[key]['dependencies'])
         return transitive
 
     @staticmethod
