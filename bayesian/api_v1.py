@@ -741,14 +741,17 @@ class StackAnalyses(ResourceWithSchema):
         check_license = request.args.get('check_license', 'false') == 'true'
         github_url = request.form.get("github_url")
         ref = request.form.get('github_ref')
-
+        is_scan_enabled = request.headers.get('IsScanEnabled')
+        ecosystem = request.headers.get('ecosystem')
+        origin = request.headers.get('origin')
         scan_repo_url = request.headers.get('ScanRepoUrl')
-        if scan_repo_url:
+        if is_scan_enabled == "true" or (is_scan_enabled != "false" and scan_repo_url):
             try:
                 api_url = GEMINI_SERVER_URL
                 dependency_files = request.files.getlist('dependencyFile[]')
                 current_app.logger.info('%r' % dependency_files)
-                data = {'git-url': scan_repo_url}
+                data = {'git-url': scan_repo_url,
+                        'ecosystem': ecosystem}
                 if dependency_files:
                     files = list()
                     for dependency_file in dependency_files:
@@ -804,7 +807,7 @@ class StackAnalyses(ResourceWithSchema):
             is_modified_flag = {'is_modified': False}
 
         manifests = []
-        ecosystem = None
+        # ecosystem = None
         for index, manifest_file_raw in enumerate(files):
             if github_url is not None:
                 filename = manifest_file_raw.get('filename', None)
@@ -841,7 +844,10 @@ class StackAnalyses(ResourceWithSchema):
             api_url = current_app.config['F8_API_BACKBONE_HOST']
 
             d = DependencyFinder()
-            deps = d.execute(args, rdb.session, manifests, source)
+            if origin == "vscode" and ecosystem == "npm":
+                deps = d.scan_and_find_dependencies(ecosystem, manifests)
+            else:
+                deps = d.execute(args, rdb.session, manifests, source)
             deps['external_request_id'] = request_id
             deps['current_stack_license'] = extract_licenses(license_files)
             deps.update(is_modified_flag)
