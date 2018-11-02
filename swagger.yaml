@@ -57,7 +57,7 @@ paths:
           description: Request unauthorized
         '404':
           description: Data not found
-  '/api/v1/cves/bydate/{date}':
+  '/cves/bydate/{date}':
     get:
       tags:
         - CVE Services
