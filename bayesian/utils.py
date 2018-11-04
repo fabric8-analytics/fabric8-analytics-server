@@ -11,12 +11,8 @@ import os
 import uuid
 import shutil
 import hashlib
-import zipfile
 
-from io import BytesIO
-from functools import lru_cache
 from selinon import run_flow
-from lru import lru_cache_function
 from flask import current_app
 from flask.json import JSONEncoder
 import semantic_version as sv
@@ -31,12 +27,11 @@ from f8a_worker.setup_celery import init_celery
 
 from . import rdb
 from .exceptions import HTTPError
-from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT, CORE_DEPENDENCIES_REPO_URL
+from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT
 
 from requests import get, post, exceptions
 from sqlalchemy.exc import SQLAlchemyError
 from github import Github, BadCredentialsException, GithubException, RateLimitExceededException
-from git import Repo, Actor
 
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
@@ -764,89 +759,6 @@ class RecommendationReason:
         return manifest_response
 
 
-def get_cve_data(input_json):
-    """Get CVEs for list of packages."""
-    ecosystem = input_json.get('ecosystem')
-    req_id = input_json.get('request_id')
-    deps = input_json.get('_resolved', [])
-
-    pkg_list = [itm['package'] for itm in deps]
-    ver_list = [itm['version'] for itm in deps]
-
-    str_gremlin = "g.V().has('pecosystem','" + ecosystem + "').has('pname', within(pkg_list))." \
-                  "has('version', within(ver_list)).has('cve_ids')." \
-                  "valueMap('pecosystem', 'pname', 'version', 'cve_ids');"
-
-    payload = {
-        'gremlin': str_gremlin,
-        'bindings': {
-            'ecosystem': ecosystem,
-            'pkg_list': pkg_list,
-            'ver_list': ver_list
-        }
-    }
-
-    resp = post(gremlin_url, json=payload)
-    jsn = resp.json()
-
-    data = jsn.get('result', {}).get('data', [])
-
-    result = []
-    highest_stack_cvss = -1
-    for itm in deps:
-        cve_dict = {
-            'ecosystem': ecosystem,
-            'package': itm['package'],
-            'version': itm['version'],
-            'cve': None
-        }
-        # if there is any EPV with CVE, modify the cve details
-        if data:
-            for cve_itm in data:
-                conditions = [ecosystem == cve_itm['pecosystem'][0],
-                              itm['package'] == cve_itm['pname'][0],
-                              itm['version'] == cve_itm['version'][0]]
-                if all(conditions):
-                    details = []
-                    highest_cvss = -1
-                    for cve in cve_itm['cve_ids']:
-                        id, cvss = cve.split(':')
-                        highest_cvss = max(float(cvss), highest_cvss)
-                        highest_stack_cvss = max(highest_stack_cvss, highest_cvss)
-                        details.append({
-                            'cve_id': id,
-                            'cvss': cvss
-                        })
-                    cve_dict['cve'] = {
-                        'highest_cvss': highest_cvss,
-                        'details': details
-                    }
-
-        result.append(cve_dict)
-
-    return {
-        "request_id": req_id,
-        "result": result,
-        "stack_highest_cvss": highest_stack_cvss
-    }
-
-
-@lru_cache(maxsize=128)
-def get_categories_data(runtime):
-    """Get categories for based on runtime."""
-    qstring = "g.V().has('category_runtime', runtime).as('category')."\
-        "in('belongs_to_category').as('package').select('category', 'package').by(valueMap());"
-
-    payload = {
-        'gremlin': qstring,
-        'bindings': {
-            'runtime': runtime
-        }
-    }
-    resp = post(gremlin_url, json=payload)
-    return resp.json()
-
-
 def convert_version_to_proper_semantic(version, package_name=None):
     """Perform Semantic versioning.
 
@@ -982,117 +894,6 @@ def generate_content_hash(content):
     """Return the sha1 digest of a string."""
     hash_object = hashlib.sha1(content.encode('utf-8'))
     return hash_object.hexdigest()
-
-
-@lru_cache_function(max_size=2048, expiration=60 * 60 * 24)
-def get_core_dependencies(runtime):
-    """Return core dependencies for each runtime."""
-    fetched_file = fetch_file_from_github(CORE_DEPENDENCIES_REPO_URL, 'core.json')
-    dependencies = json.loads(fetched_file[0].get('content', "{}"))
-    dep_runtime = dependencies.get(runtime, [])
-    return dep_runtime
-
-
-def create_directory_structure(root=os.getcwd(), struct=dict()):
-    """Create a directory structure.
-
-    root: String path to root directory
-    struct: Dict object describing dir structure
-        example:
-            {
-                'name': 'parentdir',
-                'type': 'dir',
-                'contains': [
-                    {
-                        'name': 'hello.txt',
-                        'type': 'file',
-                        'contains': "Some text"
-                    },
-                    {
-                        'name': 'childdir',
-                        'type': 'dir',
-                    }
-                ]
-            }
-    """
-    _root = os.path.abspath(root)
-    if isinstance(struct, list):
-        for item in struct:
-            create_directory_structure(_root, item)
-    else:
-        # default type is file if not defined
-        _type = struct.get('type', 'file')
-        _name = struct.get('name')
-        _contains = struct.get('contains', '')
-        if _name:
-            _root = os.path.join(_root, _name)
-            if _type == 'file':
-                with open(_root, 'wb') as _file:
-                    if not isinstance(_contains, (bytes, bytearray)):
-                        _contains = _contains.encode()
-                    _file.write(_contains)
-            else:
-                os.makedirs(_root, exist_ok=True)
-                if isinstance(_contains, (list, dict)):
-                    create_directory_structure(_root, _contains)
-
-
-def push_repo(token, local_repo, remote_repo, author_name=None, author_email=None,
-              user=None, organization=None, auto_remove=False):
-    """Initialize a git repo and push the code to the target repo."""
-    commit_msg = 'Initial commit'
-    if not os.path.exists(local_repo):
-        raise ValueError("Directory {} does not exist.".format(local_repo))
-    repo = Repo.init(local_repo)
-    repo.git.add(all=True)
-    committer = Actor(author_name or os.getenv("GIT_COMMIT_AUTHOR_NAME", "openshiftio-launchpad"),
-                      author_email or os.getenv("GIT_COMMIT_AUTHOR_EMAIL",
-                                                "obsidian-leadership@redhat.com"))
-
-    if organization is None:
-        try:
-            organization = Github(token).get_user().login
-        except RateLimitExceededException:
-            raise HTTPError(403, "Github API rate limit exceeded")
-        except BadCredentialsException:
-            raise HTTPError(401, "Invalid github access token")
-        except Exception as exc:
-            raise HTTPError(500, "Unable to get the username {}".format(str(exc)))
-
-    repo.index.commit(commit_msg, committer=committer, author=committer)
-    remote_uri = 'https://{user}:{token}@github.com/{user}/{remote_repo}'\
-        .format(user=organization, token=token, remote_repo=remote_repo)
-    try:
-        origin = repo.create_remote('origin', remote_uri)
-        origin.push('master')
-    except Exception as exc:
-        raise HTTPError(500, "Unable to Push the code: {}".format(str(exc.stderr)))
-    finally:
-        if auto_remove and os.path.exists(local_repo):
-            shutil.rmtree(local_repo)
-
-
-@lru_cache_function(max_size=2048, expiration=2 * 60 * 60 * 24)
-def get_booster_core_repo(ref='master'):
-    """Return core booster dependencies repo path."""
-    _base_url = 'https://github.com/{user}/{repo}/archive/{ref}.zip'
-    _url = CORE_DEPENDENCIES_REPO_URL
-    if _url.endswith('.git'):
-        _url = _url[:-len('.git')]
-    user, repo = _url.split('/')[-2:]
-    user = user.split(':')[-1]
-
-    url = _base_url.format(user=user, repo=repo, ref=ref)
-    resp = get(url, stream=True)
-    repo_path = os.path.abspath(os.path.join('/tmp', '-'.join([repo, ref])))
-    if os.path.exists(repo_path):
-        shutil.rmtree(repo_path)
-    if resp.status_code != 200:
-        raise HTTPError(500, "Unable to access url {} \n STATUS_CODE={}".format(
-            url, resp.status_code))
-    _zip = zipfile.ZipFile(BytesIO(resp.content))
-    _zip = _zip.extractall('/tmp')
-    return repo_path
 
 
 def get_recommendation_feedback_by_ecosystem(ecosystem):
