@@ -26,7 +26,7 @@ paths:
       responses:
         '200':
           description: Service is ready
-  '/component-analyses/{ecosystem}/{component}/{version}':
+  '/component-analyses/{eco}/{name}/{ver}':
     get:
       tags:
         - Scan Services
@@ -34,17 +34,17 @@ paths:
       summary: Get security and other details about a software component and recommendations to change to a more secured version
       parameters:
         - in: path
-          name: ecosystem
+          name: eco
           type: string
           required: true
           description: component ecosystem
         - in: path
-          name: component
+          name: name
           type: string
           required: true
           description: component name
         - in: path
-          name: version
+          name: ver
           type: string
           required: true
           description: component version
@@ -52,6 +52,42 @@ paths:
         '200':
           schema:
             $ref: "#/definitions/ComponentAnalysesResponse"
+          description: Detailed response for the requested application component
+        '401':
+          description: Request unauthorized
+        '404':
+          description: Data not found
+  '/stack-analyses':
+    post:
+      tags:
+        - Scan Services
+      operationId: f8a_scanner.api_v1.stack-analyses-post
+      summary: Initiates a scan to gather security and other details about an application stack and related recommendations to improve the stack
+      responses:
+        '200':
+          schema:
+            $ref: "#/definitions/StackAnalysesPostResponse"
+          description: Response with the unique identifier for the stack analysis request
+        '401':
+          description: Request Unauthorized
+        '400':
+          description: Bad request
+  '/stack-analyses/{request-id}':
+    get:
+      tags:
+        - Scan Services
+      operationId: f8a_scanner.api_v1.stack-analyses-get
+      summary: Get security and other details about an application stack and related recommendations to improve the stack
+      parameters:
+        - in: path
+          name: request-id
+          type: string
+          required: true
+          description: stack analysis request id
+      responses:
+        '200':
+          schema:
+            $ref: "#/definitions/StackAnalysesGetResponse"
           description: Detailed response for the requested application component
         '401':
           description: Request unauthorized
@@ -283,4 +319,236 @@ definitions:
     properties:
       result:
         $ref: "#/definitions/ComponentAnalysesData"
+  UnknownDeps:
+    title: Unknown dependencies
+    description: Unknown dependencies data
+    properties:
+      name:
+        type: string
+      version:
+        type: string
+  KnownDeps:
+    title: Known dependencies
+    description: Dependencies known to the system
+    properties:
+      package:
+        type: string
+      version:
+        type: string
+  UnknownLicenses:
+    title: Unknown licenses
+    description: Data of licenses unknown to the system
+    properties:
+      component_conflict:
+        type: array
+        items:
+          type: object
+      really_unknown:
+        type: array
+        items:
+          type: object
+  LicenseAnalysis:
+    title: License analysis
+    description: License analyses data
+    properties:
+      outlier_packages:
+        type: array
+        items:
+          type: object
+      f8a_stack_licenses:
+        type: array
+        items:
+          type: string
+      conflict_packages:
+        type: array
+        items:
+          type: string
+      current_stack_license:
+        type: object
+      unknown_licenses:
+        $ref: "#/definitions/UnknownLicenses"
+  CodeMetrics:
+    title: Code metrics data
+    description: Code Metrics static code analysis data
+    properties:
+      code_lines:
+        type: integer
+      average_cyclomatic_complexity:
+        type: number
+        format: float
+      total_files:
+        type: integer
+  GitHubDetails:
+    title: Github data
+    description: Github details
+    properties:
+      watchers:
+        type: integer
+      first_release_date:
+        type: string
+      total_releases:
+        type: integer
+      issues:
+        type: object
+      pull_requests:
+        type: object
+      dependent_repos:
+        type: integer
+      open_issues_count:
+        type: integer
+      latest_release_duration:
+        type: string
+      forks_count:
+        type: integer
+      contributors:
+        type: integer
+      size:
+        type: string
+      stargazers_count:
+        type: integer
+      used_by:
+        type: array
+        items:
+          type: string
+      dependent_projects:
+        type: integer
+  Dependencies:
+    title: Analyzed dependencies
+    description: Details of the known dependencies
+    properties:
+      name:
+        type: string
+      latest_version:
+        type: string
+      github:
+        $ref: "#/definitions/GitHubDetails"
+      licenses:
+        type: array
+        items:
+          type: string
+      topic_list:
+        type: array
+        items:
+          type: string
+      ecosystem:
+        type: string
+      security:
+        type: array
+        items:
+          type: object
+      code_metrics:
+        $ref: "#/definitions/CodeMetrics"
+      version:
+        type: string
+      osio_user_count:
+        type: integer
+  UserStackInfo:
+    title: Stack statistics
+    description: Stack analyses descriptive statistics
+    properties:
+      unknown_dependencies:
+        type: array
+        items:
+          $ref: "#/definitions/UnknownDeps"
+      ecosystem:
+        type: string
+      unknown_dependencies_count:
+        type: integer
+      analyzed_dependencies:
+        type: array
+        items:
+          $ref: "#/definitions/Dependencies"
+      analyzed_dependencies_count:
+        type: integer
+      license_analysis:
+        $ref: "#/definitions/LicenseAnalysis"
+      distinct_licenses:
+        type: array
+        items:
+          type: string
+      stack_license_conflict:
+        type: boolean
+      dependencies:
+        type: array
+        items:
+          $ref: "#/definitions/KnownDeps"
+      total_licenses:
+        type: integer
+      recommendation_ready:
+        type: boolean
+  RecommendedPackageData:
+    title: Recommended packages data
+    description: Recommended packages data
+    allOf:
+      - $ref: "#/definitions/Dependencies"
+      - properties:
+          confidence_reason:
+            type: number
+            format: float
+          reason:
+            type: string
+          topic_list:
+            type: array
+            items:
+              type: string
+          cooccurrence_count:
+            type: number
+          cooccurrence_probability:
+            type: number
+            format: float
+  StackRecommendation:
+    title: Application recommendation
+    description: Application stack recommendations
+    properties:
+      companion:
+        type: array
+        items:
+          $ref: "#/definitions/RecommendedPackageData"
+      manifest_file_path:
+        type: string
+      usage_outliers:
+        type: array
+        items:
+          type: object
+      missing_packages_pgm:
+        type: array
+        items:
+          type: object
+      input_stack_topics:
+        type: object
+      alternate:
+        type: array
+        items:
+          $ref: "#/definitions/RecommendedPackageData"
+  StackAnalysesResult:
+    title: Stack analyses result
+    description: Stack analyses result data
+    properties:
+      manifest_file_path:
+        type: string
+      user_stack_info:
+        $ref: "#/definitions/UserStackInfo"
+      manifest_name:
+        type: string
+      recommendation:
+        $ref: "#/definitions/StackRecommendation"
+  StackAnalysesGetResponse:
+    title: Stack analyses Get call response
+    description: Response structure for stack analyses
+    properties:
+      result:
+        type: array
+        items:
+          $ref: "#/definitions/StackAnalysesResult"
+  StackAnalysesPostResponse:
+    title: Stack analysis Post call response
+    description: Response structure for stack analyses post
+    properties:
+      id:
+        type: string
+      status:
+        type: string
+      submitted_at:
+        type: string
+  
 
