@@ -182,7 +182,7 @@ class GremlinComponentAnalysisResponse(object):
         for data in response[0]['epv']:
             this_version = data.get('version', {}).get('version', [None])[0]
             if this_version == self._version:
-                self.results = data
+                self.results.append(data)
                 if 'cve' in data:
                     self._cves.append(data.get('cve'))
 
