@@ -172,20 +172,19 @@ class GremlinComponentAnalysisResponse(object):
         self._package = package
         self._version = version
         self._cves = []
-        self._nocve_versions = []
+        # Gremlin query will always return two elements for response
+        # response[0] = epv
+        # response[1] = versions_with_no_cves
+        self._nocve_versions = response[1].get('recommended_versions', [])
         self.results = []
 
         # response from Gremlin is kinda weird...
-        for data in response:
+        for data in response[0]['epv']:
             this_version = data.get('version', {}).get('version', [None])[0]
             if this_version == self._version:
-                self.results = data
+                self.results.append(data)
                 if 'cve' in data:
                     self._cves.append(data.get('cve'))
-            else:
-                # different version; we can recommend it, if there is no CVE
-                if 'cve' not in data and this_version is not None:
-                    self._nocve_versions.append(this_version)
 
     def has_cves(self):
         """Return True if this EPV has CVEs, False otherwise."""
@@ -236,7 +235,9 @@ class GremlinComponentAnalysisResponse(object):
                 highest_version_tuple = version_info_tuple(
                     convert_version_to_proper_semantic(highest_version)
                 )
-                if graph_version_tuple > highest_version_tuple:
+                # If version to recommend is closer to what a user is using then, use less than
+                # If recommendation is to show highest version then, use greater than
+                if graph_version_tuple < highest_version_tuple:
                     highest_version = version
         return highest_version
 
@@ -267,9 +268,10 @@ def generate_recommendation(data, package, input_version):
 
         nocve_version = gremlin_resp.get_version_without_cves()
         if nocve_version:
-            recommendation_message = '\n It is recommended to use Version - ' + str(nocve_version)
+            message += '\n It is recommended to use Version - ' + str(nocve_version)
             reco['recommendation']['change_to'] = str(nocve_version)
-            reco['recommendation']['message'] = message + recommendation_message
+
+        reco['recommendation']['message'] = message
 
     return {"result": reco}
 
@@ -319,10 +321,14 @@ def search_packages_from_graph(tokens):
 def get_analyses_from_graph(ecosystem, package, version):
     """Read analysis for given package+version from the graph database."""
     script = """\
-g.V().has('ecosystem',ecosystem).has('name',name).as('package')\
-.out('has_version').as('version')\
-.coalesce(out('has_cve').as('cve')\
-.select('package','version','cve').by(valueMap()),select('package','version').by(valueMap()));\
+results=[];latest_ver=[];no_cve_versions=[];\
+pkg=g.V().has('ecosystem',ecosystem).has('name',name);\
+pkg.clone().out('has_version').not(out('has_cve')).values('version').dedup().fill(no_cve_versions);\
+pkg.clone().as('package').out('has_version').has('version',version).dedup().as('version')\
+.coalesce(\
+out('has_cve').as('cve').select('package','version','cve').by(valueMap()),\
+select('package','version').by(valueMap())).fill(results);\
+[epv:results,recommended_versions:no_cve_versions];\
 """
 
     payload = {
@@ -347,18 +353,12 @@ g.V().has('ecosystem',ecosystem).has('name',name).as('package')\
 
     resp = graph_req.json()
 
-    if 'result' not in resp:
-        return None
-    if len(resp['result']['data']) == 0:
+    if not (resp['result'].get('data') and resp['result'].get('data')[0].get('epv', [])):
         # trigger unknown component flow in API for missing package
         return None
 
     data = resp['result']['data']
     resp = generate_recommendation(data, package, version)
-
-    if 'data' not in resp.get('result'):
-        # trigger unknown component flow in API for missing version
-        return None
 
     return resp
 
