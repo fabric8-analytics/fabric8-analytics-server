@@ -632,11 +632,11 @@ definitions:
       remove:
         type: "array"
         items:
-          $ref: '#/definitions/Remove'
+          $ref: '#/definitions/Remove'  
   Add:
     title: CveToAdd
     type: "object"
-    properties:
+    properties: 
       cve_id:
           type: "string"
           format: "string"
@@ -657,7 +657,7 @@ definitions:
           format: "string"
       status:
           type: "string"
-          format: "string"
+          format: "string" 
       version:
           type: "string"
           format: "string"
@@ -667,7 +667,7 @@ definitions:
   Remove:
     title: CveToRemove
     type: "object"
-    properties:
+    properties: 
       cve_id:
           type: "string"
           format: "string"
