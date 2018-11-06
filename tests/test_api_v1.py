@@ -121,6 +121,7 @@ class TestApiV1Root(object):
             "/api/v1/categories/<runtime>",
             "/api/v1/component-analyses/<ecosystem>/<package>/<version>",
             "/api/v1/component-search/<package>",
+            "/api/v1/cves/bydate/<modified_date>/<ecosystem>",
             "/api/v1/depeditor-analyses",
             "/api/v1/depeditor-cve-analyses",
             "/api/v1/empty-booster",

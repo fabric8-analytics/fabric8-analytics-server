@@ -111,6 +111,57 @@ paths:
           description: Request unauthorized
         '404':
           description: Data not found
+  '/cves/bydate/{date}':
+    get:
+      tags:
+        - CVE Services
+      summary: Get CVE information by ingesation date
+      description: Returns CVEs injested/removed on that particular date from the OSIO database.
+      operationId: getCveByDate #TODO: To be changed later
+      parameters:
+        - in: path
+          name: date
+          description: Returns CVE information by date.
+          required: true
+          type: integer
+          format: int64
+      responses:
+          '200':
+            description: "successful operation"
+            schema:
+              $ref: "#/definitions/ByDate"
+          '400':
+            description: "Invalid date supplied"
+          '404':
+            description: "Data not found"
+  '/cves/bydate/{date}/{ecosystem}':
+    get:
+      tags:
+      - CVE Services
+      summary: Get CVE information by ingesation date and ecosystem
+      description: Returns CVEs injested/removed on that particular date and belonging to a certain ecosystem from the OSIO database.
+      operationId: "getCveByDateEcosystem" #TODO: To be changed later
+      parameters:
+      - in: path
+        name: date
+        description: Returns CVE information by date.
+        required: true
+        type: integer
+        format: int64
+      - in: path
+        name: ecosystem
+        description: Returns CVE information by date and ecosystem.
+        required: true
+        type: string
+      responses:
+        '200':
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/ByDateEcosystem"
+        '400':
+          description: "Invalid date/ecosystem supplied"
+        '404':
+          description: "Data not found"
 definitions:
   Version:
     title: Component Version Details
@@ -568,4 +619,75 @@ definitions:
         type: string
       submitted_at:
         type: string
-  
+
+  ByDate:
+    title: CVE ByDate
+    type: "object"
+    properties:
+      add:
+        type: "array"
+        items:
+          $ref: '#/definitions/Add'
+      count:
+        type: "integer"
+        format: "int32"
+      remove:
+        type: "array"
+        items:
+          $ref: '#/definitions/Remove'
+  ByDateEcosystem:
+    title: CVE ByDateEcosytem
+    type: "object"
+    properties:
+      add:
+        type: "array"
+        items:
+          $ref: '#/definitions/Add'
+      count:
+        type: "integer"
+        format: "int32"
+      remove:
+        type: "array"
+        items:
+          $ref: '#/definitions/Remove'
+  Add:
+    title: CveToAdd
+    type: "object"
+    properties:
+      cve_id:
+          type: "string"
+          format: "string"
+      cvss_v2:
+          type: "number"
+          format: "float"
+      description:
+          type: "string"
+          format: "string"
+      ecosystem:
+          type: "string"
+          format: "string"
+      fixed_in:
+          type: "string"
+          format: "string"
+      name:
+          type: "string"
+          format: "string"
+      status:
+          type: "string"
+          format: "string"
+      version:
+          type: "string"
+          format: "string"
+      link:
+          type: "string"
+          format: "string"
+  Remove:
+    title: CveToRemove
+    type: "object"
+    properties:
+      cve_id:
+          type: "string"
+          format: "string"
+      ecosystem:
+          type: "string"
+          format: "string"
