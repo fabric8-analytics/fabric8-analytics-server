@@ -70,6 +70,7 @@ def server_run_flow(flow_name, flow_args):
     init_celery(result_backend=False)
     dispacher_id = run_flow(flow_name, flow_args)
 
+    # compute the elapsed time
     elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
     current_app.logger.debug("It took {t} seconds to start {f} flow.".format(
         t=elapsed_seconds, f=flow_name))
@@ -78,6 +79,7 @@ def server_run_flow(flow_name, flow_args):
 
 def get_user_email(user_profile):
     """Get user e-mail address or the default address if user profile does not exist."""
+    # fallback address
     default_email = 'bayesian@redhat.com'
     if user_profile is not None:
         return user_profile.get('email', default_email)
@@ -130,6 +132,7 @@ def server_create_analysis(ecosystem, package, version, user_profile,
 
 def do_projection(fields, analysis):
     """Return filtered dictionary containing model data."""
+    # TODO: this is probably wrong - why not to check if analysis is None: at the beginning?
     if fields is None or analysis is None:
         try:
             return analysis.to_dict()
@@ -147,6 +150,10 @@ def do_projection(fields, analysis):
 
 def has_field(analysis, fields):
     """Return true or false if given field exists in analysis."""
+    # TODO: this is probably not Pythonic: why not to use:
+    # for field in fields:
+    #     if field not in analysis:
+    #         return False
     for field in fields:
         try:
             analysis = analysis[field]
@@ -563,6 +570,7 @@ def retrieve_worker_results(rdb, external_request_id):
         rdb.session.rollback()
         raise
 
+    # compute elapsed time
     elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
     msg = "It took {t} seconds to retrieve " \
           "all worker results for {r}.".format(t=elapsed_seconds, r=external_request_id)
@@ -585,6 +593,8 @@ def retrieve_worker_result(rdb, external_request_id, worker):
         rdb.session.rollback()
         raise
     result_dict = result.to_dict()
+
+    # compute elapsed time
     elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
     msg = "It took {t} seconds to retrieve {w} " \
           "worker results for {r}.".format(t=elapsed_seconds, w=worker, r=external_request_id)
@@ -720,6 +730,8 @@ class RecommendationReason:
         :param manifest_response: dict. object having all recommendation elements
         :return: True or False for usage outlier of input package at count index position
         """
+        # TODO: test variable is not needed in the following code
+        # TODO: just return True from the loop
         test = False
         outliers = manifest_response.get("recommendation", {}).get("usage_outliers", [])
         if outliers:
@@ -774,6 +786,7 @@ def get_cve_data(input_json):
     pkg_list = [itm['package'] for itm in deps]
     ver_list = [itm['version'] for itm in deps]
 
+    # TODO: refactor Gremlin query into separate function
     str_gremlin = "g.V().has('pecosystem','" + ecosystem + "').has('pname', within(pkg_list))." \
                   "has('version', within(ver_list)).has('cve_ids')." \
                   "valueMap('pecosystem', 'pname', 'version', 'cve_ids');"
@@ -787,11 +800,13 @@ def get_cve_data(input_json):
         }
     }
 
+    # call Gremlin
     resp = post(gremlin_url, json=payload)
     jsn = resp.json()
 
     data = jsn.get('result', {}).get('data', [])
 
+    # TODO: refactor result 'constructor' into separate function
     result = []
     highest_stack_cvss = -1
     for itm in deps:
@@ -892,7 +907,7 @@ def version_info_tuple(version):
 
 
 def select_latest_version(latest='', libio='', package_name=None):
-    """Retruns the latest version among current latest version and libio version."""
+    """Return the latest version among current latest version and libio version."""
     return_version = ''
     latest_sem_version = convert_version_to_proper_semantic(
         latest, package_name)
@@ -921,6 +936,8 @@ def fetch_file_from_github(url, filename, branch='master'):
     """Fetch file from github url."""
     base_url = 'https://raw.githubusercontent.com'
     try:
+        # TODO: refactor user+repository retrieving into separate function
+        # TODO: the same code as in fetch_file_from_github_release
         if url.endswith('.git'):
             url = url[:-len('.git')]
 
@@ -946,6 +963,7 @@ def fetch_file_from_github_release(url, filename, token, ref=None):
     if token:
         try:
             github_obj = Github(token)
+            # TODO: refactor user+repository retrieving into separate function
             if url.endswith('.git'):
                 url = url[:-len('.git')]
 
@@ -999,7 +1017,8 @@ def create_directory_structure(root=os.getcwd(), struct=dict()):
 
     root: String path to root directory
     struct: Dict object describing dir structure
-        example:
+        an example:
+
             {
                 'name': 'parentdir',
                 'type': 'dir',
@@ -1046,11 +1065,14 @@ def push_repo(token, local_repo, remote_repo, author_name=None, author_email=Non
         raise ValueError("Directory {} does not exist.".format(local_repo))
     repo = Repo.init(local_repo)
     repo.git.add(all=True)
+    # TODO: "openshiftio-launchpad" -> config module
+    # TODO: "obsidian-leadership@redhat.com" -> config module
     committer = Actor(author_name or os.getenv("GIT_COMMIT_AUTHOR_NAME", "openshiftio-launchpad"),
                       author_email or os.getenv("GIT_COMMIT_AUTHOR_EMAIL",
                                                 "obsidian-leadership@redhat.com"))
 
     if organization is None:
+        # try to fetch user instead of organization
         try:
             organization = Github(token).get_user().login
         except RateLimitExceededException:
@@ -1078,6 +1100,8 @@ def get_booster_core_repo(ref='master'):
     """Return core booster dependencies repo path."""
     _base_url = 'https://github.com/{user}/{repo}/archive/{ref}.zip'
     _url = CORE_DEPENDENCIES_REPO_URL
+    # TODO: refactor user+repository retrieving into separate function
+    # TODO: the same code as in fetch_file_from_github_release
     if _url.endswith('.git'):
         _url = _url[:-len('.git')]
     user, repo = _url.split('/')[-2:]
