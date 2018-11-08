@@ -137,6 +137,7 @@ def paginated(func):
     def inner(*args, **kwargs):
         func_res = func(*args, **kwargs)
         res, code, headers = func_res, 200, {}
+        # TODO: please explain the logic for the code below:
         if isinstance(res, tuple):
             if len(res) == 3:
                 res, code, headers = func_res
@@ -149,6 +150,7 @@ def paginated(func):
         page, per_page = args['page'], args['per_page']
         count = res[TOTAL_COUNT_KEY]
 
+        # first and last page handling
         previous_page = None if page == 0 else page - 1
         next_page = None if get_item_absolute_limit(page, per_page) >= count else page + 1
 
@@ -163,6 +165,7 @@ def paginated(func):
         if next_page is not None:
             paging.append({'url': url_for(request.endpoint, **view_args), 'rel': 'next'})
 
+        # put the info about pages into HTTP header for the response
         headers['Link'] = ', '.join(['<{url}>; rel="{rel}"'.format(**d) for d in paging])
 
         return res, code, headers
@@ -183,6 +186,7 @@ def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None
     endpoint = endpoint or resource.__name__.lower()
     defaults = defaults or {}
 
+    # resources with and without slashes
     rest_api_v1.add_resource(resource,
                              slashless,
                              endpoint=endpoint + '__slashless',
@@ -235,6 +239,7 @@ class ResourceWithSchema(Resource):
         response_body = response
         headers = None
 
+        # TODO: please explain the logic for the code below:
         if isinstance(response, tuple):
             response_body = response[0]
             if len(response) > 1:
@@ -309,6 +314,7 @@ class ComponentAnalyses(ResourceWithSchema):
                                                           version=version)
             raise HTTPError(202, msg)
         else:
+            # no data has been found
             server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
                                    api_flow=False, force=False, force_graph_sync=True)
             msg = "No data found for {ecosystem} package " \
@@ -550,6 +556,8 @@ class MasterTagsGET(ResourceWithSchema):
 
     method_decorators = [login_required]
 
+    # TODO: move the timeout constant to the config file
+
     @staticmethod
     @cache.memoize(timeout=604800)  # 7 days
     def get(ecosystem):
@@ -590,6 +598,7 @@ class GetNextComponent(ResourceWithSchema):
             g.decoded_token.get('email'),
             g.decoded_token.get('company'),
         )
+        # check for package data
         if pkg:
             return pkg[0]
         else:
@@ -606,18 +615,23 @@ class SetTagsToComponent(ResourceWithSchema):
         """Handle the POST REST API call."""
         input_json = request.get_json()
 
+        # sanity checks
         if not input_json:
             raise HTTPError(400, error="Expected JSON request")
 
+        # ecosystem name is expexted in the payload
         if 'ecosystem' not in input_json:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
+        # component name is expexted in the payload
         if 'component' not in input_json:
             raise HTTPError(400, error="Expected component in the request")
 
+        # at least one tag is expexted in the payload
         if 'tags' not in input_json or not any(input_json.get('tags', [])):
             raise HTTPError(400, error="Expected some tags in the request")
 
+        # start the business logic
         status, _error = set_tags_to_component(input_json.get('ecosystem'),
                                                input_json.get('component'),
                                                input_json.get('tags'),
@@ -662,12 +676,14 @@ class PublishedSchemas(ResourceWithSchema):
                     schema_path.append(version)
                     result = result.get(version)
 
+        # schema does not exist
         if result is None:
             raise HTTPError(404, 'Schema {} does not exist'.format('/'.join(schema_path)))
         return result
 
     @classmethod
     def _get_schema_url(cls, collection, name, version):
+        """Get the URL to given schema URL for the API collection."""
         return rest_api_v1.url_for(cls, collection=collection, name=name,
                                    version=version, _external=True)
 
