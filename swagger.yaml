@@ -63,6 +63,24 @@ paths:
         - Scan Services
       operationId: f8a_scanner.api_v1.stack-analyses-post
       summary: Initiates a scan to gather security and other details about an application stack and related recommendations to improve the stack
+      consumes:
+        - multipart/form-data
+      parameters:
+        - name: manifest[]
+          in: formData
+          description: A manifest file (pom.xml or package.json etc) to be processed. The pom.xml has to be an effective POM which the resolved versions for the dependencies.
+          required: false
+          type: file
+        - name: filePath[]
+          in: formData
+          description: The absolute or relative path where the manifest file is located. This has to be mandatorily provided with the manifest[] parameter and vice versa.
+          required: false
+          type: string
+        - name: github_url
+          in: formData
+          description: A github URL that will be processed by the API to find its dependencies and to generate an analytics report for the application. the parameters manifest[] and filePath[] are not to be set if this parameter is provided.
+          required: false
+          type: string
       responses:
         '200':
           schema:
@@ -314,7 +332,7 @@ definitions:
       recommendation:
         $ref: "#/definitions/Recommendation"
   ComponentAnalysesResponse:
-    title: Response of Component Analyses 
+    title: Response of Component Analyses
     description: Component analyses response
     properties:
       result:
@@ -551,4 +569,3 @@ definitions:
       submitted_at:
         type: string
   
-
