@@ -370,11 +370,12 @@ select('package','version').by(valueMap())).fill(results);\
     return resp
 
 
-def get_cves_info(modified_date, ecosystem=None):
-    """Contains Gremlin queries and sub-functions.
+class GetCveByDateEcosystem:
+    """Contains Gremlin queries and functions to serve CVEs.
 
-    Serves CVEs by date and further filters it by ecosystem if provided.
+    CVEs bydate & further filter by ecosystem if provided.
     """
+
     # Get CVEs information by date
     cve_nodes_by_date_script_template = """\
     g.V().has('vertex_label','CVE')\
@@ -394,35 +395,37 @@ def get_cves_info(modified_date, ecosystem=None):
     dedup()\
     """
 
-    def get_cves_by_date():
+    def __init__(self, bydate, ecosystem=None):
+        """Constructor."""
+        self._bydate = bydate
+        self._ecosystem = ecosystem
+
+    def get_cves_by_date(self):
         """Call graph and get CVEs by date."""
-        script = cve_nodes_by_date_script_template
-        bindings = {'modified_date': modified_date}
-        return get_cves(script, bindings)
+        script = self.cve_nodes_by_date_script_template
+        bindings = {'modified_date': self._bydate}
+        return self.get_cves(script, bindings)
 
-    def get_cves_by_date_ecosystem():
+    def get_cves_by_date_ecosystem(self):
         """Call graph and get CVEs by date and ecosystem."""
-        script = cve_nodes_by_date_ecosystem_script_template
-        bindings = {'modified_date': modified_date, 'ecosystem': ecosystem}
-        return get_cves(script, bindings)
+        script = self.cve_nodes_by_date_ecosystem_script_template
+        bindings = {'modified_date': self._bydate, 'ecosystem': self._ecosystem}
+        return self.get_cves(script, bindings)
 
-    def get_cves(script, bindings):
+    def get_cves(self, script, bindings):
         """Call Gremlin and get the CVE information."""
-        json_payload = prepare_payload(script, bindings)
+        json_payload = self.prepare_payload(script, bindings)
         response = post(gremlin_url, json=json_payload)
-        cve_list = prepare_response(response.json())
+        cve_list = self.prepare_response(response.json())
         return cve_list
 
-    def prepare_payload(script, bindings):
+    def prepare_payload(self, script, bindings):
         """Prepare payload."""
-        payload = {
-            'gremlin': script,
-            'bindings': bindings
-        }
+        payload = {'gremlin': script, 'bindings': bindings}
 
         return payload
 
-    def prepare_response(gremlin_json):
+    def prepare_response(self, gremlin_json):
         """Prepare response to be sent to user based on Gremlin data."""
         cve_list = []
         resp = gremlin_json.get('result', {}).get('data', [])
@@ -443,10 +446,6 @@ def get_cves_info(modified_date, ecosystem=None):
                 cve_list.append(cve_dict)
 
         return {"count": len(cve_list), "cve_list": cve_list}
-
-    if ecosystem:
-        return get_cves_by_date_ecosystem()
-    return get_cves_by_date()
 
 
 def get_latest_analysis_for(ecosystem, package, version):
