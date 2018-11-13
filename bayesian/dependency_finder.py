@@ -21,6 +21,67 @@ class DependencyFinder():
     """Implementation of methods to find dependencies from manifest file."""
 
     @staticmethod
+    def scan_and_find_dependencies(ecosystem, manifests):
+        """Scan the dependencies files to fetch transitive deps."""
+        deps = dict()
+        if ecosystem == "npm":
+            deps = DependencyFinder.get_npm_dependencies(ecosystem, manifests)
+        return deps
+
+    @staticmethod
+    def get_npm_dependencies(ecosystem, manifests):
+        """Scan the npm dependencies files to fetch transitive deps."""
+        deps = {}
+        result = []
+        details = []
+        for manifest in manifests:
+            dep = {
+                "ecosystem": ecosystem,
+                "manifest_file_path": manifest['filepath'],
+                "manifest_file": manifest['filename']
+            }
+
+            dependencies = json.loads(manifest['content']).get('dependencies')
+            resolved = []
+            if dependencies:
+                for key, val in dependencies.items():
+                    version = val['version']
+                    transitive = []
+                    if 'dependencies' in val:
+                        transitive = DependencyFinder.get_npm_transitives(
+                            transitive,
+                            val['dependencies'])
+                    tmp_json = {
+                        "package": key,
+                        "version": version,
+                        "deps": transitive
+                    }
+                    resolved.append(tmp_json)
+            dep['_resolved'] = resolved
+            details.append(dep)
+            details_json = {"details": details}
+            result.append(details_json)
+        deps['result'] = result
+        return deps
+
+    @staticmethod
+    def get_npm_transitives(transitive, content):
+        """Scan the npm dependencies recursively to fetch transitive deps."""
+        if content:
+            for key, val in content.items():
+                version = val['version']
+                tmp_json = {
+                    "package": key,
+                    "version": version
+                }
+                transitive.append(tmp_json)
+                if 'dependencies' in content[key]:
+                    transitive = DependencyFinder.get_npm_transitives(
+                        transitive,
+                        val['dependencies'])
+        return transitive
+
+    @staticmethod
     def _handle_external_deps(ecosystem, deps):
         """Resolve external dependency specifications."""
         if not ecosystem or not deps:
