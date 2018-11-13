@@ -817,17 +817,19 @@ class StackAnalyses(ResourceWithSchema):
                 filename = manifest_file_raw.filename
                 filepath = filepaths[index]
                 content = manifest_file_raw.read().decode('utf-8')
+            # For npm-list.json, we need not verify it as its not going to mercator task
+            if origin != "vscode" and ecosystem != "npm":
+                # check if manifest files with given name are supported
+                manifest_descriptor = get_manifest_descriptor_by_filename(filename)
+                if manifest_descriptor is None:
+                    raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
+                        filename=filename))
 
-            # check if manifest files with given name are supported
-            manifest_descriptor = get_manifest_descriptor_by_filename(filename)
-            if manifest_descriptor is None:
-                raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
-                    filename=filename))
-
-            # Check if the manifest is valid
-            if not manifest_descriptor.validate(content):
-                raise HTTPError(400, error="Error processing request. Please upload a valid "
-                                           "manifest file '{filename}'".format(filename=filename))
+                # Check if the manifest is valid
+                if not manifest_descriptor.validate(content):
+                    raise HTTPError(400,
+                                    error="Error processing request. Please upload a valid "
+                                          "manifest file '{filename}'".format(filename=filename))
 
             # Record the response details for this manifest file
             manifest = {'filename': filename,
