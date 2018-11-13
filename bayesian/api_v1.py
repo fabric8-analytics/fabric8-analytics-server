@@ -1242,7 +1242,7 @@ class CveByDateEcosystem(ResourceWithSchema):
             raise HTTPError(400, msg)
         getcve = CveByDateEcosystemUtils(modified_date, ecosystem)
         result = getcve.get_cves_by_date() if not ecosystem else getcve.get_cves_by_date_ecosystem()
-        return result, 200
+        return jsonify(result), 200
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')

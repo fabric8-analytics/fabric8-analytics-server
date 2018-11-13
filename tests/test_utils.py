@@ -48,14 +48,12 @@ mocker_input = {
                 }
             },
             {
-                "cve": {
-                    "ecosystem": ["npm"],
-                    "cve_id": ["CVE-2018-0002"],
-                    "cvss_v2": [10.0],
-                    "nvd_status": ["Depricated"],
-                    "description": ["Some description here updated just now."],
-                    "modified_date": ["20180911"]
-                }
+                "ecosystem": ["npm"],
+                "cve_id": ["CVE-2018-0002"],
+                "cvss_v2": [10.0],
+                "nvd_status": ["Depricated"],
+                "description": ["Some description here updated just now."],
+                "modified_date": ["20180911"]
 
             }
         ]

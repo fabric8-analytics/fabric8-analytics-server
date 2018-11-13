@@ -448,8 +448,8 @@ class CveByDateEcosystemUtils:
                 cve_list_add.append(cve_dict)
             else:
                 cve_dict = {
-                    "cve_id": cve.get('cve').get('cve_id', [None])[0],
-                    "ecosystem": cve.get('cve').get('ecosystem', [None])[0]
+                    "cve_id": cve.get('cve_id', [None])[0],
+                    "ecosystem": cve.get('ecosystem', [None])[0]
                 }
                 cve_list_remove.append(cve_dict)
 
