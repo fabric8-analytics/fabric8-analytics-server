@@ -39,7 +39,7 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data, get_core_dependencies,
                     create_directory_structure, push_repo, get_booster_core_repo,
-                    get_recommendation_feedback_by_ecosystem, GetCveByDateEcosystem)
+                    get_recommendation_feedback_by_ecosystem, CveByDateEcosystemUtils)
 from .license_extractor import extract_licenses
 from .manifest_models import MavenPom
 
@@ -1240,7 +1240,7 @@ class CveByDateEcosystem(ResourceWithSchema):
         except ValueError:
             msg = 'Invalid datetime specified. Please specify in YYYYMMDD format'
             raise HTTPError(400, msg)
-        getcve = GetCveByDateEcosystem(modified_date, ecosystem)
+        getcve = CveByDateEcosystemUtils(modified_date, ecosystem)
         result = getcve.get_cves_by_date() if not ecosystem else getcve.get_cves_by_date_ecosystem()
         return result, 200
 

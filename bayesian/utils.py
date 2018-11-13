@@ -370,7 +370,7 @@ select('package','version').by(valueMap())).fill(results);\
     return resp
 
 
-class GetCveByDateEcosystem:
+class CveByDateEcosystemUtils:
     """Contains Gremlin queries and functions to serve CVEs.
 
     CVEs bydate & further filter by ecosystem if provided.
@@ -378,21 +378,21 @@ class GetCveByDateEcosystem:
 
     # Get CVEs information by date
     cve_nodes_by_date_script_template = """\
-    g.V().has('vertex_label','CVE')\
-    .has('modified_date', modified_date).as('cve')\
-    .in('has_cve').as('epv')\
-    .select('cve','epv').by(valueMap())\
-    dedup()\
+    g.V().has('modified_date', modified_date)\
+    .has('vertex_label','CVE').as('cve')\
+    .coalesce(\
+    inE('has_cve').outV().as('epv').select('cve','epv').by(valueMap()),\
+    select('cve').by(valueMap()))\
     """
 
     # Get CVEs by date & ecosystem
     cve_nodes_by_date_ecosystem_script_template = """\
-    g.V().has('vertex_label','CVE')\
-    .has('modified_date', modified_date)\
+    g.V().has('modified_date', modified_date)\
+    .has('vertex_label','CVE')\
     .has('ecosystem',ecosystem).as('cve')\
-    .in('has_cve').as('epv')\
-    .select('cve','epv').by(valueMap())\
-    dedup()\
+    .coalesce(\
+    inE('has_cve').outV().as('epv').select('cve','epv').by(valueMap()),\
+    select('cve').by(valueMap()))\
     """
 
     def __init__(self, bydate, ecosystem=None):
@@ -409,6 +409,7 @@ class GetCveByDateEcosystem:
     def get_cves_by_date_ecosystem(self):
         """Call graph and get CVEs by date and ecosystem."""
         script = self.cve_nodes_by_date_ecosystem_script_template
+        self._ecosystem = self._ecosystem.lower()
         bindings = {'modified_date': self._bydate, 'ecosystem': self._ecosystem}
         return self.get_cves(script, bindings)
 
@@ -427,13 +428,14 @@ class GetCveByDateEcosystem:
 
     def prepare_response(self, gremlin_json):
         """Prepare response to be sent to user based on Gremlin data."""
-        cve_list = []
+        cve_list_add = []
+        cve_list_remove = []
         resp = gremlin_json.get('result', {}).get('data', [])
         for cve in resp:
             if 'cve' in cve and 'epv' in cve:
                 cve_dict = {
                     "cve_id": cve.get('cve').get('cve_id', [None])[0],
-                    "cvss": cve.get('cve').get('cvss_v2', [None])[0],
+                    "cvss_v2": cve.get('cve').get('cvss_v2', [None])[0],
                     "description": cve.get('cve').get('description', [None])[0],
                     "ecosystem": cve.get('cve').get('ecosystem', [None])[0],
                     "name": cve.get('epv').get('pname', [None])[0],
@@ -443,9 +445,20 @@ class GetCveByDateEcosystem:
                     "link": "https://nvd.nist.gov/vuln/detail/" +
                             cve.get('cve').get('cve_id', [''])[0]
                 }
-                cve_list.append(cve_dict)
+                cve_list_add.append(cve_dict)
+            else:
+                cve_dict = {
+                    "cve_id": cve.get('cve').get('cve_id', [None])[0],
+                    "ecosystem": cve.get('cve').get('ecosystem', [None])[0]
+                }
+                cve_list_remove.append(cve_dict)
 
-        return {"count": len(cve_list), "cve_list": cve_list}
+        response = {
+            "count": len(cve_list_add + cve_list_remove),
+            "add": cve_list_add,
+            "remove": cve_list_remove
+        }
+        return response
 
 
 def get_latest_analysis_for(ecosystem, package, version):

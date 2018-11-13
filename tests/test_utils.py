@@ -6,6 +6,9 @@ import semantic_version as sv
 import tempfile
 import os
 import json
+import requests
+from unittest.mock import Mock, patch
+
 
 from bayesian.utils import (
     get_core_dependencies,
@@ -16,7 +19,8 @@ from bayesian.utils import (
     version_info_tuple as vt,
     select_latest_version as slv,
     create_directory_structure as cds,
-    GremlinComponentAnalysisResponse
+    GremlinComponentAnalysisResponse,
+    CveByDateEcosystemUtils
 )
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
@@ -24,6 +28,39 @@ from urllib.request import urlopen
 
 now = datetime.datetime.now()
 later = now + datetime.timedelta(minutes=10)
+
+mocker_input = {
+    "result": {
+        "data": [
+            {
+                "cve": {
+                    "ecosystem": ["maven"],
+                    "cve_id": ["CVE-2018-0001"],
+                    "cvss_v2": [10.0],
+                    "nvd_status": ["Awaiting Analyses"],
+                    "description": ["Some description here updated just now."],
+                    "modified_date": ["20180911"]
+                },
+                "epv": {
+                    "pname": ["io.vertx:vertx-core"],
+                    "version": ["3.4.1"],
+                    "pecosystem": ["maven"],
+                }
+            },
+            {
+                "cve": {
+                    "ecosystem": ["npm"],
+                    "cve_id": ["CVE-2018-0002"],
+                    "cvss_v2": [10.0],
+                    "nvd_status": ["Depricated"],
+                    "description": ["Some description here updated just now."],
+                    "modified_date": ["20180911"]
+                }
+
+            }
+        ]
+    }
+}
 
 
 @pytest.fixture
@@ -286,3 +323,54 @@ def test_gremlin_component_analysis_response():
         assert resp.get_max_cvss_score() == 3.3
         assert resp.get_version_without_cves() == '1.3.3'
         assert len(resp.get_cve_maps()) == 1
+
+
+@patch("bayesian.utils.post")
+def test_cve_get_by_date_valid(mocker):
+    """Test getting CVEs for (date)."""
+    mocker.return_value = mock_response = Mock()
+    mock_response.json.return_value = mocker_input
+
+    cve = CveByDateEcosystemUtils('20160911')
+    response = cve.get_cves_by_date()
+
+    assert response
+    assert 'add' in response
+    assert response['add'][0]['cve_id'] == 'CVE-2018-0001'
+    assert 'ecosystem' in response['add'][0]
+    assert 'name' in response['add'][0]
+    assert 'version' in response['add'][0]
+
+
+@patch("bayesian.utils.post")
+def test_get_cves_by_date_ecosystem_add(mocker):
+    """Test getting CVEs by date and ecosystem."""
+    mocker.return_value = mock_response = Mock()
+    mock_response.json.return_value = mocker_input
+
+    cve = CveByDateEcosystemUtils('20180911', 'maven')
+    response = cve.get_cves_by_date_ecosystem()
+
+    assert response
+    assert 'add' in response
+    assert response['add'][0]['cve_id'] == 'CVE-2018-0001'
+    assert 'ecosystem' in response['add'][0]
+    assert response['add'][0]['ecosystem'] == 'maven'
+    assert 'name' in response['add'][0]
+    assert 'version' in response['add'][0]
+
+
+@patch("bayesian.utils.post")
+def test_get_cves_by_date_ecosystem_remove(mocker):
+    """Test getting CVEs by date and ecosystem."""
+    mocker.return_value = mock_response = Mock()
+    mock_response.json.return_value = mocker_input
+
+    cve = CveByDateEcosystemUtils('20180911', 'npm')
+    response = cve.get_cves_by_date_ecosystem()
+
+    assert response
+    assert 'remove' in response
+    assert response['remove'][0]['cve_id'] == 'CVE-2018-0002'
+    assert 'ecosystem' in response['remove'][0]
+    assert response['remove'][0]['ecosystem'] == 'npm'
