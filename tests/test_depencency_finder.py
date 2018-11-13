@@ -12,7 +12,6 @@ def test_scan_and_find_dependencies():
         "content": open(str(Path(__file__).parent / "data/manifests/npm-list.json")).read()
     }]
     res = DependencyFinder().scan_and_find_dependencies("npm", manifests)
-    print(res)
     assert "result" in res
     assert res['result'][0]['details'][0]['_resolved'][0]['package'] == "body-parser"
     assert len(res['result'][0]['details'][0]['_resolved'][0]['deps']) == 2

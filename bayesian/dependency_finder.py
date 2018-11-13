@@ -44,13 +44,13 @@ class DependencyFinder():
             dependencies = json.loads(manifest['content']).get('dependencies')
             resolved = []
             if dependencies:
-                for key in dependencies:
-                    version = dependencies[key]['version']
+                for key, val in dependencies.items():
+                    version = val['version']
                     transitive = []
-                    if 'dependencies' in dependencies[key]:
+                    if 'dependencies' in val:
                         transitive = DependencyFinder.get_npm_transitives(
                             transitive,
-                            dependencies[key]['dependencies'])
+                            val['dependencies'])
                     tmp_json = {
                         "package": key,
                         "version": version,
@@ -68,8 +68,8 @@ class DependencyFinder():
     def get_npm_transitives(transitive, content):
         """Scan the npm dependencies recursively to fetch transitive deps."""
         if content:
-            for key in content:
-                version = content[key]['version']
+            for key, val in content.items():
+                version = val['version']
                 tmp_json = {
                     "package": key,
                     "version": version
@@ -78,7 +78,7 @@ class DependencyFinder():
                 if 'dependencies' in content[key]:
                     transitive = DependencyFinder.get_npm_transitives(
                         transitive,
-                        content[key]['dependencies'])
+                        val['dependencies'])
         return transitive
 
     @staticmethod
