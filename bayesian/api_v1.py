@@ -745,7 +745,7 @@ class StackAnalyses(ResourceWithSchema):
         ecosystem = request.headers.get('ecosystem')
         origin = request.headers.get('origin')
         scan_repo_url = request.headers.get('ScanRepoUrl')
-        if is_scan_enabled and scan_repo_url:
+        if is_scan_enabled == "true" and scan_repo_url:
             try:
                 api_url = GEMINI_SERVER_URL
                 dependency_files = request.files.getlist('dependencyFile[]')
