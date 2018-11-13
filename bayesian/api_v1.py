@@ -39,7 +39,7 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data, get_core_dependencies,
                     create_directory_structure, push_repo, get_booster_core_repo,
-                    get_recommendation_feedback_by_ecosystem)
+                    get_recommendation_feedback_by_ecosystem, CveByDateEcosystemUtils)
 from .license_extractor import extract_licenses
 from .manifest_models import MavenPom
 
@@ -1227,6 +1227,24 @@ class RecommendationFB(Resource):
         return jsonify(result)
 
 
+class CveByDateEcosystem(ResourceWithSchema):
+    """Implementation of api endpoint for CVEs bydate & further filter by ecosystem if provided."""
+
+    @staticmethod
+    def get(modified_date, ecosystem=None):
+        """Implement GET Method."""
+        if not modified_date:
+            raise HTTPError(400, error="Expected date in the request")
+        try:
+            datetime.datetime.strptime(modified_date, '%Y%m%d')
+        except ValueError:
+            msg = 'Invalid datetime specified. Please specify in YYYYMMDD format'
+            raise HTTPError(400, msg)
+        getcve = CveByDateEcosystemUtils(modified_date, ecosystem)
+        result = getcve.get_cves_by_date() if not ecosystem else getcve.get_cves_by_date_ecosystem()
+        return jsonify(result), 200
+
+
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
                                endpoint='get_components')
@@ -1258,6 +1276,7 @@ add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 add_resource_no_matter_slashes(CoreDependencies, '/get-core-dependencies/<runtime>')
 add_resource_no_matter_slashes(EmptyBooster, '/empty-booster')
 add_resource_no_matter_slashes(RecommendationFB, '/recommendation_feedback/<ecosystem>')
+add_resource_no_matter_slashes(CveByDateEcosystem, '/cves/bydate/<modified_date>/<ecosystem>')
 
 
 @api_v1.errorhandler(HTTPError)
