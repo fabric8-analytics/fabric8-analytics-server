@@ -6,7 +6,6 @@ import semantic_version as sv
 import tempfile
 import os
 import json
-import requests
 from unittest.mock import Mock, patch
 
 
