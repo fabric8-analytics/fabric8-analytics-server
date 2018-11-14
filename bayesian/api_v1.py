@@ -103,8 +103,8 @@ def readiness():
 
 
 @api_v1.route('/zainee')
-def readiness():
-    """Handle the /readiness REST API call."""
+def zainee():
+    """Handle the /zainee REST API call."""
     current_app.logger.error("YUSUF ZAINEE")
     data = {
         "key": "value"
@@ -113,7 +113,7 @@ def readiness():
             'ecosystem': "npm",
             'data': data}
     server_run_flow('gitOperationsFlow', args)
-    return jsonify({}), 200
+    return jsonify({"sample": "response"}), 200
 
 
 @api_v1.route('/liveness')
