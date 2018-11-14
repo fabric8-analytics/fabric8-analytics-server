@@ -39,7 +39,8 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data, get_core_dependencies,
                     create_directory_structure, push_repo, get_booster_core_repo,
-                    get_recommendation_feedback_by_ecosystem, CveByDateEcosystemUtils)
+                    get_recommendation_feedback_by_ecosystem, CveByDateEcosystemUtils,
+                    server_run_flow)
 from .license_extractor import extract_licenses
 from .manifest_models import MavenPom
 
@@ -98,6 +99,20 @@ def error():
 @api_v1.route('/readiness')
 def readiness():
     """Handle the /readiness REST API call."""
+    return jsonify({}), 200
+
+
+@api_v1.route('/zainee')
+def readiness():
+    """Handle the /readiness REST API call."""
+    current_app.logger.error("YUSUF ZAINEE")
+    data = {
+        "key": "value"
+    }
+    args = {'git_url': "http://my-url.com",
+            'ecosystem': "npm",
+            'data': data}
+    server_run_flow('gitOperationsFlow', args)
     return jsonify({}), 200
 
 
