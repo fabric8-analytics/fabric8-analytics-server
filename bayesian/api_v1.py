@@ -40,14 +40,14 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     is_valid, select_latest_version, get_categories_data, get_core_dependencies,
                     create_directory_structure, push_repo, get_booster_core_repo,
                     get_recommendation_feedback_by_ecosystem, CveByDateEcosystemUtils,
-                    server_run_flow)
+                    server_run_flow, resolved_files_exist,
+                    get_ecosystem_from_manifest)
 from .license_extractor import extract_licenses
 from .manifest_models import MavenPom
 
 import os
 from f8a_worker.storages import AmazonS3
 from .generate_manifest import PomXMLTemplate
-from .default_config import GEMINI_SERVER_URL
 from fabric8a_auth.errors import AuthError
 
 
@@ -100,20 +100,6 @@ def error():
 def readiness():
     """Handle the /readiness REST API call."""
     return jsonify({}), 200
-
-
-@api_v1.route('/zainee')
-def zainee():
-    """Handle the /zainee REST API call."""
-    current_app.logger.error("YUSUF ZAINEE")
-    data = {
-        "key": "value"
-    }
-    args = {'git_url': "http://my-url.com",
-            'ecosystem': "npm",
-            'data': data}
-    server_run_flow('gitOperationsFlow', args)
-    return jsonify({"sample": "response"}), 200
 
 
 @api_v1.route('/liveness')
@@ -760,32 +746,12 @@ class StackAnalyses(ResourceWithSchema):
         ecosystem = request.headers.get('ecosystem')
         origin = request.headers.get('origin')
         scan_repo_url = request.headers.get('ScanRepoUrl')
-        if is_scan_enabled == "true" and scan_repo_url:
-            try:
-                api_url = GEMINI_SERVER_URL
-                dependency_files = request.files.getlist('dependencyFile[]')
-                current_app.logger.info('%r' % dependency_files)
-                data = {'git-url': scan_repo_url,
-                        'ecosystem': ecosystem}
-                if dependency_files:
-                    files = list()
-                    for dependency_file in dependency_files:
 
-                        # http://docs.python-requests.org/en/master/user/advanced/#post-multiple-multipart-encoded-files
-                        files.append((
-                                dependency_file.name, (
-                                    dependency_file.filename,
-                                    dependency_file.read(),
-                                    'text/plain'
-                                )
-                        ))
+        if ecosystem == "node":
+            ecosystem = "npm"
 
-                    _session.headers['Authorization'] = request.headers.get('Authorization')
-                    _session.post('{}/api/v1/user-repo/scan'.format(api_url),
-                                  data=data, files=files)
-            except Exception as exc:
-                raise HTTPError(500, "Could not process the scan endpoint call") \
-                    from exc
+        if ecosystem == "python":
+            ecosystem = "pypi"
 
         source = request.form.get('source')
         if github_url is not None:
@@ -822,7 +788,6 @@ class StackAnalyses(ResourceWithSchema):
             is_modified_flag = {'is_modified': False}
 
         manifests = []
-        # ecosystem = None
         for index, manifest_file_raw in enumerate(files):
             if github_url is not None:
                 filename = manifest_file_raw.get('filename', None)
@@ -847,6 +812,7 @@ class StackAnalyses(ResourceWithSchema):
                                           "manifest file '{filename}'".format(filename=filename))
 
             # Record the response details for this manifest file
+
             manifest = {'filename': filename,
                         'content': content,
                         'ecosystem': ecosystem or manifest_descriptor.ecosystem,
@@ -854,26 +820,47 @@ class StackAnalyses(ResourceWithSchema):
 
             manifests.append(manifest)
 
+            if not ecosystem:
+                ecosystem = get_ecosystem_from_manifest(manifests)
+
         data = {'api_name': 'stack_analyses'}
         args = {'external_request_id': request_id,
                 'ecosystem': ecosystem, 'data': data}
         try:
             api_url = current_app.config['F8_API_BACKBONE_HOST']
-
             d = DependencyFinder()
-            if origin == "vscode" and ecosystem in ("npm", "pypi"):
+            deps = {}
+            worker_flow_enabled = "false"
+
+            if resolved_files_exist(manifests) == "true" \
+                    and ecosystem in ("npm", "pypi"):
                 deps = d.scan_and_find_dependencies(ecosystem, manifests)
+            elif scan_repo_url and ecosystem == "npm":
+
+                args = {'git_url': scan_repo_url,
+                        'ecosystem': ecosystem,
+                        'is_scan_enabled': is_scan_enabled,
+                        'request_id': request_id,
+                        'is_modified_flag': is_modified_flag,
+                        'auth_key': request.headers.get('Authorization'),
+                        'check_license': check_license,
+                        'gh_token': github_token
+                        }
+                server_run_flow('gitOperationsFlow', args)
+                worker_flow_enabled = "true"
             else:
                 deps = d.execute(args, rdb.session, manifests, source)
+
             deps['external_request_id'] = request_id
             deps['current_stack_license'] = extract_licenses(license_files)
             deps.update(is_modified_flag)
 
-            _session.post(
-                '{}/api/v1/stack_aggregator'.format(api_url), json=deps,
-                params={'check_license': str(check_license).lower()})
-            _session.post('{}/api/v1/recommender'.format(api_url), json=deps,
-                          params={'check_license': str(check_license).lower()})
+            if worker_flow_enabled == "false":
+                _session.post(
+                    '{}/api/v1/stack_aggregator'.format(api_url), json=deps,
+                    params={'check_license': str(check_license).lower()})
+                _session.post('{}/api/v1/recommender'.format(api_url), json=deps,
+                              params={'check_license': str(check_license).lower()})
 
         except Exception as exc:
             raise HTTPError(500, ("Could not process {t}."

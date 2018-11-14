@@ -1240,3 +1240,27 @@ def get_recommendation_feedback_by_ecosystem(ecosystem):
     except SQLAlchemyError:
         rdb.session.rollback()
         raise
+
+
+accepted_file_names = {
+        "npmlist.json": "npm",
+        "direct-dependencies.txt": "maven",
+        "transitive-dependencies.txt": "maven",
+        "pylist.json": "pypi"
+    }
+
+
+def resolved_files_exist(manifests):
+    """Check if the manifest files are already resolved."""
+    for manifest in manifests:
+        if manifest['filename'] in accepted_file_names:
+            return "true"
+    return "false"
+
+
+def get_ecosystem_from_manifest(manifests):
+    """Check if the manifest files are already resolved."""
+    for manifest in manifests:
+        if manifest['filename'] in accepted_file_names:
+            return accepted_file_names[manifest['filename']]
+    return None

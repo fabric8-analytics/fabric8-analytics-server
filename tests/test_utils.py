@@ -19,7 +19,9 @@ from bayesian.utils import (
     select_latest_version as slv,
     create_directory_structure as cds,
     GremlinComponentAnalysisResponse,
-    CveByDateEcosystemUtils
+    CveByDateEcosystemUtils,
+    resolved_files_exist,
+    get_ecosystem_from_manifest
 )
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
@@ -371,3 +373,57 @@ def test_get_cves_by_date_ecosystem_remove(mocker):
     assert response['remove'][0]['cve_id'] == 'CVE-2018-0002'
     assert 'ecosystem' in response['remove'][0]
     assert response['remove'][0]['ecosystem'] == 'npm'
+
+
+def test_check_manifest_for_resolved_deps():
+    """Test test_check_manifest_for_resolved_deps function."""
+    manifests = [
+        {
+            'filename': "npmlist.json",
+            'ecosystem': "npm"
+        },
+        {
+            'filename': "npm-abcd.json",
+            'ecosystem': "npm"
+        }
+    ]
+    resp = resolved_files_exist(manifests)
+    assert resp == "true"
+
+    manifests = [
+        {
+            'filename': "npm-list.json",
+            'ecosystem': "npm"
+        },
+        {
+            'filename': "npm-abcd.json",
+            'ecosystem': "npm"
+        }
+    ]
+    resp = resolved_files_exist(manifests)
+    assert resp == "false"
+
+
+def test_get_ecosystem_from_manifest():
+    """Test get_ecosystem_from_manifest function."""
+    manifests = [
+        {
+            'filename': "npmlist.json",
+            'ecosystem': "npm"
+        },
+        {
+            'filename': "npm-abcd.json",
+            'ecosystem': "npm"
+        }
+    ]
+    resp = get_ecosystem_from_manifest(manifests)
+    assert resp == "npm"
+
+    manifests = [
+        {
+            'filename': "direct-dependencies.txt",
+            'ecosystem': "maven"
+        }
+    ]
+    resp = get_ecosystem_from_manifest(manifests)
+    assert resp == "maven"

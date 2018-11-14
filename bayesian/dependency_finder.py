@@ -51,10 +51,10 @@ class DependencyFinder():
                     version = val.get('version') or val.get('required').get('version')
                     if version:
                         transitive = []
-                        deps = val.get('dependencies') or \
+                        tr_deps = val.get('dependencies') or \
                             val.get('required', {}).get('dependencies')
-                        if deps:
-                            transitive = DependencyFinder.get_npm_transitives(transitive, deps)
+                        if tr_deps:
+                            transitive = DependencyFinder.get_npm_transitives(transitive, tr_deps)
                         tmp_json = {
                             "package": key,
                             "version": version,
@@ -80,9 +80,9 @@ class DependencyFinder():
                         "version": version
                     }
                     transitive.append(tmp_json)
-                    deps = val.get('dependencies') or val.get('required', {}).get('dependencies')
-                    if deps:
-                        transitive = DependencyFinder.get_npm_transitives(transitive, deps)
+                    tr_deps = val.get('dependencies') or val.get('required', {}).get('dependencies')
+                    if tr_deps:
+                        transitive = DependencyFinder.get_npm_transitives(transitive, tr_deps)
         return transitive
 
     @staticmethod
