@@ -834,7 +834,7 @@ class StackAnalyses(ResourceWithSchema):
             # Record the response details for this manifest file
             manifest = {'filename': filename,
                         'content': content,
-                        'ecosystem': manifest_descriptor.ecosystem,
+                        'ecosystem': ecosystem,
                         'filepath': filepath}
 
             manifests.append(manifest)
