@@ -45,18 +45,19 @@ class DependencyFinder():
             resolved = []
             if dependencies:
                 for key, val in dependencies.items():
-                    version = val['version']
-                    transitive = []
-                    if 'dependencies' in val:
-                        transitive = DependencyFinder.get_npm_transitives(
-                            transitive,
-                            val['dependencies'])
-                    tmp_json = {
-                        "package": key,
-                        "version": version,
-                        "deps": transitive
-                    }
-                    resolved.append(tmp_json)
+                    version = val.get('version') or val.get('required').get('version')
+                    if version:
+                        transitive = []
+                        deps = val.get('dependencies') or \
+                            val.get('required', {}).get('dependencies')
+                        if deps:
+                            transitive = DependencyFinder.get_npm_transitives(transitive, deps)
+                        tmp_json = {
+                            "package": key,
+                            "version": version,
+                            "deps": transitive
+                        }
+                        resolved.append(tmp_json)
             dep['_resolved'] = resolved
             details.append(dep)
             details_json = {"details": details}
@@ -69,16 +70,16 @@ class DependencyFinder():
         """Scan the npm dependencies recursively to fetch transitive deps."""
         if content:
             for key, val in content.items():
-                version = val['version']
-                tmp_json = {
-                    "package": key,
-                    "version": version
-                }
-                transitive.append(tmp_json)
-                if 'dependencies' in content[key]:
-                    transitive = DependencyFinder.get_npm_transitives(
-                        transitive,
-                        val['dependencies'])
+                version = val.get('version') or val.get('required').get('version')
+                if version:
+                    tmp_json = {
+                        "package": key,
+                        "version": version
+                    }
+                    transitive.append(tmp_json)
+                    deps = val.get('dependencies') or val.get('required', {}).get('dependencies')
+                    if deps:
+                        transitive = DependencyFinder.get_npm_transitives(transitive, deps)
         return transitive
 
     @staticmethod
