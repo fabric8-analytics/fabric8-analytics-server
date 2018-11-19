@@ -1219,6 +1219,8 @@ class EmptyBooster(ResourceWithSchema):
 class RecommendationFB(Resource):
     """Implementation of /recommendation_feedback/<ecosystem> API call."""
 
+    method_decorators = [login_required]
+
     @staticmethod
     def get(ecosystem):
         """Implement GET method."""
