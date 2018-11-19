@@ -1232,6 +1232,8 @@ class RecommendationFB(Resource):
 class CveByDateEcosystem(ResourceWithSchema):
     """Implementation of api endpoint for CVEs bydate & further filter by ecosystem if provided."""
 
+    method_decorators = [login_required]
+
     @staticmethod
     def get(modified_date, ecosystem=None):
         """Implement GET Method."""
