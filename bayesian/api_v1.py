@@ -1219,8 +1219,6 @@ class EmptyBooster(ResourceWithSchema):
 class RecommendationFB(Resource):
     """Implementation of /recommendation_feedback/<ecosystem> API call."""
 
-    method_decorators = [login_required]
-
     @staticmethod
     def get(ecosystem):
         """Implement GET method."""
@@ -1233,6 +1231,8 @@ class RecommendationFB(Resource):
 
 class CveByDateEcosystem(ResourceWithSchema):
     """Implementation of api endpoint for CVEs bydate & further filter by ecosystem if provided."""
+
+    method_decorators = [login_required]
 
     @staticmethod
     def get(modified_date, ecosystem=None):
