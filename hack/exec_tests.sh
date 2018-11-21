@@ -22,3 +22,8 @@ echo "*****************************************"
 # we need no:cacheprovider, otherwise pytest will try to write to directory .cache which is in /usr under unprivileged
 # user and will cause exception
 py.test -p no:cacheprovider --cov=/bayesian/bayesian/ --cov-report term-missing --cov-fail-under=$COVERAGE_THRESHOLD -vv $@
+
+# this is necessary - codecov expect proper git repo
+cp -r /bayesian/.git ./
+
+codecov --token=e77dc055-bc31-402b-aeac-dc6f66a3668f
