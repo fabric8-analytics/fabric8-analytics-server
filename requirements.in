@@ -19,5 +19,6 @@ semantic_version
 py_lru_cache
 radon
 pygithub
+codecov
 lxml
 gitpython
