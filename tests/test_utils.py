@@ -330,7 +330,7 @@ def test_cve_get_by_date_valid(mocker):
     mocker.return_value = mock_response = Mock()
     mock_response.json.return_value = mocker_input
 
-    cve = CveByDateEcosystemUtils('20160911')
+    cve = CveByDateEcosystemUtils(1,'20160911')
     response = cve.get_cves_by_date()
 
     assert response
@@ -347,7 +347,7 @@ def test_get_cves_by_date_ecosystem_add(mocker):
     mocker.return_value = mock_response = Mock()
     mock_response.json.return_value = mocker_input
 
-    cve = CveByDateEcosystemUtils('20180911', 'maven')
+    cve = CveByDateEcosystemUtils(1,'20180911', 'maven')
     response = cve.get_cves_by_date_ecosystem()
 
     assert response
@@ -365,7 +365,7 @@ def test_get_cves_by_date_ecosystem_remove(mocker):
     mocker.return_value = mock_response = Mock()
     mock_response.json.return_value = mocker_input
 
-    cve = CveByDateEcosystemUtils('20180911', 'npm')
+    cve = CveByDateEcosystemUtils(1,'20180911', 'npm')
     response = cve.get_cves_by_date_ecosystem()
 
     assert response
