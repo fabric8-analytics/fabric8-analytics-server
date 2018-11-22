@@ -382,7 +382,7 @@ class CveByDateEcosystemUtils:
     .has('vertex_label','CVE').as('cve')\
     .coalesce(\
     inE('has_cve').outV().as('epv').select('cve','epv').by(valueMap()),\
-    select('cve').by(valueMap()))\
+    select('cve').by(valueMap())).range(start,end)\
     """
 
     # Get CVEs by date & ecosystem
@@ -392,25 +392,27 @@ class CveByDateEcosystemUtils:
     .has('ecosystem',ecosystem).as('cve')\
     .coalesce(\
     inE('has_cve').outV().as('epv').select('cve','epv').by(valueMap()),\
-    select('cve').by(valueMap()))\
+    select('cve').by(valueMap())).range(start,end)\
     """
 
-    def __init__(self, bydate, ecosystem=None):
+    def __init__(self, page, bydate, ecosystem=None):
         """Constructor."""
+        self._delta = 500
+        self._query_begin = (page-1)*self._delta
         self._bydate = bydate
         self._ecosystem = ecosystem
 
     def get_cves_by_date(self):
         """Call graph and get CVEs by date."""
         script = self.cve_nodes_by_date_script_template
-        bindings = {'modified_date': self._bydate}
+        bindings = {'modified_date': self._bydate, 'start': self._query_begin, 'end': self._query_begin + self._delta}
         return self.get_cves(script, bindings)
 
     def get_cves_by_date_ecosystem(self):
         """Call graph and get CVEs by date and ecosystem."""
         script = self.cve_nodes_by_date_ecosystem_script_template
         self._ecosystem = self._ecosystem.lower()
-        bindings = {'modified_date': self._bydate, 'ecosystem': self._ecosystem}
+        bindings = {'modified_date': self._bydate, 'ecosystem': self._ecosystem, 'start': self._query_begin, 'end': self._query_begin + self._delta}
         return self.get_cves(script, bindings)
 
     def get_cves(self, script, bindings):

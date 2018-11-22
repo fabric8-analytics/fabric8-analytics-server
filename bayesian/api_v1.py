@@ -1204,7 +1204,7 @@ class CveByDateEcosystem(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    def get(modified_date, ecosystem=None):
+    def get(modified_date):
         """Implement GET Method."""
         if not modified_date:
             raise HTTPError(400, error="Expected date in the request")
@@ -1213,9 +1213,16 @@ class CveByDateEcosystem(Resource):
         except ValueError:
             msg = 'Invalid datetime specified. Please specify in YYYYMMDD format'
             raise HTTPError(400, msg)
-        getcve = CveByDateEcosystemUtils(modified_date, ecosystem)
+        page = request.args.get('page','1')
+        if not page.isdigit() or page=='0':
+            raise HTTPError(400, error="Page parameter should be a positive integer")
+        ecosystem = request.args.get('ecosystem',None)
+        getcve = CveByDateEcosystemUtils(int(page), modified_date, ecosystem)
         result = getcve.get_cves_by_date() if not ecosystem else getcve.get_cves_by_date_ecosystem()
-        return jsonify(result), 200
+        headers = {}
+        if result['count']==500:
+            headers['page'] = int(page) + 1
+        return result, 200 , headers
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
@@ -1245,8 +1252,7 @@ add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 add_resource_no_matter_slashes(CoreDependencies, '/get-core-dependencies/<runtime>')
 add_resource_no_matter_slashes(EmptyBooster, '/empty-booster')
 add_resource_no_matter_slashes(RecommendationFB, '/recommendation_feedback/<ecosystem>')
-add_resource_no_matter_slashes(CveByDateEcosystem, '/cves/bydate/<modified_date>/<ecosystem>')
-
+add_resource_no_matter_slashes(CveByDateEcosystem, '/cves/bydate/<modified_date>')
 
 @api_v1.errorhandler(HTTPError)
 def handle_http_error(err):
