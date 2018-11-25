@@ -17,5 +17,19 @@ def test_scan_and_find_dependencies():
     assert len(res['result'][0]['details'][0]['_resolved'][0]['deps']) == 2
 
 
+def test_scan_and_find_dependencies_pypi():
+    """Test scan_and_find_dependencies function for pypi."""
+    manifests = [{
+        "filename": "pylist.json",
+        "filepath": "/bin/local",
+        "content": open(str(Path(__file__).parent / "data/manifests/pylist.json")).read()
+    }]
+    res = DependencyFinder().scan_and_find_dependencies("pypi", manifests)
+    assert "result" in res
+    assert res['result'][0]['details'][0]['_resolved'][0]['package'] == "django"
+    assert len(res['result'][0]['details'][0]['_resolved'][0]['deps']) == 1
+
+
 if __name__ == '__main__':
     test_scan_and_find_dependencies()
+    test_scan_and_find_dependencies_pypi()
