@@ -15,6 +15,7 @@ from f8a_worker.workers.mercator import MercatorTask
 from botocore.exceptions import ClientError
 
 from .utils import generate_content_hash
+from .exceptions import HTTPError
 
 
 class DependencyFinder():
@@ -26,6 +27,8 @@ class DependencyFinder():
         deps = dict()
         if ecosystem == "npm":
             deps = DependencyFinder.get_npm_dependencies(ecosystem, manifests)
+        if ecosystem == "pypi":
+            deps = DependencyFinder.get_pypi_dependencies(ecosystem, manifests)
         return deps
 
     @staticmethod
@@ -178,3 +181,46 @@ class DependencyFinder():
             result.append(out)
 
         return {'result': result}
+
+    @staticmethod
+    def get_pypi_dependencies(ecosystem, manifests):
+        """Scan the pypi dependencies files to fetch transitive deps."""
+        result = []
+        details = []
+        deps = {}
+        for manifest in manifests:
+            dep = {
+                "ecosystem": ecosystem,
+                "manifest_file_path": manifest['filepath'],
+                "manifest_file": manifest['filename']
+            }
+            DependencyFinder.validate_manifest(ecosystem, manifest)
+            content = json.loads(manifest['content'])
+            dep['_resolved'] = content
+            details.append(dep)
+            details_json = {"details": details}
+            result.append(details_json)
+        deps['result'] = result
+        return deps
+
+    @staticmethod
+    def validate_manifest(ecosystem, manifest):
+        """Validate the manifest for the correct format."""
+        content = json.loads(manifest['content'])
+        if ecosystem == 'pypi':
+            if not content:
+                current_app.logger.warning(
+                    "No content provided for pypi manifest file {}".format(manifest['filename']))
+            if type(content) != list:
+                raise HTTPError(400, "manifest file must be in the format of "
+                                "[{package: name, version: ver, deps: []}, ]")
+            for item in content:
+                if not all([item.get('package'), item.get('version') is not None]):
+                    current_app.logger.error(item)
+                    raise HTTPError(
+                        400, "Supported format is {package:name, version:ver, deps:[]}")
+                for transitive in item.get('deps', []):
+                    if not all([item.get('package'), item.get('version') is not None]):
+                        current_app.logger.error(item)
+                        raise HTTPError(
+                            400, "Supported format is {package:name, version:ver}")

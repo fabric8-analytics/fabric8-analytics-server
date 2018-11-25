@@ -818,7 +818,7 @@ class StackAnalyses(ResourceWithSchema):
                 filepath = filepaths[index]
                 content = manifest_file_raw.read().decode('utf-8')
             # For npm-list.json, we need not verify it as its not going to mercator task
-            if origin != "vscode" and ecosystem != "npm":
+            if origin != "vscode" and ecosystem not in ("npm", "pypi"):
                 # check if manifest files with given name are supported
                 manifest_descriptor = get_manifest_descriptor_by_filename(filename)
                 if manifest_descriptor is None:
@@ -846,7 +846,7 @@ class StackAnalyses(ResourceWithSchema):
             api_url = current_app.config['F8_API_BACKBONE_HOST']
 
             d = DependencyFinder()
-            if origin == "vscode" and ecosystem == "npm":
+            if origin == "vscode" and ecosystem in ("npm", "pypi"):
                 deps = d.scan_and_find_dependencies(ecosystem, manifests)
             else:
                 deps = d.execute(args, rdb.session, manifests, source)
