@@ -7,8 +7,8 @@ ENV LANG=en_US.UTF-8 \
 RUN useradd -d /coreapi coreapi
 
 # https://copr.fedorainfracloud.org/coprs/fche/pcp/
-# https://copr.fedorainfracloud.org/coprs/jpopelka/mercator/
-COPY hack/_copr_fche_pcp.repo hack/_copr_jpopelka-mercator.repo /etc/yum.repos.d/
+# https://copr.fedorainfracloud.org/coprs/msrb/mercator/
+COPY hack/_copr_fche_pcp.repo hack/_copr_msrb-mercator.repo /etc/yum.repos.d/
 
 # python3-pycurl is needed for Amazon SQS (boto lib), we need CentOS' rpm - installing it from pip results in NSS errors
 RUN yum install -y epel-release &&\
