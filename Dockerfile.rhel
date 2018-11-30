@@ -3,7 +3,7 @@ LABEL maintainer "Devtools <devtools@redhat.com>"
 LABEL author "Devtools <devtools@redhat.com>"
 
 ENV LANG=en_US.UTF-8 \
-    F8A_WORKER_VERSION=e731a6d \
+    F8A_WORKER_VERSION=d403113 \
     F8A_AUTH_VERSION=5211e23
 
 RUN useradd -d /coreapi coreapi
