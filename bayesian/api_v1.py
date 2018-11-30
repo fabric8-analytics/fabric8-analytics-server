@@ -831,12 +831,15 @@ class StackAnalyses(ResourceWithSchema):
             d = DependencyFinder()
             deps = {}
             worker_flow_enabled = "false"
+            # TODO This will be changed once we add support for other ecosystems
 
             if resolved_files_exist(manifests) == "true" \
                     and ecosystem in ("npm", "pypi"):
+                # This condition for the flow from vscode
                 deps = d.scan_and_find_dependencies(ecosystem, manifests)
             elif scan_repo_url and ecosystem == "npm":
 
+                # This condition is for the build flow
                 args = {'git_url': scan_repo_url,
                         'ecosystem': ecosystem,
                         'is_scan_enabled': is_scan_enabled,
@@ -847,8 +850,10 @@ class StackAnalyses(ResourceWithSchema):
                         'gh_token': github_token
                         }
                 server_run_flow('gitOperationsFlow', args)
+                # Flag to prevent calling of backbone twice
                 worker_flow_enabled = "true"
             else:
+                # The default flow via mercator
                 deps = d.execute(args, rdb.session, manifests, source)
 
             deps['external_request_id'] = request_id
@@ -856,6 +861,7 @@ class StackAnalyses(ResourceWithSchema):
             deps.update(is_modified_flag)
 
             if worker_flow_enabled == "false":
+                # No need to call backbone if its already called via worker flow
                 _session.post(
                     '{}/api/v1/stack_aggregator'.format(api_url), json=deps,
                     params={'check_license': str(check_license).lower()})
