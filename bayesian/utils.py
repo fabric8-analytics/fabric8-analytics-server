@@ -1246,6 +1246,7 @@ accepted_file_names = {
         "npmlist.json": "npm",
         "direct-dependencies.txt": "maven",
         "transitive-dependencies.txt": "maven",
+        "golist.json": "golang",
         "pylist.json": "pypi"
     }
 
