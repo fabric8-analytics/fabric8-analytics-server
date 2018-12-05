@@ -1,15 +1,11 @@
 """Unit tests for the REST API module."""
 
 import datetime
-import json
-import os
-
 import pytest
 
 from bayesian import api_v1
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
-from f8a_worker.schemas import load_all_worker_schemas
 
 
 def api_route_for(route):

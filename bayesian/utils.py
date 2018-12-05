@@ -478,8 +478,7 @@ def get_latest_analysis_for(ecosystem, package, version):
         raise
 
 
-# TODO: fix the unused variable 'projection'
-def get_latest_analysis_by_hash(algorithm, artifact_hash, projection=None):
+def get_latest_analysis_by_hash(algorithm, artifact_hash):
     """Note: has to be called inside flask request context."""
     if algorithm not in ['sha1', 'sha256', 'md5']:
         return None
