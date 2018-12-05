@@ -7,7 +7,6 @@ import os
 import pytest
 
 from bayesian import api_v1
-from bayesian.schemas import load_all_server_schemas
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
 from f8a_worker.schemas import load_all_worker_schemas
@@ -130,10 +129,6 @@ class TestApiV1Root(object):
             "/api/v1/get-next-component/<ecosystem>",
             "/api/v1/master-tags/<ecosystem>",
             "/api/v1/recommendation_feedback/<ecosystem>",
-            "/api/v1/schemas",
-            "/api/v1/schemas/<collection>",
-            "/api/v1/schemas/<collection>/<name>",
-            "/api/v1/schemas/<collection>/<name>/<version>",
             "/api/v1/set-tags",
             "/api/v1/stack-analyses",
             "/api/v1/stack-analyses/<external_request_id>",
@@ -215,99 +210,6 @@ class TestApiV1Schemas(object):
         """Check schema ID added by the API server."""
         expected_id = 'http://localhost' + expected_path + '/'
         assert received_schema['id'] == expected_id
-
-    def test_get_all_schemas(self, accept_json):
-        """Test for the /api/v1/schemas endpoint."""
-        query_path = api_route_for('/schemas')
-        res = self.client.get(query_path, headers=accept_json)
-        assert res.status_code == 200
-        received_data = res.json
-        assert received_data == api_v1.PublishedSchemas.schema_collections
-        for collection, schemas in received_data.items():
-            collection_path = query_path + "/" + collection
-            for name, versions in schemas.items():
-                schema_path = collection_path + "/" + name
-                for version, schema in versions.items():
-                    version_path = schema_path + "/" + version
-                    self._check_schema_id(schema, version_path)
-
-    def test_get_schemas_by_collection(self, accept_json):
-        """Test for the /api/v1/schemas/api endpoint."""
-        collection_path = api_route_for('/schemas/api')
-        res = self.client.get(collection_path, headers=accept_json)
-        assert res.status_code == 200
-        received_data = res.json
-        assert received_data == api_v1.PublishedSchemas.\
-            schema_collections[api_v1.PublishedSchemas.API_COLLECTION]
-        for name, versions in received_data.items():
-            schema_path = collection_path + "/" + name
-            for version, schema in versions.items():
-                version_path = schema_path + "/" + version
-                self._check_schema_id(schema, version_path)
-
-        res = self.client.get(api_route_for('/schemas/blahblahblah'), headers=accept_json)
-        assert res.status_code == 404
-
-    def test_get_schemas_by_collection_and_name(self, accept_json):
-        """Test for the /api/v1/schemas/api/component_analyses endpoint."""
-        schema_path = api_route_for('/schemas/api/component_analyses')
-        res = self.client.get(schema_path, headers=accept_json)
-        assert res.status_code == 200
-        received_data = res.json
-        assert received_data == api_v1.PublishedSchemas.\
-            schema_collections[api_v1.PublishedSchemas.API_COLLECTION]['component_analyses']
-        for version, schema in received_data.items():
-            version_path = schema_path + "/" + version
-            self._check_schema_id(schema, version_path)
-
-        res = self.client.get(api_route_for('/schemas/api/blahblahblah'),
-                              headers=accept_json)
-        assert res.status_code == 404
-
-    def test_get_schema_by_collection_and_name_and_version(self, accept_json):
-        """Test for the /api/v1/schemas/api/component_analyses endpoint."""
-        version_path = api_route_for('/schemas/api/component_analyses/1-0-0')
-        res = self.client.get(version_path, headers=accept_json)
-        assert res.status_code == 200
-        received_data = res.json
-        assert received_data == api_v1.PublishedSchemas.\
-            schema_collections[api_v1.PublishedSchemas.
-                               API_COLLECTION]['component_analyses']['1-0-0']
-        self._check_schema_id(received_data, version_path)
-
-        res = self.client.get(api_route_for('/schemas/api/component_analyses/blah-blah-blah'),
-                              headers=accept_json)
-        assert res.status_code == 404
-
-    def test_get_server_schemas(self, accept_json):
-        """Test that all server schemas are provided in all versions through the API."""
-        for schema_ref, _ in load_all_server_schemas().items():
-            path = api_route_for('/schemas/api/{}/{}'.format(schema_ref.name,
-                                                             schema_ref.version))
-            res = self.client.get(path, headers=accept_json)
-            assert res.status_code == 200
-            received_schema = res.json
-            self._check_schema_id(received_schema, path)
-            received_schema.pop('id')
-            json_path = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                     'data',
-                                     'schemas',
-                                     '{}-v{}.schema.json'.
-                                     format(schema_ref.name, schema_ref.version))
-            with open(json_path) as f:
-                assert received_schema == json.load(f)
-
-    def test_get_worker_schemas(self, accept_json):
-        """Test that all worker schemas are provided in all versions through the API."""
-        for schema_ref, json_schema in load_all_worker_schemas().items():
-            path = api_route_for('/schemas/component_analyses/{}/{}'.
-                                 format(schema_ref.name, schema_ref.version))
-            res = self.client.get(path, headers=accept_json)
-            assert res.status_code == 200
-            received_schema = res.json
-            self._check_schema_id(received_schema, path)
-            received_schema.pop('id')
-            assert received_schema == json_schema
 
     def test_get_recommendation_feedback(self, accept_json):
         """Test GET endpoint for /recommendation_feedback/<ecosystem>."""

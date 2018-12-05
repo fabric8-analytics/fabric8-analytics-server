@@ -21,7 +21,7 @@ from selinon import StoragePool
 
 from f8a_worker.models import (
     Ecosystem, StackAnalysisRequest, RecommendationFeedback)
-from f8a_worker.schemas import load_all_worker_schemas, SchemaRef
+from f8a_worker.schemas import SchemaRef
 from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
@@ -30,7 +30,6 @@ from .dependency_finder import DependencyFinder
 from fabric8a_auth.auth import login_required
 from .auth import get_access_token
 from .exceptions import HTTPError
-from .schemas import load_all_server_schemas
 from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     server_create_component_bookkeeping, build_nested_schema_dict,
                     server_create_analysis, get_analyses_from_graph,
@@ -648,39 +647,6 @@ class PublishedSchemas(ResourceWithSchema):
     """Implementation of all /schemas REST API calls."""
 
     API_COLLECTION = 'api'
-    COMPONENT_ANALYSES_COLLECTION = 'component_analyses'
-    schema_collections = {
-        API_COLLECTION: build_nested_schema_dict(load_all_server_schemas()),
-        COMPONENT_ANALYSES_COLLECTION: build_nested_schema_dict(load_all_worker_schemas())
-    }
-
-    def __init__(self):
-        """Construct PublishedSchemas class instance and initialize id attribute for all schemas."""
-        super(PublishedSchemas, self).__init__()
-        for collection, schemas in self.schema_collections.items():
-            for name, versions in schemas.items():
-                for version, schema in versions.items():
-                    url = self._get_schema_url(collection, name, version)
-                    schema["id"] = url
-
-    def get(self, collection=None, name=None, version=None):
-        """Get the schema for specified collection, name, and version."""
-        # Boring if statement instead of clever loop because Nick is no fun
-        result = self.schema_collections
-        if collection is not None:
-            schema_path = [collection]
-            result = self.schema_collections.get(collection)
-            if result is not None and name is not None:
-                schema_path.append(name)
-                result = result.get(name)
-                if result is not None and version is not None:
-                    schema_path.append(version)
-                    result = result.get(version)
-
-        # schema does not exist
-        if result is None:
-            raise HTTPError(404, 'Schema {} does not exist'.format('/'.join(schema_path)))
-        return result
 
     @classmethod
     def _get_schema_url(cls, collection, name, version):
@@ -1270,13 +1236,6 @@ add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(UserIntent, '/user-intent')
 add_resource_no_matter_slashes(UserIntentGET, '/user-intent/<user>/<ecosystem>')
 add_resource_no_matter_slashes(MasterTagsGET, '/master-tags/<ecosystem>')
-add_resource_no_matter_slashes(PublishedSchemas, '/schemas')
-add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>',
-                               endpoint='get_schemas_by_collection')
-add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>',
-                               endpoint='get_schemas_by_name')
-add_resource_no_matter_slashes(PublishedSchemas, '/schemas/<collection>/<name>/<version>',
-                               endpoint='get_schema_by_name_and_version')
 add_resource_no_matter_slashes(GenerateManifest, '/generate-file')
 add_resource_no_matter_slashes(
     GetNextComponent, '/get-next-component/<ecosystem>')
