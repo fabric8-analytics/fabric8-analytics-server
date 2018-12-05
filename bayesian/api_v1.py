@@ -31,7 +31,7 @@ from fabric8a_auth.auth import login_required
 from .auth import get_access_token
 from .exceptions import HTTPError
 from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
-                    server_create_component_bookkeeping, build_nested_schema_dict,
+                    server_create_component_bookkeeping,
                     server_create_analysis, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, RecommendationReason,
