@@ -31,9 +31,7 @@ RUN mkdir -p /etc/pcp /var/run/pcp /var/lib/pcp /var/log/pcp  && \
 COPY ./ /coreapi
 RUN pushd /coreapi && \
     pip3 install --upgrade pip>=10.0.0 && pip3 install . &&\
-    popd && \
-    # needed for DB migrations
-    find coreapi/ -mindepth 1 -maxdepth 1 \( ! -name 'alembic*' -a ! -name hack \) -exec rm -rf {} +
+    popd
 
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@${F8A_AUTH_VERSION}
