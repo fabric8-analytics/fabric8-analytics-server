@@ -21,7 +21,6 @@ from selinon import StoragePool
 
 from f8a_worker.models import (
     Ecosystem, StackAnalysisRequest, RecommendationFeedback)
-from f8a_worker.schemas import SchemaRef
 from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
@@ -48,7 +47,6 @@ import os
 from f8a_worker.storages import AmazonS3
 from .generate_manifest import PomXMLTemplate
 from fabric8a_auth.errors import AuthError
-
 
 # TODO: improve maintainability index
 # TODO: https://github.com/fabric8-analytics/fabric8-analytics-server/issues/373
@@ -199,60 +197,7 @@ def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None
                              defaults=defaults)
 
 
-class ResourceWithSchema(Resource):
-    """This class makes sure we can add schemas to any response returned by any API endpoint.
-
-    If a subclass of ResourceWithSchema is supposed to add a schema, it has to:
-    - either implement `add_schema` method (see its docstring for information on signature
-      of this method)
-    - or add a `schema_ref` (instance of `f8a_worker.schemas.SchemaRef`) class attribute.
-      If this attribute is added, it only adds schema to response with `200` status code
-      on `GET` request.
-    Note that if both `schema_ref` and `add_schema` are defined, only the method will be used.
-    """
-
-    def add_schema(self, response, status_code, method):
-        """Add schema to response.
-
-        The schema must be dict containing 3 string values:
-        name, version and url (representing name and version of the schema and its
-        full url).
-
-        :param response: dict, the actual response object returned by the view
-        :param status_code: int, numeric representation of returned status code
-        :param method: str, uppercase textual representation of used HTTP method
-        :return: dict, modified response object that includes the schema
-        """
-        if hasattr(self, 'schema_ref') and status_code == 200 and method == 'GET':
-            response['schema'] = {
-                'name': self.schema_ref.name,
-                'version': self.schema_ref.version,
-                'url': PublishedSchemas.get_api_schema_url(name=self.schema_ref.name,
-                                                           version=self.schema_ref.version)
-            }
-        return response
-
-    def dispatch_request(self, *args, **kwargs):
-        """Perform the request dispatching based on the standard Flask dispatcher."""
-        response = super().dispatch_request(*args, **kwargs)
-
-        method = request.method
-        status_code = 200
-        response_body = response
-        headers = None
-
-        # TODO: please explain the logic for the code below:
-        if isinstance(response, tuple):
-            response_body = response[0]
-            if len(response) > 1:
-                status_code = response[1]
-            if len(response) > 2:
-                headers = response[2]
-
-        return self.add_schema(response_body, status_code, method), status_code, headers
-
-
-class ApiEndpoints(ResourceWithSchema):
+class ApiEndpoints(Resource):
     """Implementation of / REST API call."""
 
     def get(self):
@@ -260,7 +205,7 @@ class ApiEndpoints(ResourceWithSchema):
         return {'paths': sorted(_resource_paths)}
 
 
-class SystemVersion(ResourceWithSchema):
+class SystemVersion(Resource):
     """Implementation of /system/version REST API call."""
 
     @staticmethod
@@ -269,7 +214,7 @@ class SystemVersion(ResourceWithSchema):
         return get_system_version()
 
 
-class ComponentSearch(ResourceWithSchema):
+class ComponentSearch(Resource):
     """Implementation of /component-search REST API call."""
 
     method_decorators = [login_required]
@@ -285,12 +230,10 @@ class ComponentSearch(ResourceWithSchema):
         return result
 
 
-class ComponentAnalyses(ResourceWithSchema):
+class ComponentAnalyses(Resource):
     """Implementation of all /component-analyses REST API calls."""
 
     method_decorators = [login_required]
-
-    schema_ref = SchemaRef('analyses_graphdb', '1-2-0')
 
     @staticmethod
     def get(ecosystem, package, version):
@@ -337,12 +280,10 @@ class ComponentAnalyses(ResourceWithSchema):
         return {}, 202
 
 
-class StackAnalysesGET(ResourceWithSchema):
+class StackAnalysesGET(Resource):
     """Implementation of the /stack-analyses GET REST API call method."""
 
     method_decorators = [login_required]
-
-    # schema_ref = SchemaRef('stack_analyses', '2-1-4')
 
     @staticmethod
     def get(external_request_id):
@@ -462,7 +403,7 @@ def stack_analyses_debug(external_request_id):
     return jsonify(response), 200
 
 
-class UserFeedback(ResourceWithSchema):
+class UserFeedback(Resource):
     """Implementation of /user-feedback POST REST API call."""
 
     method_decorators = [login_required]
@@ -494,7 +435,7 @@ class UserFeedback(ResourceWithSchema):
         return {'status': 'success'}
 
 
-class UserIntent(ResourceWithSchema):
+class UserIntent(Resource):
     """Implementation of /user-intent POST REST API call."""
 
     method_decorators = [login_required]
@@ -536,7 +477,7 @@ class UserIntent(ResourceWithSchema):
             return s3.store_user_data(input_json)
 
 
-class UserIntentGET(ResourceWithSchema):
+class UserIntentGET(Resource):
     """Implementation of /user-intent GET REST API call."""
 
     method_decorators = [login_required]
@@ -565,7 +506,7 @@ class UserIntentGET(ResourceWithSchema):
         return result
 
 
-class MasterTagsGET(ResourceWithSchema):
+class MasterTagsGET(Resource):
     """Implementation of /master-tags REST API call."""
 
     method_decorators = [login_required]
@@ -598,7 +539,7 @@ class MasterTagsGET(ResourceWithSchema):
         return "{}({})".format(self.__class__.__name__, self.id)
 
 
-class GetNextComponent(ResourceWithSchema):
+class GetNextComponent(Resource):
     """Implementation of all /get-next-component REST API call."""
 
     method_decorators = [login_required]
@@ -622,7 +563,7 @@ class GetNextComponent(ResourceWithSchema):
             raise HTTPError(200, error="No package found for tagging.")
 
 
-class SetTagsToComponent(ResourceWithSchema):
+class SetTagsToComponent(Resource):
     """Implementation of all /set-tags REST API calls."""
 
     method_decorators = [login_required]
@@ -660,29 +601,6 @@ class SetTagsToComponent(ResourceWithSchema):
             raise HTTPError(400, error=_error)
 
 
-class PublishedSchemas(ResourceWithSchema):
-    """Implementation of all /schemas REST API calls."""
-
-    API_COLLECTION = 'api'
-
-    @classmethod
-    def _get_schema_url(cls, collection, name, version):
-        """Get the URL to given schema URL for the API collection."""
-        return rest_api_v1.url_for(cls, collection=collection, name=name,
-                                   version=version, _external=True)
-
-    @classmethod
-    def get_api_schema_url(cls, name, version):
-        """Get the URL to given schema URL with the specified version."""
-        return cls._get_schema_url(collection=cls.API_COLLECTION, name=name, version=version)
-
-    @classmethod
-    def get_component_analysis_schema_url(cls, name, version):
-        """Get the URL to component analysis schema."""
-        return cls._get_schema_url(collection=cls.COMPONENT_ANALYSES_COLLECTION,
-                                   name=name, version=version)
-
-
 class GenerateManifest(Resource):
     """Implementation of the /generate-file REST API call."""
 
@@ -710,7 +628,7 @@ class GenerateManifest(Resource):
             )
 
 
-class StackAnalyses(ResourceWithSchema):
+class StackAnalyses(Resource):
     """Implementation of all /stack-analyses REST API calls."""
 
     method_decorators = [login_required]
@@ -883,7 +801,7 @@ class StackAnalyses(ResourceWithSchema):
         raise HTTPError(404, "Unsupported API endpoint")
 
 
-class SubmitFeedback(ResourceWithSchema):
+class SubmitFeedback(Resource):
     """Implementation of /submit-feedback POST REST API call."""
 
     method_decorators = [login_required]
@@ -929,7 +847,7 @@ class SubmitFeedback(ResourceWithSchema):
                 500, "Error inserting log for request {t}".format(t=stack_id)) from e
 
 
-class DepEditorAnalyses(ResourceWithSchema):
+class DepEditorAnalyses(Resource):
     """Implementation of /depeditor-analyses POST REST API call."""
 
     method_decorators = [login_required]
@@ -1043,7 +961,7 @@ class DepEditorAnalyses(ResourceWithSchema):
         }
 
 
-class DepEditorCVEAnalyses(ResourceWithSchema):
+class DepEditorCVEAnalyses(Resource):
     """Implementation of /depeditor-cve-analyses POST REST API call."""
 
     method_decorators = [login_required]
@@ -1065,7 +983,7 @@ class DepEditorCVEAnalyses(ResourceWithSchema):
         return response, 200
 
 
-class CategoryService(ResourceWithSchema):
+class CategoryService(Resource):
     """Implementation of Dependency editor category service GET REST API call."""
 
     method_decorators = [login_required]
@@ -1108,7 +1026,7 @@ class CategoryService(ResourceWithSchema):
         return response, 200
 
 
-class CoreDependencies(ResourceWithSchema):
+class CoreDependencies(Resource):
     """Implementation of Blank booster /get-core-dependencies REST API call."""
 
     method_decorators = [login_required]
@@ -1138,7 +1056,7 @@ class CoreDependencies(ResourceWithSchema):
             current_app.logger.error('ERROR: {}'.format(str(e)))
 
 
-class EmptyBooster(ResourceWithSchema):
+class EmptyBooster(Resource):
     """Implementation of /empty-booster POST REST API call."""
 
     method_decorators = [login_required]
@@ -1232,7 +1150,7 @@ class RecommendationFB(Resource):
         return jsonify(result)
 
 
-class CveByDateEcosystem(ResourceWithSchema):
+class CveByDateEcosystem(Resource):
     """Implementation of api endpoint for CVEs bydate & further filter by ecosystem if provided."""
 
     method_decorators = [login_required]
