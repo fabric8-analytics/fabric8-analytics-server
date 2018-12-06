@@ -199,13 +199,8 @@ class TestApiV1SystemVersion(object):
 
 
 @pytest.mark.usefixtures('client_class', 'rdb')
-class TestApiV1Schemas(object):
-    """Tests for the /api/v1/schemas endpoints."""
-
-    def _check_schema_id(self, received_schema, expected_path):
-        """Check schema ID added by the API server."""
-        expected_id = 'http://localhost' + expected_path + '/'
-        assert received_schema['id'] == expected_id
+class TestApiV1RecommendationFeedback(object):
+    """Tests for the /api/v1/recommendation_feedback/<ecosystem> endpoint."""
 
     def test_get_recommendation_feedback(self, accept_json):
         """Test GET endpoint for /recommendation_feedback/<ecosystem>."""
