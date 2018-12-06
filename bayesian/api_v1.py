@@ -131,6 +131,8 @@ def get_items_for_page(items, page, per_page):
     return items[get_item_skip(page, per_page):get_item_absolute_limit(page, per_page)]
 
 
+# TODO: do we really need paginated output?
+
 def paginated(func):
     """Provide paginated output for longer responses."""
     @functools.wraps(func)
@@ -346,6 +348,7 @@ class StackAnalysesGET(ResourceWithSchema):
     def get(external_request_id):
         """Handle the GET REST API call."""
         # TODO: reduce cyclomatic complexity
+        # TODO: refactor the business logic into its own function defined outside api_v1.py
         if get_request_count(rdb, external_request_id) < 1:
             raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
 
@@ -471,7 +474,11 @@ class UserFeedback(ResourceWithSchema):
     def post():
         """Handle the POST REST API call."""
         input_json = request.get_json()
+        # TODO: refactor the business logic into its own function defined outside api_v1.py
 
+        # TODO: two cases should be handled here:
+        # 1) no JSON at all
+        # 2) JSON without 'request_id'
         if not request.json or 'request_id' not in input_json:
             raise HTTPError(400, error="Expected JSON request")
 
@@ -495,6 +502,7 @@ class UserIntent(ResourceWithSchema):
     @staticmethod
     def post():
         """Handle the POST REST API call."""
+        # TODO: refactor the business logic into its own function defined outside api_v1.py
         input_json = request.get_json()
 
         if not input_json:
@@ -507,6 +515,8 @@ class UserIntent(ResourceWithSchema):
             if 'data' not in input_json:
                 raise HTTPError(400, error="Expected data in the request")
 
+            # TODO: please use proper class constant here, like in
+            # UserFeedback._ANALYTICS_BUCKET_NAME
             s3 = StoragePool.get_connected_storage('S3UserIntent')
 
             # Store data
@@ -518,6 +528,8 @@ class UserIntent(ResourceWithSchema):
             if 'data' not in input_json:
                 raise HTTPError(400, error="Expected tags in the request")
 
+            # TODO: please use proper class constant here, like in
+            # UserFeedback._ANALYTICS_BUCKET_NAME
             s3 = StoragePool.get_connected_storage('S3ManualTagging')
 
             # Store data
@@ -532,12 +544,14 @@ class UserIntentGET(ResourceWithSchema):
     @staticmethod
     def get(user, ecosystem):
         """Handle the GET REST API call."""
+        # TODO: refactor the business logic into its own function defined outside api_v1.py
         if not user:
             raise HTTPError(400, error="Expected user name in the request")
 
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
+        # TODO: please use proper class constant here, like in
         s3 = StoragePool.get_connected_storage('S3ManualTagging')
         # get user data
         try:
@@ -562,9 +576,11 @@ class MasterTagsGET(ResourceWithSchema):
     @cache.memoize(timeout=604800)  # 7 days
     def get(ecosystem):
         """Handle the GET REST API call."""
+        # TODO: refactor the business logic into its own function defined outside api_v1.py
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
+        # TODO: please use proper class constant here, like in
         s3 = StoragePool.get_connected_storage('S3UserIntent')
 
         # get user data
@@ -593,6 +609,7 @@ class GetNextComponent(ResourceWithSchema):
         if not ecosystem:
             raise HTTPError(400, error="Expected ecosystem in the request")
 
+        # TODO: refactor the business logic into its own function defined outside api_v1.py
         pkg = get_next_component_from_graph(
             ecosystem,
             g.decoded_token.get('email'),
@@ -702,6 +719,7 @@ class StackAnalyses(ResourceWithSchema):
     def post():
         """Handle the POST REST API call."""
         # TODO: reduce cyclomatic complexity
+        # TODO: refactor the business logic into its own function defined outside api_v1.py
         github_token = get_access_token('github')
         sid = request.args.get('sid')
         license_files = list()
@@ -713,6 +731,7 @@ class StackAnalyses(ResourceWithSchema):
         origin = request.headers.get('origin')
         scan_repo_url = request.headers.get('ScanRepoUrl')
 
+        # TODO: is not it better to use map of synonyms, for example?
         if ecosystem == "node":
             ecosystem = "npm"
 
@@ -796,6 +815,7 @@ class StackAnalyses(ResourceWithSchema):
             api_url = current_app.config['F8_API_BACKBONE_HOST']
             d = DependencyFinder()
             deps = {}
+            # TODO: don't use "true" and "false" for Boolean values
             worker_flow_enabled = "false"
             # TODO This will be changed once we add support for other ecosystems
 
@@ -817,6 +837,7 @@ class StackAnalyses(ResourceWithSchema):
                         }
                 server_run_flow('gitOperationsFlow', args)
                 # Flag to prevent calling of backbone twice
+                # TODO: don't use "true" and "false" for Boolean values
                 worker_flow_enabled = "true"
             else:
                 # The default flow via mercator
@@ -826,6 +847,7 @@ class StackAnalyses(ResourceWithSchema):
             deps['current_stack_license'] = extract_licenses(license_files)
             deps.update(is_modified_flag)
 
+            # TODO: don't use "true" and "false" for Boolean values
             if worker_flow_enabled == "false":
                 # No need to call backbone if its already called via worker flow
                 _session.post(
@@ -852,6 +874,7 @@ class StackAnalyses(ResourceWithSchema):
             rdb.session.commit()
             return {"status": "success", "submitted_at": str(dt), "id": str(request_id)}
         except SQLAlchemyError as e:
+            # TODO: please log the actual error too here
             raise HTTPError(500, "Error updating log for request {t}".format(t=sid)) from e
 
     @staticmethod
@@ -899,6 +922,7 @@ class SubmitFeedback(ResourceWithSchema):
             rdb.session.commit()
             return {'status': 'success'}
         except SQLAlchemyError as e:
+            # TODO: please log the actual error too here
             current_app.logger.exception(
                 'Failed to create new analysis request')
             raise HTTPError(
@@ -961,6 +985,7 @@ class DepEditorAnalyses(ResourceWithSchema):
             reco_result = recommender_result.json()
         external_request_id = reco_result.get('external_request_id')
         if stack_result is not None and 'result' in stack_result:
+            # TODO: DRY!
             started_at = stack_result.get("result", {}).get(
                 "_audit", {}).get("started_at", started_at)
             finished_at = stack_result.get("result", {}).get(
@@ -1028,6 +1053,9 @@ class DepEditorCVEAnalyses(ResourceWithSchema):
         """Handle the POST REST API call."""
         input_json = request.get_json()
 
+        # TODO: two cases should be handled here:
+        # 1) no JSON at all
+        # 2) JSON without 'request_id'
         if not request.json or 'request_id' not in input_json:
             raise HTTPError(400, error="Expected JSON request and request_id")
 
@@ -1045,6 +1073,7 @@ class CategoryService(ResourceWithSchema):
     @staticmethod
     def get(runtime):
         """Handle the GET REST API call."""
+        # TODO: refactor
         categories = defaultdict(lambda: {'pkg_count': 0, 'packages': list()})
         gremlin_resp = get_categories_data(re.sub('[^A-Za-z0-9]+', '', runtime))
         response = {
