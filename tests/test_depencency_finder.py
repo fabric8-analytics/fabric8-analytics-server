@@ -31,9 +31,9 @@ def test_scan_and_find_dependencies_pypi():
 
 
 def test_scan_and_find_dependencies_golang():
-    """Test scan_and_find_dependencies function for pypi."""
+    """Test scan_and_find_dependencies function for golang."""
     manifests = [{
-        "filename": "pylist.json",
+        "filename": "golist.json",
         "filepath": "/bin/local",
         "content": open(str(Path(__file__).parent / "data/manifests/golist.json")).read()
     }]
