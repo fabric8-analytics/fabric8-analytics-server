@@ -1,6 +1,6 @@
 #!/bin/bash
 
-directories="bayesian hack tests alembic"
+directories="bayesian hack tests"
 separate_files="setup.py"
 pass=0
 fail=0

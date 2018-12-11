@@ -33,7 +33,7 @@ from . import rdb
 from .exceptions import HTTPError
 from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT, CORE_DEPENDENCIES_REPO_URL
 
-from requests import get, post, exceptions
+from requests import get, post
 from sqlalchemy.exc import SQLAlchemyError
 from github import Github, BadCredentialsException, GithubException, RateLimitExceededException
 from git import Repo, Actor
@@ -478,25 +478,6 @@ def get_latest_analysis_for(ecosystem, package, version):
         raise
 
 
-# TODO: fix the unused variable 'projection'
-def get_latest_analysis_by_hash(algorithm, artifact_hash, projection=None):
-    """Note: has to be called inside flask request context."""
-    if algorithm not in ['sha1', 'sha256', 'md5']:
-        return None
-
-    contains_dict = {'details': [{"artifact": True, algorithm: artifact_hash}]}
-    try:
-        return rdb.session.query(Analysis).\
-            join(WorkerResult).\
-            filter(WorkerResult.worker == 'digests').\
-            filter(WorkerResult.task_result.contains(contains_dict)).\
-            order_by(Analysis.started_at.desc()).\
-            first()
-    except SQLAlchemyError:
-        rdb.session.rollback()
-        raise
-
-
 def get_system_version():
     """Get the actual version of the server.
 
@@ -514,18 +495,6 @@ def get_system_version():
         if len(couple) > 1:
             ret[couple[0].lower()] = couple[1]
     return ret
-
-
-def build_nested_schema_dict(schema_dict):
-    """Accept a dictionary in form of {SchemaRef(): schema}.
-
-    Return a dictionary in form of {schema_name: {schema_version: schema}}
-    """
-    result = {}
-    for schema_ref, schema in schema_dict.items():
-        result.setdefault(schema_ref.name, {})
-        result[schema_ref.name][schema_ref.version] = schema
-    return result
 
 
 def get_next_component_from_graph(ecosystem, user_id, company):
@@ -619,33 +588,6 @@ class JSONEncoderWithExtraTypes(JSONEncoder):
         else:
             return list(iterable)
         return JSONEncoder.default(self, obj)
-
-
-def fetch_public_key(app):
-    """Get public key and caches it on the app object for future use."""
-    # TODO: even though saving the key on the app object is not very nice,
-    #  it's actually safe - the worst thing that can happen is that we will
-    #  fetch and save the same value on the app object multiple times
-    if not getattr(app, 'public_key', ''):
-        keycloak_url = app.config.get('BAYESIAN_FETCH_PUBLIC_KEY', '')
-        if keycloak_url:
-            pub_key_url = keycloak_url.strip('/') + '/auth/realms/fabric8/'
-            try:
-                result = get(pub_key_url, timeout=0.5)
-                app.logger.info('Fetching public key from %s, status %d, result: %s',
-                                pub_key_url, result.status_code, result.text)
-            except exceptions.Timeout:
-                app.logger.error('Timeout fetching public key from %s', pub_key_url)
-                return ''
-            if result.status_code != 200:
-                return ''
-            pkey = result.json().get('public_key', '')
-            app.public_key = \
-                '-----BEGIN PUBLIC KEY-----\n{pkey}\n-----END PUBLIC KEY-----'.format(pkey=pkey)
-        else:
-            app.public_key = app.config.get('BAYESIAN_PUBLIC_KEY')
-
-    return app.public_key
 
 
 def retrieve_worker_results(rdb, external_request_id):
