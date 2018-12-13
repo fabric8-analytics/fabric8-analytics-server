@@ -82,7 +82,7 @@ The marked offline tests can then be run as:
 
     (bayesian) $ py.test -m offline tests/
 
-If the Docker container based tests have been run, then this may complain
+If the Docker container based tests have been run, then this might complain
 about mismatched locations in compiled files. Those can be deleted using:
 
     (bayesian) $ sudo find -name *.pyc -delete
