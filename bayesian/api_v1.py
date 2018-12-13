@@ -656,6 +656,9 @@ class StackAnalyses(Resource):
         if ecosystem == "python":
             ecosystem = "pypi"
 
+        if ecosystem == "golang":
+            ecosystem = "golang"
+
         source = request.form.get('source')
         if github_url is not None:
             files = fetch_file_from_github_release(url=github_url,
@@ -701,7 +704,7 @@ class StackAnalyses(Resource):
                 filepath = filepaths[index]
                 content = manifest_file_raw.read().decode('utf-8')
             # For npm-list.json, we need not verify it as its not going to mercator task
-            if origin != "vscode" and ecosystem not in ("npm", "pypi"):
+            if origin != "vscode" and ecosystem not in ("npm", "pypi", "golang"):
                 # check if manifest files with given name are supported
                 manifest_descriptor = get_manifest_descriptor_by_filename(filename)
                 if manifest_descriptor is None:
@@ -738,7 +741,7 @@ class StackAnalyses(Resource):
             # TODO This will be changed once we add support for other ecosystems
 
             if resolved_files_exist(manifests) == "true" \
-                    and ecosystem in ("npm", "pypi"):
+                    and ecosystem in ("npm", "pypi", "golang"):
                 # This condition for the flow from vscode
                 deps = d.scan_and_find_dependencies(ecosystem, manifests)
             elif scan_repo_url and ecosystem == "npm":

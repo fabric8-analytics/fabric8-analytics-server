@@ -27,8 +27,8 @@ class DependencyFinder():
         deps = dict()
         if ecosystem == "npm":
             deps = DependencyFinder.get_npm_dependencies(ecosystem, manifests)
-        if ecosystem == "pypi":
-            deps = DependencyFinder.get_pypi_dependencies(ecosystem, manifests)
+        if ecosystem == "pypi" or ecosystem == "golang":
+            deps = DependencyFinder.get_dependencies_from_ecosystem_list(ecosystem, manifests)
         return deps
 
     @staticmethod
@@ -183,7 +183,7 @@ class DependencyFinder():
         return {'result': result}
 
     @staticmethod
-    def get_pypi_dependencies(ecosystem, manifests):
+    def get_dependencies_from_ecosystem_list(ecosystem, manifests):
         """Scan the pypi dependencies files to fetch transitive deps."""
         result = []
         details = []
@@ -207,10 +207,10 @@ class DependencyFinder():
     def validate_manifest(ecosystem, manifest):
         """Validate the manifest for the correct format."""
         content = json.loads(manifest['content'])
-        if ecosystem == 'pypi':
+        if ecosystem == 'pypi' or ecosystem == 'golang':
             if not content:
                 current_app.logger.warning(
-                    "No content provided for pypi manifest file {}".format(manifest['filename']))
+                    "No content provided for manifest file {}".format(manifest['filename']))
             if type(content) != list:
                 raise HTTPError(400, "manifest file must be in the format of "
                                 "[{package: name, version: ver, deps: []}, ]")
