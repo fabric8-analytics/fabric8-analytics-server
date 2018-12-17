@@ -53,3 +53,5 @@ CORE_DEPENDENCIES_REPO_URL = os.getenv('CORE_DEPENDENCIES_REPO', 'https://github
 GEMINI_SERVER_URL = "http://{host}:{port}".format(
                      host=os.getenv('F8A_GEMINI_SERVER_SERVICE_HOST'),
                      port=os.getenv('F8A_GEMINI_SERVER_SERVICE_PORT'))
+
+COMPONENT_ANALYSES_LIMIT = 10
