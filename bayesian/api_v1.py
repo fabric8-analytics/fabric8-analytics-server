@@ -46,6 +46,7 @@ from .manifest_models import MavenPom
 import os
 from f8a_worker.storages import AmazonS3
 from .generate_manifest import PomXMLTemplate
+from .default_config import COMPONENT_ANALYSES_LIMIT
 from fabric8a_auth.errors import AuthError
 
 # TODO: improve maintainability index
@@ -267,17 +268,59 @@ class ComponentAnalyses(Resource):
                                                package=package, version=version)
             raise HTTPError(404, msg)
 
-    @staticmethod
-    def post(ecosystem, package, version):
-        """Handle the POST REST API call."""
-        if ecosystem == 'maven':
-            package = MavenCoordinates.normalize_str(package)
-        package = case_sensitivity_transform(ecosystem, package)
 
-        server_create_analysis(ecosystem, package, version,
-                               user_profile=g.decoded_token or {}, api_flow=True, force=True,
-                               force_graph_sync=False)
-        return {}, 202
+class ComponentAnalysesPOST(Resource):
+    """Implementation of /component-analyses REST API calls."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        input_json = request.get_json()
+        if not input_json:
+            raise HTTPError(400, error="Expected JSON request")
+        if type(input_json) != list:
+            raise HTTPError(400, error="Expected list of dependencies in JSON request")
+        if len(input_json) > COMPONENT_ANALYSES_LIMIT:
+            raise HTTPError(400, error="Could not process more than {} dependencies at once."
+                            .format(COMPONENT_ANALYSES_LIMIT))
+
+        results = list()
+        for dependency in input_json:
+            ecosystem = dependency.get('ecosystem')
+            package = dependency.get('package')
+            version = dependency.get('version')
+            if not all([ecosystem, package, version]):
+                raise HTTPError(422, "provide the valid input.")
+            if ecosystem == 'maven':
+                package = MavenCoordinates.normalize_str(package)
+            package = case_sensitivity_transform(ecosystem, package)
+            result = get_analyses_from_graph(ecosystem, package, version)
+
+            if result is not None:
+                # Known component for Bayesian
+                server_create_component_bookkeeping(ecosystem, package, version, g.decoded_token)
+                results.append(result)
+
+            elif os.environ.get("INVOKE_API_WORKERS", "") == "1":
+                # Enter the unknown path
+                server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
+                                       api_flow=True, force=False, force_graph_sync=True)
+                msg = "Package {ecosystem}/{package}/{version} is unavailable. " \
+                    "The package will be available shortly," \
+                    " please retry after some time.".format(ecosystem=ecosystem, package=package,
+                                                            version=version)
+                results.append({"package": package, "message": msg})
+            else:
+                # no data has been found
+                server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
+                                       api_flow=False, force=False, force_graph_sync=True)
+                msg = "No data found for {ecosystem} package " \
+                    "{package}/{version}".format(ecosystem=ecosystem,
+                                                 package=package, version=version)
+                results.append({"package": package, "message": msg})
+        return results, 200
 
 
 class StackAnalysesGET(Resource):
@@ -1179,6 +1222,9 @@ add_resource_no_matter_slashes(ComponentSearch, '/component-search/<package>',
 add_resource_no_matter_slashes(ComponentAnalyses,
                                '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
+add_resource_no_matter_slashes(ComponentAnalysesPOST,
+                               '/component-analyses',
+                               endpoint='post_component_analysis')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(StackAnalyses, '/stack-analyses')
 add_resource_no_matter_slashes(StackAnalysesGET, '/stack-analyses/<external_request_id>')
