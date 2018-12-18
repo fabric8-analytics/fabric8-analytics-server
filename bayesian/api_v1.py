@@ -746,7 +746,7 @@ class StackAnalyses(Resource):
                 filename = manifest_file_raw.filename
                 filepath = filepaths[index]
                 content = manifest_file_raw.read().decode('utf-8')
-            # For npm-list.json, we need not verify it as its not going to mercator task
+            # For flow generating from build, we need not goto mercator
             if origin != "vscode" and not resolved_files_exist(filename):
                 # check if manifest files with given name are supported
                 manifest_descriptor = get_manifest_descriptor_by_filename(filename)
