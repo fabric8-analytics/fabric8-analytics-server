@@ -54,4 +54,4 @@ GEMINI_SERVER_URL = "http://{host}:{port}".format(
                      host=os.getenv('F8A_GEMINI_SERVER_SERVICE_HOST'),
                      port=os.getenv('F8A_GEMINI_SERVER_SERVICE_PORT'))
 
-COMPONENT_ANALYSES_LIMIT = 10
+COMPONENT_ANALYSES_LIMIT = int(os.getenv('COMPONENT_ANALYSES_LIMIT', 10))
