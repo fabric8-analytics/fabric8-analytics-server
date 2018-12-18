@@ -1186,24 +1186,31 @@ def get_recommendation_feedback_by_ecosystem(ecosystem):
 
 accepted_file_names = {
         "npmlist.json": "npm",
-        "direct-dependencies.txt": "maven",
-        "transitive-dependencies.txt": "maven",
         "golist.json": "golang",
-        "pylist.json": "pypi"
+        "pylist.json": "pypi",
+        "dependencies.txt": "maven"
     }
 
 
 def resolved_files_exist(manifests):
     """Check if the manifest files are already resolved."""
-    for manifest in manifests:
-        if manifest['filename'] in accepted_file_names:
-            return "true"
-    return "false"
+    if type(manifests) is list:
+        for manifest in manifests:
+            if manifest['filename'] in accepted_file_names:
+                return True
+    else:
+        if manifests in accepted_file_names:
+            return True
+    return False
 
 
 def get_ecosystem_from_manifest(manifests):
     """Check if the manifest files are already resolved."""
-    for manifest in manifests:
-        if manifest['filename'] in accepted_file_names:
-            return accepted_file_names[manifest['filename']]
+    if type(manifests) is list:
+        for manifest in manifests:
+            if manifest['filename'] in accepted_file_names:
+                return accepted_file_names[manifest['filename']]
+    else:
+        if manifests in accepted_file_names:
+            return accepted_file_names[manifests]
     return None
