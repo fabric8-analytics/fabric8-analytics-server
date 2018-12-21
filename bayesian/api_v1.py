@@ -784,7 +784,7 @@ class StackAnalyses(Resource):
             if resolved_files_exist(manifests):
                 # This condition is for the flow from vscode
                 deps = d.scan_and_find_dependencies(ecosystem, manifests)
-            elif scan_repo_url:
+            elif scan_repo_url and ecosystem:
                 # This condition is for the build flow
                 args = {'git_url': scan_repo_url,
                         'ecosystem': ecosystem,
