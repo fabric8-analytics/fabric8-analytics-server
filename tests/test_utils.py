@@ -388,7 +388,7 @@ def test_check_manifest_for_resolved_deps():
         }
     ]
     resp = resolved_files_exist(manifests)
-    assert resp == "true"
+    assert resp is True
 
     manifests = [
         {
@@ -401,7 +401,10 @@ def test_check_manifest_for_resolved_deps():
         }
     ]
     resp = resolved_files_exist(manifests)
-    assert resp == "false"
+    assert resp is False
+
+    resp = resolved_files_exist("dependencies.txt")
+    assert resp is True
 
 
 def test_get_ecosystem_from_manifest():
@@ -421,9 +424,12 @@ def test_get_ecosystem_from_manifest():
 
     manifests = [
         {
-            'filename': "direct-dependencies.txt",
+            'filename': "dependencies.txt",
             'ecosystem': "maven"
         }
     ]
     resp = get_ecosystem_from_manifest(manifests)
+    assert resp == "maven"
+
+    resp = get_ecosystem_from_manifest("dependencies.txt")
     assert resp == "maven"

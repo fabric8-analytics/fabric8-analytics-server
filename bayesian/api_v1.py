@@ -746,8 +746,8 @@ class StackAnalyses(Resource):
                 filename = manifest_file_raw.filename
                 filepath = filepaths[index]
                 content = manifest_file_raw.read().decode('utf-8')
-            # For npm-list.json, we need not verify it as its not going to mercator task
-            if origin != "vscode" and ecosystem not in ("npm", "pypi", "golang"):
+            # For flow generating from build, we need not goto mercator
+            if origin != "vscode" and not resolved_files_exist(filename):
                 # check if manifest files with given name are supported
                 manifest_descriptor = get_manifest_descriptor_by_filename(filename)
                 if manifest_descriptor is None:
@@ -779,16 +779,12 @@ class StackAnalyses(Resource):
             api_url = current_app.config['F8_API_BACKBONE_HOST']
             d = DependencyFinder()
             deps = {}
-            # TODO: don't use "true" and "false" for Boolean values
-            worker_flow_enabled = "false"
-            # TODO This will be changed once we add support for other ecosystems
+            worker_flow_enabled = False
 
-            if resolved_files_exist(manifests) == "true" \
-                    and ecosystem in ("npm", "pypi", "golang"):
-                # This condition for the flow from vscode
+            if resolved_files_exist(manifests):
+                # This condition is for the flow from vscode
                 deps = d.scan_and_find_dependencies(ecosystem, manifests)
-            elif scan_repo_url and ecosystem == "npm":
-
+            elif scan_repo_url:
                 # This condition is for the build flow
                 args = {'git_url': scan_repo_url,
                         'ecosystem': ecosystem,
@@ -801,8 +797,7 @@ class StackAnalyses(Resource):
                         }
                 server_run_flow('gitOperationsFlow', args)
                 # Flag to prevent calling of backbone twice
-                # TODO: don't use "true" and "false" for Boolean values
-                worker_flow_enabled = "true"
+                worker_flow_enabled = True
             else:
                 # The default flow via mercator
                 deps = d.execute(args, rdb.session, manifests, source)
@@ -811,8 +806,7 @@ class StackAnalyses(Resource):
             deps['current_stack_license'] = extract_licenses(license_files)
             deps.update(is_modified_flag)
 
-            # TODO: don't use "true" and "false" for Boolean values
-            if worker_flow_enabled == "false":
+            if not worker_flow_enabled:
                 # No need to call backbone if its already called via worker flow
                 _session.post(
                     '{}/api/v1/stack_aggregator'.format(api_url), json=deps,
