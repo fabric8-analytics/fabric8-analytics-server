@@ -702,6 +702,9 @@ class StackAnalyses(Resource):
         if ecosystem == "golang":
             ecosystem = "golang"
 
+        if ecosystem == "java":
+            ecosystem = "maven"
+
         source = request.form.get('source')
         if github_url is not None:
             files = fetch_file_from_github_release(url=github_url,
