@@ -725,13 +725,15 @@ class StackAnalyses(Resource):
                     raise HTTPError(400, error="Error processing request. "
                                                "Please send a valid manifest file path.")
                 if len(files) != len(filepaths):
-                    raise HTTPError(400, error="Error processing request. "
-                                               "Number of manifests and filePaths must be the same.")
+                    raise HTTPError(400,
+                                    error="Error processing request. "
+                                          "Number of manifests and filePaths must be the same.")
 
             # At least one manifest file should be present to analyse a stack
             if not files:
-                raise HTTPError(400, error="Error processing request. "
-                                       "Please upload a valid manifest files.")
+                raise HTTPError(400,
+                                error="Error processing request. "
+                                      "Please upload a valid manifest files.")
         else:
             files = []
         dt = datetime.datetime.now()
