@@ -706,31 +706,36 @@ class StackAnalyses(Resource):
             ecosystem = "maven"
 
         source = request.form.get('source')
-        if github_url is not None:
-            files = fetch_file_from_github_release(url=github_url,
-                                                   filename='pom.xml',
-                                                   token=github_token.get('access_token'),
-                                                   ref=ref)
+        if not (scan_repo_url and ecosystem):
+            if github_url is not None:
+                files = fetch_file_from_github_release(url=github_url,
+                                                       filename='pom.xml',
+                                                       token=github_token.get('access_token'),
+                                                       ref=ref)
+            else:
+                files = request.files.getlist('manifest[]')
+                filepaths = request.values.getlist('filePath[]')
+                license_files = request.files.getlist('license[]')
+
+                current_app.logger.info('%r' % files)
+                current_app.logger.info('%r' % filepaths)
+
+                # At least one manifest file path should be present to analyse a stack
+                if not filepaths:
+                    raise HTTPError(400, error="Error processing request. "
+                                               "Please send a valid manifest file path.")
+                if len(files) != len(filepaths):
+                    raise HTTPError(400,
+                                    error="Error processing request. "
+                                          "Number of manifests and filePaths must be the same.")
+
+            # At least one manifest file should be present to analyse a stack
+            if not files:
+                raise HTTPError(400,
+                                error="Error processing request. "
+                                      "Please upload a valid manifest files.")
         else:
-            files = request.files.getlist('manifest[]')
-            filepaths = request.values.getlist('filePath[]')
-            license_files = request.files.getlist('license[]')
-
-            current_app.logger.info('%r' % files)
-            current_app.logger.info('%r' % filepaths)
-
-            # At least one manifest file path should be present to analyse a stack
-            if not filepaths:
-                raise HTTPError(400, error="Error processing request. "
-                                           "Please send a valid manifest file path.")
-            if len(files) != len(filepaths):
-                raise HTTPError(400, error="Error processing request. "
-                                           "Number of manifests and filePaths must be the same.")
-
-        # At least one manifest file should be present to analyse a stack
-        if not files:
-            raise HTTPError(400, error="Error processing request. "
-                                       "Please upload a valid manifest files.")
+            files = []
         dt = datetime.datetime.now()
         if sid:
             request_id = sid
