@@ -1220,7 +1220,7 @@ class CveByDateEcosystem(Resource):
         getcve = CveByDateEcosystemUtils(int(page), modified_date, ecosystem)
         result = getcve.get_cves_by_date() if not ecosystem else getcve.get_cves_by_date_ecosystem()
         headers = {}
-        if result['count'] == 500:
+        if result['count'] == 25:
             headers['page'] = int(page) + 1
         return result, 200, headers
 

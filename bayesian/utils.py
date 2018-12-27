@@ -397,7 +397,7 @@ class CveByDateEcosystemUtils:
 
     def __init__(self, page, bydate, ecosystem=None):
         """Constructor."""
-        self._delta = 500
+        self._delta = 25
         self._query_begin = (page - 1) * self._delta
         self._bydate = bydate
         self._ecosystem = ecosystem
