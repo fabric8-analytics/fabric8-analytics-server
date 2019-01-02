@@ -16,6 +16,7 @@ RUN yum install -y epel-release &&\
     yum clean all
 
 COPY ./requirements.txt /coreapi/
+RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-utils
 RUN pushd /coreapi && \
     pip3 install -r requirements.txt && \
     rm requirements.txt && \
