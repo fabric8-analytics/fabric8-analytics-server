@@ -939,7 +939,7 @@ def version_info_tuple(version):
     : param version: The semantic version whole details are needed.
     : return: A tuple in form of Version.(major, minor, patch, build)
     """
-    if type(version) == sv.base.Version:
+    if isinstance(version, sv.base.Version):
         return(version.major,
                version.minor,
                version.patch,
@@ -1197,12 +1197,12 @@ accepted_file_names = {
         "golist.json": "golang",
         "pylist.json": "pypi",
         "dependencies.txt": "maven"
-    }
+}
 
 
 def resolved_files_exist(manifests):
     """Check if the manifest files are already resolved."""
-    if type(manifests) is list:
+    if isinstance(manifests, list):
         for manifest in manifests:
             if manifest['filename'] in accepted_file_names:
                 return True
@@ -1214,7 +1214,7 @@ def resolved_files_exist(manifests):
 
 def get_ecosystem_from_manifest(manifests):
     """Check if the manifest files are already resolved."""
-    if type(manifests) is list:
+    if isinstance(manifests, list):
         for manifest in manifests:
             if manifest['filename'] in accepted_file_names:
                 return accepted_file_names[manifest['filename']]

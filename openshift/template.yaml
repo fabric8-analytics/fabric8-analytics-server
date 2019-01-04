@@ -25,8 +25,6 @@ objects:
         - env:
           - name: BAYESIAN_COMPONENT_TAGGED_COUNT
             value: "2"
-          - name: COMPONENT_ANALYSES_LIMIT
-            value: ${COMPONENT_ANALYSES_LIMIT}
           - name: DEPLOYMENT_PREFIX
             valueFrom:
               configMapKeyRef:
@@ -38,6 +36,8 @@ objects:
             value: "http://f8a-server-backbone:5000"
           - name: FUTURES_SESSION_WORKER_COUNT
             value: "100"
+          - name: PER_PAGE_COUNT
+            value: 25
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
           - name: OSIO_AUTH_URL
@@ -184,12 +184,6 @@ parameters:
   required: true
   name: REPLICAS
   value: "1"
-
-- description: Number of dependencies allowed in one component analyses call
-  displayName: Number of dependencies allowed in one component analyses call
-  required: true
-  name: COMPONENT_ANALYSES_LIMIT
-  value: "10"
 
 - description: "Flask logging level (see: https://docs.python.org/3/library/logging.html#levels)"
   displayName: Flask logging level
