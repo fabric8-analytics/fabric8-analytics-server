@@ -1222,7 +1222,7 @@ class CveByDateEcosystem(Resource):
         headers = {}
         count_ = os.getenv("PER_PAGE_COUNT", 25)
         if result['count'] == count_:
-           headers['page'] = int(page) + 1
+            headers['page'] = int(page) + 1
         return result, 200, headers
 
 
