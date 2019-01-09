@@ -3,21 +3,17 @@
 import datetime
 import pytest
 import semantic_version as sv
-import tempfile
 import os
 import json
 from unittest.mock import Mock, patch
 
-
 from bayesian.utils import (
-    get_core_dependencies,
     do_projection,
     fetch_file_from_github,
     is_valid, has_field, get_user_email,
     convert_version_to_proper_semantic as cvs,
     version_info_tuple as vt,
     select_latest_version as slv,
-    create_directory_structure as cds,
     GremlinComponentAnalysisResponse,
     CveByDateEcosystemUtils,
     resolved_files_exist,
@@ -259,49 +255,6 @@ def test_is_valid():
     """Check the function is_valid()."""
     assert not is_valid(None)
     assert is_valid("parameter")
-
-
-def test_get_core_dependencies():
-    """Check the function get_core_dependencies()."""
-    assert any(get_core_dependencies('spring-boot'))
-    assert get_core_dependencies('xyz') == []
-
-
-def test_create_dir_structure():
-    """Check for directory structure.
-
-    parentdir
-    ├── childdir
-    └── hello.txt
-    """
-    dir_struct = {
-        'name': 'parentdir',
-        'type': 'dir',
-        'contains': [
-            {
-                'name': 'hello.txt',
-                'type': 'file',
-                'contains': "Some dummy text"
-            },
-            {
-                'name': 'childdir',
-                'type': 'dir',
-            }
-        ]}
-
-    tempdir = tempfile.TemporaryDirectory()
-    root_path = tempdir.name
-    assert os.path.exists(root_path)
-
-    assert not os.path.exists(os.path.join(root_path, 'parentdir'))
-    assert not os.path.exists(os.path.join(root_path, 'parentdir', 'childdir'))
-    assert not os.path.isfile(os.path.join(root_path, 'parentdir', 'hello.txt'))
-
-    cds(root_path, dir_struct)
-
-    assert os.path.exists(os.path.join(root_path, 'parentdir'))
-    assert os.path.exists(os.path.join(root_path, 'parentdir', 'childdir'))
-    assert os.path.isfile(os.path.join(root_path, 'parentdir', 'hello.txt'))
 
 
 def test_gremlin_component_analysis_response():

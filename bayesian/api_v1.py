@@ -5,14 +5,10 @@ import functools
 import uuid
 import re
 import urllib
-import tempfile
-import json
-
-from collections import defaultdict
 
 import botocore
 from requests_futures.sessions import FuturesSession
-from flask import Blueprint, current_app, request, url_for, Response, g
+from flask import Blueprint, current_app, request, url_for, g
 from flask.json import jsonify
 from flask_restful import Api, Resource, reqparse
 from sqlalchemy.exc import SQLAlchemyError
@@ -29,23 +25,19 @@ from .dependency_finder import DependencyFinder
 from fabric8a_auth.auth import login_required
 from .auth import get_access_token
 from .exceptions import HTTPError
-from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
+from .utils import (get_system_version, retrieve_worker_result,
                     server_create_component_bookkeeping,
                     server_create_analysis, get_analyses_from_graph,
                     search_packages_from_graph, get_request_count, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
-                    is_valid, select_latest_version, get_categories_data, get_core_dependencies,
-                    create_directory_structure, push_repo, get_booster_core_repo,
-                    get_recommendation_feedback_by_ecosystem, CveByDateEcosystemUtils,
+                    is_valid, get_recommendation_feedback_by_ecosystem, CveByDateEcosystemUtils,
                     server_run_flow, resolved_files_exist,
                     get_ecosystem_from_manifest)
 from .license_extractor import extract_licenses
-from .manifest_models import MavenPom
 
 import os
 from f8a_worker.storages import AmazonS3
-from .generate_manifest import PomXMLTemplate
 from .default_config import COMPONENT_ANALYSES_LIMIT
 from fabric8a_auth.errors import AuthError
 
@@ -644,33 +636,6 @@ class SetTagsToComponent(Resource):
             raise HTTPError(400, error=_error)
 
 
-class GenerateManifest(Resource):
-    """Implementation of the /generate-file REST API call."""
-
-    method_decorators = [login_required]
-
-    @staticmethod
-    def post():
-        """Handle the POST REST API call with the manifest file."""
-        input_json = request.get_json()
-        if 'ecosystem' not in input_json:
-            raise HTTPError(400, "Must provide an ecosystem")
-        if input_json.get('ecosystem') == 'maven':
-            return Response(
-                PomXMLTemplate(input_json).xml_string(),
-                headers={
-                    "Content-disposition": 'attachment;filename=pom.xml',
-                    "Content-Type": "text/xml;charset=utf-8"
-                }
-            )
-        else:
-            return Response(
-                {'result': "ecosystem '{}' is not yet supported".format(
-                    input_json['ecosystem'])},
-                status=400
-            )
-
-
 class StackAnalyses(Resource):
     """Implementation of all /stack-analyses REST API calls."""
 
@@ -895,296 +860,6 @@ class SubmitFeedback(Resource):
                 500, "Error inserting log for request {t}".format(t=stack_id)) from e
 
 
-class DepEditorAnalyses(Resource):
-    """Implementation of /depeditor-analyses POST REST API call."""
-
-    method_decorators = [login_required]
-
-    @staticmethod
-    def post():
-        """Handle the POST REST API call."""
-        # TODO: reduce cyclomatic complexity
-        manifest_file = {
-            'maven': 'pom.xml',
-            'node': 'package.json',
-            'pypi': 'requirements.txt'
-        }
-
-        input_json = request.get_json()
-        persist = request.args.get('persist', 'false') == 'true'
-        if not input_json or 'request_id' not in input_json:
-            raise HTTPError(400, error="Expected JSON request and request_id")
-
-        if '_resolved' not in input_json or 'ecosystem' not in input_json:
-            raise HTTPError(400, error="Expected _resolved and ecosystem in request")
-
-        request_obj = {
-            "external_request_id": input_json.get('request_id'),
-            "result": [{
-                "details": [{
-                    "ecosystem": input_json.get('ecosystem'),
-                    "_resolved": input_json.get('_resolved', []),
-                    "manifest_file_path": input_json.get('manifest_file_path', '/path'),
-                    "manifest_file": manifest_file.get(input_json.get('ecosystem'))
-                }],
-            }]
-        }
-
-        api_url = current_app.config['F8_API_BACKBONE_HOST']
-        stack_agg_resp = _session.post('{}/api/v1/stack_aggregator'.format(api_url),
-                                       json=request_obj, params={'persist': str(persist).lower()})
-        recommender_resp = _session.post('{}/api/v1/recommender'.format(api_url),
-                                         json=request_obj, params={'persist': str(persist).lower()})
-        recommender_result = recommender_resp.result()
-        stack_agg_result = stack_agg_resp.result()
-        started_at = None
-        finished_at = None
-        version = None
-        release = None
-        manifest_response = []
-        stacks = []
-        recommendations = []
-        stack_result = reco_result = dict()
-        if stack_agg_result.status_code == 200:
-            stack_result = stack_agg_result.json()
-        if recommender_result.status_code == 200:
-            reco_result = recommender_result.json()
-        external_request_id = reco_result.get('external_request_id')
-        if stack_result is not None and 'result' in stack_result:
-            # TODO: DRY!
-            started_at = stack_result.get("result", {}).get(
-                "_audit", {}).get("started_at", started_at)
-            finished_at = stack_result.get("result", {}).get(
-                "_audit", {}).get("ended_at", finished_at)
-            version = stack_result.get("result", {}).get("_audit", {}).get("version", version)
-            release = stack_result.get("result", {}).get("_release", release)
-            stacks = stack_result.get("result", {}).get("stack_data", stacks)
-
-        if reco_result is not None and 'result' in reco_result:
-            recommendations = reco_result.get("result", {}).get("recommendations",
-                                                                recommendations)
-
-        if not stacks:
-            return {
-                "version": version,
-                "release": release,
-                "started_at": started_at,
-                "finished_at": finished_at,
-                "request_id": external_request_id,
-                "result": manifest_response
-            }
-        for stack in stacks:
-            user_stack_deps = stack.get('user_stack_info', {}).get('analyzed_dependencies', [])
-            stack_recommendation = get_item_from_list_by_key_value(recommendations,
-                                                                   "manifest_file_path",
-                                                                   stack.get(
-                                                                       "manifest_file_path"))
-            for dep in user_stack_deps:
-                # Adding topics from the recommendations
-                if stack_recommendation is not None:
-                    dep["topic_list"] = stack_recommendation.get("input_stack_topics",
-                                                                 {}).get(dep.get('name'), [])
-                else:
-                    dep["topic_list"] = []
-
-        for stack in stacks:
-            stack["recommendation"] = get_item_from_list_by_key_value(
-                recommendations,
-                "manifest_file_path",
-                stack.get("manifest_file_path"))
-            manifest_response.append(stack)
-
-        # Populate reason for alternate and companion recommendation
-        if manifest_response[0].get('recommendation'):
-            manifest_response = RecommendationReason().add_reco_reason(manifest_response)
-
-        return {
-            "version": version,
-            "release": release,
-            "started_at": started_at,
-            "finished_at": finished_at,
-            "request_id": external_request_id,
-            "result": manifest_response,
-            "dep_snapshot": input_json
-        }
-
-
-class DepEditorCVEAnalyses(Resource):
-    """Implementation of /depeditor-cve-analyses POST REST API call."""
-
-    method_decorators = [login_required]
-
-    @staticmethod
-    def post():
-        """Handle the POST REST API call."""
-        input_json = request.get_json()
-
-        # TODO: two cases should be handled here:
-        # 1) no JSON at all
-        # 2) JSON without 'request_id'
-        if not request.json or 'request_id' not in input_json:
-            raise HTTPError(400, error="Expected JSON request and request_id")
-
-        if '_resolved' not in input_json or 'ecosystem' not in input_json:
-            raise HTTPError(400, error="Expected _resolved and ecosystem in request")
-        response = get_cve_data(input_json)
-        return response, 200
-
-
-class CategoryService(Resource):
-    """Implementation of Dependency editor category service GET REST API call."""
-
-    method_decorators = [login_required]
-
-    @staticmethod
-    def get(runtime):
-        """Handle the GET REST API call."""
-        # TODO: refactor
-        categories = defaultdict(lambda: {'pkg_count': 0, 'packages': list()})
-        gremlin_resp = get_categories_data(re.sub('[^A-Za-z0-9]+', '', runtime))
-        response = {
-            'categories': dict(),
-            'request_id': gremlin_resp.get('requestId')
-        }
-        if 'result' in gremlin_resp and 'requestId' in gremlin_resp:
-            data = gremlin_resp.get('result')
-            if 'data' in data and data['data']:
-                for items in data.get('data'):
-                    category = items.get('category')
-                    package = items.get('package')
-                    if category and package:
-                        pkg_count = category.get('category_deps_count', [0])[0]
-                        _category = category.get('ctname', [''])[0]
-                        pkg_name = package.get('name', [''])[0]
-                        pkg_description = package.get('description', [''])[0]
-                        libio_version = package.get('libio_latest_version', [''])[0]
-                        version = package.get('latest_version', [''])[0]
-                        latest_version = select_latest_version(
-                            version, libio_version, pkg_name)
-                        categories[_category]['pkg_count'] = pkg_count
-                        categories[_category]['packages'].append({
-                            'name': pkg_name,
-                            'version': latest_version,
-                            'description': pkg_description,
-                            'category': _category
-                        })
-                response['categories'] = categories
-        else:
-            get_categories_data.clear_cache()
-        return response, 200
-
-
-class CoreDependencies(Resource):
-    """Implementation of Blank booster /get-core-dependencies REST API call."""
-
-    method_decorators = [login_required]
-
-    @staticmethod
-    def get(runtime):
-        """Handle the GET REST API call."""
-        try:
-            resolved = []
-            dependencies = get_core_dependencies(runtime)
-            request_id = uuid.uuid4().hex
-            for elem in dependencies:
-                packages = {}
-                packages['package'] = elem['groupId'] + ':' + elem['artifactId']
-                if elem.get('version'):
-                    packages['version'] = elem['version']
-                if elem.get('scope'):
-                    packages['scope'] = elem['scope']
-                resolved.append(packages)
-            response = {
-                "_resolved": resolved,
-                "ecosystem": "maven",
-                "request_id": request_id
-            }
-            return response, 200
-        except Exception as e:
-            current_app.logger.error('ERROR: {}'.format(str(e)))
-
-
-class EmptyBooster(Resource):
-    """Implementation of /empty-booster POST REST API call."""
-
-    method_decorators = [login_required]
-
-    @staticmethod
-    def post():
-        """Handle the POST REST API request."""
-        remote_repo = request.form.get('gitRepository')
-        _exists = os.path.exists
-        if not remote_repo:
-            raise HTTPError(400, error="Expected gitRepository in request")
-
-        runtime = request.form.get('runtime')
-        if not runtime:
-            raise HTTPError(400, error="Expected runtime in request")
-
-        booster_core_repo = get_booster_core_repo()
-        if not _exists(booster_core_repo):
-            get_booster_core_repo.cache.clear()
-            booster_core_repo = get_booster_core_repo()
-
-        pom_template = os.path.join(booster_core_repo, 'pom.template.xml')
-        jenkinsfile = os.path.join(booster_core_repo, 'Jenkinsfile')
-        core_json = os.path.join(booster_core_repo, 'core.json')
-
-        if not all(map(_exists, [pom_template, jenkinsfile, core_json])):
-            raise HTTPError(500, "Some necessary files are missing in core dependencies Repository")
-
-        core_deps = json.load(open(core_json))
-        dependencies = [dict(zip(['groupId', 'artifactId', 'version'],
-                                 d.split(':'))) for d in request.form.getlist('dependency')]
-
-        dependencies += core_deps.get(runtime, [])
-
-        git_org = request.form.get('gitOrganization')
-        github_token = get_access_token('github').get('access_token', '')
-
-        maven_obj = MavenPom(open(pom_template).read())
-        maven_obj['version'] = '1.0.0-SNAPSHOT'
-        maven_obj['artifactId'] = re.sub('[^A-Za-z0-9-]+', '', runtime) + '-application'
-        maven_obj['groupId'] = 'io.openshift.booster'
-        maven_obj.add_dependencies(dependencies)
-        build_config = core_deps.get(runtime + '-' + 'build')
-        if build_config:
-            maven_obj.add_element(build_config, 'build', next_to='dependencies')
-
-        dir_struct = {
-            'name': 'booster',
-            'type': 'dir',
-            'contains': [{'name': 'src',
-                          'type': 'dir',
-                          'contains': [
-                              {'name': 'main/java/io/openshift/booster',
-                               'type': 'dir',
-                               'contains': {'name': 'Booster.java',
-                                            'contains': 'package io.openshift.booster;\
-                                                      \npublic class Booster {\
-                                                      \n public static void main(String[] args) { }\
-                                                      \n} '}
-                               },
-                              {'name': 'test/java/io/openshift/booster',
-                               'type': 'dir',
-                               'contains': {'name': 'BoosterTest.java',
-                                            'contains': 'package io.openshift.booster;\
-                                                    \n\npublic class BoosterTest { } '}
-                               }]},
-                         {'name': 'pom.xml',
-                          'type': 'file',
-                          'contains': MavenPom.tostring(maven_obj)},
-                         {'name': "Jenkinsfile",
-                          'contains': open(jenkinsfile).read()}
-                         ]
-        }
-        booster_dir = tempfile.TemporaryDirectory().name
-        create_directory_structure(booster_dir, dir_struct)
-        push_repo(github_token, os.path.join(booster_dir, dir_struct.get('name')),
-                  remote_repo, organization=git_org, auto_remove=True)
-        return {'status': 'ok'}, 200
-
-
 class RecommendationFB(Resource):
     """Implementation of /recommendation_feedback/<ecosystem> API call."""
 
@@ -1234,16 +909,10 @@ add_resource_no_matter_slashes(UserFeedback, '/user-feedback')
 add_resource_no_matter_slashes(UserIntent, '/user-intent')
 add_resource_no_matter_slashes(UserIntentGET, '/user-intent/<user>/<ecosystem>')
 add_resource_no_matter_slashes(MasterTagsGET, '/master-tags/<ecosystem>')
-add_resource_no_matter_slashes(GenerateManifest, '/generate-file')
 add_resource_no_matter_slashes(
     GetNextComponent, '/get-next-component/<ecosystem>')
 add_resource_no_matter_slashes(SetTagsToComponent, '/set-tags')
-add_resource_no_matter_slashes(CategoryService, '/categories/<runtime>')
 add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
-add_resource_no_matter_slashes(DepEditorAnalyses, '/depeditor-analyses')
-add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
-add_resource_no_matter_slashes(CoreDependencies, '/get-core-dependencies/<runtime>')
-add_resource_no_matter_slashes(EmptyBooster, '/empty-booster')
 add_resource_no_matter_slashes(RecommendationFB, '/recommendation_feedback/<ecosystem>')
 add_resource_no_matter_slashes(CveByDateEcosystem, '/cves/bydate/<modified_date>/<ecosystem>')
 
