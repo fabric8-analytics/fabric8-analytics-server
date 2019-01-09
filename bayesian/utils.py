@@ -1104,6 +1104,7 @@ def push_repo(token, local_repo, remote_repo, author_name=None, author_email=Non
                       author_email or os.getenv("GIT_COMMIT_AUTHOR_EMAIL",
                                                 "obsidian-leadership@redhat.com"))
 
+    # TODO: refactor this code into new function
     if organization is None:
         # try to fetch user instead of organization
         try:
@@ -1134,6 +1135,7 @@ def get_booster_core_repo(ref='master'):
     _base_url = 'https://github.com/{user}/{repo}/archive/{ref}.zip'
     _url = CORE_DEPENDENCIES_REPO_URL
     # TODO: refactor user+repository retrieving into separate function
+    # TODO: test the refactored code
     # TODO: the same code as in fetch_file_from_github_release
     if _url.endswith('.git'):
         _url = _url[:-len('.git')]
@@ -1155,6 +1157,9 @@ def get_booster_core_repo(ref='master'):
 
 def get_recommendation_feedback_by_ecosystem(ecosystem):
     """Return json object representing recommendation feedback."""
+    # TODO: it needs to be refactored into two functions:
+    # 1) read data from RDS
+    # 2) reshape results (from feedback_list into result)
     try:
         feedback_list = rdb.session.query(RecommendationFeedback). \
             join(StackAnalysisRequest).join(Ecosystem). \
@@ -1184,6 +1189,7 @@ def get_recommendation_feedback_by_ecosystem(ecosystem):
         raise
 
 
+# TODO: this is module constant -> use capital letters with underscores separating words.
 accepted_file_names = {
         "npmlist.json": "npm",
         "golist.json": "golang",
