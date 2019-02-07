@@ -17,7 +17,7 @@ requests-futures
 Flask-Cache
 semantic_version
 py_lru_cache
-radon==2.4.0
+radon==3.0.1
 pygithub
 codecov
 lxml
