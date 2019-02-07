@@ -7,7 +7,7 @@ function prepare_venv() {
         VIRTUALENV=$(which virtualenv-3)
     fi
 
-    ${VIRTUALENV} -p python3 venv && source venv/bin/activate && python3 "$(which pip3)" install radon==2.4.0
+    ${VIRTUALENV} -p python3 venv && source venv/bin/activate && python3 "$(which pip3)" install radon==3.0.1
 }
 
 [ "$NOVENV" == "1" ] || prepare_venv || exit 1
