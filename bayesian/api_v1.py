@@ -345,7 +345,7 @@ class StackAnalysesGET(Resource):
         stack_result = retrieve_worker_result(rdb, external_request_id, "stack_aggregator_v2")
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
 
-        if stack_result is None and reco_result is None:
+        if stack_result is None or reco_result is None:
             raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(
                 t=external_request_id))
 
