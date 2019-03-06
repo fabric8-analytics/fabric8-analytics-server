@@ -11,6 +11,7 @@ from f8a_worker.solver import get_ecosystem_solver
 from f8a_worker.storages import AmazonS3
 from tempfile import TemporaryDirectory
 from f8a_worker.workers.mercator import MercatorTask
+from f8a_utils.dependency_finder import DependencyFinder as Df
 
 from botocore.exceptions import ClientError
 
@@ -24,12 +25,7 @@ class DependencyFinder():
     @staticmethod
     def scan_and_find_dependencies(ecosystem, manifests):
         """Scan the dependencies files to fetch transitive deps."""
-        deps = dict()
-        if ecosystem == "npm":
-            deps = DependencyFinder.get_npm_dependencies(ecosystem, manifests)
-        if ecosystem == "pypi" or ecosystem == "golang":
-            deps = DependencyFinder.get_dependencies_from_ecosystem_list(ecosystem, manifests)
-        return deps
+        return Df.scan_and_find_dependencies(ecosystem, manifests)
 
     @staticmethod
     def get_npm_dependencies(ecosystem, manifests):
