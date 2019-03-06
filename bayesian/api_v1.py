@@ -25,7 +25,7 @@ from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
 from . import rdb, cache
-from .dependency_finder import DependencyFinder
+from f8a_utils.dependency_finder import DependencyFinder
 from fabric8a_auth.auth import login_required
 from .auth import get_access_token
 from .exceptions import HTTPError
