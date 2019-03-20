@@ -328,13 +328,12 @@ def search_packages_from_graph(tokens):
 def get_analyses_from_graph(ecosystem, package, version):
     """Read analysis for given package+version from the graph database."""
     script = """\
-results=[];latest_ver=[];no_cve_versions=[];\
-pkg=g.V().has('ecosystem',ecosystem).has('name',name);\
-pkg.clone().out('has_version').not(out('has_cve')).values('version').dedup().fill(no_cve_versions);\
-pkg.clone().as('package').out('has_version').has('version',version).dedup().as('version')\
-.coalesce(\
-out('has_cve').as('cve').select('package','version','cve').by(valueMap()),\
-select('package','version').by(valueMap())).fill(results);\
+results=[];no_cve_versions=[];\
+ver=g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version);\
+ver.clone().in('has_version').out('has_version').not(out('has_cve')).values('version').dedup().fill(no_cve_versions);\
+ver.clone().as('version').in('has_version').dedup().as('package').select('version')\
+.coalesce(out('has_cve').as('cve').select('package','version','cve')\
+.by(valueMap()),select('package','version').by(valueMap())).fill(results);
 [epv:results,recommended_versions:no_cve_versions];\
 """
 
