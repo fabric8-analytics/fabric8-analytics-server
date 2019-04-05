@@ -18,7 +18,7 @@ RUN yum install -y epel-release &&\
 
 COPY ./requirements.txt /coreapi/
 RUN pushd /coreapi && \
-    pip3 install -r requirements.txt && \
+    pip3.4 install -r requirements.txt && \
     rm requirements.txt && \
     popd
 
@@ -31,12 +31,12 @@ RUN mkdir -p /etc/pcp /var/run/pcp /var/lib/pcp /var/log/pcp  && \
 
 COPY ./ /coreapi
 RUN pushd /coreapi && \
-    pip3 install --upgrade pip>=10.0.0 && pip3 install . &&\
+    pip3.4 install --upgrade pip>=10.0.0 && pip3.4 install . &&\
     popd
 
-RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
-RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@${F8A_AUTH_VERSION}
-RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@${F8A_UTILS}
+RUN pip3.4 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
+RUN pip3.4 install git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@${F8A_AUTH_VERSION}
+RUN pip3.4 install git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@${F8A_UTILS}
 
 # Required by the solver task in worker to resolve dependencies from package.json
 RUN npm install -g semver-ranger
