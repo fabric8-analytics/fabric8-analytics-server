@@ -327,18 +327,15 @@ def search_packages_from_graph(tokens):
 
 def get_analyses_from_graph(ecosystem, package, version):
     """Read analysis for given package+version from the graph database."""
-    script = """\
-results=[];no_cve_versions=[];\
-ver=g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version);\
-ver.clone().in('has_version').out('has_version').not(out('has_cve')).values('version').dedup().fill(no_cve_versions);\
-ver.clone().as('version').in('has_version').dedup().as('package').select('version')\
-.coalesce(out('has_cve').as('cve').select('package','version','cve')\
-.by(valueMap()),select('package','version').by(valueMap())).fill(results);
-[epv:results,recommended_versions:no_cve_versions];\
+    script1 = """\
+g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as('version')\
+.in('has_version').dedup().as('package').select('version').coalesce(out('has_cve')\
+.as('cve').select('package','version','cve').by(valueMap()),select('package','version')\
+.by(valueMap()));\
 """
 
     payload = {
-        'gremlin': script,
+        'gremlin': script1,
         'bindings': {
             'ecosystem': ecosystem,
             'name': package,
@@ -347,7 +344,44 @@ ver.clone().as('version').in('has_version').dedup().as('package').select('versio
     }
     start = datetime.datetime.now()
     try:
+        clubbed_data = []
         graph_req = post(gremlin_url, data=json.dumps(payload))
+
+        if graph_req is not None:
+            resp = graph_req.json()
+
+            if not (resp['result'].get('data') and len(resp['result'].get('data')) > 0):
+                # trigger unknown component flow in API for missing package
+                return None
+
+            clubbed_data.append({
+                "epv": resp['result']['data']
+            })
+
+            if "cve" in resp['result'].get('data')[0]:
+                script2 = """\
+g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)\
+.in('has_version').out('has_version').not(out('has_cve')).values('version').dedup();\
+"""
+                payload = {
+                    'gremlin': script2,
+                    'bindings': {
+                        'ecosystem': ecosystem,
+                        'name': package,
+                        'version': version
+                    }
+                }
+
+                graph_req2 = post(gremlin_url, data=json.dumps(payload))
+                if graph_req2 is not None:
+                    resp2 = graph_req2.json()
+                    clubbed_data.append({
+                        "recommended_versions": resp2['result']['data']
+                    })
+            else:
+                clubbed_data.append({
+                    "recommended_versions": []
+                })
     except Exception as e:
         current_app.logger.debug(' '.join([type(e), ':', str(e)]))
         return None
@@ -357,15 +391,7 @@ ver.clone().as('version').in('has_version').dedup().as('package').select('versio
         current_app.logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
                                                                                 t=elapsed_seconds))
 
-    resp = graph_req.json()
-
-    if not (resp['result'].get('data') and resp['result'].get('data')[0].get('epv', [])):
-        # trigger unknown component flow in API for missing package
-        return None
-
-    data = resp['result']['data']
-    resp = generate_recommendation(data, package, version)
-
+    resp = generate_recommendation(clubbed_data, package, version)
     return resp
 
 
