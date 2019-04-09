@@ -334,10 +334,6 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as
 .by(valueMap()));\
 """
 
-    script2 = """\
-g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)\
-.in('has_version').out('has_version').not(out('has_cve')).values('version').dedup();\
-"""
     payload = {
         'gremlin': script1,
         'bindings': {
@@ -353,14 +349,6 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)\
 
         if graph_req is not None:
             resp = graph_req.json()
-            payload = {
-                'gremlin': script2,
-                'bindings': {
-                    'ecosystem': ecosystem,
-                    'name': package,
-                    'version': version
-                }
-            }
 
             if not (resp['result'].get('data') and len(resp['result'].get('data')) > 0):
                 # trigger unknown component flow in API for missing package
@@ -369,13 +357,21 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)\
             clubbed_data.append({
                 "epv": resp['result']['data']
             })
-            second_query_flag = False
-            for first_data in resp['result'].get('data'):
-                if "cve" in first_data:
-                    second_query_flag = True
-                    break
 
-            if second_query_flag:
+            if "cve" in resp['result'].get('data')[0]:
+                script2 = """\
+g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)\
+.in('has_version').out('has_version').not(out('has_cve')).values('version').dedup();\
+"""
+                payload = {
+                    'gremlin': script2,
+                    'bindings': {
+                        'ecosystem': ecosystem,
+                        'name': package,
+                        'version': version
+                    }
+                }
+
                 graph_req2 = post(gremlin_url, data=json.dumps(payload))
                 if graph_req2 is not None:
                     resp2 = graph_req2.json()
