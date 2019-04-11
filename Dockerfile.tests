@@ -4,7 +4,7 @@ MAINTAINER Tomas Tomecek <ttomecek@redhat.com>
 ENV PYTHONDONTWRITEBYTECODE 1
 
 COPY . /bayesian
-RUN cd /bayesian/tests && pip3.4 install -r ./requirements.txt
+RUN cd /bayesian/tests && pip3 install -r ./requirements.txt
 
 ENV POSTGRESQL_USER=coreapi
 ENV POSTGRESQL_PASSWORD=coreapi

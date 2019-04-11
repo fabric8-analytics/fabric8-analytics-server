@@ -72,7 +72,7 @@ set -x
 # mount f8a_worker, if available (won't be in CI)
 f8a_worker_path="${here}/../worker/f8a_worker"
 if [ -d "${f8a_worker_path}" ]; then
-    f8a_worker_vol="${f8a_worker_path}:/usr/lib/python3.4/site-packages/f8a_worker:ro,Z"
+    f8a_worker_vol="${f8a_worker_path}:/usr/lib/python3.6/site-packages/f8a_worker:ro,Z"
 fi
 
 echo "Starting test suite"
