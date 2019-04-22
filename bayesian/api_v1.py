@@ -690,6 +690,7 @@ class StackAnalyses(Resource):
         is_scan_enabled = request.headers.get('IsScanEnabled', "false")
         ecosystem = request.headers.get('ecosystem')
         origin = request.headers.get('origin')
+        show_transitive = request.headers.get('show_transitive_report')
         scan_repo_url = request.headers.get('ScanRepoUrl')
 
         # TODO: is not it better to use map of synonyms, for example?
@@ -791,7 +792,7 @@ class StackAnalyses(Resource):
 
             if resolved_files_exist(manifests):
                 # This condition is for the flow from vscode
-                deps = d.scan_and_find_dependencies(ecosystem, manifests)
+                deps = d.scan_and_find_dependencies(ecosystem, manifests, show_transitive)
             elif scan_repo_url and ecosystem:
                 # This condition is for the build flow
                 args = {'git_url': scan_repo_url,

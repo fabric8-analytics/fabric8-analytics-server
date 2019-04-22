@@ -11,7 +11,7 @@ def test_scan_and_find_dependencies():
         "filepath": "/bin/local",
         "content": open(str(Path(__file__).parent / "data/manifests/npm-list.json")).read()
     }]
-    res = DependencyFinder().scan_and_find_dependencies("npm", manifests)
+    res = DependencyFinder().scan_and_find_dependencies("npm", manifests, "true")
     assert "result" in res
     assert res['result'][0]['details'][0]['_resolved'][0]['package'] == "body-parser"
     assert len(res['result'][0]['details'][0]['_resolved'][0]['deps']) == 2
@@ -24,7 +24,7 @@ def test_scan_and_find_dependencies_pypi():
         "filepath": "/bin/local",
         "content": open(str(Path(__file__).parent / "data/manifests/pylist.json")).read()
     }]
-    res = DependencyFinder().scan_and_find_dependencies("pypi", manifests)
+    res = DependencyFinder().scan_and_find_dependencies("pypi", manifests, "false")
     assert "result" in res
     assert res['result'][0]['details'][0]['_resolved'][0]['package'] == "django"
     assert len(res['result'][0]['details'][0]['_resolved'][0]['deps']) == 1
@@ -37,7 +37,7 @@ def test_scan_and_find_dependencies_golang():
         "filepath": "/bin/local",
         "content": open(str(Path(__file__).parent / "data/manifests/golist.json")).read()
     }]
-    res = DependencyFinder().scan_and_find_dependencies("golang", manifests)
+    res = DependencyFinder().scan_and_find_dependencies("golang", manifests, "true")
     assert "result" in res
     assert res['result'][0]['details'][0]['_resolved'][0]['package'] == \
         "github.com/asaskevich/govalidator"
