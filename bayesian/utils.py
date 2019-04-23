@@ -244,7 +244,7 @@ class GremlinComponentAnalysisResponse(object):
                 )
                 # If version to recommend is closer to what a user is using then, use less than
                 # If recommendation is to show highest version then, use greater than
-                if graph_version_tuple < highest_version_tuple:
+                if graph_version_tuple > highest_version_tuple:
                     highest_version = version
         return highest_version
 
