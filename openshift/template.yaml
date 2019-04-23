@@ -56,6 +56,8 @@ objects:
             value: "${SENTRY_DSN}"
           - name: INVOKE_API_WORKERS
             value: "1"
+          - name: SHOW_TRANSITIVE_REPORT
+            value: ${SHOW_TRANSITIVE_REPORT}
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
@@ -202,3 +204,9 @@ parameters:
   required: false
   name: SENTRY_DSN
   value: ""
+
+- description: Flag to enable or disable the transitive report from stack report
+  displayName: SHOW TRANSITIVE REPORT
+  required: true
+  name: SHOW_TRANSITIVE_REPORT
+  value: "false"
