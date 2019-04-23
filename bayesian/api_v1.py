@@ -690,7 +690,8 @@ class StackAnalyses(Resource):
         is_scan_enabled = request.headers.get('IsScanEnabled', "false")
         ecosystem = request.headers.get('ecosystem')
         origin = request.headers.get('origin')
-        show_transitive = request.headers.get('show_transitive_report')
+        show_transitive = request.headers.get('show_transitive_report') \
+            or os.environ.get('SHOW_TRANSITIVE_REPORT', "false")
         scan_repo_url = request.headers.get('ScanRepoUrl')
 
         # TODO: is not it better to use map of synonyms, for example?
