@@ -180,6 +180,26 @@ class TestCommonEndpoints(object):
         res = self.client.get(api_route_for('/component-search'), headers=accept_json)
         assert res.status_code == 202 or res.status_code == 401 or res.status_code == 404
 
+    def test_component_analyses(self, accept_json):
+        """Test the /component-analyses endpoint for GET."""
+        res = self.client.get(api_route_for('/component-analyses/abb/cc/dd'),
+                              headers=accept_json)
+        assert res.status_code == 400
+
+    def test_component_analyses1(self, accept_json):
+        """Test the /component-analyses endpoint for POST."""
+        data = [
+            {
+                "ecosystem": "abcd",
+                "package": "hhh",
+                "version": "tttt"
+            }
+        ]
+        res = self.client.post(api_route_for('/component-analyses'),
+                               data=json.dumps(data),
+                               content_type='application/json')
+        assert res.status_code == 400
+
 
 @pytest.mark.usefixtures('client_class', 'rdb')
 class TestUser(object):

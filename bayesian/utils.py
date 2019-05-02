@@ -1223,6 +1223,19 @@ accepted_file_names = {
     }
 
 
+accepted_ecosystems = [
+    "npm",
+    "maven"
+]
+
+
+def check_for_accepted_ecosystem(ecosystem):
+    """Check if the ecosystem is supported or not."""
+    if ecosystem in accepted_ecosystems:
+        return True
+    return False
+
+
 def resolved_files_exist(manifests):
     """Check if the manifest files are already resolved."""
     if type(manifests) is list:

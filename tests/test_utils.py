@@ -21,7 +21,8 @@ from bayesian.utils import (
     GremlinComponentAnalysisResponse,
     CveByDateEcosystemUtils,
     resolved_files_exist,
-    get_ecosystem_from_manifest
+    get_ecosystem_from_manifest,
+    check_for_accepted_ecosystem
 )
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
@@ -433,3 +434,12 @@ def test_get_ecosystem_from_manifest():
 
     resp = get_ecosystem_from_manifest("dependencies.txt")
     assert resp == "maven"
+
+
+def test_check_for_accepted_ecosystem():
+    """Test check_for_accepted_ecosystem function."""
+    resp = check_for_accepted_ecosystem("maven")
+    assert resp is True
+
+    resp = check_for_accepted_ecosystem("abcd")
+    assert resp is False
