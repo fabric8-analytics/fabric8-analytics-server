@@ -173,7 +173,7 @@ class TestCommonEndpoints(object):
     def test_stack_analyses(self, accept_json):
         """Test the /stack-analyses endpoint for GET."""
         res = self.client.get(api_route_for('/stack-analyses'), headers=accept_json)
-        assert res.status_code == 400 or res.status_code == 401
+        assert res.status_code == 400 or res.status_code == 404
 
     def test_component_search(self, accept_json):
         """Test the /component-search endpoint for GET."""
