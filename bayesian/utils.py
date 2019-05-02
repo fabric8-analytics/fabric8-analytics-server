@@ -1231,9 +1231,7 @@ accepted_ecosystems = [
 
 def check_for_accepted_ecosystem(ecosystem):
     """Check if the ecosystem is supported or not."""
-    if ecosystem in accepted_ecosystems:
-        return True
-    return False
+    return ecosystem in accepted_ecosystems
 
 
 def resolved_files_exist(manifests):
