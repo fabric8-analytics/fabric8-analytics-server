@@ -2,7 +2,7 @@
 
 import datetime
 import pytest
-
+import json
 from bayesian import api_v1
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
@@ -186,7 +186,7 @@ class TestCommonEndpoints(object):
                               headers=accept_json)
         assert res.status_code == 400
 
-    def test_component_analyses1(self, accept_json):
+    def test_component_analyses1(self):
         """Test the /component-analyses endpoint for POST."""
         data = [
             {
