@@ -240,7 +240,7 @@ class ComponentAnalyses(Resource):
     def get(ecosystem, package, version):
         """Handle the GET REST API call."""
         package = urllib.parse.unquote(package)
-        if check_for_accepted_ecosystem(ecosystem) is False:
+        if not check_for_accepted_ecosystem(ecosystem):
             msg = "Ecosystem {ecosystem} is not supported for this request".format(
                 ecosystem=ecosystem
             )
@@ -298,7 +298,7 @@ class ComponentAnalysesPOST(Resource):
             version = dependency.get('version')
             if not all([ecosystem, package, version]):
                 raise HTTPError(422, "provide the valid input.")
-            if check_for_accepted_ecosystem(ecosystem) is False:
+            if not check_for_accepted_ecosystem(ecosystem):
                 msg = "Ecosystem {ecosystem} is not supported for this request".format(
                     ecosystem=ecosystem
                 )

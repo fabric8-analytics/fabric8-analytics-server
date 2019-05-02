@@ -435,11 +435,14 @@ def test_get_ecosystem_from_manifest():
     resp = get_ecosystem_from_manifest("dependencies.txt")
     assert resp == "maven"
 
+    resp = get_ecosystem_from_manifest("npm-abcd.txt")
+    assert resp is None
+
 
 def test_check_for_accepted_ecosystem():
     """Test check_for_accepted_ecosystem function."""
     resp = check_for_accepted_ecosystem("maven")
-    assert resp is True
+    assert resp
 
     resp = check_for_accepted_ecosystem("abcd")
-    assert resp is False
+    assert not resp

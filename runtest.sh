@@ -17,6 +17,7 @@ IMAGE_NAME=${IMAGE_NAME:-bayesian-api}
 TEST_IMAGE_NAME="server-tests"
 POSTGRES_IMAGE_NAME="registry.centos.org/centos/postgresql-96-centos7:latest"
 DOCKER_NETWORK="F8aServerTest"
+DISABLE_AUTHENTICATION=1
 
 gc() {
   retval=$?
