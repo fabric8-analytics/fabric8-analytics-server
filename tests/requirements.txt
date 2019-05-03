@@ -7,12 +7,12 @@
 astroid==1.4.8            # via pylint
 click==6.6                # via flask
 coverage==4.4.2           # via pytest-cov
-Flask==0.11.1             # via pytest-flask
+Flask==0.12.3             # via pytest-flask
 flexmock==0.10.2
 freezegun==0.3.7
 isort==4.2.5              # via pylint
 itsdangerous==0.24        # via flask
-Jinja2==2.8               # via flask
+Jinja2==2.10.1            # via flask
 jsonschema==2.5.1
 lazy-object-proxy==1.2.2  # via astroid
 MarkupSafe==0.23          # via jinja2
@@ -23,7 +23,7 @@ pytest-flask==0.10.0
 pytest==3.0.3
 pytest-cov==2.5.1
 python-dateutil==2.5.3    # via freezegun
-requests==2.11.1
+requests==2.21.0
 six==1.10.0               # via astroid, freezegun, pylint, python-dateutil
 Werkzeug==0.11.11         # via flask, pytest-flask
 wrapt==1.10.8             # via astroid
