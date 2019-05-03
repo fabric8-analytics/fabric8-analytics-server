@@ -10,6 +10,7 @@ ENV POSTGRESQL_USER=coreapi
 ENV POSTGRESQL_PASSWORD=coreapi
 ENV POSTGRESQL_DATABASE=coreapi
 ENV PGBOUNCER_SERVICE_HOST=coreapi-pgbouncer
+ENV DISABLE_AUTHENTICATION 1
 
 # This is needed for codecov so the CWD is writeable and codecov can write stats to a file.
 WORKDIR /tmp

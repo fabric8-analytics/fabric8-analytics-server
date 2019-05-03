@@ -2,7 +2,7 @@
 
 import datetime
 import pytest
-
+import json
 from bayesian import api_v1
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
@@ -173,12 +173,32 @@ class TestCommonEndpoints(object):
     def test_stack_analyses(self, accept_json):
         """Test the /stack-analyses endpoint for GET."""
         res = self.client.get(api_route_for('/stack-analyses'), headers=accept_json)
-        assert res.status_code == 400 or res.status_code == 401
+        assert res.status_code == 400 or res.status_code == 404
 
     def test_component_search(self, accept_json):
         """Test the /component-search endpoint for GET."""
         res = self.client.get(api_route_for('/component-search'), headers=accept_json)
         assert res.status_code == 202 or res.status_code == 401 or res.status_code == 404
+
+    def test_component_analyses(self, accept_json):
+        """Test the /component-analyses endpoint for GET."""
+        res = self.client.get(api_route_for('/component-analyses/abb/cc/dd'),
+                              headers=accept_json)
+        assert res.status_code == 400
+
+    def test_component_analyses1(self):
+        """Test the /component-analyses endpoint for POST."""
+        data = [
+            {
+                "ecosystem": "abcd",
+                "package": "hhh",
+                "version": "tttt"
+            }
+        ]
+        res = self.client.post(api_route_for('/component-analyses'),
+                               data=json.dumps(data),
+                               content_type='application/json')
+        assert res.status_code == 400
 
 
 @pytest.mark.usefixtures('client_class', 'rdb')

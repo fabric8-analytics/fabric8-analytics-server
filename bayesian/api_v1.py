@@ -39,7 +39,7 @@ from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     create_directory_structure, push_repo, get_booster_core_repo,
                     get_recommendation_feedback_by_ecosystem, CveByDateEcosystemUtils,
                     server_run_flow, resolved_files_exist,
-                    get_ecosystem_from_manifest)
+                    get_ecosystem_from_manifest, check_for_accepted_ecosystem)
 from .license_extractor import extract_licenses
 from .manifest_models import MavenPom
 
@@ -240,6 +240,11 @@ class ComponentAnalyses(Resource):
     def get(ecosystem, package, version):
         """Handle the GET REST API call."""
         package = urllib.parse.unquote(package)
+        if not check_for_accepted_ecosystem(ecosystem):
+            msg = "Ecosystem {ecosystem} is not supported for this request".format(
+                ecosystem=ecosystem
+            )
+            raise HTTPError(400, msg)
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
         package = case_sensitivity_transform(ecosystem, package)
@@ -293,6 +298,11 @@ class ComponentAnalysesPOST(Resource):
             version = dependency.get('version')
             if not all([ecosystem, package, version]):
                 raise HTTPError(422, "provide the valid input.")
+            if not check_for_accepted_ecosystem(ecosystem):
+                msg = "Ecosystem {ecosystem} is not supported for this request".format(
+                    ecosystem=ecosystem
+                )
+                raise HTTPError(400, msg)
             if ecosystem == 'maven':
                 package = MavenCoordinates.normalize_str(package)
             package = case_sensitivity_transform(ecosystem, package)
