@@ -10,6 +10,7 @@ from flask import url_for
 from flask_appconfig import AppConfig
 from flask_sqlalchemy import SQLAlchemy
 from flask_cache import Cache
+from raven.contrib.flask import Sentry
 
 from f8a_worker.setup_celery import init_selinon
 
@@ -77,5 +78,8 @@ def create_app(configfile=None):
 init_selinon()
 
 app = create_app()
+
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+sentry = Sentry(app, dsn=SENTRY_DSN, logging=True, level=logging.ERROR)
 
 app.logger.info('App initialized, ready to roll...')

@@ -64,3 +64,5 @@ urllib3==1.24.1           # via requests
 werkzeug==0.15.2          # via flask
 wrapt==1.11.1             # via deprecated
 wtforms==2.2.1            # via flask-wtf
+raven[flask]==6.10.0
+contextlib2==0.5.5        # via raven
