@@ -22,7 +22,8 @@ from bayesian.utils import (
     CveByDateEcosystemUtils,
     resolved_files_exist,
     get_ecosystem_from_manifest,
-    check_for_accepted_ecosystem
+    check_for_accepted_ecosystem,
+    server_run_flow
 )
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
@@ -458,7 +459,7 @@ def test_server_run_flow(mocker):
             "version": "3.4.0"
         }
     }
-    res = server_create_analysis("someFlow", tmp)
+    res = server_run_flow("someFlow", tmp)
     assert res == "111"
 
 
