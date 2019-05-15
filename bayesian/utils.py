@@ -12,6 +12,7 @@ import uuid
 import shutil
 import hashlib
 import zipfile
+import logging
 
 from io import BytesIO
 from functools import lru_cache
@@ -47,7 +48,7 @@ companion_reason_statement = "along with the provided input stack. " \
 
 zero_version = sv.Version("0.0.0")
 AUTH_KEY = os.getenv('OS_AUTH_KEY', '')
-
+logger = logging.getLogger(__file__)
 INGESTION_API_URL = os.environ.get("INGESTION_API_HOST", "http://localhost:5000")
 
 
@@ -64,7 +65,7 @@ def server_run_flow(flow_name, flow_args):
     :param flow_args: arguments for the flow
     :return: dispatcher ID handling flow
     """
-    current_app.logger.debug('Running flow {}'.format(flow_name))
+    logger.debug('Running flow {}'.format(flow_name))
     start = datetime.datetime.now()
     dispatcher_id = ''
     try:
@@ -78,19 +79,19 @@ def server_run_flow(flow_name, flow_args):
         response = post(endpoint, json=input_json)
         # compute the elapsed time
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        current_app.logger.debug("It took {t} seconds to start {f} flow.".format(
-            t=elapsed_seconds, f=flow_name))
+        logger.debug("It took {t} seconds to start {f} flow.".format(
+          t=elapsed_seconds, f=flow_name))
         if response.status_code == 200:
 
             json_data = response.json()
-            current_app.logger.info(json_data)
+            logger.info(json_data)
             dispatcher_id = json_data['id']
         else:
-            current_app.logger.error("Got an error {e} while calling ingestion API".format(
+            logger.error("Got an error {e} while calling ingestion API".format(
                 e=response.status_code))
 
     except Exception:
-        current_app.logger.exception("Failed to invoke the worker flow.")
+        logger.exception("Failed to invoke the worker flow.")
     return dispatcher_id
 
 
