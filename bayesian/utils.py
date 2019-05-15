@@ -15,7 +15,6 @@ import zipfile
 
 from io import BytesIO
 from functools import lru_cache
-from selinon import run_flow
 from lru import lru_cache_function
 from flask import current_app
 from flask.json import JSONEncoder
@@ -26,8 +25,6 @@ from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
                                WorkerResult, StackAnalysisRequest, RecommendationFeedback)
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
-from f8a_worker.setup_celery import init_celery
-
 
 from . import rdb
 from .exceptions import HTTPError
