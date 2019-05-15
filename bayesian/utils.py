@@ -49,6 +49,9 @@ companion_reason_statement = "along with the provided input stack. " \
     "Do you want to consider adding this Package?"
 
 zero_version = sv.Version("0.0.0")
+AUTH_KEY = os.getenv('OS_AUTH_KEY', '')
+
+INGESTION_API_URL = os.environ.get("INGESTION_API_HOST", "http://localhost:5000")
 
 
 def get_recent_analyses(limit=100):
@@ -66,15 +69,32 @@ def server_run_flow(flow_name, flow_args):
     """
     current_app.logger.debug('Running flow {}'.format(flow_name))
     start = datetime.datetime.now()
+    dispatcher_id = ''
+    try:
+        api_url = INGESTION_API_URL
+        # requests.headers['Authorization'] = AUTH_KEY
+        input_json = {
+            "worker-data": flow_args
+        }
+        endpoint = "{url}/api/v1/worker-flow/{name}".format(url=api_url,
+                                                            name=flow_name)
+        response = post(endpoint, json=input_json)
+        # compute the elapsed time
+        elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+        current_app.logger.debug("It took {t} seconds to start {f} flow.".format(
+            t=elapsed_seconds, f=flow_name))
+        if response.status_code == 200:
 
-    init_celery(result_backend=False)
-    dispacher_id = run_flow(flow_name, flow_args)
+            json_data = response.json()
+            current_app.logger.info(json_data)
+            dispatcher_id = json_data['id']
+        else:
+            current_app.logger.error("Got an error {e} while calling ingestion API".format(
+                e=response.status_code))
 
-    # compute the elapsed time
-    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    current_app.logger.debug("It took {t} seconds to start {f} flow.".format(
-        t=elapsed_seconds, f=flow_name))
-    return dispacher_id
+    except Exception:
+        current_app.logger.exception("Failed to invoke the worker flow.")
+    return dispatcher_id
 
 
 def get_user_email(user_profile):

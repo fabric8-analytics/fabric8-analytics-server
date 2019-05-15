@@ -34,6 +34,8 @@ objects:
                 key: deployment-prefix
           - name: WORKER_ADMINISTRATION_REGION
             value: "api"
+          - name: INGESTION_API_HOST
+            value: "http://f8a-ingestion-api:5000"
           - name: F8_API_BACKBONE_HOST
             value: "http://f8a-server-backbone:5000"
           - name: FUTURES_SESSION_WORKER_COUNT

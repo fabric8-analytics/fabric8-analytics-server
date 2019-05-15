@@ -63,6 +63,13 @@ mocker_input = {
 }
 
 
+ingestion_mocked = {
+    "id": "111",
+    "submitted_at": "10-10-2019",
+    "status": "Submitted"
+}
+
+
 @pytest.fixture
 def analyses(app):
     """Prepare the known set of data used by tests."""
@@ -437,6 +444,22 @@ def test_get_ecosystem_from_manifest():
 
     resp = get_ecosystem_from_manifest("npm-abcd.txt")
     assert resp is None
+
+
+@patch('bayesian.utils.post')
+def test_server_run_flow(mocker):
+    """Test server_run_flow function."""
+    mocker.return_value = mock_response = Mock()
+    mock_response.json.return_value = ingestion_mocked
+    tmp = {
+        "worker-data": {
+            "ecosystem": "maven",
+            "name": "io.vertx:vertx-web",
+            "version": "3.4.0"
+        }
+    }
+    res = server_create_analysis("someFlow", tmp)
+    assert res == "111"
 
 
 def test_check_for_accepted_ecosystem():
