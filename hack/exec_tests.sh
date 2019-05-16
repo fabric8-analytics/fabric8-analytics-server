@@ -3,6 +3,12 @@
 # test coverage threshold
 COVERAGE_THRESHOLD=40
 
+check_python_version() {
+    python3 tools/check_python_version.py 3 6
+}
+
+check_python_version
+
 set -e
 
 echo "*****************************************"
