@@ -1,6 +1,6 @@
 #!/bin/bash
 
-directories="bayesian hack tests"
+directories="bayesian hack tests tools"
 separate_files="setup.py"
 pass=0
 fail=0
