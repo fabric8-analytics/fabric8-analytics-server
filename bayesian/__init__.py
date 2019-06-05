@@ -35,8 +35,7 @@ cache = Cache(config={'CACHE_TYPE': 'simple'})
 
 # Add Prometheus Metrics Support
 registry = CollectorRegistry()
-prometheus_multiproc_dir = os.environ.get('PROMETHEUS_LOG_DIR')
-multiprocess.MultiProcessCollector(registry, path=prometheus_multiproc_dir)
+multiprocess.MultiProcessCollector(registry)
 
 metrics = PrometheusMetrics(app=None, registry=registry, buckets=(1.0, 2.0, 3.0, 4.0, 5.0, 8.0,
                                                                   13.0, 21.0, 34.0, float("inf")))

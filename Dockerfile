@@ -53,10 +53,9 @@ EXPOSE 44321
 
 # Add support for Prometheus
 RUN mkdir -p /var/log/prometheus && \
-    chgrp -R coreapi /var/log/prometheus && \
     chmod -R 777 /var/log/prometheus
 
-ENV PROMETHEUS_LOG_DIR="/var/log/prometheus"
+ENV prometheus_multiproc_dir="/var/log/prometheus"
 
 CMD ["/usr/bin/server+pmcd.sh"]
 
