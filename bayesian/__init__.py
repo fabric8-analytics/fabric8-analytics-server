@@ -14,6 +14,10 @@ from raven.contrib.flask import Sentry
 
 from f8a_worker.setup_celery import init_selinon
 
+from prometheus_client import multiprocess
+from prometheus_client.core import CollectorRegistry
+from prometheus_flask_exporter import PrometheusMetrics
+
 
 def setup_logging(app):
     """Set up logger, the log level is read from the environment variable."""
@@ -28,6 +32,14 @@ def setup_logging(app):
 #  flask really sucks at this
 rdb = SQLAlchemy()
 cache = Cache(config={'CACHE_TYPE': 'simple'})
+
+# Add Prometheus Metrics Support
+registry = CollectorRegistry()
+prometheus_multiproc_dir = os.environ.get('PROMETHEUS_LOG_DIR')
+multiprocess.MultiProcessCollector(registry, path=prometheus_multiproc_dir)
+
+metrics = PrometheusMetrics(app=None, registry=registry, buckets=(1.0, 2.0, 3.0, 4.0, 5.0, 8.0,
+                                                                  13.0, 21.0, 34.0, float("inf")))
 
 
 def create_app(configfile=None):
@@ -71,6 +83,9 @@ def create_app(configfile=None):
             "PATCH, POST, PUT"
         response.headers["Allow"] = "GET, HEAD, OPTIONS, PATCH, POST, PUT"
         return response
+
+    metrics.init_app(app)
+    app.logger.info("************ Metrics Initialized *****************")
 
     return app
 
