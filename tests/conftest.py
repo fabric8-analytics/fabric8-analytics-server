@@ -9,6 +9,8 @@ from f8a_worker.models import Base
 from bayesian import create_app
 
 
+
+
 @pytest.fixture
 def someuser(rdb):
     """Fixture with one record with user data."""
@@ -27,7 +29,7 @@ def auth_header(rdb, someuser):
 def app():
     """Fixture with an application context."""
     here = os.path.dirname(__file__)
-    app = create_app(configfile=os.path.join(here, 'appconfig.py'))
+    app = create_app(configfile=os.path.join(here, 'appconfig.py'), clear_prom_registry=True)
     return app
 
 

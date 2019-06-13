@@ -7,8 +7,6 @@ import tempfile
 import os
 import json
 from unittest.mock import Mock, patch
-from prometheus_client import REGISTRY
-
 
 from bayesian.utils import (
     get_core_dependencies,
@@ -64,13 +62,6 @@ mocker_input = {
 }
 
 
-def deregister_metrics():
-    for collector, names in tuple(REGISTRY._collector_to_names.items()):
-        if any(name.startswith('flask_') or name.startswith('webhook_proxy_') or
-               name.startswith('analytics_api') for name in names):
-            REGISTRY.unregister(collector)
-
-
 @pytest.fixture
 def analyses(app):
     """Prepare the known set of data used by tests."""
@@ -113,8 +104,6 @@ class TestDoProjection(object):
 
     def test_empty_projection(self, analyses):
         """Test that no fields are returned for empty projection."""
-        # De-register the prometheus metrics
-        deregister_metrics()
         projection = []
         expected = {}
         result = do_projection(projection, analyses[0])
@@ -122,8 +111,6 @@ class TestDoProjection(object):
 
     def test_simple_projection(self, analyses):
         """Test simple projection of 2 simple arguments."""
-        # De-register the prometheus metrics
-        deregister_metrics()
         projection = ['ecosystem', 'package']
         # pypi has order 1
         expected = {'ecosystem': 'npm', 'package': 'arrify'}
@@ -132,8 +119,6 @@ class TestDoProjection(object):
 
     def test_none_projection(self, analyses):
         """Check that original model is returned if projection is None."""
-        # De-register the prometheus metrics
-        deregister_metrics()
         projection = None
         returned = do_projection(projection, analyses[0])
         expected = analyses[0].to_dict()
@@ -141,8 +126,6 @@ class TestDoProjection(object):
 
     def test_nested_projection(self, analyses):
         """Test whether filtering of nested JSON returns just desired field."""
-        # De-register the prometheus metrics
-        deregister_metrics()
         projection = ['analyses.digests']
         expected = {'analyses': {'digests': {'details':
                                              [{'artifact': True, 'sha1':
@@ -152,8 +135,6 @@ class TestDoProjection(object):
 
     def test_combined_projection(self, analyses):
         """Combining simple fields with nested fields."""
-        # De-register the prometheus metrics
-        deregister_metrics()
         projection = ['analyses.digests', 'analyses.a', 'package']
         expected = {'analyses': {'a': 'b', 'digests': {
             'details': [{'artifact': True, 'sha1': '6be7ae55bae2372c7be490321bbe5ead278bb51b'}]}},
@@ -163,8 +144,6 @@ class TestDoProjection(object):
 
     def test_three_level_fields(self, analyses):
         """Testing third level of nested JSON."""
-        # De-register the prometheus metrics
-        deregister_metrics()
         projection = ['analyses.digests.details', 'audit.audit.audit']
         expected = {'audit': {'audit': {'audit': 'audit'}},
                     'analyses':
