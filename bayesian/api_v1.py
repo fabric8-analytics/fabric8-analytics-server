@@ -1237,6 +1237,7 @@ class CveByDateEcosystem(Resource):
     method_decorators = [login_required]
 
     @staticmethod
+    @metrics.do_not_track()
     def get(modified_date, ecosystem=None):
         """Implement GET Method."""
         if not modified_date:
@@ -1282,12 +1283,14 @@ add_resource_no_matter_slashes(CveByDateEcosystem, '/cves/bydate/<modified_date>
 
 
 @api_v1.errorhandler(HTTPError)
+@metrics.do_not_track()
 def handle_http_error(err):
     """Handle HTTPError exceptions."""
     return jsonify({'error': err.error}), err.status_code
 
 
 @api_v1.errorhandler(AuthError)
+@metrics.do_not_track()
 def api_401_handler(err):
     """Handle AuthError exceptions."""
     return jsonify(error=err.error), err.status_code
@@ -1297,6 +1300,7 @@ def api_401_handler(err):
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined
 # after this
 @api_v1.route('/<path:invalid_path>')
+@metrics.do_not_track()
 def api_404_handler(*args, **kwargs):
     """Handle all other routes not defined above."""
     return jsonify(error='Cannot match given query to any API v1 endpoint'), 404

@@ -37,8 +37,9 @@ cache = Cache(config={'CACHE_TYPE': 'simple'})
 registry = CollectorRegistry()
 multiprocess.MultiProcessCollector(registry)
 
-metrics = PrometheusMetrics(app=None, registry=registry, buckets=(1.0, 2.0, 3.0, 4.0, 5.0, 8.0,
-                                                                  13.0, 21.0, 34.0, float("inf")))
+metrics = PrometheusMetrics(app=None, defaults_prefix='analytics_api',
+                            group_by='endpoint', registry=registry,
+                            buckets=(1.0, 2.0, 3.0, 4.0, 5.0, 8.0, 13.0, 21.0, 34.0, float("inf")))
 
 
 def create_app(configfile=None):
