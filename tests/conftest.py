@@ -9,8 +9,6 @@ from f8a_worker.models import Base
 from bayesian import create_app
 
 
-
-
 @pytest.fixture
 def someuser(rdb):
     """Fixture with one record with user data."""
