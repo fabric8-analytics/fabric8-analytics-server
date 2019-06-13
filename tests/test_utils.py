@@ -8,7 +8,6 @@ import os
 import json
 from unittest.mock import Mock, patch
 
-
 from bayesian.utils import (
     get_core_dependencies,
     do_projection,
