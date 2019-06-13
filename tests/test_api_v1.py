@@ -6,6 +6,7 @@ import json
 from bayesian import api_v1
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
+from tests.test_utils import deregister_metrics
 
 
 def api_route_for(route):
@@ -140,6 +141,8 @@ class TestApiV1Root(object):
 
     def test_api_root(self, accept_json):
         """Basic tests if all endpoints are accessible."""
+        # Deregister the prometheus metrics
+        deregister_metrics()
         res = self.client.get(api_route_for('/'), headers=accept_json)
         assert res.status_code == 200
         assert res.json == self.api_root
@@ -151,43 +154,59 @@ class TestCommonEndpoints(object):
 
     def test_readiness(self, accept_json):
         """Test the /readiness endpoint."""
+        # De-register the prometheus metrics
+        deregister_metrics()
         res = self.client.get(api_route_for('/readiness'), headers=accept_json)
         assert res.status_code == 200
 
     @pytest.mark.usefixtures('rdb')
     def test_liveness(self, accept_json):
         """Test the /liveness endpoint."""
+        # De-register the prometheus metrics
+        deregister_metrics()
         res = self.client.get(api_route_for('/liveness'), headers=accept_json)
         assert res.status_code == 200 or res.status_code == 500
 
     def test_error(self, accept_json):
         """Test the /_error endpoint."""
+        # De-register the prometheus metrics
+        deregister_metrics()
         res = self.client.get(api_route_for('/_error'), headers=accept_json)
         assert res.status_code == 404
 
     def test_system_version(self, accept_json):
         """Test the /system/version endpoint."""
+        # De-register the prometheus metrics
+        deregister_metrics()
         res = self.client.get(api_route_for('/system/version'), headers=accept_json)
         assert res.status_code == 200
 
     def test_stack_analyses(self, accept_json):
         """Test the /stack-analyses endpoint for GET."""
+        # De-register the prometheus metrics
+        deregister_metrics()
         res = self.client.get(api_route_for('/stack-analyses'), headers=accept_json)
         assert res.status_code == 400 or res.status_code == 404
 
     def test_component_search(self, accept_json):
         """Test the /component-search endpoint for GET."""
+        # De-register the prometheus metrics
+        deregister_metrics()
         res = self.client.get(api_route_for('/component-search'), headers=accept_json)
         assert res.status_code == 202 or res.status_code == 401 or res.status_code == 404
 
     def test_component_analyses(self, accept_json):
         """Test the /component-analyses endpoint for GET."""
+        # De-register the prometheus metrics
+        deregister_metrics()
         res = self.client.get(api_route_for('/component-analyses/abb/cc/dd'),
                               headers=accept_json)
         assert res.status_code == 400
 
     def test_component_analyses1(self):
         """Test the /component-analyses endpoint for POST."""
+        # De-register the prometheus metrics
+        deregister_metrics()
         data = [
             {
                 "ecosystem": "abcd",
@@ -214,6 +233,8 @@ class TestApiV1SystemVersion(object):
 
     def test_get_system_version(self, accept_json):
         """Test for the /api/v1/system/version endpoint."""
+        # De-register the prometheus metrics
+        deregister_metrics()
         res = self.client.get(api_route_for('/system/version/'), headers=accept_json)
         assert res.status_code == 200
         assert set(res.json.keys()) == {'committed_at', 'commit_hash'}
@@ -225,6 +246,8 @@ class TestApiV1RecommendationFeedback(object):
 
     def test_get_recommendation_feedback(self, accept_json):
         """Test GET endpoint for /recommendation_feedback/<ecosystem>."""
+        # De-register the prometheus metrics
+        deregister_metrics()
         for ecosystem in ['npm', 'pipy', 'maven']:
             path = api_route_for('/recommendation_feedback/{}'.format(ecosystem))
             res = self.client.get(path, headers=accept_json)
