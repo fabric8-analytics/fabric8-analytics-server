@@ -44,4 +44,6 @@ COPY hack/coreapi-server.sh hack/server+pmcd.sh /usr/bin/
 
 EXPOSE 44321
 
+ENV prometheus_multiproc_dir="/var/log/prometheus"
+
 CMD ["/usr/bin/server+pmcd.sh"]
