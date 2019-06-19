@@ -21,7 +21,8 @@ from bayesian.utils import (
     CveByDateEcosystemUtils,
     resolved_files_exist,
     get_ecosystem_from_manifest,
-    check_for_accepted_ecosystem
+    check_for_accepted_ecosystem,
+    get_analyses_from_graph
 )
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
@@ -56,6 +57,33 @@ mocker_input = {
                 "description": ["Some description here updated just now."],
                 "modified_date": ["20180911"]
 
+            }
+        ]
+    }
+}
+
+non_cve_input = {
+    "result": {
+        "data": [
+            {
+                "cve": {
+                    "ecosystem": ["npm"],
+                    "cve_id": ["CVE-2018-0001"],
+                    "cvss_v2": [10.0],
+                    "nvd_status": ["Awaiting Analyses"],
+                    "description": ["Some description here updated just now."],
+                    "modified_date": ["20180911"]
+                },
+                "version": {
+                    "pname": ["lodash"],
+                    "version": ["4.17.4"],
+                    "pecosystem": ["npm"]
+                },
+                "package": {
+                    "name": ["lodash"],
+                    "latest_non_cve_version": ["4.17.11"],
+                    "pecosystem": ["npm"]
+                }
             }
         ]
     }
@@ -445,3 +473,13 @@ def test_check_for_accepted_ecosystem():
 
     resp = check_for_accepted_ecosystem("abcd")
     assert not resp
+
+
+@patch("bayesian.utils.post")
+def test_get_analyses_from_graph(mocker):
+    """Test the get_analyses_from_graph function."""
+    mocker.return_value = mock_response = Mock()
+    mock_response.json.return_value = non_cve_input
+    resp = get_analyses_from_graph("npm", "lodash", "4.17.4")
+    print(resp)
+    assert resp['result']['recommendation']['change_to'] == "4.17.11"

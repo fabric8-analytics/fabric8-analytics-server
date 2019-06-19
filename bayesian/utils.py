@@ -12,6 +12,7 @@ import uuid
 import shutil
 import hashlib
 import zipfile
+import logging
 
 from io import BytesIO
 from functools import lru_cache
@@ -37,6 +38,8 @@ from requests import get, post
 from sqlalchemy.exc import SQLAlchemyError
 from github import Github, BadCredentialsException, GithubException, RateLimitExceededException
 from git import Repo, Actor
+
+logger = logging.getLogger(__file__)
 
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
@@ -388,13 +391,13 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as
                     "recommended_versions": []
                 })
     except Exception as e:
-        current_app.logger.debug(' '.join([type(e), ':', str(e)]))
+        logger.debug(' '.join([type(e), ':', str(e)]))
         return None
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
         epv = "{e}/{p}/{v}".format(e=ecosystem, p=package, v=version)
-        current_app.logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
-                                                                                t=elapsed_seconds))
+        logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
+                                                                    t=elapsed_seconds))
 
     resp = generate_recommendation(clubbed_data, package, version)
     return resp
