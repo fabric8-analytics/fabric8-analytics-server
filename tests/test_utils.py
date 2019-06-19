@@ -481,5 +481,4 @@ def test_get_analyses_from_graph(mocker):
     mocker.return_value = mock_response = Mock()
     mock_response.json.return_value = non_cve_input
     resp = get_analyses_from_graph("npm", "lodash", "4.17.4")
-    print(resp)
     assert resp['result']['recommendation']['change_to'] == "4.17.11"
