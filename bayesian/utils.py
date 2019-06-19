@@ -349,35 +349,40 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as
 
         if graph_req is not None:
             resp = graph_req.json()
+            result_data = resp['result'].get('data')
 
-            if not (resp['result'].get('data') and len(resp['result'].get('data')) > 0):
+            if not (result_data and len(result_data) > 0):
                 # trigger unknown component flow in API for missing package
                 return None
 
             clubbed_data.append({
-                "epv": resp['result']['data']
+                "epv": result_data
             })
 
-            if "cve" in resp['result'].get('data')[0]:
-                script2 = """\
-g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)\
-.in('has_version').out('has_version').not(out('has_cve')).values('version').dedup();\
-"""
-                payload = {
-                    'gremlin': script2,
-                    'bindings': {
-                        'ecosystem': ecosystem,
-                        'name': package,
-                        'version': version
-                    }
-                }
-
-                graph_req2 = post(gremlin_url, data=json.dumps(payload))
-                if graph_req2 is not None:
-                    resp2 = graph_req2.json()
+            if "cve" in result_data[0]:
+                if "latest_non_cve_version" in result_data[0]['package']:
                     clubbed_data.append({
-                        "recommended_versions": resp2['result']['data']
+                        "recommended_versions": result_data[0]['package']['latest_non_cve_version']
                     })
+                else:
+                    script2 = "g.V().has('pecosystem', ecosystem).has('pname', name)" \
+                              ".has('version', version).in('has_version')" \
+                              ".out('has_version').not(out('has_cve')).values('version').dedup();"
+                    payload = {
+                        'gremlin': script2,
+                        'bindings': {
+                            'ecosystem': ecosystem,
+                            'name': package,
+                            'version': version
+                        }
+                    }
+
+                    graph_req2 = post(gremlin_url, data=json.dumps(payload))
+                    if graph_req2 is not None:
+                        resp2 = graph_req2.json()
+                        clubbed_data.append({
+                            "recommended_versions": resp2['result']['data']
+                        })
             else:
                 clubbed_data.append({
                     "recommended_versions": []
