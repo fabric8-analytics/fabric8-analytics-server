@@ -37,6 +37,7 @@ RUN pushd /coreapi && \
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@${F8A_AUTH_VERSION}
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@${F8A_UTILS}
+RUN pip3 install git+https://github.com/miteshvp/prometheus_flask_exporter.git
 
 # Required by the solver task in worker to resolve dependencies from package.json
 RUN npm install -g semver-ranger
