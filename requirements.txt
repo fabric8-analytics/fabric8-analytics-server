@@ -66,5 +66,3 @@ wrapt==1.11.1             # via deprecated
 wtforms==2.2.1            # via flask-wtf
 raven[flask]==6.10.0
 contextlib2==0.5.5        # via raven
-prometheus-flask-exporter==0.8.0
-prometheus-client==0.6.0  # via prometheus-flask-exporter
