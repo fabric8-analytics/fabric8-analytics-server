@@ -131,14 +131,7 @@ objects:
             limits:
               memory: "1024Mi"
               cpu: "1000m"
-          volumeMounts:
-          - mountPath: "/var/log/prometheus"
-            name: bayesian-prometheus-pv
         restartPolicy: Always
-        volumes:
-          - name: bayesian-prometheus-pv
-            persistentVolumeClaim:
-              claimName: bayesian-prometheus-pvc
     test: false
     triggers:
     - type: ConfigChange
@@ -157,16 +150,6 @@ objects:
       targetPort: 5000
     selector:
       service: bayesian-api
-- apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: bayesian-prometheus-pvc
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 10Gi
 - apiVersion: v1
   kind: Route
   metadata:
