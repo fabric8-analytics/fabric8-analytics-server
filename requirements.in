@@ -23,4 +23,3 @@ codecov
 lxml
 gitpython
 raven[flask]
-prometheus_flask_exporter
