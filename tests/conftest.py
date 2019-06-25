@@ -27,7 +27,7 @@ def auth_header(rdb, someuser):
 def app():
     """Fixture with an application context."""
     here = os.path.dirname(__file__)
-    app = create_app(configfile=os.path.join(here, 'appconfig.py'), clear_prom_registry=True)
+    app = create_app(configfile=os.path.join(here, 'appconfig.py'))
     return app
 
 

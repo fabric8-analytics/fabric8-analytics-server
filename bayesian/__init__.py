@@ -14,10 +14,6 @@ from raven.contrib.flask import Sentry
 
 from f8a_worker.setup_celery import init_selinon
 
-from prometheus_client import multiprocess
-from prometheus_client.core import CollectorRegistry
-from prometheus_flask_exporter import PrometheusMetrics
-
 
 def setup_logging(app):
     """Set up logger, the log level is read from the environment variable."""
@@ -33,22 +29,8 @@ def setup_logging(app):
 rdb = SQLAlchemy()
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 
-# Add Prometheus Metrics Support
-registry = CollectorRegistry()
-multiprocess.MultiProcessCollector(registry)
 
-metrics = PrometheusMetrics(app=None, defaults_prefix='analytics_api',
-                            group_by='endpoint', registry=registry,
-                            buckets=(1.0, 2.0, 3.0, 4.0, 5.0, 8.0, 13.0, 21.0, 34.0, float("inf")))
-
-
-def deregister_metrics():
-    """De-register the prometheus metrics for every init."""
-    for collector, names in tuple(registry._collector_to_names.items()):
-        registry.unregister(collector)
-
-
-def create_app(configfile=None, clear_prom_registry=False):
+def create_app(configfile=None):
     """Create the web application and define basic endpoints."""
     # do the imports here to not shadow e.g. "import bayesian.frontend.api_v1"
     # by Blueprint imported here
@@ -89,11 +71,6 @@ def create_app(configfile=None, clear_prom_registry=False):
             "PATCH, POST, PUT"
         response.headers["Allow"] = "GET, HEAD, OPTIONS, PATCH, POST, PUT"
         return response
-
-    if clear_prom_registry:
-        deregister_metrics()
-    metrics.init_app(app)
-    app.logger.info("************ Metrics Initialized *****************")
 
     return app
 

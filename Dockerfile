@@ -37,7 +37,6 @@ RUN pushd /coreapi && \
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@${F8A_AUTH_VERSION}
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@${F8A_UTILS}
-RUN pip3 install git+https://github.com/miteshvp/prometheus_flask_exporter.git
 
 # Required by the solver task in worker to resolve dependencies from package.json
 RUN npm install -g semver-ranger
@@ -51,12 +50,6 @@ RUN cd /tmp/.git &&\
 COPY hack/coreapi-server.sh hack/server+pmcd.sh /usr/bin/
 
 EXPOSE 44321
-
-# Add support for Prometheus
-RUN mkdir -p /var/log/prometheus && \
-    chmod -R 777 /var/log/prometheus
-
-ENV prometheus_multiproc_dir="/var/log/prometheus"
 
 CMD ["/usr/bin/server+pmcd.sh"]
 
