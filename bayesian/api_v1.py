@@ -24,7 +24,7 @@ from f8a_worker.models import (
 from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 
-from . import rdb, cache, metrics
+from . import rdb, cache
 from .dependency_finder import DependencyFinder
 from fabric8a_auth.auth import login_required
 from .auth import get_access_token
@@ -77,7 +77,6 @@ _session = FuturesSession(max_workers=worker_count)
 
 
 @api_v1.route('/_error')
-@metrics.do_not_track()
 def error():
     """Implement the endpoint used by httpd, which redirects its errors to it."""
     try:
@@ -103,7 +102,6 @@ def readiness():
 
 
 @api_v1.route('/liveness')
-@metrics.do_not_track()
 def liveness():
     """Handle the /liveness REST API call."""
     # Check database connection
@@ -213,7 +211,6 @@ class SystemVersion(Resource):
     """Implementation of /system/version REST API call."""
 
     @staticmethod
-    @metrics.do_not_track()
     def get():
         """Handle the GET REST API call."""
         return get_system_version()
@@ -224,7 +221,6 @@ class ComponentSearch(Resource):
 
     method_decorators = [login_required]
 
-    @metrics.do_not_track()
     def get(self, package):
         """Handle the GET REST API call."""
         if not package:
@@ -437,7 +433,6 @@ class StackAnalysesGET(Resource):
 
 @api_v1.route('/stack-analyses/<external_request_id>/_debug')
 @login_required
-@metrics.do_not_track()
 def stack_analyses_debug(external_request_id):
     """Debug endpoint exposing operational data for particular stack analysis.
 
@@ -471,7 +466,6 @@ class UserFeedback(Resource):
         os.environ.get("AWS_ANALYTICS_BUCKET", "bayesian-user-feedback"))
 
     @staticmethod
-    @metrics.do_not_track()
     def post():
         """Handle the POST REST API call."""
         input_json = request.get_json()
@@ -501,7 +495,6 @@ class UserIntent(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def post():
         """Handle the POST REST API call."""
         # TODO: refactor the business logic into its own function defined outside api_v1.py
@@ -544,7 +537,6 @@ class UserIntentGET(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def get(user, ecosystem):
         """Handle the GET REST API call."""
         # TODO: refactor the business logic into its own function defined outside api_v1.py
@@ -576,7 +568,6 @@ class MasterTagsGET(Resource):
     # TODO: move the timeout constant to the config file
 
     @staticmethod
-    @metrics.do_not_track()
     @cache.memoize(timeout=604800)  # 7 days
     def get(ecosystem):
         """Handle the GET REST API call."""
@@ -608,7 +599,6 @@ class GetNextComponent(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def post(ecosystem):
         """Handle the POST REST API call."""
         if not ecosystem:
@@ -633,7 +623,6 @@ class SetTagsToComponent(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def post():
         """Handle the POST REST API call."""
         input_json = request.get_json()
@@ -672,7 +661,6 @@ class GenerateManifest(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def post():
         """Handle the POST REST API call with the manifest file."""
         input_json = request.get_json()
@@ -869,7 +857,6 @@ class StackAnalyses(Resource):
             raise HTTPError(500, "Error updating log for request {t}".format(t=sid)) from e
 
     @staticmethod
-    @metrics.do_not_track()
     def get():
         """Handle the GET REST API call."""
         raise HTTPError(404, "Unsupported API endpoint")
@@ -881,7 +868,6 @@ class SubmitFeedback(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def post():
         """Handle the POST REST API call."""
         input_json = request.get_json()
@@ -928,7 +914,6 @@ class DepEditorAnalyses(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def post():
         """Handle the POST REST API call."""
         # TODO: reduce cyclomatic complexity
@@ -1043,7 +1028,6 @@ class DepEditorCVEAnalyses(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def post():
         """Handle the POST REST API call."""
         input_json = request.get_json()
@@ -1066,7 +1050,6 @@ class CategoryService(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def get(runtime):
         """Handle the GET REST API call."""
         # TODO: refactor
@@ -1110,7 +1093,6 @@ class CoreDependencies(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def get(runtime):
         """Handle the GET REST API call."""
         try:
@@ -1141,7 +1123,6 @@ class EmptyBooster(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def post():
         """Handle the POST REST API request."""
         remote_repo = request.form.get('gitRepository')
@@ -1221,7 +1202,6 @@ class RecommendationFB(Resource):
     """Implementation of /recommendation_feedback/<ecosystem> API call."""
 
     @staticmethod
-    @metrics.do_not_track()
     def get(ecosystem):
         """Implement GET method."""
         if not ecosystem:
@@ -1237,7 +1217,6 @@ class CveByDateEcosystem(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    @metrics.do_not_track()
     def get(modified_date, ecosystem=None):
         """Implement GET Method."""
         if not modified_date:
@@ -1283,14 +1262,12 @@ add_resource_no_matter_slashes(CveByDateEcosystem, '/cves/bydate/<modified_date>
 
 
 @api_v1.errorhandler(HTTPError)
-@metrics.do_not_track()
 def handle_http_error(err):
     """Handle HTTPError exceptions."""
     return jsonify({'error': err.error}), err.status_code
 
 
 @api_v1.errorhandler(AuthError)
-@metrics.do_not_track()
 def api_401_handler(err):
     """Handle AuthError exceptions."""
     return jsonify(error=err.error), err.status_code
@@ -1300,7 +1277,6 @@ def api_401_handler(err):
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined
 # after this
 @api_v1.route('/<path:invalid_path>')
-@metrics.do_not_track()
 def api_404_handler(*args, **kwargs):
     """Handle all other routes not defined above."""
     return jsonify(error='Cannot match given query to any API v1 endpoint'), 404
