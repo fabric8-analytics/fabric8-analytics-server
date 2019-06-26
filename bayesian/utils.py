@@ -410,48 +410,77 @@ class CveByDateEcosystemUtils:
     """
 
     # Get CVEs information by date
-    cve_nodes_by_date_script_template = """\
-    g.V().has('modified_date', modified_date)\
-    .has('vertex_label','CVE').as('cve')\
-    .coalesce(\
-    inE('has_cve').outV().as('epv').select('cve','epv').by(valueMap()),\
-    select('cve').by(valueMap()))\
+    cve_epv_nodes_template = """\
+    g.V().has('cve_id', cve_id)\
+    .in("has_cve").valueMap()\
     """
 
     # Get CVEs by date & ecosystem
     cve_nodes_by_date_ecosystem_script_template = """\
     g.V().has('modified_date', modified_date)\
-    .has('vertex_label','CVE')\
-    .has('ecosystem',ecosystem).as('cve')\
-    .coalesce(\
-    inE('has_cve').outV().as('epv').select('cve','epv').by(valueMap()),\
-    select('cve').by(valueMap()))\
+    .has('cecosystem',ecosystem)\
+    .has('cve_sources',cve_sources)\
+    .valueMap()\
     """
 
-    def __init__(self, bydate, ecosystem=None):
-        """Constructor."""
-        self._bydate = bydate
-        self._ecosystem = ecosystem
+    cve_nodes_by_date_ecosystem_script_template_all = """\
+    g.V().has('modified_date', modified_date)\
+    .has('cecosystem',ecosystem)\
+    .valueMap()\
+    """
 
-    def get_cves_by_date(self):
-        """Call graph and get CVEs by date."""
-        script = self.cve_nodes_by_date_script_template
-        bindings = {'modified_date': self._bydate}
-        return self.get_cves(script, bindings)
+    def __init__(self, cve_id, cve_sources='all', bydate=None,
+                 ecosystem='all', date_range=7):
+        """Constructor."""
+        self._cve_id = cve_id
+        if cve_id is None:
+            self._bydate = bydate
+            self._ecosystem = ecosystem
+            self._cve_sources = cve_sources
+            self._date_range = date_range
 
     def get_cves_by_date_ecosystem(self):
         """Call graph and get CVEs by date and ecosystem."""
-        script = self.cve_nodes_by_date_ecosystem_script_template
-        self._ecosystem = self._ecosystem.lower()
-        bindings = {'modified_date': self._bydate, 'ecosystem': self._ecosystem}
-        return self.get_cves(script, bindings)
+        program_startdate = datetime.datetime.strptime(self._bydate, "%Y%m%d")
+        didx = [program_startdate - datetime.timedelta(days=x) for x in range(0, self._date_range)]
+        gremlin_json = []
 
-    def get_cves(self, script, bindings):
-        """Call Gremlin and get the CVE information."""
-        json_payload = self.prepare_payload(script, bindings)
-        response = post(gremlin_url, json=json_payload)
-        cve_list = self.prepare_response(response.json())
+        try:
+            for dt in didx:
+                dt = datetime.datetime.strftime(dt, '%Y%m%d')
+                # Gremlin script execution
+                script = self.cve_nodes_by_date_ecosystem_script_template_all \
+                    if self._cve_sources == 'all' \
+                    else self.cve_nodes_by_date_ecosystem_script_template
+
+                self._ecosystem = self._ecosystem.lower()
+                bindings = {
+                    'modified_date': dt, 'ecosystem': self._ecosystem,
+                    'cve_sources': self._cve_sources
+                }
+                """Call Gremlin and get the CVE information."""
+                json_payload = self.prepare_payload(script, bindings)
+
+                response = post(gremlin_url, json=json_payload)
+                gremlin_json.extend(response.json().get('result', {}).get('data', []))
+        except Exception:
+            raise
+
+        cve_list = self.prepare_response_cve(gremlin_json)
         return cve_list
+
+    def get_cves_epv_by_date(self):
+        """Call graph and get CVEs by date and ecosystem."""
+        script = self.cve_epv_nodes_template
+        bindings = {'cve_id': self._cve_id}
+        """Call Gremlin and get the CVE EPV information."""
+        json_payload = self.prepare_payload(script, bindings)
+        try:
+            response = post(gremlin_url, json=json_payload)
+        except Exception:
+            raise
+        epv_list = self.prepare_response_epv(response.json())
+        return epv_list
 
     def prepare_payload(self, script, bindings):
         """Prepare payload."""
@@ -459,38 +488,46 @@ class CveByDateEcosystemUtils:
 
         return payload
 
-    def prepare_response(self, gremlin_json):
+    def prepare_response_cve(self, gremlin_json):
         """Prepare response to be sent to user based on Gremlin data."""
         cve_list_add = []
-        cve_list_remove = []
-        resp = gremlin_json.get('result', {}).get('data', [])
-        for cve in resp:
-            if 'cve' in cve and 'epv' in cve:
-                cve_dict = {
-                    "cve_id": cve.get('cve').get('cve_id', [None])[0],
-                    "cvss_v2": cve.get('cve').get('cvss_v2', [None])[0],
-                    "description": cve.get('cve').get('description', [None])[0],
-                    "ecosystem": cve.get('cve').get('ecosystem', [None])[0],
-                    "name": cve.get('epv').get('pname', [None])[0],
-                    "version": cve.get('epv').get('version', [None])[0],
-                    "status": cve.get('cve').get('status', [None])[0],
-                    "fixed_in": cve.get('cve').get('fixed_in', [None])[0],
-                    "link": "https://nvd.nist.gov/vuln/detail/" +
-                            cve.get('cve').get('cve_id', [''])[0]
-                }
-                cve_list_add.append(cve_dict)
-            else:
-                cve_dict = {
-                    "cve_id": cve.get('cve_id', [None])[0],
-                    "ecosystem": cve.get('ecosystem', [None])[0]
-                }
-                cve_list_remove.append(cve_dict)
+        # resp = gremlin_json.get('result', {}).get('data', [])
+        for cve in gremlin_json:
+            cve_dict = {
+                "cve_id": cve.get('cve_id', [None])[0],
+                "cvss_v2": cve.get('cvss_v2', [None])[0],
+                "description": cve.get('description', [None])[0],
+                "ecosystem": cve.get('cecosystem', [None])[0],
+                "fixed_in": cve.get('fixed_in', [None])[0],
+                "cve_sources": cve.get('cve_sources', [None])[0],
+                "link": "https://nvd.nist.gov/vuln/detail/" +
+                        cve.get('cve_id', [''])[0]
+            }
+            cve_list_add.append(cve_dict)
 
         response = {
-            "count": len(cve_list_add + cve_list_remove),
-            "add": cve_list_add,
-            "remove": cve_list_remove
+            "count": len(cve_list_add),
+            "add": cve_list_add
         }
+
+        return response
+
+    def prepare_response_epv(self, gremlin_json):
+        """Prepare response to be sent to user based on Gremlin data."""
+        epv_list_add = []
+        resp = gremlin_json.get('result', {}).get('data', [])
+        for epv in resp:
+            epv_dict = {
+                "name": epv.get('pname', [None])[0],
+                "version": epv.get('version', [None])[0]
+            }
+            epv_list_add.append(epv_dict)
+
+        response = {
+            "count": len(epv_list_add),
+            "add": epv_list_add
+        }
+
         return response
 
 

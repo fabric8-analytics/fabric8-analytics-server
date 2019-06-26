@@ -1242,18 +1242,48 @@ class CveByDateEcosystem(Resource):
     method_decorators = [login_required]
 
     @staticmethod
-    def get(modified_date, ecosystem=None):
+    def get(end_date, ecosystem='all'):
         """Implement GET Method."""
-        if not modified_date:
+        if not end_date:
             raise HTTPError(400, error="Expected date in the request")
         try:
-            datetime.datetime.strptime(modified_date, '%Y%m%d')
+            datetime.datetime.strptime(end_date, '%Y%m%d')
         except ValueError:
             msg = 'Invalid datetime specified. Please specify in YYYYMMDD format'
             raise HTTPError(400, msg)
-        getcve = CveByDateEcosystemUtils(modified_date, ecosystem)
-        result = getcve.get_cves_by_date() if not ecosystem else getcve.get_cves_by_date_ecosystem()
-        return jsonify(result), 200
+        try:
+            cve_sources = request.args.get('cve_sources', 'all')
+            date_range = int(request.args.get('date_range', 7))
+            if date_range <= 0:
+                raise HTTPError(400, error="date_range parameter should be a positive integer")
+            getcve = CveByDateEcosystemUtils(None, cve_sources,
+                                             end_date, ecosystem, date_range)
+            result = getcve.get_cves_by_date_ecosystem()
+        except Exception as e:
+            result = {}
+            current_app.logger.error('ERROR: {}'.format(str(e)))
+            raise HTTPError()
+
+        return result, 200
+
+
+class EpvsByCveidService(Resource):
+    """Implementation of api endpoint for EPVs bycveid."""
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def get(cve_id):
+        """Implement GET Method."""
+        try:
+            getcve = CveByDateEcosystemUtils(cve_id)
+            result = getcve.get_cves_epv_by_date()
+        except Exception as e:
+            result = {}
+            current_app.logger.error('ERROR: {}'.format(str(e)))
+            raise HTTPError()
+
+        return result, 200
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
@@ -1283,7 +1313,8 @@ add_resource_no_matter_slashes(DepEditorCVEAnalyses, '/depeditor-cve-analyses')
 add_resource_no_matter_slashes(CoreDependencies, '/get-core-dependencies/<runtime>')
 add_resource_no_matter_slashes(EmptyBooster, '/empty-booster')
 add_resource_no_matter_slashes(RecommendationFB, '/recommendation_feedback/<ecosystem>')
-add_resource_no_matter_slashes(CveByDateEcosystem, '/cves/bydate/<modified_date>/<ecosystem>')
+add_resource_no_matter_slashes(CveByDateEcosystem, '/cves/bydate/<end_date>/<ecosystem>')
+add_resource_no_matter_slashes(EpvsByCveidService, '/epvs/bycveid/<cve_id>')
 
 
 @api_v1.errorhandler(HTTPError)
