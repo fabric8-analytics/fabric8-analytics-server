@@ -12,6 +12,7 @@ import uuid
 import shutil
 import hashlib
 import zipfile
+import logging
 
 from io import BytesIO
 from functools import lru_cache
@@ -37,6 +38,8 @@ from requests import get, post
 from sqlalchemy.exc import SQLAlchemyError
 from github import Github, BadCredentialsException, GithubException, RateLimitExceededException
 from git import Repo, Actor
+
+logger = logging.getLogger(__file__)
 
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
@@ -349,47 +352,52 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as
 
         if graph_req is not None:
             resp = graph_req.json()
+            result_data = resp['result'].get('data')
 
-            if not (resp['result'].get('data') and len(resp['result'].get('data')) > 0):
+            if not (result_data and len(result_data) > 0):
                 # trigger unknown component flow in API for missing package
                 return None
 
             clubbed_data.append({
-                "epv": resp['result']['data']
+                "epv": result_data
             })
 
-            if "cve" in resp['result'].get('data')[0]:
-                script2 = """\
-g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)\
-.in('has_version').out('has_version').not(out('has_cve')).values('version').dedup();\
-"""
-                payload = {
-                    'gremlin': script2,
-                    'bindings': {
-                        'ecosystem': ecosystem,
-                        'name': package,
-                        'version': version
-                    }
-                }
-
-                graph_req2 = post(gremlin_url, data=json.dumps(payload))
-                if graph_req2 is not None:
-                    resp2 = graph_req2.json()
+            if "cve" in result_data[0]:
+                if "latest_non_cve_version" in result_data[0]['package']:
                     clubbed_data.append({
-                        "recommended_versions": resp2['result']['data']
+                        "recommended_versions": result_data[0]['package']['latest_non_cve_version']
                     })
+                else:
+                    script2 = "g.V().has('pecosystem', ecosystem).has('pname', name)" \
+                              ".has('version', version).in('has_version')" \
+                              ".out('has_version').not(out('has_cve')).values('version').dedup();"
+                    payload = {
+                        'gremlin': script2,
+                        'bindings': {
+                            'ecosystem': ecosystem,
+                            'name': package,
+                            'version': version
+                        }
+                    }
+
+                    graph_req2 = post(gremlin_url, data=json.dumps(payload))
+                    if graph_req2 is not None:
+                        resp2 = graph_req2.json()
+                        clubbed_data.append({
+                            "recommended_versions": resp2['result']['data']
+                        })
             else:
                 clubbed_data.append({
                     "recommended_versions": []
                 })
     except Exception as e:
-        current_app.logger.debug(' '.join([type(e), ':', str(e)]))
+        logger.debug(' '.join([type(e), ':', str(e)]))
         return None
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
         epv = "{e}/{p}/{v}".format(e=ecosystem, p=package, v=version)
-        current_app.logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
-                                                                                t=elapsed_seconds))
+        logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
+                                                                    t=elapsed_seconds))
 
     resp = generate_recommendation(clubbed_data, package, version)
     return resp
