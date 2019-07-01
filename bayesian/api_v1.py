@@ -269,7 +269,7 @@ class ComponentAnalyses(Resource):
             server_create_component_bookkeeping(ecosystem, package, version, g.decoded_token)
 
             metrics_payload.update({"status_code": 200, "value": time.time() - st})
-            _session.post(url=METRICS_SERVICE_URL+"/api/v1/prometheus", json=metrics_payload)
+            _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
 
             return result
 
