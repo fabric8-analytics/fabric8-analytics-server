@@ -7,6 +7,7 @@ import re
 import urllib
 import tempfile
 import json
+import time
 
 from collections import defaultdict
 
@@ -71,6 +72,11 @@ ANALYSIS_ACCESS_COUNT_KEY = 'access_count'
 TOTAL_COUNT_KEY = 'total_count'
 
 ANALYTICS_API_VERSION = "v1.0"
+HOSTNAME = os.environ.get('HOSTNAME', 'bayesian-api')
+METRICS_SERVICE_URL = "http://{}:{}".format(
+    os.environ.get('METRICS_ACCUMULATOR_HOST', 'metrics-accumulator'),
+    os.environ.get('METRICS_ACCUMULATOR_PORT', '5200')
+)
 
 worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
 _session = FuturesSession(max_workers=worker_count)
@@ -240,6 +246,13 @@ class ComponentAnalyses(Resource):
     @staticmethod
     def get(ecosystem, package, version):
         """Handle the GET REST API call."""
+        st = time.time()
+        metrics_payload = {
+            "pid": os.getpid(),
+            "hostname": HOSTNAME,
+            "endpoint": request.endpoint,
+            "request_method": "GET"
+        }
         package = urllib.parse.unquote(package)
         if not check_for_accepted_ecosystem(ecosystem):
             msg = "Ecosystem {ecosystem} is not supported for this request".format(
@@ -254,6 +267,10 @@ class ComponentAnalyses(Resource):
         if result is not None:
             # Known component for Bayesian
             server_create_component_bookkeeping(ecosystem, package, version, g.decoded_token)
+
+            metrics_payload.update({"status_code": 200, "value": time.time() - st})
+            _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
+
             return result
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
@@ -264,6 +281,10 @@ class ComponentAnalyses(Resource):
                   "The package will be available shortly," \
                   " please retry after some time.".format(ecosystem=ecosystem, package=package,
                                                           version=version)
+
+            metrics_payload.update({"status_code": 202, "value": time.time() - st})
+            _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
+
             raise HTTPError(202, msg)
         else:
             # no data has been found
@@ -272,6 +293,10 @@ class ComponentAnalyses(Resource):
             msg = "No data found for {ecosystem} package " \
                   "{package}/{version}".format(ecosystem=ecosystem,
                                                package=package, version=version)
+
+            metrics_payload.update({"status_code": 404, "value": time.time() - st})
+            _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
+
             raise HTTPError(404, msg)
 
 
