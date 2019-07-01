@@ -74,8 +74,8 @@ TOTAL_COUNT_KEY = 'total_count'
 ANALYTICS_API_VERSION = "v1.0"
 HOSTNAME = os.environ.get('HOSTNAME', 'bayesian-api')
 METRICS_SERVICE_URL = "http://{}:{}".format(
-    os.environ.get('METRICS_COLLECTOR_HOST', 'metrics-accumulator'),
-    os.environ.get('METRICS_COLLECTOR_PORT', '5200')
+    os.environ.get('METRICS_ACCUMULATOR_HOST', 'metrics-accumulator'),
+    os.environ.get('METRICS_ACCUMULATOR_PORT', '5200')
 )
 
 worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))

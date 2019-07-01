@@ -36,9 +36,9 @@ objects:
             value: "api"
           - name: F8_API_BACKBONE_HOST
             value: "http://f8a-server-backbone:5000"
-          - name: METRICS_COLLECTOR_HOST
+          - name: METRICS_ACCUMULATOR_HOST
             value: "metrics-accumulator"
-          - name: METRICS_COLLECTOR_PORT
+          - name: METRICS_ACCUMULATOR_PORT
             value: "5200"
           - name: FUTURES_SESSION_WORKER_COUNT
             value: "100"
