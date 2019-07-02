@@ -1260,9 +1260,9 @@ class CveByDateEcosystem(Resource):
                                              end_date, ecosystem, date_range)
             result = getcve.get_cves_by_date_ecosystem()
         except Exception as e:
-            result = {}
             current_app.logger.error('ERROR: {}'.format(str(e)))
-            raise HTTPError()
+            msg = "No cve data found for {ecosystem} ".format(ecosystem=ecosystem)
+            raise HTTPError(404, msg)
 
         return result, 200
 
@@ -1279,9 +1279,9 @@ class EpvsByCveidService(Resource):
             getcve = CveByDateEcosystemUtils(cve_id)
             result = getcve.get_cves_epv_by_date()
         except Exception as e:
-            result = {}
             current_app.logger.error('ERROR: {}'.format(str(e)))
-            raise HTTPError()
+            msg = "No epv data found for {cve_id} ".format(cve_id=cve_id)
+            raise HTTPError(404, msg)
 
         return result, 200
 
