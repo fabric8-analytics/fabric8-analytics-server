@@ -31,34 +31,122 @@ from urllib.request import urlopen
 now = datetime.datetime.now()
 later = now + datetime.timedelta(minutes=10)
 
-mocker_input = {
+mocker_input_cve = {
     "result": {
         "data": [
             {
-                "cve": {
-                    "ecosystem": ["maven"],
-                    "cve_id": ["CVE-2018-0001"],
-                    "cvss_v2": [10.0],
-                    "nvd_status": ["Awaiting Analyses"],
-                    "description": ["Some description here updated just now."],
-                    "modified_date": ["20180911"]
-                },
-                "epv": {
-                    "pname": ["io.vertx:vertx-core"],
-                    "version": ["3.4.1"],
-                    "pecosystem": ["maven"],
-                }
+                "cve_id": [
+                    "CVE-2019-0542"
+                ],
+                "cecosystem": [
+                    "npm"
+                ],
+                "cvss_v2": [
+                    7.5
+                ],
+                "nvd_status": [
+                    "ANALYZED"
+                ],
+                "vertex_label": [
+                    "CVE"
+                ],
+                "fixed_in": [
+                    "<=3.8.1,3.8.1",
+                    "<=3.9.2,3.9.2",
+                    ">=3.10.1"
+                ],
+                "description": [
+                    "A remote code execution vulnerability"
+                ],
+                "modified_date": [
+                    "20190509"
+                ]
             },
             {
-                "ecosystem": ["npm"],
-                "cve_id": ["CVE-2018-0002"],
-                "cvss_v2": [10.0],
-                "nvd_status": ["Depricated"],
-                "description": ["Some description here updated just now."],
-                "modified_date": ["20180911"]
-
+                "cve_id": [
+                    "CVE-2019-10742"
+                ],
+                "cecosystem": [
+                    "npm"
+                ],
+                "cvss_v2": [
+                    5
+                ],
+                "nvd_status": [
+                    "ANALYZED"
+                ],
+                "vertex_label": [
+                    "CVE"
+                ],
+                "fixed_in": [
+                    ">=0.19.0-beta.1"
+                ],
+                "description": [
+                    "Axios up to and including 0.18.0 allows attackers to cause a denial of service"
+                ],
+                "modified_date": [
+                    "20190509"
+                ]
             }
-        ]
+        ],
+        "meta": {}
+    }
+}
+
+mocker_input_epv = {
+    "result": {
+        "data": [
+            {
+                "licenses": [
+                    "MIT License"
+                ],
+                "last_updated": [
+                    1557381635.7018023
+                ],
+                "declared_licenses": [
+                    "MIT"
+                ],
+                "pecosystem": [
+                    "npm"
+                ],
+                "pname": [
+                    "xterm"
+                ],
+                "vertex_label": [
+                    "Version"
+                ],
+                "description": [
+                    "Full xterm terminal in your browser"
+                ],
+                "version": [
+                    "2.9.2"
+                ]
+            },
+            {
+                "last_updated": [
+                    1557381637.6013052
+                ],
+                "declared_licenses": [
+                    "MIT"
+                ],
+                "pecosystem": [
+                    "npm"
+                ],
+                "pname": [
+                    "xterm"
+                ],
+                "vertex_label": [
+                    "Version"
+                ],
+                "description": [
+                    "Full xterm terminal in your browser"
+                ],
+                "version": [
+                    "3.0.1"
+                ]
+            }
+        ],
+        "meta": {}
     }
 }
 
@@ -353,54 +441,40 @@ def test_gremlin_component_analysis_response():
 
 
 @patch("bayesian.utils.post")
-def test_cve_get_by_date_valid(mocker):
-    """Test getting CVEs for (date)."""
-    mocker.return_value = mock_response = Mock()
-    mock_response.json.return_value = mocker_input
-
-    cve = CveByDateEcosystemUtils('20160911')
-    response = cve.get_cves_by_date()
-
-    assert response
-    assert 'add' in response
-    assert response['add'][0]['cve_id'] == 'CVE-2018-0001'
-    assert 'ecosystem' in response['add'][0]
-    assert 'name' in response['add'][0]
-    assert 'version' in response['add'][0]
-
-
-@patch("bayesian.utils.post")
 def test_get_cves_by_date_ecosystem_add(mocker):
     """Test getting CVEs by date and ecosystem."""
     mocker.return_value = mock_response = Mock()
-    mock_response.json.return_value = mocker_input
+    mock_response.json.return_value = mocker_input_cve
 
-    cve = CveByDateEcosystemUtils('20180911', 'maven')
+    cve = CveByDateEcosystemUtils(None, 'all', '20190509', 'npm', 2)
     response = cve.get_cves_by_date_ecosystem()
 
     assert response
     assert 'add' in response
-    assert response['add'][0]['cve_id'] == 'CVE-2018-0001'
+    assert response['add'][0]['cve_id'] == 'CVE-2019-0542'
     assert 'ecosystem' in response['add'][0]
-    assert response['add'][0]['ecosystem'] == 'maven'
-    assert 'name' in response['add'][0]
-    assert 'version' in response['add'][0]
+    assert response['add'][0]['ecosystem'] == 'npm'
+    assert 'cvss_v2' in response['add'][0]
+    assert 'fixed_in' in response['add'][0]
+    assert 'link' in response['add'][0]
+    assert response['add'][0]['link'] == "https://nvd.nist.gov/vuln/detail/CVE-2019-0542"
 
 
 @patch("bayesian.utils.post")
-def test_get_cves_by_date_ecosystem_remove(mocker):
+def test_get_epvs_by_cve(mocker):
     """Test getting CVEs by date and ecosystem."""
     mocker.return_value = mock_response = Mock()
-    mock_response.json.return_value = mocker_input
+    mock_response.json.return_value = mocker_input_epv
 
-    cve = CveByDateEcosystemUtils('20180911', 'npm')
-    response = cve.get_cves_by_date_ecosystem()
+    cve = CveByDateEcosystemUtils('CVE-2019-0542')
+    response = cve.get_cves_epv_by_date()
 
     assert response
-    assert 'remove' in response
-    assert response['remove'][0]['cve_id'] == 'CVE-2018-0002'
-    assert 'ecosystem' in response['remove'][0]
-    assert response['remove'][0]['ecosystem'] == 'npm'
+    assert 'add' in response
+    assert 'name' in response['add'][0]
+    assert response['add'][0]['name'] == 'xterm'
+    assert 'version' in response['add'][0]
+    assert response['add'][0]['version'] == '2.9.2'
 
 
 def test_check_manifest_for_resolved_deps():

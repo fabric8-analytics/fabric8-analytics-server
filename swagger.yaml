@@ -111,35 +111,34 @@ paths:
           description: Request unauthorized
         '404':
           description: Data not found
-  '/cves/bydate/{date}':
+  '/epvs/bycveid/{cve_id}':
     get:
       tags:
         - CVE Services
-      summary: Get CVE information by ingesation date
-      description: Returns CVEs injested/removed on that particular date from the OSIO database.
-      operationId: getCveByDate #TODO: To be changed later
+      summary: Get EPV information by cve id
+      description: Returns linked EPV information by cve id from the OSIO database.
+      operationId: getEpvByDate #TODO: To be changed later
       parameters:
         - in: path
-          name: date
-          description: Returns CVE information by date.
+          name: cve_id
+          description: Returns EPV information by cveid.
           required: true
-          type: integer
-          format: int64
+          type: string
       responses:
           '200':
             description: "successful operation"
             schema:
-              $ref: "#/definitions/ByDate"
+              $ref: "#/definitions/ByCveId"
           '400':
-            description: "Invalid date supplied"
+            description: "Invalid cve id supplied"
           '404':
             description: "Data not found"
   '/cves/bydate/{date}/{ecosystem}':
     get:
       tags:
       - CVE Services
-      summary: Get CVE information by ingesation date and ecosystem
-      description: Returns CVEs injested/removed on that particular date and belonging to a certain ecosystem from the OSIO database.
+      summary: Get CVE ids by ingesation date and ecosystem
+      description: Returns CVE ids injested/removed on that particular date and belonging to a certain ecosystem from the OSIO database.
       operationId: "getCveByDateEcosystem" #TODO: To be changed later
       parameters:
       - in: path
@@ -152,6 +151,17 @@ paths:
         name: ecosystem
         description: Returns CVE information by date and ecosystem.
         required: true
+        type: string
+      - in: query
+        name: date_range
+        description: cve ids fetched as per the specified date range
+        required: false
+        type: integer
+        format: int64
+      - in: query
+        name: cve_sources
+        description: specifying cve sources for the query
+        required: false
         type: string
       responses:
         '200':
@@ -620,21 +630,17 @@ definitions:
       submitted_at:
         type: string
 
-  ByDate:
-    title: CVE ByDate
+  ByCveId:
+    title: CVE ByCveId
     type: "object"
     properties:
       add:
         type: "array"
         items:
-          $ref: '#/definitions/Add'
+          $ref: '#/definitions/AddEpv'
       count:
         type: "integer"
         format: "int32"
-      remove:
-        type: "array"
-        items:
-          $ref: '#/definitions/Remove'
   ByDateEcosystem:
     title: CVE ByDateEcosytem
     type: "object"
@@ -646,10 +652,16 @@ definitions:
       count:
         type: "integer"
         format: "int32"
-      remove:
-        type: "array"
-        items:
-          $ref: '#/definitions/Remove'
+  AddEpv:
+    title: EpvToAdd
+    type: "object"
+    properties:
+      name:
+          type: "string"
+          format: "string"
+      version:
+          type: "string"
+          format: "string"
   Add:
     title: CveToAdd
     type: "object"
@@ -669,25 +681,6 @@ definitions:
       fixed_in:
           type: "string"
           format: "string"
-      name:
-          type: "string"
-          format: "string"
-      status:
-          type: "string"
-          format: "string"
-      version:
-          type: "string"
-          format: "string"
       link:
-          type: "string"
-          format: "string"
-  Remove:
-    title: CveToRemove
-    type: "object"
-    properties:
-      cve_id:
-          type: "string"
-          format: "string"
-      ecosystem:
           type: "string"
           format: "string"
