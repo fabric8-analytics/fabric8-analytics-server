@@ -1,7 +1,12 @@
 #!/bin/bash
 
-directories="bayesian hack tests tools"
-separate_files="setup.py"
+IFS=$'\n'
+
+# list of directories with sources to check
+directories=$(cat directories.txt)
+
+# list of separate files to check
+separate_files=$(cat files.txt)
 
 pass=0
 fail=0
