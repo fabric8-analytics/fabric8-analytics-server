@@ -37,9 +37,9 @@ objects:
           - name: F8_API_BACKBONE_HOST
             value: "http://f8a-server-backbone:5000"
           - name: METRICS_ACCUMULATOR_HOST
-            value: "metrics-accumulator"
+            value: ${METRICS_ACCUMULATOR_HOST}
           - name: METRICS_ACCUMULATOR_PORT
-            value: "5200"
+            value: ${METRICS_ACCUMULATOR_PORT}
           - name: FUTURES_SESSION_WORKER_COUNT
             value: "100"
           - name: PGBOUNCER_SERVICE_HOST
@@ -211,3 +211,15 @@ parameters:
   required: true
   name: SHOW_TRANSITIVE_REPORT
   value: "false"
+
+- description: Metrics accumulator service host
+  displayName: METRICS ACCUMULATOR HOST
+  required: true
+  name: METRICS_ACCUMULATOR_HOST
+  value: "metrics-accumulator"
+
+- description: Metrics accumulator service port
+  displayName: METRICS ACCUMULATOR PORT
+  required: true
+  name: METRICS_ACCUMULATOR_PORT
+  value: "5200"
