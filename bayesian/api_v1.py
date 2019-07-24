@@ -251,7 +251,10 @@ class ComponentAnalyses(Resource):
             "pid": os.getpid(),
             "hostname": HOSTNAME,
             "endpoint": request.endpoint,
-            "request_method": "GET"
+            "request_method": "GET",
+            "ecosystem": ecosystem,
+            "package": package,
+            "version": version
         }
         package = urllib.parse.unquote(package)
         if not check_for_accepted_ecosystem(ecosystem):
