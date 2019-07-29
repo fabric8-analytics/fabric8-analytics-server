@@ -3,6 +3,6 @@ freezegun
 pytest >= 3 # Needed for compatibility with celery 4.x fixtures
 pytest-flask
 pytest-cov
-requests
+requests>=2.20.0
 jsonschema
 pylint
