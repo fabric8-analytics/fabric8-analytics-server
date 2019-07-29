@@ -7,7 +7,7 @@ from flask import Flask
 from flask import g
 from flask import redirect
 from flask import url_for
-from flask_appconfig import AppConfig
+from dynaconf import FlaskDynaconf
 from flask_sqlalchemy import SQLAlchemy
 from flask_cache import Cache
 from raven.contrib.flask import Sentry
@@ -37,7 +37,7 @@ def create_app(configfile=None):
     from .api_v1 import api_v1
     from .utils import JSONEncoderWithExtraTypes
     app = Flask(__name__)
-    AppConfig(app, configfile)
+    FlaskDynaconf(app, configfile)
 
     cache.init_app(app)
 
