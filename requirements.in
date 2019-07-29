@@ -1,5 +1,5 @@
-flask
-flask-appconfig>=0.10
+flask==1.1.0
+dynaconf>=2.0.3
 flask-security
 flask-sqlalchemy
 flask-restful
@@ -8,7 +8,6 @@ jsl
 # there's a regression in mod_wsgi 4.5.4:
 # https://github.com/GrahamDumpleton/mod_wsgi/issues/147
 # install httpd-devel in order to have apxs command, otherwise build fails
-mod_wsgi!=4.5.4
 psycopg2>=2.7
 # in order for pyjwt to be able to use RS256 we need pycrypto
 cryptography
