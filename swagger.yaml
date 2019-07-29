@@ -66,21 +66,32 @@ paths:
       consumes:
         - multipart/form-data
       parameters:
+        - name: ecosystem
+          in: header
+          description: The ecosystem of the stack analysis being called.
+          required: true
+          type: string
+        - name: origin
+          in: header
+          description: This is required to give an indication as to from where is the request getting generated. If from VScode extension, the value which we need to send is 'vscode'.
+          required: false
+          type: string
+        - name: show_transitive
+          in: header
+          description: This is required to enable or disable the transitive support. We need to pass the value as True if transitive is needed. Default value is False.
+          required: false
+          type: string
         - name: manifest[]
           in: formData
-          description: A manifest file (pom.xml or package.json etc) to be processed. The pom.xml has to be an effective POM which the resolved versions for the dependencies.
-          required: false
+          description: A manifest file dependencies.txt for maven, npmlist.json for npm & pylist.json for pypi. Commands to generate these files are mentioned in the README.md
+          required: true
           type: file
         - name: filePath[]
           in: formData
           description: The absolute or relative path where the manifest file is located. This has to be mandatorily provided with the manifest[] parameter and vice versa.
-          required: false
+          required: true
           type: string
-        - name: github_url
-          in: formData
-          description: A github URL that will be processed by the API to find its dependencies and to generate an analytics report for the application. the parameters manifest[] and filePath[] are not to be set if this parameter is provided.
-          required: false
-          type: string
+
       responses:
         '200':
           schema:
