@@ -78,7 +78,7 @@ paths:
           type: string
         - name: show_transitive
           in: header
-          description: This is required to enable or disable the transitive support. We need to pass the value as True if transitive is needed. Default value is False.
+          description: This is required to enable or disable the transitive support. We need to pass the value as 'true' if transitive is needed. Default value is 'false'.
           required: false
           type: string
         - name: manifest[]
