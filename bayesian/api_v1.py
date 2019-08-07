@@ -263,7 +263,16 @@ class ComponentAnalyses(Resource):
             )
             raise HTTPError(400, msg)
         if ecosystem == 'maven':
-            package = MavenCoordinates.normalize_str(package)
+            try:
+                package = MavenCoordinates.normalize_str(package)
+            except Exception:
+                msg = "Invalid maven format - {pkg}".format(
+                    pkg=package
+                )
+                metrics_payload.update({"status_code": 400, "value": time.time() - st})
+                _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
+                raise HTTPError(400, msg)
+
         package = case_sensitivity_transform(ecosystem, package)
         result = get_analyses_from_graph(ecosystem, package, version)
 
