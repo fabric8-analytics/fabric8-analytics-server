@@ -265,7 +265,7 @@ class ComponentAnalyses(Resource):
         if ecosystem == 'maven':
             try:
                 package = MavenCoordinates.normalize_str(package)
-            except Exception:
+            except ValueError:
                 msg = "Invalid maven format - {pkg}".format(
                     pkg=package
                 )
