@@ -7,6 +7,10 @@ The Fabric8-Analytics API is a microservice that is responsible for:
 * Serving generated analysis results to clients through API
 * Scheduling new analyses based on client requests
 
+## API information
+
+See our [API details](API.md) for more info.
+
 ## Contributing
 
 See our [contributing guidelines](https://github.com/fabric8-analytics/common/blob/master/CONTRIBUTING.md) for more info.
