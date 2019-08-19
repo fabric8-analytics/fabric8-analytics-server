@@ -126,7 +126,7 @@ Fetches dependency stack analysis response using the request identifier returned
 
   **_In Progress_**
     ```
-        200:
+        202:
         {
             "error": "Analysis for request ID '510a314561104e8ba14bac489b31efe0' is in progress"
         }
