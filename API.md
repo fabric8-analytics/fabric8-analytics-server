@@ -175,6 +175,13 @@ Fetches various data points and recommendations for a given dependency.
 
     Sample success reponse is [here](https://gist.github.com/sivaavkd/6b4d27bcd60e57fcba6bc9d1546eb2d2)
 
+  **_In Progress_**
+    ```
+        202:
+        {
+            "error": "Package npm/serve-static/1.7.x is unavailable. The package will be available shortly, please retry after some time."
+        }
+    ```
   **_Failure_**
     ```
         400:
