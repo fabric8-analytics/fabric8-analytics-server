@@ -20,7 +20,9 @@ To integrate with the CodeReady Analytics platform, you need to use an existing 
 
 ## **Initiate Dependency Analysis**
 
-Submits a dependency stack analysis request
+- **Purpose**
+
+  Submits a dependency stack analysis request
 
 - **URL**
   `https://<3scale-api-gateway-url>/api/v1/stack-analyses`
@@ -89,7 +91,9 @@ Submits a dependency stack analysis request
 
 ## **Fetch Dependency Analysis**
 
-Fetches the dependency stack analysis response using the request identifier returned by the initiated dependency analysis.
+- **Purpose**
+
+  Fetches the dependency stack analysis response using the request identifier returned by the initiated dependency analysis.
 
 - **URL**
   `https://<3scale-api-gateway-url>/api/v1/stack-analyses/{request ID}`
@@ -141,7 +145,9 @@ Fetches the dependency stack analysis response using the request identifier retu
 
 ## **Single Dependency Analysis**
 
-Fetches various data points and recommendations for a given dependency.
+- **Purpose**
+
+  Fetches various data points and recommendations for a given dependency.
 
 - **URL**
   `https://<3scale-api-gateway-url>/api/v1/component-analyses/{ecosystem}/{name}/{version}`
