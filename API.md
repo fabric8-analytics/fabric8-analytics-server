@@ -1,22 +1,22 @@
 # CodeReady Analytics Core API Specifications
 
-CodeReady Analytics is an open-source analytics platform aimed primarily at assisting developers in getting insights and recommendations on the selected dependency/package stack used for developing their applications.
+CodeReady Analytics is an open-source analytics platform aimed primarily at assisting developers in getting insights and recommendations on the selected dependency or package stack used for developing their applications.
 
 This documentation is for developers who are interested in integrating their services or applications with CodeReady Analytics platform.
 
 ## **Supported ecosystems**
 
-Below are the ecosystems that CodeReady Analytics currently supports.  We will be adding support for more ecosystems in the near future.
-| | |
-|-|-|
-|**Ecosystem**|**Manifest file**|
-| Java Maven | pom.xml |
-| Python Pypi | requirements.txt |
-| NodeJS | package.json |
+Currently, CodeReady Analytics supports the following ecosystems. We will add support for more ecosystems in the near future.
+
+| Ecosystem    | Manifest file     |
+|:------------:|:-----------------:|
+| Java Maven   | pom.xml           |
+| Python Pypi  | requirements.txt  |
+| NodeJS NPM   | package.json      |
 
 ## **Prerequisites**
 
-Any new integration with the CodeReady Analytics platform will have to do that using an existing 3-scale API management gateway setup. Please reach out to us by raising an issue [here](https://github.com/fabric8-analytics/fabric8-analytics-vscode-extension/issues)
+To integrate with the CodeReady Analytics platform, you need to use an existing 3-scale API management gateway. Create an issue[here](https://github.com/fabric8-analytics/fabric8-analytics-vscode-extension/issues)to reach out to us for the API management gateway.
 
 ## **Initiate Dependency Analysis**
 
@@ -35,22 +35,22 @@ Submits a dependency stack analysis request
   `None`
 
 - **Query Parameters**
-  | | | | |
-  |-|-|-|-|
-  |**Name**|**Required**|**Description**|**Example**|
+
+  |Name|Required|Description|Example|
+  |---|---|---|---|
   | user_key | required | 3-scale API management authorization user key. | 421249d63 |
 
 - **Form Data**
-  | | | | |
-  |-|-|-|-|
-  |**Name**|**Required**|**Description**|**Example**|
+
+  |Name|Required|Description|Example|
+  |---|---|---|---|
   | manifest[] | required | Ecosystem specific Manifest file(s) available in the application. One can provide multiple manifest files to invoke the method. | @pom.xml |
   | filePath[] | required | Corresponding manifest file’s directory information. Care has to be taken to map the manifest filenames and file paths correctly. | /home/JohnDoe |
 
 - **Headers**
-  | | | | |
-  |-|-|-|-|
-  |**Name**|**Required**|**Description**|**Example**|
+
+  |Name|Required|Description|Example|
+  |---|---|---|---|
   | source | required | Source of the request. | "vscode" |
   | ecosystem | required | Ecosystem | maven/pypi/npm |
 
@@ -89,7 +89,7 @@ Submits a dependency stack analysis request
 
 ## **Fetch Dependency Analysis**
 
-Fetches dependency stack analysis response using the request identifier returned by initiate dependency analysis.
+Fetches the dependency stack analysis response using the request identifier returned by the initiated dependency analysis.
 
 - **URL**
   `https://<3scale-api-gateway-url>/api/v1/stack-analyses/{request ID}`
@@ -101,15 +101,15 @@ Fetches dependency stack analysis response using the request identifier returned
   `jSON`
 
 - **Path Parameters**
-  | | | | |
-  |-|-|-|-|
-  |**Name**|**Required**|**Description**|**Example**|
+
+  |Name|Required|Description|Example|
+  |---|---|---|---|
   | {request ID} | required | Request identifier returned by /stack-analyses POST. | 421249d9e1e5464cbf3e77dde4941463 |
 
 - **Query Parameters**
-  | | | | |
-  |-|-|-|-|
-  |**Name**|**Required**|**Description**|**Example**|
+
+  |Name|Required|Description|Example|
+  |---|---|---|---|
   | user_key | required | 3-scale API management authorization user key. | 421249d63 |
 
 - **Sample Request with cURL**
@@ -156,9 +156,9 @@ Fetches various data points and recommendations for a given dependency.
   `None`
 
 - **Path Parameters**
-  | | | | |
-  |-|-|-|-|
-  |**Name**|**Required**|**Description**|**Example**|
+
+  |Name|Required|Description|Example|
+  |---|---|---|---|
   | ecosystem | required | Ecosystem | maven/pypi/npm |
   | name | required | Name of the package | bootstrap/io.vertx:vertx-core |
   | version | required | version of the package | 3.4.1 |
