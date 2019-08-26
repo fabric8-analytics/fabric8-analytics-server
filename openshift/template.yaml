@@ -105,6 +105,8 @@ objects:
               secretKeyRef:
                 name: 3scale
                 key: three_scale_account_secret
+          - name: STACK_ANALYSIS_REQUEST_TIMEOUT
+            value: ${STACK_ANALYSIS_REQUEST_TIMEOUT}
           - name: FLASK_LOGGING_LEVEL
             value: ${FLASK_LOGGING_LEVEL}
           image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
@@ -223,3 +225,9 @@ parameters:
   required: true
   name: METRICS_ACCUMULATOR_PORT
   value: "5200"
+
+- description: Stack analysis request timeout
+  displayName: STACK_ANALYSIS_REQUEST_TIMEOUT
+  required: true
+  name: STACK_ANALYSIS_REQUEST_TIMEOUT
+  value: "120"

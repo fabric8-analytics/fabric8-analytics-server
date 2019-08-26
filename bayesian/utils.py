@@ -32,7 +32,8 @@ from f8a_worker.setup_celery import init_celery
 
 from . import rdb
 from .exceptions import HTTPError
-from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT, CORE_DEPENDENCIES_REPO_URL
+from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT, CORE_DEPENDENCIES_REPO_URL, \
+    STACK_ANALYSIS_REQUEST_TIMEOUT
 
 from requests import get, post
 from sqlalchemy.exc import SQLAlchemyError
@@ -714,14 +715,27 @@ def get_item_from_list_by_key_value(items, key, value):
     return None
 
 
-def get_request_count(rdb, external_request_id):
-    """Query number of stack analysis requests for given request id."""
+def fetch_sa_request(rdb, external_request_id):
+    """Query the stack analysis record for a given request id."""
     try:
         return rdb.session.query(StackAnalysisRequest)\
-                          .filter(StackAnalysisRequest.id == external_request_id).count()
+                          .filter(StackAnalysisRequest.id == external_request_id).first()
     except SQLAlchemyError:
         rdb.session.rollback()
         raise
+
+
+def request_timed_out(request):
+    """Check if a stack analysis request has timed out."""
+    row = request.to_dict()
+    submit_time = row.get("submitTime", {})
+
+    current_time = datetime.datetime.now()
+    diff = (current_time - submit_time).seconds
+
+    if diff > int(STACK_ANALYSIS_REQUEST_TIMEOUT):
+        return True
+    return False
 
 
 class GithubRead:

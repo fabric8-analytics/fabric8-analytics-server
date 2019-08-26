@@ -55,3 +55,5 @@ GEMINI_SERVER_URL = "http://{host}:{port}".format(
                      port=os.getenv('F8A_GEMINI_SERVER_SERVICE_PORT'))
 
 COMPONENT_ANALYSES_LIMIT = int(os.getenv('COMPONENT_ANALYSES_LIMIT', 10))
+
+STACK_ANALYSIS_REQUEST_TIMEOUT = int(os.getenv('STACK_ANALYSIS_REQUEST_TIMEOUT', 120))
