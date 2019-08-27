@@ -122,6 +122,8 @@ paths:
           description: Request unauthorized
         '404':
           description: Data not found
+        '408':
+          description: Request has timed out on server
   '/epvs/bycveid/{cve_id}':
     get:
       tags:

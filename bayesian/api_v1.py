@@ -33,13 +33,13 @@ from .exceptions import HTTPError
 from .utils import (get_system_version, retrieve_worker_result, get_cve_data,
                     server_create_component_bookkeeping,
                     server_create_analysis, get_analyses_from_graph,
-                    search_packages_from_graph, get_request_count, fetch_file_from_github_release,
+                    search_packages_from_graph, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, RecommendationReason,
                     retrieve_worker_results, get_next_component_from_graph, set_tags_to_component,
                     is_valid, select_latest_version, get_categories_data, get_core_dependencies,
                     create_directory_structure, push_repo, get_booster_core_repo,
                     get_recommendation_feedback_by_ecosystem, CveByDateEcosystemUtils,
-                    server_run_flow, resolved_files_exist,
+                    server_run_flow, resolved_files_exist, fetch_sa_request, request_timed_out,
                     get_ecosystem_from_manifest, check_for_accepted_ecosystem)
 from .license_extractor import extract_licenses
 from .manifest_models import MavenPom
@@ -381,7 +381,8 @@ class StackAnalysesGET(Resource):
         """Handle the GET REST API call."""
         # TODO: reduce cyclomatic complexity
         # TODO: refactor the business logic into its own function defined outside api_v1.py
-        if get_request_count(rdb, external_request_id) < 1:
+        db_result = fetch_sa_request(rdb, external_request_id)
+        if db_result is None:
             raise HTTPError(404, "Invalid request ID '{t}'.".format(t=external_request_id))
 
         graph_agg = retrieve_worker_result(rdb, external_request_id, "GraphAggregatorTask")
@@ -394,8 +395,13 @@ class StackAnalysesGET(Resource):
         reco_result = retrieve_worker_result(rdb, external_request_id, "recommendation_v2")
 
         if stack_result is None or reco_result is None:
-            raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(
-                t=external_request_id))
+            # If the response is not ready and the timeout period is over, send error 408
+            if request_timed_out(db_result):
+                raise HTTPError(408, "Stack analysis request {t} has timed out. Please retry "
+                                     "with a new analysis.".format(t=external_request_id))
+            else:
+                raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(
+                    t=external_request_id))
 
         if stack_result == -1 and reco_result == -1:
             raise HTTPError(404, "Worker result for request ID '{t}' doesn't exist yet".format(
