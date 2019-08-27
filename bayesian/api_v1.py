@@ -440,7 +440,16 @@ class StackAnalysesGET(Resource):
             }
         for stack in stacks:
             user_stack_deps = stack.get('user_stack_info', {}).get('analyzed_dependencies', [])
-            stack_recommendation = get_item_from_list_by_key_value(recommendations,
+            if stack.get("user_stack_info", {}).get("analyzed_dependencies_count", 0) <= 0:
+                stack_recommendation = {
+                    "alternate": [],
+                    "companion": [],
+                    "usage_outliers": [],
+                    "input_stack_topics": {},
+                    "manifest_file_path": stack.get("manifest_file_path", ""),
+                    "missing_packages_pgm": []}
+            else:
+                stack_recommendation = get_item_from_list_by_key_value(recommendations,
                                                                    "manifest_file_path",
                                                                    stack.get(
                                                                        "manifest_file_path"))
@@ -452,7 +461,6 @@ class StackAnalysesGET(Resource):
                 else:
                     dep["topic_list"] = []
 
-        for stack in stacks:
             stack["recommendation"] = get_item_from_list_by_key_value(
                 recommendations,
                 "manifest_file_path",
