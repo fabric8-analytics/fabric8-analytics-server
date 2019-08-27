@@ -440,19 +440,9 @@ class StackAnalysesGET(Resource):
             }
         for stack in stacks:
             user_stack_deps = stack.get('user_stack_info', {}).get('analyzed_dependencies', [])
-            if stack.get("user_stack_info", {}).get("analyzed_dependencies_count", 0) <= 0:
-                stack_recommendation = {
-                    "alternate": [],
-                    "companion": [],
-                    "usage_outliers": [],
-                    "input_stack_topics": {},
-                    "manifest_file_path": stack.get("manifest_file_path", ""),
-                    "missing_packages_pgm": []}
-            else:
-                stack_recommendation = get_item_from_list_by_key_value(recommendations,
+            stack_recommendation = get_item_from_list_by_key_value(recommendations,
                                                                    "manifest_file_path",
-                                                                   stack.get(
-                                                                       "manifest_file_path"))
+                                                                   stack.get("manifest_file_path"))
             for dep in user_stack_deps:
                 # Adding topics from the recommendations
                 if stack_recommendation is not None:
@@ -461,10 +451,22 @@ class StackAnalysesGET(Resource):
                 else:
                     dep["topic_list"] = []
 
-            stack["recommendation"] = get_item_from_list_by_key_value(
-                recommendations,
-                "manifest_file_path",
-                stack.get("manifest_file_path"))
+            # There should not be any recommendations if there are no analyzed dependencies
+            user_stack_deps_count = stack.get('user_stack_info', {}). \
+                get('analyzed_dependencies_count', [])
+            if user_stack_deps_count == 0:
+                stack["recommendation"] = {
+                    "alternate": [],
+                    "companion": [],
+                    "usage_outliers": [],
+                    "input_stack_topics": {},
+                    "manifest_file_path": stack.get("manifest_file_path", ""),
+                    "missing_packages_pgm": []}
+            else:
+                stack["recommendation"] = get_item_from_list_by_key_value(
+                    recommendations,
+                    "manifest_file_path",
+                    stack.get("manifest_file_path"))
             manifest_response.append(stack)
 
         # Populate reason for alternate and companion recommendation
