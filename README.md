@@ -228,11 +228,19 @@ Code coverage is reported via the codecov.io. The results can be seen on the fol
 [code coverage report](https://codecov.io/gh/fabric8-analytics/fabric8-analytics-server)
 
 #### Commands to generate the dependency files for stack analysis call
-Maven- mvn org.apache.maven.plugins:maven-dependency-plugin:3.0.2:tree -DoutputFile=/someloc/dependencies.txt -DoutputType=dot -DappendOutput=true;
+##### Maven
+```
+mvn org.apache.maven.plugins:maven-dependency-plugin:3.0.2:tree -DoutputFile=/someloc/dependencies.txt -DoutputType=dot -DappendOutput=true;
+```
 
-Node- npm install; npm list --prod --json > npmlist.json
+##### NPM
+```
+npm install; npm list --prod --json > npmlist.json
+```
 
-Pypi- python -m pip install -r requirements.txt; python -c 'exec("""
+##### Pypi
+```
+python -m pip install -r requirements.txt; python -c 'exec("""
         import pkg_resources as pr;import json,sys;gd=pr.get_distribution;res=list();
         for i in open(sys.argv[1]):
             try:
@@ -246,4 +254,4 @@ Pypi- python -m pip install -r requirements.txt; python -c 'exec("""
         op=open(a[0],"w")if a else sys.stdout
         json.dump(res,op)
         """)'  requirements.txt  pylist.json
-
+```
