@@ -878,6 +878,7 @@ class StackAnalyses(Resource):
 
             deps['external_request_id'] = request_id
             deps['current_stack_license'] = extract_licenses(license_files)
+            deps['show_transitive'] = show_transitive
             deps.update(is_modified_flag)
 
             if not worker_flow_enabled:
