@@ -64,6 +64,13 @@ def test_get_license_synonyms_wrong_response(mocked_get, _mocked_function):
     assert mocked_get.called
 
 
+def _check_extracted_license(result, expected_license):
+    """Check the extracted license output."""
+    assert result
+    assert len(result) >= 1
+    assert result[1] == expected_license
+
+
 @patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
 def test_extract_licenses(_mocked_object):
     """Test the function extract_licenses()."""
@@ -75,26 +82,22 @@ def test_extract_licenses(_mocked_object):
     # text/string mode
     with open("/bayesian/tests/data/licenses/licenses.txt") as fin:
         result = extract_licenses([fin])
-        assert result
-        assert result[1] == "bsd-new"
+        _check_extracted_license(result, "bsd-new")
 
     # binary mode
     with open("/bayesian/tests/data/licenses/licenses.txt", "rb") as fin:
         result = extract_licenses([fin])
-        assert result
-        assert result[1] == "bsd-new"
+        _check_extracted_license(result, "bsd-new")
 
     # text/string mode
     with open("/bayesian/tests/data/licenses/licenses2.txt") as fin:
         result = extract_licenses([fin])
-        assert result
-        assert result[1] == "gplv2"
+        _check_extracted_license(result, "gplv2")
 
     # binary mode
     with open("/bayesian/tests/data/licenses/licenses2.txt", "rb") as fin:
         result = extract_licenses([fin])
-        assert result
-        assert result[1] == "gplv2"
+        _check_extracted_license(result, "gplv2")
 
 
 @patch("bayesian.license_extractor.get_license_synonyms", return_value=None)
