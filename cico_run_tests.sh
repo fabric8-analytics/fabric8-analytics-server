@@ -6,7 +6,7 @@ set -ex
 
 build_image
 
-./runtest.sh
+./qa/runtest.sh
 
 docker_login
 push_image
