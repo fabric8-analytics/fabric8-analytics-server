@@ -12,7 +12,7 @@ set -e
 # unable to prepare context: The Dockerfile (Dockerfile.tests) must be within the build context (.)
 set -x
 
-here=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
+here=$(pwd)
 
 TIMESTAMP="$(date +%F-%H-%M-%S)"
 DB_CONTAINER_NAME="db-server-tests-${TIMESTAMP}"
