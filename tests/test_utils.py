@@ -320,7 +320,6 @@ def test_semantic_versioning():
 
 def test_version_info_tuple():
     """Check the function vt()."""
-    # TODO: reduce cyclomatic complexity
     version_str = "2.0.rc1"
     package_name = "test_package"
     version_obj = cvs(version_str, package_name)
@@ -330,6 +329,10 @@ def test_version_info_tuple():
     assert version_info[1] == version_obj.minor
     assert version_info[2] == version_obj.patch
     assert version_info[3] == version_obj.build
+
+
+def test_version_info_tuple_empty_version_obj():
+    """Check the function vt() for empty version object."""
     version_obj = ""
     version_info = vt(version_obj)
     assert len(version_info) == 4
