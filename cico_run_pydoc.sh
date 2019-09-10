@@ -14,4 +14,4 @@ check_python_version() {
 
 prep
 check_python_version
-./check-docstyle.sh
+./qa/check-docstyle.sh
