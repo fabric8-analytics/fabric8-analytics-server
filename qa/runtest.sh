@@ -1,5 +1,9 @@
 #!/bin/bash
 
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+pushd "${SCRIPT_DIR}/.." > /dev/null
+
 # fail if smth fails
 # the whole env will be running if test suite fails so you can debug
 set -e
@@ -88,3 +92,4 @@ docker run -t \
   ${TEST_IMAGE_NAME} /bayesian/hack/exec_tests.sh $@ /bayesian/tests/
 
 echo "Test suite passed \\o/"
+popd > /dev/null
