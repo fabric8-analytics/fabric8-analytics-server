@@ -838,8 +838,12 @@ class StackAnalyses(Resource):
 
             manifest = {'filename': filename,
                         'content': content,
-                        'ecosystem': ecosystem or manifest_descriptor.ecosystem,
                         'filepath': filepath}
+            try:
+                # Exception is raised when origin is vscode and ecosystem header is not set.
+                manifest['ecosystem'] = ecosystem or manifest_descriptor.ecosystem
+            except UnboundLocalError:
+                raise HTTPError(400, error="ecosystem header must be set.")
 
             manifests.append(manifest)
 
