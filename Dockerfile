@@ -18,7 +18,7 @@ RUN yum install -y epel-release &&\
 
 COPY ./requirements.txt /coreapi/
 RUN pushd /coreapi && \
-    pip3 install -r requirements.txt && \
+    python3.6 -m pip install -r requirements.txt && \
     rm requirements.txt && \
     popd
 
@@ -31,7 +31,7 @@ RUN mkdir -p /etc/pcp /var/run/pcp /var/lib/pcp /var/log/pcp  && \
 
 COPY ./ /coreapi
 RUN pushd /coreapi && \
-    pip3 install --upgrade pip>=10.0.0 && pip3 install . &&\
+    python3.6 -m pip install --upgrade pip>=10.0.0 && pip3 install . &&\
     popd
 
 RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
