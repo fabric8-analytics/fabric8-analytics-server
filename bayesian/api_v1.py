@@ -892,7 +892,8 @@ class StackAnalyses(Resource):
                     params={'check_license': str(check_license).lower()})
                 _session.post('{}/api/v1/recommender'.format(api_url), json=deps,
                               params={'check_license': str(check_license).lower()})
-
+        except (ValueError, json.JSONDecodeError) as e:
+            HTTPError(400, "Invalid dependencies encountered. %r" % e)
         except Exception as exc:
             raise HTTPError(500, ("Could not process {t}."
                                   .format(t=request_id))) from exc
