@@ -400,8 +400,8 @@ class StackAnalysesGET(Resource):
                 raise HTTPError(408, "Stack analysis request {t} has timed out. Please retry "
                                      "with a new analysis.".format(t=external_request_id))
             else:
-                raise HTTPError(202, "Analysis for request ID '{t}' is in progress".format(
-                    t=external_request_id))
+                return {'message': "Analysis for request ID '{t}' is in progress".format(
+                    t=external_request_id)}, 202
 
         if stack_result == -1 and reco_result == -1:
             raise HTTPError(404, "Worker result for request ID '{t}' doesn't exist yet".format(
