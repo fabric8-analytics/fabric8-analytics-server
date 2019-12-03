@@ -1,6 +1,8 @@
 """Unit tests for the REST API module."""
 
 import datetime
+import io
+from pathlib import Path
 import pytest
 import json
 from bayesian import api_v1
@@ -175,6 +177,28 @@ class TestCommonEndpoints(object):
         """Test the /stack-analyses endpoint for GET."""
         res = self.client.get(api_route_for('/stack-analyses'), headers=accept_json)
         assert res.status_code == 400 or res.status_code == 404
+
+    def test_stack_analyses_202(self, accept_json):
+        """Test the /stack-analyses endpoint for POST."""
+        manifests = {
+            "filePath[]": "/tmp/bin",
+            "manifest[]": (io.StringIO(str(Path(__file__).parent /
+                            "data/manifests/202/npmlist.json")).read(), 'npmlist.json'),
+        }
+        headers = {
+            'ecosystem': 'npm',
+            'origin': 'vscode'
+        }
+        res = self.client.post(api_route_for('/stack-analyses'),
+                               data=manifests,
+                               content_type='multipart/form-data',
+                               headers=headers,
+                               )
+        assert res.status_code == 200
+        stack_id = res.json['id']
+        res = self.client.get(api_route_for('/stack-analyses/') + stack_id,
+                               headers=accept_json)
+        assert res.status_code == 202
 
     def test_component_search(self, accept_json):
         """Test the /component-search endpoint for GET."""
