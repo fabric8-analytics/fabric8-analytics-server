@@ -297,7 +297,7 @@ class ComponentAnalyses(Resource):
             metrics_payload.update({"status_code": 202, "value": time.time() - st})
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
 
-            return jsonify(msg), 202
+            raise HTTPError(202, msg)
         else:
             # no data has been found
             server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
