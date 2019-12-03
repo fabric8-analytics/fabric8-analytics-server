@@ -183,7 +183,8 @@ class TestCommonEndpoints(object):
         manifests = {
             "filePath[]": "/tmp/bin",
             "manifest[]": (io.StringIO(str(Path(__file__).parent /
-                            "data/manifests/202/npmlist.json")).read(), 'npmlist.json'),
+                                           "data/manifests/202/npmlist.json")).read(),
+                           'npmlist.json'),
         }
         headers = {
             'ecosystem': 'npm',
@@ -197,7 +198,7 @@ class TestCommonEndpoints(object):
         assert res.status_code == 200
         stack_id = res.json['id']
         res = self.client.get(api_route_for('/stack-analyses/') + stack_id,
-                               headers=accept_json)
+                              headers=accept_json)
         assert res.status_code == 202
 
     def test_component_search(self, accept_json):
