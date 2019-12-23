@@ -14,11 +14,11 @@ from datetime import datetime as dt
 # caching response for 24 hours
 @lru_cache_function(max_size=2048, expiration=60 * 60 * 24)
 def get_license_synonyms():
-    """Fetch all the license sysnonyms from license anlysis github repo."""
+    """Fetch all the license synonyms from license analysis github repo."""
     resp = get(LIC_SYNONYMS_URL)
     if resp.status_code == 200:
         current_app.logger.info(
-            "{} Succefully fetched license synonyms".format(dt.now()))
+            "{} Successfully fetched license synonyms".format(dt.now()))
         return resp.json()
     else:
         current_app.logger.error("{tm} Unable to fetch license synonyms, STATUS_CODE:{cd}".format(
