@@ -297,7 +297,7 @@ class ComponentAnalyses(Resource):
             metrics_payload.update({"status_code": 202, "value": time.time() - st})
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
 
-            return {'message': msg}, 202
+            return {'error': msg}, 202
         else:
             # no data has been found
             server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
@@ -400,7 +400,7 @@ class StackAnalysesGET(Resource):
                 raise HTTPError(408, "Stack analysis request {t} has timed out. Please retry "
                                      "with a new analysis.".format(t=external_request_id))
             else:
-                return {'message': "Analysis for request ID '{t}' is in progress".format(
+                return {'error': "Analysis for request ID '{t}' is in progress".format(
                     t=external_request_id)}, 202
 
         if stack_result == -1 and reco_result == -1:
