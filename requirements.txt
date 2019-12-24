@@ -42,9 +42,9 @@ lxml==4.3.3
 mando==0.6.4              # via radon
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
-mod-wsgi==4.6.5
+mod-wsgi==4.7.0
 passlib==1.7.1            # via flask-security
-psycopg2==2.8.1
+psycopg2==2.7.7
 py-lru-cache==0.1.4
 pycodestyle==2.5.0        # via flake8
 pycparser==2.19           # via cffi

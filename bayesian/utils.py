@@ -432,7 +432,7 @@ class CveByDateEcosystemUtils:
 
     def __init__(self, cve_id, cve_sources='all', bydate=None,
                  ecosystem='all', date_range=7):
-        """Initialize CvaeDate Ecosystem Utils."""
+        """Initialize CVE-Date Ecosystem Utils."""
         self._cve_id = cve_id
         if cve_id is None:
             self._bydate = bydate
