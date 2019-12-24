@@ -179,7 +179,7 @@ class GremlinComponentAnalysisResponse(object):
     """Wrapper around Gremlin component analysis response."""
 
     def __init__(self, package, version, response):
-        """Constructor."""
+        """Initialize Gremlin Component Analyses."""
         self._package = package
         self._version = version
         self._cves = []
@@ -432,7 +432,7 @@ class CveByDateEcosystemUtils:
 
     def __init__(self, cve_id, cve_sources='all', bydate=None,
                  ecosystem='all', date_range=7):
-        """Constructor."""
+        """Initialize CvaeDate Ecosystem Utils."""
         self._cve_id = cve_id
         if cve_id is None:
             self._bydate = bydate
