@@ -231,7 +231,7 @@ class ComponentSearch(Resource):
         """Handle the GET REST API call."""
         if not package:
             msg = "Please enter a valid search term"
-            raise HTTPError(202, msg)
+            raise HTTPError(406, msg)
 
         # Tokenize the search term before calling graph search
         result = search_packages_from_graph(re.split(r'\W+', package))
@@ -297,7 +297,7 @@ class ComponentAnalyses(Resource):
             metrics_payload.update({"status_code": 202, "value": time.time() - st})
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
 
-            raise HTTPError(202, msg)
+            return {'message': msg}, 202
         else:
             # no data has been found
             server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
