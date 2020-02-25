@@ -329,14 +329,23 @@ def search_packages_from_graph(tokens):
     return {'result': pkg_list}
 
 
-def get_analyses_from_graph(ecosystem, package, version):
+def get_analyses_from_graph(ecosystem, package, version, vendor=None):
     """Read analysis for given package+version from the graph database."""
     script1 = """\
-g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as('version')\
-.in('has_version').dedup().as('package').select('version').coalesce(out('has_cve')\
-.as('cve').select('package','version','cve').by(valueMap()),select('package','version')\
-.by(valueMap()));\
-"""
+        g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as('version')\
+        .in('has_version').dedup().as('package').select('version').coalesce(out('has_cve')\
+        .as('cve').select('package','version','cve').by(valueMap()),select('package','version')\
+        .by(valueMap()));\
+        """
+
+    script2 = \
+        "g.V().has('pecosystem', ecosystem).has('pname', name)" \
+        ".has('version', version).in('has_version')" \
+        ".out('has_version').not(out('has_cve')).values('version').dedup();"
+
+    if vendor:
+        script1 = "query_to_fetch_snyk_fields"
+        script2 = "query_to_fetch_latest_non_cve_versions"
 
     payload = {
         'gremlin': script1,
@@ -369,9 +378,7 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as
                         "recommended_versions": result_data[0]['package']['latest_non_cve_version']
                     })
                 else:
-                    script2 = "g.V().has('pecosystem', ecosystem).has('pname', name)" \
-                              ".has('version', version).in('has_version')" \
-                              ".out('has_version').not(out('has_cve')).values('version').dedup();"
+
                     payload = {
                         'gremlin': script2,
                         'bindings': {
