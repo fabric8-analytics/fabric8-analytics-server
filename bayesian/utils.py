@@ -347,12 +347,10 @@ def build_graphdb_query(vendor):
     fetch_cve_info = {
         'snyk': "query_to_fetch_snyk_fields",
     }
-    fetch_latest_non_cve_package = {
-        'snyk': 'query_to_fetch_latest_non_cve_fields'
-    }
+
     return (
         fetch_cve_info.get(vendor, get_cve_info),
-        fetch_latest_non_cve_package.get(vendor, get_latest_non_cve_version))
+        get_latest_non_cve_version)
 
 
 def get_analyses_from_graph(ecosystem, package, version, vendor=None):
