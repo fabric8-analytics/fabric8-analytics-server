@@ -246,7 +246,7 @@ class ComponentAnalyses(Resource):
     @staticmethod
     def get(ecosystem, package, version):
         """Handle the GET REST API call."""
-        secy_vendor = request.headers.get('secy_vendor', None)
+        security_vendor = request.headers.get('security_vendor', None)
         st = time.time()
         metrics_payload = {
             "pid": os.getpid(),
@@ -275,7 +275,7 @@ class ComponentAnalyses(Resource):
                 raise HTTPError(400, msg)
 
         package = case_sensitivity_transform(ecosystem, package)
-        result = get_analyses_from_graph(ecosystem, package, version, vendor=secy_vendor)
+        result = get_analyses_from_graph(ecosystem, package, version, vendor=security_vendor)
 
         if result is not None:
             # Known component for Bayesian

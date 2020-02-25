@@ -329,26 +329,37 @@ def search_packages_from_graph(tokens):
     return {'result': pkg_list}
 
 
-def get_analyses_from_graph(ecosystem, package, version, vendor=None):
-    """Read analysis for given package+version from the graph database."""
-    script1 = """\
-        g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as('version')\
-        .in('has_version').dedup().as('package').select('version').coalesce(out('has_cve')\
-        .as('cve').select('package','version','cve').by(valueMap()),select('package','version')\
-        .by(valueMap()));\
-        """
+def build_graphdb_query(vendor):
+    """Func returns GraphDB query based on vendor argument."""
+    get_cve_info = """\
+            g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)
+            .as('version').in('has_version').dedup().as('package').select('version')
+            .coalesce(out('has_cve').as('cve').select('package','version','cve')
+            .by(valueMap()),select('package','version').by(valueMap()));
+            """
 
-    script2 = \
+    get_latest_non_cve_version = \
         "g.V().has('pecosystem', ecosystem).has('pname', name)" \
         ".has('version', version).in('has_version')" \
         ".out('has_version').not(out('has_cve')).values('version').dedup();"
 
-    if vendor:
-        script1 = "query_to_fetch_snyk_fields"
-        script2 = "query_to_fetch_latest_non_cve_versions"
+    # vendor specific query
+    fetch_cve_info = {
+        'snyk': "query_to_fetch_snyk_fields",
+    }
+    fetch_latest_non_cve_package = {
+        'snyk': 'query_to_fetch_latest_non_cve_fields'
+    }
+    return (
+        fetch_cve_info.get(vendor, get_cve_info),
+        fetch_latest_non_cve_package.get(vendor, get_latest_non_cve_version))
 
+
+def get_analyses_from_graph(ecosystem, package, version, vendor=None):
+    """Read analysis for given package+version from the graph database."""
+    cve_info_query, latest_non_cve_version_query = build_graphdb_query(vendor)
     payload = {
-        'gremlin': script1,
+        'gremlin': cve_info_query,
         'bindings': {
             'ecosystem': ecosystem,
             'name': package,
@@ -380,7 +391,7 @@ def get_analyses_from_graph(ecosystem, package, version, vendor=None):
                 else:
 
                     payload = {
-                        'gremlin': script2,
+                        'gremlin': latest_non_cve_version_query,
                         'bindings': {
                             'ecosystem': ecosystem,
                             'name': package,
