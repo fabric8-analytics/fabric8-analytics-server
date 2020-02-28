@@ -31,7 +31,7 @@ from fabric8a_auth.auth import login_required
 from .auth import get_access_token
 from .exceptions import HTTPError
 from .utils import (get_system_version, retrieve_worker_result,
-                    server_create_component_bookkeeping,
+                    server_create_component_bookkeeping, GraphAnalyses,
                     server_create_analysis, get_analyses_from_graph,
                     search_packages_from_graph, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, RecommendationReason,
@@ -275,7 +275,9 @@ class ComponentAnalyses(Resource):
                 raise HTTPError(400, msg)
 
         package = case_sensitivity_transform(ecosystem, package)
-        result = get_analyses_from_graph(ecosystem, package, version, vendor=security_vendor)
+        # Querying GraphDB for CVE Info.
+        result = GraphAnalyses(ecosystem, package, version,
+                               vendor=security_vendor).main()
 
         if result is not None:
             # Known component for Bayesian

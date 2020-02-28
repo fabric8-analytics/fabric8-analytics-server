@@ -329,35 +329,127 @@ def search_packages_from_graph(tokens):
     return {'result': pkg_list}
 
 
-def build_graphdb_query(vendor):
-    """Func returns GraphDB query based on vendor argument."""
-    get_cve_info = """\
+class GraphAnalyses:
+    """It Queries GraphDB Based on vendor and returns json converted data."""
+
+    def __init__(self, ecosystem, package, version, vendor=None):
+        """For Flows related to Security Vendor Integrations."""
+        self.vendor = vendor
+        self.ecosystem = ecosystem
+        self.version = version
+        self.package = package
+
+    @staticmethod
+    def build_graphdb_query(vendor):
+        """Func returns GraphDB query based on vendor argument."""
+        get_cve_info = """
             g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)
             .as('version').in('has_version').dedup().as('package').select('version')
             .coalesce(out('has_cve').as('cve').select('package','version','cve')
             .by(valueMap()),select('package','version').by(valueMap()));
             """
 
-    get_latest_non_cve_version = \
-        "g.V().has('pecosystem', ecosystem).has('pname', name)" \
-        ".has('version', version).in('has_version')" \
-        ".out('has_version').not(out('has_cve')).values('version').dedup();"
+        get_latest_non_cve_version = """
+            g.V().has('pecosystem', ecosystem).has('pname', name)
+            .has('version', version).in('has_version').out('has_version')
+            .not(out('has_cve')).values('version').dedup();
+            """
+        # vendor specific query
+        fetch_cve_info = {
+            'snyk': "query_to_fetch_snyk_fields",
+        }
+        return (
+            fetch_cve_info.get(vendor, get_cve_info),
+            get_latest_non_cve_version)
 
-    # vendor specific query
-    fetch_cve_info = {
-        'snyk': "query_to_fetch_snyk_fields",
-    }
+    def main(self):
+        """Fetch analysis for given package+version from the graph database.
 
-    return (
-        fetch_cve_info.get(vendor, get_cve_info),
-        get_latest_non_cve_version)
+        It finally builds and returns JSON Response. This is main Function.
+        """
+        if self.vendor is None:
+            # if vendor is None, resume Old Flow for fetching data from our GraphDB Node
+            return get_analyses_from_graph(self.ecosystem, self.package, self.version)
+        cve_info_query, latest_non_cve_version_query = self.build_graphdb_query(self.vendor)
+        payload = {
+            'gremlin': cve_info_query,
+            'bindings': {
+                'ecosystem': self.ecosystem,
+                'name': self.package,
+                'version': self.version
+            }
+        }
+        start = datetime.datetime.now()
+        try:
+            clubbed_data = []
+            graph_req = post(gremlin_url, data=json.dumps(payload))
+
+            if graph_req is None:
+                return None
+
+            resp = graph_req.json()
+            result_data = resp['result'].get('data')
+
+            if not (result_data and len(result_data) > 0):
+                # trigger unknown component flow in API for missing package
+                return None
+
+            clubbed_data.append({
+                "epv": result_data
+            })
+
+            if "cve" not in result_data[0]:
+                clubbed_data.append({
+                    "recommended_versions": []
+                })
+
+            if "latest_non_cve_version" in result_data[0]['package']:
+                clubbed_data.append({
+                    "recommended_versions": result_data[0]['package']['latest_non_cve_version']
+                })
+            else:
+                payload = {
+                    'gremlin': latest_non_cve_version_query,
+                    'bindings': {
+                        'ecosystem': self.ecosystem,
+                        'name': self.package,
+                        'version': self.version
+                    }
+                }
+                graph_req2 = post(gremlin_url, data=json.dumps(payload))
+                if graph_req2 is not None:
+                    resp2 = graph_req2.json()
+                    clubbed_data.append({
+                        "recommended_versions": resp2['result']['data']
+                    })
+
+        except Exception as e:
+            logger.debug(' '.join([type(e), ':', str(e)]))
+            return None
+
+        finally:
+            elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
+            epv = "{e}/{p}/{v}".format(e=self.ecosystem, p=self.package, v=self.version)
+            logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
+                                                                        t=elapsed_seconds))
+
+        return generate_recommendation(clubbed_data, self.package, self.version)
 
 
-def get_analyses_from_graph(ecosystem, package, version, vendor=None):
-    """Read analysis for given package+version from the graph database."""
-    cve_info_query, latest_non_cve_version_query = build_graphdb_query(vendor)
+def get_analyses_from_graph(ecosystem, package, version):
+    """Read analysis for given package+version from the graph database.
+
+    Fetching data from our GraphDB Node. Classical Flow
+    """
+    script1 = """\
+g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as('version')\
+.in('has_version').dedup().as('package').select('version').coalesce(out('has_cve')\
+.as('cve').select('package','version','cve').by(valueMap()),select('package','version')\
+.by(valueMap()));\
+"""
+
     payload = {
-        'gremlin': cve_info_query,
+        'gremlin': script1,
         'bindings': {
             'ecosystem': ecosystem,
             'name': package,
@@ -387,9 +479,11 @@ def get_analyses_from_graph(ecosystem, package, version, vendor=None):
                         "recommended_versions": result_data[0]['package']['latest_non_cve_version']
                     })
                 else:
-
+                    script2 = "g.V().has('pecosystem', ecosystem).has('pname', name)" \
+                              ".has('version', version).in('has_version')" \
+                              ".out('has_version').not(out('has_cve')).values('version').dedup();"
                     payload = {
-                        'gremlin': latest_non_cve_version_query,
+                        'gremlin': script2,
                         'bindings': {
                             'ecosystem': ecosystem,
                             'name': package,
