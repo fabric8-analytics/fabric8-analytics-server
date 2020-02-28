@@ -13,7 +13,7 @@ See our [API details](API.md) for more info.
 
 ## Contributing
 
-See our [contributing guidelines](https://github.com/fabric8-analytics/common/blob/master/CONTRIBUTING.md) for more info.
+See our [contributing guidelines](https://github.com/fabric8-analytics/common/blob/master/CONTRIBUTING.md) for more information.
 
 <!--- (Commenting out this section for now. Update this section once specifications for API are updated.)
 ## API definition
