@@ -276,8 +276,16 @@ class ComponentAnalyses(Resource):
 
         package = case_sensitivity_transform(ecosystem, package)
         # Querying GraphDB for CVE Info.
-        result = GraphAnalyses(ecosystem, package, version,
-                               vendor=security_vendor).main()
+
+        if security_vendor:
+            graph_obj = GraphAnalyses(ecosystem, package, version, vendor=security_vendor)
+            func = {
+                'snyk': graph_obj.get_analyses_for_snyk
+            }
+            result = eval(func.get(security_vendor))
+        else:
+            # Old Flow
+            result = get_analyses_from_graph(ecosystem, package, version)
 
         if result is not None:
             # Known component for Bayesian

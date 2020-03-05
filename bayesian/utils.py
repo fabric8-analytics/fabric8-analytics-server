@@ -28,7 +28,8 @@ from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 from f8a_worker.setup_celery import init_celery
-
+from urllib.parse import quote
+from urllib.request import urlretrieve
 
 from . import rdb
 from .exceptions import HTTPError
@@ -339,38 +340,17 @@ class GraphAnalyses:
         self.version = version
         self.package = package
 
-    @staticmethod
-    def build_graphdb_query(vendor):
-        """Func returns GraphDB query based on vendor argument."""
-        get_cve_info = """
-            g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)
-            .as('version').in('has_version').dedup().as('package').select('version')
-            .coalesce(out('has_cve').as('cve').select('package','version','cve')
-            .by(valueMap()),select('package','version').by(valueMap()));
-            """
-
-        get_latest_non_cve_version = """
-            g.V().has('pecosystem', ecosystem).has('pname', name)
-            .has('version', version).in('has_version').out('has_version')
-            .not(out('has_cve')).values('version').dedup();
-            """
-        # vendor specific query
-        fetch_cve_info = {
-            'snyk': "query_to_fetch_snyk_fields",
-        }
-        return (
-            fetch_cve_info.get(vendor, get_cve_info),
-            get_latest_non_cve_version)
-
-    def main(self):
+    def get_analyses_for_snyk(self):
         """Fetch analysis for given package+version from the graph database.
 
-        It finally builds and returns JSON Response. This is main Function.
+        It finally builds and returns JSON Response. This is vendor specific Function.
         """
-        if self.vendor is None:
-            # if vendor is None, resume Old Flow for fetching data from our GraphDB Node
-            return get_analyses_from_graph(self.ecosystem, self.package, self.version)
-        cve_info_query, latest_non_cve_version_query = self.build_graphdb_query(self.vendor)
+        cve_info_query = """
+            g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)
+            .as('version').in('has_version').dedup().as('package').select('version')
+            .coalesce(out('has_snyk_cve').as('cve').select('package','version','cve')
+            .by(valueMap()),select('package','version').by(valueMap()));
+            """
         payload = {
             'gremlin': cve_info_query,
             'bindings': {
@@ -398,30 +378,17 @@ class GraphAnalyses:
                 "epv": result_data
             })
 
-            if "cve" not in result_data[0]:
+            if "cve" in result_data[0]:
+                # if cve if present
+                clubbed_data.append({
+                    "recommended_versions": result_data[0]['cve']['sfixed_in'],
+                    "severity": result_data[0]['cve']['severity'],
+                    "link": self.get_link
+                })
+            else:
                 clubbed_data.append({
                     "recommended_versions": []
                 })
-
-            if "latest_non_cve_version" in result_data[0]['package']:
-                clubbed_data.append({
-                    "recommended_versions": result_data[0]['package']['latest_non_cve_version']
-                })
-            else:
-                payload = {
-                    'gremlin': latest_non_cve_version_query,
-                    'bindings': {
-                        'ecosystem': self.ecosystem,
-                        'name': self.package,
-                        'version': self.version
-                    }
-                }
-                graph_req2 = post(gremlin_url, data=json.dumps(payload))
-                if graph_req2 is not None:
-                    resp2 = graph_req2.json()
-                    clubbed_data.append({
-                        "recommended_versions": resp2['result']['data']
-                    })
 
         except Exception as e:
             logger.debug(' '.join([type(e), ':', str(e)]))
@@ -434,6 +401,12 @@ class GraphAnalyses:
                                                                         t=elapsed_seconds))
 
         return generate_recommendation(clubbed_data, self.package, self.version)
+
+    @property
+    def get_link(self):
+        """Generate link to Snyk Vulnerability Page."""
+        return urlretrieve(
+            "https://snyk.io/vuln/{}:{}".format(self.ecosystem, quote(self.package)))
 
 
 def get_analyses_from_graph(ecosystem, package, version):
