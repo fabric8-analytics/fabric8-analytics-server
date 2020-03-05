@@ -383,7 +383,8 @@ class GraphAnalyses:
                 clubbed_data.append({
                     "recommended_versions": result_data[0]['cve']['sfixed_in'],
                     "severity": result_data[0]['cve']['severity'],
-                    "link": self.get_link
+                    "link": self.get_link,
+                    "exploit": result_data[0]['cve']['exploit']
                 })
             else:
                 clubbed_data.append({
@@ -405,8 +406,14 @@ class GraphAnalyses:
     @property
     def get_link(self):
         """Generate link to Snyk Vulnerability Page."""
+        snyk_ecosystem = {
+            'maven': 'maven',
+            'pypi': 'pip',
+            'npm': 'npm'
+        }
         return urlretrieve(
-            "https://snyk.io/vuln/{}:{}".format(self.ecosystem, quote(self.package)))
+            "https://snyk.io/vuln/{}:{}".format(
+                snyk_ecosystem[self.ecosystem], quote(self.package)))
 
 
 def get_analyses_from_graph(ecosystem, package, version):
