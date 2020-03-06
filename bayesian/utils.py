@@ -29,7 +29,6 @@ from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 from f8a_worker.setup_celery import init_celery
 from urllib.parse import quote
-from urllib.request import urlretrieve
 
 from . import rdb
 from .exceptions import HTTPError
@@ -382,7 +381,7 @@ class GraphAnalyses:
                 # if cve if present
                 clubbed_data.append({
                     "recommended_versions": result_data[0]['cve']['sfixed_in'],
-                    "link": self.get_link,
+                    "link": self.get_link(),
                 })
             else:
                 clubbed_data.append({
@@ -401,7 +400,6 @@ class GraphAnalyses:
 
         return generate_recommendation(clubbed_data, self.package, self.version)
 
-    @property
     def get_link(self):
         """Generate link to Snyk Vulnerability Page."""
         snyk_ecosystem = {
@@ -409,9 +407,8 @@ class GraphAnalyses:
             'pypi': 'pip',
             'npm': 'npm'
         }
-        return urlretrieve(
-            "https://snyk.io/vuln/{}:{}".format(
-                snyk_ecosystem[self.ecosystem], quote(self.package)))
+        return "https://snyk.io/vuln/{}:{}".format(
+                snyk_ecosystem[self.ecosystem], quote(self.package))
 
 
 def get_analyses_from_graph(ecosystem, package, version):
