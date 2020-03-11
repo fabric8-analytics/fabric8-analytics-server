@@ -246,7 +246,7 @@ class ComponentAnalyses(Resource):
     @staticmethod
     def get(ecosystem, package, version):
         """Handle the GET REST API call."""
-        security_vendor = request.headers.get('security_vendor', None)
+        security_vendor = request.headers.get('security-vendor', None)
         st = time.time()
         metrics_payload = {
             "pid": os.getpid(),
@@ -279,10 +279,7 @@ class ComponentAnalyses(Resource):
 
         if security_vendor:
             graph_obj = GraphAnalyses(ecosystem, package, version, vendor=security_vendor)
-            func = {
-                'snyk': graph_obj.get_analyses_for_snyk
-            }
-            result = eval(func.get(security_vendor))
+            result = graph_obj.get_analyses_for_snyk()
         else:
             # Old Flow
             result = get_analyses_from_graph(ecosystem, package, version)

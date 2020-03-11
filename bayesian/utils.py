@@ -344,6 +344,7 @@ class GraphAnalyses:
 
         It finally builds and returns JSON Response. This is vendor specific Function.
         """
+        logger.debug('Executing Vendor Analyses')
         cve_info_query = """
             g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)
             .as('version').in('has_version').dedup().as('package').select('version')
@@ -361,6 +362,7 @@ class GraphAnalyses:
         start = datetime.datetime.now()
         try:
             clubbed_data = []
+            logger.debug("Executing Gremlin calls with payload {}".format(payload))
             graph_req = post(gremlin_url, data=json.dumps(payload))
 
             if graph_req is None:
@@ -397,11 +399,12 @@ class GraphAnalyses:
             epv = "{e}/{p}/{v}".format(e=self.ecosystem, p=self.package, v=self.version)
             logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
                                                                         t=elapsed_seconds))
-
+        logger.debug('Generating Recommendation')
         return generate_recommendation(clubbed_data, self.package, self.version)
 
     def get_link(self):
         """Generate link to Snyk Vulnerability Page."""
+        logger.debug('Generate Synk link')
         snyk_ecosystem = {
             'maven': 'maven',
             'pypi': 'pip',
