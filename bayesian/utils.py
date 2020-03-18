@@ -393,8 +393,6 @@ class GraphAnalyses:
                     ver=rec_version
                 ))
             else:
-                logger.info("Unable to find recommended version for Package Object:\n{}\n".format(
-                                result_data[0].get('package', {})))
                 clubbed_data.append({
                     "recommended_versions": []
                 })
