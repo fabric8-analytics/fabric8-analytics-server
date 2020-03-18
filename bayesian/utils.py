@@ -381,10 +381,17 @@ class GraphAnalyses:
 
             if "cve" in result_data[0]:
                 # if cve if present
+                recommended_version = result_data[0].get('package', {}).get(
+                                                'latest_non_cve_version', {})
                 clubbed_data.append({
-                    "recommended_versions": result_data[0]['cve']['sfixed_in'],
-                    "link": self.get_link(),
+                    "recommended_versions": recommended_version,
+                    "snyk_pkg_link": self.get_link(),
                 })
+                logger.info("latest non cve version for {eco} {pkg} is {ver}".format(
+                    eco=self.ecosystem,
+                    pkg=self.package,
+                    ver=recommended_version
+                ))
             else:
                 clubbed_data.append({
                     "recommended_versions": []
