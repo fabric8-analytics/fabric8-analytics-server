@@ -382,8 +382,9 @@ class GraphAnalyses:
             if "cve" in result_data[0]:
                 # if cve if present
                 clubbed_data.append({
-                    "recommended_versions": result_data[0]['cve']['sfixed_in'],
-                    "link": self.get_link(),
+                    "recommended_versions": result_data[0].get('package', {}).get(
+                                                        'latest_non_cve_version', {}),
+                    "snyk_pkg_link": self.get_link(),
                 })
             else:
                 clubbed_data.append({
