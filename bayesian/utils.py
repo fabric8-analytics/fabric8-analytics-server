@@ -201,12 +201,15 @@ class GremlinComponentAnalysisResponse(object):
         """Return True if this EPV has CVEs, False otherwise."""
         return bool(self._cves)
 
-    def get_cve_maps(self):
+    def get_cve_maps(self, vendor=None):
         """Get all CVEs for this EPV."""
         cve_maps = []
+        cve_key = {
+            'synk': 'snyk_cve_ids'
+        }
         for cve in self._cves:
             cve_map = {
-                'id': cve.get('cve_id')[0],
+                'id': cve.get(cve_key.get(vendor, 'cve_id'))[0],
                 'cvss': cve.get('cvss_v2')[0]
             }
             cve_maps.append(cve_map)
@@ -253,7 +256,7 @@ class GremlinComponentAnalysisResponse(object):
         return highest_version
 
 
-def generate_recommendation(data, package, input_version):
+def generate_recommendation(data, package, input_version, vendor=None):
     """Generate recommendation for the package+version."""
     # Template Dict for recommendation
     reco = {
@@ -269,7 +272,7 @@ def generate_recommendation(data, package, input_version):
         if gremlin_resp.has_cves():
             message = 'CVE/s found for Package - ' + package + ', Version - ' + \
                       input_version + '\n'
-            cve_maps = gremlin_resp.get_cve_maps()
+            cve_maps = gremlin_resp.get_cve_maps(vendor)
             message += ', '.join([x.get('id') for x in cve_maps])
             message += ' with a max cvss score of - ' + str(gremlin_resp.get_max_cvss_score())
             reco['recommendation']['component-analyses']['cve'] = cve_maps
@@ -407,7 +410,7 @@ class GraphAnalyses:
             logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
                                                                         t=elapsed_seconds))
         logger.debug('Generating Recommendation')
-        return generate_recommendation(clubbed_data, self.package, self.version)
+        return generate_recommendation(clubbed_data, self.package, self.version, vendor='snyk')
 
     def get_link(self):
         """Generate link to Snyk Vulnerability Page."""
