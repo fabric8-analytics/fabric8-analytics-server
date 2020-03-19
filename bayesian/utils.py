@@ -50,7 +50,7 @@ gremlin_url = "http://{host}:{port}".format(
     port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
 
 companion_reason_statement = "along with the provided input stack. " \
-    "Do you want to consider adding this Package?"
+                             "Do you want to consider adding this Package?"
 
 zero_version = sv.Version("0.0.0")
 
@@ -329,10 +329,63 @@ def search_packages_from_graph(tokens):
     return {'result': pkg_list}
 
 
+class SnykComponentAnalysisResponse(GremlinComponentAnalysisResponse):
+    """Generate Snyk specific Component Analyses Response."""
+
+    """
+    This inherits functionality from Generic GremlinComponentAnalysisResponse class.
+    """
+
+    def get_cve_maps(self):
+        """Get all CVE ID for this EPV."""
+        cve_maps = []
+        for cve in self._cves:
+            cve_map = {
+                'id': cve.get('snyk_cve_ids')[0],
+            }
+            cve_maps.append(cve_map)
+
+        return cve_maps
+
+    def get_total_vulnerabilities(self):
+        """Find total number of CVEs."""
+        return len(self._cves)
+
+    def get_severity(self):
+        """Severity Calculator."""
+        """
+        severity_levels = { "severity": power_number }
+        expected_inputs = {"high", "critical", "severe"}
+        :returns: Maximum severity out of accumulated severities of every cve.
+        """
+        severity_levels = {"low": 1, "medium": 2, "high": 3, "critical": 4}
+
+        input_severities = {cve['severity'][0] for cve in self._cves
+                            if 'severity' in cve.keys()}
+
+        if not input_severities.issubset(severity_levels.keys()):
+            # Input values contains non recognised values
+            return []
+
+        max_severe_value = max(map(lambda x: severity_levels[x], input_severities))
+        return [severity for severity, power_number in severity_levels.items()
+                if power_number == max_severe_value]
+
+    def get_exploitable_cves(self):
+        """Calculate total exploitable CVES."""
+        # possible_values = ["Not Defined", "Unproven", "Proof of Concept", "Functional", "High"]
+        exploitable_exploits = ["Proof of Concept", "Functional", "High"]
+        exploit_counter = 0
+        for cve in self._cves:
+            if 'exploit' in cve.keys() and cve['exploit'][0] in exploitable_exploits:
+                exploit_counter += 1
+        return exploit_counter
+
+
 class GraphAnalyses:
     """It Queries GraphDB Based on vendor and returns json converted data."""
 
-    def __init__(self, ecosystem, package, version, vendor=None):
+    def __init__(self, ecosystem, package, version, vendor):
         """For Flows related to Security Vendor Integrations."""
         self.vendor = vendor
         self.ecosystem = ecosystem
@@ -382,10 +435,9 @@ class GraphAnalyses:
             if "cve" in result_data[0]:
                 # if cve if present
                 recommended_version = result_data[0].get('package', {}).get(
-                                                'latest_non_cve_version', {})
+                    'latest_non_cve_version', {})
                 clubbed_data.append({
                     "recommended_versions": recommended_version,
-                    "snyk_pkg_link": self.get_link(),
                 })
                 logger.info("latest non cve version for {eco} {pkg} is {ver}".format(
                     eco=self.ecosystem,
@@ -407,7 +459,7 @@ class GraphAnalyses:
             logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
                                                                         t=elapsed_seconds))
         logger.debug('Generating Recommendation')
-        return generate_recommendation(clubbed_data, self.package, self.version)
+        return self.vendor_recommendation(clubbed_data, self.package, self.version)
 
     def get_link(self):
         """Generate link to Snyk Vulnerability Page."""
@@ -419,6 +471,44 @@ class GraphAnalyses:
         }
         return "https://snyk.io/vuln/{}:{}".format(
                 snyk_ecosystem[self.ecosystem], quote(self.package))
+
+    def vendor_recommendation(self, clubbed_data, package, version):
+        """Recommendation function which adds Recommendation Text in Response."""
+        # Template Dict for recommendation
+        reco = {
+            'recommendation': {
+                'component-analyses': {},
+            },
+            'snyk_package_link': self.get_link()
+        }
+        message = '{vulnerable} vulnerabilities within this dependency, ' \
+                  '{exploitable} with exploitable vulnerabilities'
+
+        if clubbed_data:
+            gremlin_resp = SnykComponentAnalysisResponse(package, version, clubbed_data)
+
+            reco['data'] = gremlin_resp.results
+
+            if not gremlin_resp.has_cves():
+                # If there is No CVE, we have No Recommendations for you.
+                reco['recommendation'] = {}
+                return {"result": reco}
+
+            recommendation_dict = reco['recommendation']
+            recommendation_dict['component-analyses']['cve'] = gremlin_resp.get_cve_maps()
+            recommendation_dict['total_vulnerabilities'] = gremlin_resp.get_total_vulnerabilities()
+
+            nocve_version = gremlin_resp.get_version_without_cves()
+            if nocve_version:
+                recommendation_dict['change_to'] = str(nocve_version)
+
+            recommendation_dict['severity'] = gremlin_resp.get_severity()
+            recommendation_dict['exploitable_vulnerabilities'] = gremlin_resp.get_exploitable_cves()
+            recommendation_dict['message'] = message.format(
+                vulnerable=recommendation_dict['total_vulnerabilities'],
+                exploitable=recommendation_dict['exploitable_vulnerabilities'])
+            reco['recommendation'] = recommendation_dict
+        return {"result": reco}
 
 
 def get_analyses_from_graph(ecosystem, package, version):

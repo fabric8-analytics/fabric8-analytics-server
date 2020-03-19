@@ -18,6 +18,7 @@ from bayesian.utils import (
     select_latest_version as slv,
     create_directory_structure as cds,
     GremlinComponentAnalysisResponse,
+    SnykComponentAnalysisResponse,
     CveByDateEcosystemUtils,
     resolved_files_exist,
     get_ecosystem_from_manifest,
@@ -581,13 +582,15 @@ def test_graph_analyses(gr_mocker, post_mocker):
     """Test Graph Analyses Class for Integration."""
     snyk_data = get_vendor_data('snyk')
     post_mocker.return_value = MockedGremlinResponse(snyk_data)
-    gr_mocker.return_value = GenerateRecommendationMocker(snyk_data).clubbed_data()
+    gr_mocker.return_value = SnykComponentAnalysisResponseMocker(snyk_data).clubbed_data()
     graph_analyses_obj = GraphAnalyses(
-        'maven', 'com.fasterxml.jackson.core:jackson-databind', '2.8.9')
+        'maven', 'com.fasterxml.jackson.core:jackson-databind', '2.8.9', "snyk")
     response = graph_analyses_obj.get_analyses_for_snyk()
-    assert type(response['recommended_versions']) is list
-    assert response['recommended_versions'][0] == '2.9.0'
-    assert 'epv' in response
+    print("Res", response)
+    assert response['result']['recommendation']['change_to'] == '2.9.9'
+    assert response['result']['recommendation']['total_vulnerabilities'] == 1
+    assert response['result']['snyk_package_link'] is not None
+    assert type(response['result']['data']) is list
 
 
 class MockedGremlinResponse:
@@ -602,7 +605,7 @@ class MockedGremlinResponse:
         return self.data
 
 
-class GenerateRecommendationMocker:
+class SnykComponentAnalysisResponseMocker:
     """Mock Response Object for Generate Recommendation Function."""
 
     def __init__(self, resp):
@@ -620,6 +623,6 @@ class GenerateRecommendationMocker:
 def test_get_link():
     """Test link to vendor website."""
     link = GraphAnalyses(
-        'maven', 'com.fasterxml.jackson.core:jackson-databind', '2.8.9').get_link()
+        'maven', 'com.fasterxml.jackson.core:jackson-databind', '2.8.9', 'snyk').get_link()
     assert link == "https://snyk.io/vuln/maven:" + quote(
         "com.fasterxml.jackson.core:jackson-databind")

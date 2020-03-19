@@ -278,7 +278,7 @@ class ComponentAnalyses(Resource):
         # Querying GraphDB for CVE Info.
 
         if security_vendor:
-            graph_obj = GraphAnalyses(ecosystem, package, version, vendor=security_vendor)
+            graph_obj = GraphAnalyses(ecosystem, package, version, security_vendor)
             result = graph_obj.get_analyses_for_snyk()
         else:
             # Old Flow

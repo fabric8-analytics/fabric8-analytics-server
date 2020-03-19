@@ -206,7 +206,7 @@
                     "fixable": [
                         "true"
                     ],
-                    "scve_ids": [
+                    "snyk_cve_ids": [
                         "CVE-2017-7525",
                         "CVE-2017-7526"
                     ]
