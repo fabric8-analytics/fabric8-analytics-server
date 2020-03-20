@@ -18,7 +18,6 @@ from bayesian.utils import (
     select_latest_version as slv,
     create_directory_structure as cds,
     GremlinComponentAnalysisResponse,
-    SnykComponentAnalysisResponse,
     CveByDateEcosystemUtils,
     resolved_files_exist,
     get_ecosystem_from_manifest,
