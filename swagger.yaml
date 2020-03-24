@@ -14,7 +14,7 @@ securityDefinitions:
     type: apiKey
     name: user_key
     in: query
-    description: Token Auth is used for Authentication
+    description: 3Scale Token Auth is used for Authentication
 
 security:
   - tokenAuth: []
