@@ -1,22 +1,25 @@
 swagger: '2.0'
 info:
   title: Analytics Core API
-  version: '0.1'
+  version: '0.14'
 basePath: /api/v1/
+host: "f8a-analytics-2445582058137.production.gw.apicast.io"
 consumes:
   - application/json
 produces:
   - application/json
+
+securityDefinitions:
+  tokenAuth:
+    type: apiKey
+    name: user_key
+    in: query
+    description: Token Auth is used for Authentication
+
+security:
+  - tokenAuth: []
+
 paths:
-  /liveness:
-    get:
-      tags:
-        - Service settings
-      operationId: f8a_admin.api_v1.get_liveness
-      summary: Get job service liveness
-      responses:
-        '200':
-          description: Service is alive
   /readiness:
     get:
       tags:
@@ -48,6 +51,11 @@ paths:
           type: string
           required: true
           description: component version
+        - in: query
+          name: security-vendor
+          type: string
+          required: false
+          description: Security Vendor
       responses:
         '200':
           schema:
