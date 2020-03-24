@@ -51,7 +51,7 @@ paths:
           type: string
           required: true
           description: component version
-        - in: query
+        - in: header
           name: security-vendor
           type: string
           required: false
