@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   title: Analytics Core API
-  version: '0.14'
+  version: '0.2'
 basePath: /api/v1/
 host: "f8a-analytics-2445582058137.production.gw.apicast.io"
 consumes:
