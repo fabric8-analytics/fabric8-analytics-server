@@ -403,9 +403,9 @@ definitions:
         $ref: "#/definitions/CveDetails"
       message:
         type: string
-  SnykPremiumRecommendation:
-    title: Snyk Premium Recommendation Information
-    description: Snyk Premium Recommendation information
+  SnykRecommendation:
+    title: Snyk Recommendation Information
+    description: Snyk Recommendation information for Standard and Premium Recommendation.
     properties:
       change_to:
         type: string
@@ -416,31 +416,11 @@ definitions:
       severity:
         type: string
       public_vulnerabilities:
-        type: string
+        type: integer
       private_vulnerabilities:
         type: integer
       exploitable_vulnerabilities:
         type: integer
-      snyk_package_link:
-        type: string
-  SnykStandardRecommendation:
-    title: Snyk Recommended Information
-    description: Snyk Recommended information
-    properties:
-      change_to:
-        type: string
-      component-analyses:
-        $ref: "#/definitions/CveDetails"
-      message:
-        type: string
-      severity:
-        type: string
-      public_vulnerabilities:
-        type: string
-      private_vulnerabilities:
-        type: string
-      exploitable_vulnerabilities:
-        type: string
       snyk_package_link:
         type: string
   ComponentAnalysesData:
@@ -454,8 +434,7 @@ definitions:
       recommendation:
         oneOf:
           - $ref: "#/definitions/Recommendation"
-          - $ref: "#/definitions/SnykPremiumRecommendation"
-          - $ref: "#/definitions/SnykStandardRecommendation"
+          - $ref: "#/definitions/SnykRecommendation"
   ComponentAnalysesResponse:
     title: Response of Component Analyses
     description: Component analyses response
