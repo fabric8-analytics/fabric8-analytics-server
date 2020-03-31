@@ -8,24 +8,6 @@ consumes:
 produces:
   - application/json
 paths:
-  /liveness:
-    get:
-      tags:
-        - Service settings
-      operationId: f8a_admin.api_v1.get_liveness
-      summary: Get job service liveness
-      responses:
-        '200':
-          description: Service is alive
-  /readiness:
-    get:
-      tags:
-        - Service settings
-      operationId: f8a_admin.api_v1.get_readiness
-      summary: Get job service readiness
-      responses:
-        '200':
-          description: Service is ready
   '/component-analyses/{eco}/{name}/{ver}':
     get:
       tags:
@@ -124,67 +106,6 @@ paths:
           description: Data not found
         '408':
           description: Request has timed out on server
-  '/epvs/bycveid/{cve_id}':
-    get:
-      tags:
-        - CVE Services
-      summary: Get EPV information by cve id
-      description: Returns linked EPV information by cve id from the OSIO database.
-      operationId: getEpvByDate #TODO: To be changed later
-      parameters:
-        - in: path
-          name: cve_id
-          description: Returns EPV information by cveid.
-          required: true
-          type: string
-      responses:
-          '200':
-            description: "successful operation"
-            schema:
-              $ref: "#/definitions/ByCveId"
-          '400':
-            description: "Invalid cve id supplied"
-          '404':
-            description: "Data not found"
-  '/cves/bydate/{date}/{ecosystem}':
-    get:
-      tags:
-      - CVE Services
-      summary: Get CVE ids by ingesation date and ecosystem
-      description: Returns CVE ids injested/removed on that particular date and belonging to a certain ecosystem from the OSIO database.
-      operationId: "getCveByDateEcosystem" #TODO: To be changed later
-      parameters:
-      - in: path
-        name: date
-        description: Returns CVE information by date.
-        required: true
-        type: integer
-        format: int64
-      - in: path
-        name: ecosystem
-        description: Returns CVE information by date and ecosystem.
-        required: true
-        type: string
-      - in: query
-        name: date_range
-        description: cve ids fetched as per the specified date range
-        required: false
-        type: integer
-        format: int64
-      - in: query
-        name: cve_sources
-        description: specifying cve sources for the query
-        required: false
-        type: string
-      responses:
-        '200':
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/ByDateEcosystem"
-        '400':
-          description: "Invalid date/ecosystem supplied"
-        '404':
-          description: "Data not found"
 definitions:
   Version:
     title: Component Version Details
@@ -459,17 +380,6 @@ definitions:
         type: object
       unknown_licenses:
         $ref: "#/definitions/UnknownLicenses"
-  CodeMetrics:
-    title: Code metrics data
-    description: Code Metrics static code analysis data
-    properties:
-      code_lines:
-        type: integer
-      average_cyclomatic_complexity:
-        type: number
-        format: float
-      total_files:
-        type: integer
   GitHubDetails:
     title: Github data
     description: Github details
@@ -642,58 +552,3 @@ definitions:
         type: string
       submitted_at:
         type: string
-
-  ByCveId:
-    title: CVE ByCveId
-    type: "object"
-    properties:
-      add:
-        type: "array"
-        items:
-          $ref: '#/definitions/AddEpv'
-      count:
-        type: "integer"
-        format: "int32"
-  ByDateEcosystem:
-    title: CVE ByDateEcosytem
-    type: "object"
-    properties:
-      add:
-        type: "array"
-        items:
-          $ref: '#/definitions/Add'
-      count:
-        type: "integer"
-        format: "int32"
-  AddEpv:
-    title: EpvToAdd
-    type: "object"
-    properties:
-      name:
-          type: "string"
-          format: "string"
-      version:
-          type: "string"
-          format: "string"
-  Add:
-    title: CveToAdd
-    type: "object"
-    properties:
-      cve_id:
-          type: "string"
-          format: "string"
-      cvss_v2:
-          type: "number"
-          format: "float"
-      description:
-          type: "string"
-          format: "string"
-      ecosystem:
-          type: "string"
-          format: "string"
-      fixed_in:
-          type: "string"
-          format: "string"
-      link:
-          type: "string"
-          format: "string"
