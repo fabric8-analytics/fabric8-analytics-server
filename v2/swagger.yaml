@@ -1,8 +1,8 @@
 swagger: '2.0'
 info:
   title: Analytics Core API
-  version: '0.1'
-basePath: /api/v1/
+  version: '0.2'
+basePath: /api/v2/
 consumes:
   - application/json
 produces:
@@ -289,6 +289,63 @@ definitions:
         $ref: "#/definitions/Version"
       package:
         $ref: "#/definitions/Package"
+  PremiumVulnerabilityFields:
+    title: PremiumVulnerabilityFields
+    description: Premium Vulnerability details, available only to registered
+    properties:
+      malicious:
+        type: boolean
+      patch_exists:
+        type: boolean
+      fixable:
+        type: boolean
+      exploit:
+        type: string
+      description:
+        type: string
+      fixed_in:
+        type: string
+      references:
+        type: array
+        items:
+          type: object
+          properties:
+            title:
+              type: string
+            url:
+              type: string
+  Vulnerability:
+    title: Vulnerability
+    description: Vulnerability details
+    properties:
+      cve_ids:
+        type: array
+        items:
+          type: string
+      cvss:
+        type: number
+        format: float
+      cvss_v3:
+        type: string
+      cwes:
+        type: array
+        items:
+          type: string
+      id:
+        type: string
+      severity:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+      title:
+        type: string
+      url:
+        type: string
+      premium_details:
+        description: Premium details about a Vulnerability, available only to registered users
+        $ref: "#/definitions/PremiumVulnerabilityFields"
   CVE:
     title: CVE and CVSS information
     description: CVE details
@@ -434,12 +491,30 @@ definitions:
           type: string
       ecosystem:
         type: string
-      security:
+      public_vulnerabilities_count:
+        type: integer
+      private_vulnerabilities_count:
+        type: integer
+      public_vulnerabilities:
         type: array
         items:
+          $ref: "#/definitions/Vulnerability"
+        description: Publicly known vulnerability details
+      private_vulnerabilities:
+        type: array
+        items:
+          $ref: "#/definitions/Vulnerability"
+        description: Private vulnerability details, available only to registered users
+      affected_direct_deps:
+        type: array
+        description: Lists all direct dependencies of this package
+        items:
           type: object
-      code_metrics:
-        $ref: "#/definitions/CodeMetrics"
+          properties:
+            package:
+              type: string
+            version:
+              type: string
       version:
         type: string
       osio_user_count:
