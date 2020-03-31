@@ -1,0 +1,699 @@
+swagger: '2.0'
+info:
+  title: Analytics Core API
+  version: '0.1'
+basePath: /api/v1/
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /liveness:
+    get:
+      tags:
+        - Service settings
+      operationId: f8a_admin.api_v1.get_liveness
+      summary: Get job service liveness
+      responses:
+        '200':
+          description: Service is alive
+  /readiness:
+    get:
+      tags:
+        - Service settings
+      operationId: f8a_admin.api_v1.get_readiness
+      summary: Get job service readiness
+      responses:
+        '200':
+          description: Service is ready
+  '/component-analyses/{eco}/{name}/{ver}':
+    get:
+      tags:
+        - Scan Services
+      operationId: f8a_scanner.api_v1.component-analyses
+      summary: Get security and other details about a software component and recommendations to change to a more secured version
+      parameters:
+        - in: path
+          name: eco
+          type: string
+          required: true
+          description: component ecosystem
+        - in: path
+          name: name
+          type: string
+          required: true
+          description: component name
+        - in: path
+          name: ver
+          type: string
+          required: true
+          description: component version
+      responses:
+        '200':
+          schema:
+            $ref: "#/definitions/ComponentAnalysesResponse"
+          description: Detailed response for the requested application component
+        '401':
+          description: Request unauthorized
+        '404':
+          description: Data not found
+  '/stack-analyses':
+    post:
+      tags:
+        - Scan Services
+      operationId: f8a_scanner.api_v1.stack-analyses-post
+      summary: Initiates a scan to gather security and other details about an application stack and related recommendations to improve the stack
+      consumes:
+        - multipart/form-data
+      parameters:
+        - name: ecosystem
+          in: header
+          description: The ecosystem of the stack analysis being called.
+          required: true
+          type: string
+        - name: origin
+          in: header
+          description: This is required to give an indication as to from where is the request getting generated. If from VScode extension, the value which we need to send is 'vscode'.
+          required: false
+          type: string
+        - name: show_transitive
+          in: header
+          description: This is required to enable or disable the transitive support. We need to pass the value as 'true' if transitive is needed. Default value is 'false'.
+          required: false
+          type: string
+        - name: manifest[]
+          in: formData
+          description: A manifest file dependencies.txt for maven, npmlist.json for npm & pylist.json for pypi. Commands to generate these files are mentioned in the README.md
+          required: true
+          type: file
+        - name: filePath[]
+          in: formData
+          description: The absolute or relative path where the manifest file is located. This has to be mandatorily provided with the manifest[] parameter and vice versa.
+          required: true
+          type: string
+
+      responses:
+        '200':
+          schema:
+            $ref: "#/definitions/StackAnalysesPostResponse"
+          description: Response with the unique identifier for the stack analysis request
+        '401':
+          description: Request Unauthorized
+        '400':
+          description: Bad request
+  '/stack-analyses/{request-id}':
+    get:
+      tags:
+        - Scan Services
+      operationId: f8a_scanner.api_v1.stack-analyses-get
+      summary: Get security and other details about an application stack and related recommendations to improve the stack
+      parameters:
+        - in: path
+          name: request-id
+          type: string
+          required: true
+          description: stack analysis request id
+      responses:
+        '200':
+          schema:
+            $ref: "#/definitions/StackAnalysesGetResponse"
+          description: Detailed response for the requested application component
+        '401':
+          description: Request unauthorized
+        '404':
+          description: Data not found
+        '408':
+          description: Request has timed out on server
+  '/epvs/bycveid/{cve_id}':
+    get:
+      tags:
+        - CVE Services
+      summary: Get EPV information by cve id
+      description: Returns linked EPV information by cve id from the OSIO database.
+      operationId: getEpvByDate #TODO: To be changed later
+      parameters:
+        - in: path
+          name: cve_id
+          description: Returns EPV information by cveid.
+          required: true
+          type: string
+      responses:
+          '200':
+            description: "successful operation"
+            schema:
+              $ref: "#/definitions/ByCveId"
+          '400':
+            description: "Invalid cve id supplied"
+          '404':
+            description: "Data not found"
+  '/cves/bydate/{date}/{ecosystem}':
+    get:
+      tags:
+      - CVE Services
+      summary: Get CVE ids by ingesation date and ecosystem
+      description: Returns CVE ids injested/removed on that particular date and belonging to a certain ecosystem from the OSIO database.
+      operationId: "getCveByDateEcosystem" #TODO: To be changed later
+      parameters:
+      - in: path
+        name: date
+        description: Returns CVE information by date.
+        required: true
+        type: integer
+        format: int64
+      - in: path
+        name: ecosystem
+        description: Returns CVE information by date and ecosystem.
+        required: true
+        type: string
+      - in: query
+        name: date_range
+        description: cve ids fetched as per the specified date range
+        required: false
+        type: integer
+        format: int64
+      - in: query
+        name: cve_sources
+        description: specifying cve sources for the query
+        required: false
+        type: string
+      responses:
+        '200':
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/ByDateEcosystem"
+        '400':
+          description: "Invalid date/ecosystem supplied"
+        '404':
+          description: "Data not found"
+definitions:
+  Version:
+    title: Component Version Details
+    description: Component version details
+    properties:
+      pecosystem:
+        type: array
+        items:
+          type: string
+      pname:
+        type: array
+        items:
+          type: string
+      version:
+        type: array
+        items:
+          type: string
+      declared_licenses:
+        type: array
+        items:
+          type: string
+      licenses:
+        type: array
+        items:
+          type: string
+      last_updated:
+        type: array
+        items:
+          type: number
+          format: float
+      vertex_label:
+        type: array
+        items:
+          type: string
+      cve_ids:
+        type: array
+        items:
+          type: string
+      description:
+        type: array
+        items:
+          type: string
+      cm_loc:
+        type: array
+        items:
+          type: integer
+      cm_num_files:
+        type: array
+        items:
+          type: integer
+      cm_avg_cyclomatic_complexity:
+        type: array
+        items:
+          type: integer
+      shipped_as_downstream:
+        type: array
+        items:
+          type: boolean
+      dependents_count:
+        type: array
+        items:
+          type: integer
+  Package:
+    title: Component Package Specific Details
+    description: Component package details
+    properties:
+      libio_dependents_repos:
+        type: array
+        items:
+          type: string
+      libio_latest_release:
+        type: array
+        items:
+          type: string
+      gh_prs_last_year_opened:
+        type: array
+        items:
+          type: integer
+      libio_latest_version:
+        type: array
+        items:
+          type: string
+      last_updated:
+        type: array
+        items:
+          type: number
+          format: float
+      gh_subscribers_count:
+        type: array
+        items:
+          type: number
+      gh_stargazers:
+        type: array
+        items:
+          type: number
+      libio_dependents_projects:
+        type: array
+        items:
+          type: string
+      gh_forks:
+        type: array
+        items:
+          type: integer
+      libio_usedby:
+        type: array
+        items:
+          type: string
+      gh_issues_last_month_closed:
+        type: array
+        items:
+          type: integer
+      ecosystem:
+        type: array
+        items:
+          type: string
+      gh_prs_last_year_closed:
+        type: array
+        items:
+          type: integer
+      gh_issues_last_year_opened:
+        type: array
+        items:
+          type: integer
+      gh_prs_last_month_closed:
+        type: array
+        items:
+          type: integer
+      gh_prs_last_month_opened:
+        type: array
+        items:
+          type: integer
+      vertex_label:
+        type: array
+        items:
+          type: string
+      gh_contributors_count:
+        type: array
+        items:
+          type: integer
+      gh_issues_last_month_opened:
+        type: array
+        items:
+          type: integer
+      gh_issues_last_year_closed:
+        type: array
+        items:
+          type: integer
+      latest_version:
+        type: array
+        items:
+          type: integer
+      gh_open_issues_count:
+        type: array
+        items:
+          type: integer
+      name:
+        type: array
+        items:
+          type: string
+      package_relative_used:
+        type: array
+        items:
+          type: string
+      package_dependents_count:
+        type: array
+        items:
+          type: integer
+      libio_total_releases:
+        type: array
+        items:
+          type: string
+      tokens:
+        type: array
+        items:
+          type: string
+  ComponentAnalysesDataDetails:
+    title: Component Analyses Package and Version
+    description: Component analyses data for package and version
+    properties:
+      version:
+        $ref: "#/definitions/Version"
+      package:
+        $ref: "#/definitions/Package"
+  CVE:
+    title: CVE and CVSS information
+    description: CVE details
+    properties:
+      cvss:
+        type: number
+        format: float
+      id:
+        type: string
+  CveDetails:
+    title: CVE Details
+    description: Information of the CVE found
+    properties:
+      cve:
+        type: array
+        items:
+          $ref: "#/definitions/CVE"
+  Recommendation:
+    title: Recommended Version Information
+    description: Recommended version information
+    properties:
+      change_to:
+        type: string
+      component-analyses:
+        $ref: "#/definitions/CveDetails"
+      message:
+        type: string
+  ComponentAnalysesData:
+    title: Component Analyses Data
+    description: Component analyses data
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/ComponentAnalysesDataDetails"
+      recommendation:
+        $ref: "#/definitions/Recommendation"
+  ComponentAnalysesResponse:
+    title: Response of Component Analyses
+    description: Component analyses response
+    properties:
+      result:
+        $ref: "#/definitions/ComponentAnalysesData"
+  UnknownDeps:
+    title: Unknown dependencies
+    description: Unknown dependencies data
+    properties:
+      name:
+        type: string
+      version:
+        type: string
+  KnownDeps:
+    title: Known dependencies
+    description: Dependencies known to the system
+    properties:
+      package:
+        type: string
+      version:
+        type: string
+  UnknownLicenses:
+    title: Unknown licenses
+    description: Data of licenses unknown to the system
+    properties:
+      component_conflict:
+        type: array
+        items:
+          type: object
+      really_unknown:
+        type: array
+        items:
+          type: object
+  LicenseAnalysis:
+    title: License analysis
+    description: License analyses data
+    properties:
+      outlier_packages:
+        type: array
+        items:
+          type: object
+      f8a_stack_licenses:
+        type: array
+        items:
+          type: string
+      conflict_packages:
+        type: array
+        items:
+          type: string
+      current_stack_license:
+        type: object
+      unknown_licenses:
+        $ref: "#/definitions/UnknownLicenses"
+  CodeMetrics:
+    title: Code metrics data
+    description: Code Metrics static code analysis data
+    properties:
+      code_lines:
+        type: integer
+      average_cyclomatic_complexity:
+        type: number
+        format: float
+      total_files:
+        type: integer
+  GitHubDetails:
+    title: Github data
+    description: Github details
+    properties:
+      watchers:
+        type: integer
+      first_release_date:
+        type: string
+      total_releases:
+        type: integer
+      issues:
+        type: object
+      pull_requests:
+        type: object
+      dependent_repos:
+        type: integer
+      open_issues_count:
+        type: integer
+      latest_release_duration:
+        type: string
+      forks_count:
+        type: integer
+      contributors:
+        type: integer
+      size:
+        type: string
+      stargazers_count:
+        type: integer
+      used_by:
+        type: array
+        items:
+          type: string
+      dependent_projects:
+        type: integer
+  Dependencies:
+    title: Analyzed dependencies
+    description: Details of the known dependencies
+    properties:
+      name:
+        type: string
+      latest_version:
+        type: string
+      github:
+        $ref: "#/definitions/GitHubDetails"
+      licenses:
+        type: array
+        items:
+          type: string
+      topic_list:
+        type: array
+        items:
+          type: string
+      ecosystem:
+        type: string
+      security:
+        type: array
+        items:
+          type: object
+      code_metrics:
+        $ref: "#/definitions/CodeMetrics"
+      version:
+        type: string
+      osio_user_count:
+        type: integer
+  UserStackInfo:
+    title: Stack statistics
+    description: Stack analyses descriptive statistics
+    properties:
+      unknown_dependencies:
+        type: array
+        items:
+          $ref: "#/definitions/UnknownDeps"
+      ecosystem:
+        type: string
+      unknown_dependencies_count:
+        type: integer
+      analyzed_dependencies:
+        type: array
+        items:
+          $ref: "#/definitions/Dependencies"
+      analyzed_dependencies_count:
+        type: integer
+      license_analysis:
+        $ref: "#/definitions/LicenseAnalysis"
+      distinct_licenses:
+        type: array
+        items:
+          type: string
+      stack_license_conflict:
+        type: boolean
+      dependencies:
+        type: array
+        items:
+          $ref: "#/definitions/KnownDeps"
+      total_licenses:
+        type: integer
+      recommendation_ready:
+        type: boolean
+  RecommendedPackageData:
+    title: Recommended packages data
+    description: Recommended packages data
+    allOf:
+      - $ref: "#/definitions/Dependencies"
+      - properties:
+          confidence_reason:
+            type: number
+            format: float
+          reason:
+            type: string
+          topic_list:
+            type: array
+            items:
+              type: string
+          cooccurrence_count:
+            type: number
+          cooccurrence_probability:
+            type: number
+            format: float
+  StackRecommendation:
+    title: Application recommendation
+    description: Application stack recommendations
+    properties:
+      companion:
+        type: array
+        items:
+          $ref: "#/definitions/RecommendedPackageData"
+      manifest_file_path:
+        type: string
+      usage_outliers:
+        type: array
+        items:
+          type: object
+      missing_packages_pgm:
+        type: array
+        items:
+          type: object
+      input_stack_topics:
+        type: object
+      alternate:
+        type: array
+        items:
+          $ref: "#/definitions/RecommendedPackageData"
+  StackAnalysesResult:
+    title: Stack analyses result
+    description: Stack analyses result data
+    properties:
+      manifest_file_path:
+        type: string
+      user_stack_info:
+        $ref: "#/definitions/UserStackInfo"
+      manifest_name:
+        type: string
+      recommendation:
+        $ref: "#/definitions/StackRecommendation"
+  StackAnalysesGetResponse:
+    title: Stack analyses Get call response
+    description: Response structure for stack analyses
+    properties:
+      result:
+        type: array
+        items:
+          $ref: "#/definitions/StackAnalysesResult"
+  StackAnalysesPostResponse:
+    title: Stack analysis Post call response
+    description: Response structure for stack analyses post
+    properties:
+      id:
+        type: string
+      status:
+        type: string
+      submitted_at:
+        type: string
+
+  ByCveId:
+    title: CVE ByCveId
+    type: "object"
+    properties:
+      add:
+        type: "array"
+        items:
+          $ref: '#/definitions/AddEpv'
+      count:
+        type: "integer"
+        format: "int32"
+  ByDateEcosystem:
+    title: CVE ByDateEcosytem
+    type: "object"
+    properties:
+      add:
+        type: "array"
+        items:
+          $ref: '#/definitions/Add'
+      count:
+        type: "integer"
+        format: "int32"
+  AddEpv:
+    title: EpvToAdd
+    type: "object"
+    properties:
+      name:
+          type: "string"
+          format: "string"
+      version:
+          type: "string"
+          format: "string"
+  Add:
+    title: CveToAdd
+    type: "object"
+    properties:
+      cve_id:
+          type: "string"
+          format: "string"
+      cvss_v2:
+          type: "number"
+          format: "float"
+      description:
+          type: "string"
+          format: "string"
+      ecosystem:
+          type: "string"
+          format: "string"
+      fixed_in:
+          type: "string"
+          format: "string"
+      link:
+          type: "string"
+          format: "string"
