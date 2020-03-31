@@ -1,25 +1,22 @@
 swagger: '2.0'
 info:
   title: Analytics Core API
-  version: '0.2'
+  version: '0.1'
 basePath: /api/v1/
-host: "f8a-analytics-2445582058137.production.gw.apicast.io"
 consumes:
   - application/json
 produces:
   - application/json
-
-securityDefinitions:
-  tokenAuth:
-    type: apiKey
-    name: user_key
-    in: query
-    description: 3Scale Token Auth is used for Authentication
-
-security:
-  - tokenAuth: []
-
 paths:
+  /liveness:
+    get:
+      tags:
+        - Service settings
+      operationId: f8a_admin.api_v1.get_liveness
+      summary: Get job service liveness
+      responses:
+        '200':
+          description: Service is alive
   /readiness:
     get:
       tags:
@@ -51,11 +48,6 @@ paths:
           type: string
           required: true
           description: component version
-        - in: header
-          name: security-vendor
-          type: string
-          required: false
-          description: Security Vendor
       responses:
         '200':
           schema:
@@ -403,26 +395,6 @@ definitions:
         $ref: "#/definitions/CveDetails"
       message:
         type: string
-  SnykRecommendation:
-    title: Snyk Recommendation Information
-    description: Snyk Recommendation information for Standard and Premium Recommendation.
-    properties:
-      change_to:
-        type: string
-      component-analyses:
-        $ref: "#/definitions/CveDetails"
-      message:
-        type: string
-      severity:
-        type: string
-      public_vulnerabilities:
-        type: integer
-      private_vulnerabilities:
-        type: integer
-      exploitable_vulnerabilities:
-        type: integer
-      snyk_package_link:
-        type: string
   ComponentAnalysesData:
     title: Component Analyses Data
     description: Component analyses data
@@ -432,9 +404,7 @@ definitions:
         items:
           $ref: "#/definitions/ComponentAnalysesDataDetails"
       recommendation:
-        oneOf:
-          - $ref: "#/definitions/Recommendation"
-          - $ref: "#/definitions/SnykRecommendation"
+        $ref: "#/definitions/Recommendation"
   ComponentAnalysesResponse:
     title: Response of Component Analyses
     description: Component analyses response

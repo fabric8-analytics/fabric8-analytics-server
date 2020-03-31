@@ -1,0 +1,312 @@
+openapi: 3.0.1
+info:
+  title: Analytics Core API Specs for Version 2
+  version: "2"
+servers:
+- url: https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v1
+  description: "Fabric8 Server"
+security:
+- tokenAuth: []
+paths:
+  /component-analyses/{eco}/{name}/{ver}:
+    get:
+      tags:
+      - Scan Services
+      summary: Get security and other details about a software component and recommendations
+        to change to a more secured version
+      operationId: f8a_scanner.api_v1.component-analyses
+      parameters:
+      - name: eco
+        in: path
+        description: component ecosystem
+        required: true
+        schema:
+          type: string
+      - name: name
+        in: path
+        description: component name
+        required: true
+        schema:
+          type: string
+      - name: ver
+        in: path
+        description: component version
+        required: true
+        schema:
+          type: string
+      - name: security-vendor
+        in: header
+        description: Security Vendor
+        schema:
+          type: string
+          enum:
+          - snyk
+      responses:
+        200:
+          description: Detailed response for the requested application component
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComponentAnalysesResponse'
+        202:
+          description: Package is currently Unavailable. Please try again later
+          content: {}
+        401:
+          description: Request unauthorized
+          content: {}
+        404:
+          description: Data not found
+          content: {}
+components:
+  schemas:
+    Version:
+      title: Component Version Details
+      type: object
+      properties:
+        pecosystem:
+          type: array
+          items:
+            type: string
+        pname:
+          type: array
+          items:
+            type: string
+        version:
+          type: array
+          items:
+            type: string
+        declared_licenses:
+          type: array
+          items:
+            type: string
+        licenses:
+          type: array
+          items:
+            type: string
+        last_updated:
+          type: array
+          items:
+            type: number
+            format: float
+        vertex_label:
+          type: array
+          items:
+            type: string
+        cve_ids:
+          type: array
+          items:
+            type: string
+        description:
+          type: array
+          items:
+            type: string
+        cm_loc:
+          type: array
+          items:
+            type: integer
+        cm_num_files:
+          type: array
+          items:
+            type: integer
+        cm_avg_cyclomatic_complexity:
+          type: array
+          items:
+            type: integer
+        shipped_as_downstream:
+          type: array
+          items:
+            type: boolean
+        dependents_count:
+          type: array
+          items:
+            type: integer
+      description: Component version details
+    Package:
+      title: Component Package Specific Details
+      type: object
+      properties:
+        libio_dependents_repos:
+          type: array
+          items:
+            type: string
+        libio_latest_release:
+          type: array
+          items:
+            type: string
+        gh_prs_last_year_opened:
+          type: array
+          items:
+            type: integer
+        libio_latest_version:
+          type: array
+          items:
+            type: string
+        last_updated:
+          type: array
+          items:
+            type: number
+            format: float
+        gh_subscribers_count:
+          type: array
+          items:
+            type: number
+        gh_stargazers:
+          type: array
+          items:
+            type: number
+        libio_dependents_projects:
+          type: array
+          items:
+            type: string
+        gh_forks:
+          type: array
+          items:
+            type: integer
+        libio_usedby:
+          type: array
+          items:
+            type: string
+        gh_issues_last_month_closed:
+          type: array
+          items:
+            type: integer
+        ecosystem:
+          type: array
+          items:
+            type: string
+        gh_prs_last_year_closed:
+          type: array
+          items:
+            type: integer
+        gh_issues_last_year_opened:
+          type: array
+          items:
+            type: integer
+        gh_prs_last_month_closed:
+          type: array
+          items:
+            type: integer
+        gh_prs_last_month_opened:
+          type: array
+          items:
+            type: integer
+        vertex_label:
+          type: array
+          items:
+            type: string
+        gh_contributors_count:
+          type: array
+          items:
+            type: integer
+        gh_issues_last_month_opened:
+          type: array
+          items:
+            type: integer
+        gh_issues_last_year_closed:
+          type: array
+          items:
+            type: integer
+        latest_version:
+          type: array
+          items:
+            type: integer
+        gh_open_issues_count:
+          type: array
+          items:
+            type: integer
+        name:
+          type: array
+          items:
+            type: string
+        package_relative_used:
+          type: array
+          items:
+            type: string
+        package_dependents_count:
+          type: array
+          items:
+            type: integer
+        libio_total_releases:
+          type: array
+          items:
+            type: string
+        tokens:
+          type: array
+          items:
+            type: string
+      description: Component package details
+    ComponentAnalysesDataDetails:
+      title: Component Analyses Package and Version
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        package:
+          $ref: '#/components/schemas/Package'
+      description: Component analyses data for package and version
+    CVE:
+      title: CVE and CVSS information
+      type: object
+      properties:
+        cvss:
+          type: number
+          format: float
+        id:
+          type: string
+      description: CVE details
+    CveDetails:
+      title: CVE Details
+      type: object
+      properties:
+        cve:
+          type: array
+          items:
+            $ref: '#/components/schemas/CVE'
+      description: Information of the CVE found
+    VendorRecommendation:
+      title: Vendor Recommendation Information
+      type: object
+      properties:
+        change_to:
+          type: string
+        component-analyses:
+          $ref: '#/components/schemas/CveDetails'
+        message:
+          type: string
+        severity:
+          type: string
+        public_vulnerabilities:
+          type: integer
+        private_vulnerabilities:
+          type: integer
+        exploitable_vulnerabilities:
+          type: integer
+        vendor_package_link:
+          type: string
+      description: Vendor Recommendation information for Standard and Premium Recommendation.
+    ComponentAnalysesData:
+      title: Component Analyses Data
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComponentAnalysesDataDetails'
+        recommendation:
+          type: object
+          items:
+            $ref: '#/components/schemas/VendorRecommendation'
+      description: Component analyses data
+    ComponentAnalysesResponse:
+      title: Response of Component Analyses
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/ComponentAnalysesData'
+      description: Component analyses response
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      description: 3Scale Token Auth is used for Authentication
+      name: user_key
+      in: query
