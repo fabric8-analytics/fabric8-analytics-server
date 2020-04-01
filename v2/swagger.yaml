@@ -1,564 +1,381 @@
-swagger: '2.0'
+openapi: 3.0.1
 info:
   title: Analytics Core API
-  version: '0.2'
-basePath: /api/v2/
-consumes:
-  - application/json
-produces:
-  - application/json
+  version: "2.0"
+servers:
+- url: /api/v1
 paths:
-  '/component-analyses/{eco}/{name}/{ver}':
-    get:
-      tags:
-        - Scan Services
-      operationId: f8a_scanner.api_v1.component-analyses
-      summary: Get security and other details about a software component and recommendations to change to a more secured version
-      parameters:
-        - in: path
-          name: eco
-          type: string
-          required: true
-          description: component ecosystem
-        - in: path
-          name: name
-          type: string
-          required: true
-          description: component name
-        - in: path
-          name: ver
-          type: string
-          required: true
-          description: component version
-      responses:
-        '200':
-          schema:
-            $ref: "#/definitions/ComponentAnalysesResponse"
-          description: Detailed response for the requested application component
-        '401':
-          description: Request unauthorized
-        '404':
-          description: Data not found
-  '/stack-analyses':
+  /stack-analyses:
     post:
       tags:
-        - Scan Services
-      operationId: f8a_scanner.api_v1.stack-analyses-post
-      summary: Initiates a scan to gather security and other details about an application stack and related recommendations to improve the stack
-      consumes:
-        - multipart/form-data
+      - Scan Services
+      summary: Initiates a scan to gather security and other details about an application
+        stack and related recommendations to improve the stack
+      operationId: f8a_scanner.api_v2.stack-analyses-post
       parameters:
-        - name: ecosystem
-          in: header
-          description: The ecosystem of the stack analysis being called.
-          required: true
+      - name: ecosystem
+        in: header
+        description: The ecosystem of the stack analysis being called.
+        required: true
+        schema:
           type: string
-        - name: origin
-          in: header
-          description: This is required to give an indication as to from where is the request getting generated. If from VScode extension, the value which we need to send is 'vscode'.
-          required: false
+      - name: origin
+        in: header
+        description: This is required to give an indication as to from where is the
+          request getting generated. If from VScode extension, the value which we
+          need to send is 'vscode'.
+        schema:
           type: string
-        - name: show_transitive
-          in: header
-          description: This is required to enable or disable the transitive support. We need to pass the value as 'true' if transitive is needed. Default value is 'false'.
-          required: false
-          type: string
-        - name: manifest[]
-          in: formData
-          description: A manifest file dependencies.txt for maven, npmlist.json for npm & pylist.json for pypi. Commands to generate these files are mentioned in the README.md
-          required: true
-          type: file
-        - name: filePath[]
-          in: formData
-          description: The absolute or relative path where the manifest file is located. This has to be mandatorily provided with the manifest[] parameter and vice versa.
-          required: true
-          type: string
-
+          default: vscode
+          enum:
+            - vscode
+      - name: show_transitive
+        in: header
+        description: This is required to enable or disable the transitive support.
+          We need to pass the value as 'true' if transitive is needed. Default value
+          is 'false'.
+        schema:
+          type: boolean
+          default: true
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - filePath[]
+              - manifest[]
+              properties:
+                manifest[]:
+                  type: string
+                  description: A manifest file dependencies.txt for maven, npmlist.json
+                    for npm & pylist.json for pypi. Commands to generate these files
+                    are mentioned in the README.md
+                  format: binary
+                filePath[]:
+                  type: string
+                  description: The absolute or relative path where the manifest file
+                    is located. This has to be mandatorily provided with the manifest[]
+                    parameter and vice versa.
+        required: true
       responses:
-        '200':
-          schema:
-            $ref: "#/definitions/StackAnalysesPostResponse"
-          description: Response with the unique identifier for the stack analysis request
-        '401':
-          description: Request Unauthorized
-        '400':
+        200:
+          description: Response with the unique identifier for the stack analysis
+            request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StackAnalysesPostResponse'
+        400:
           description: Bad request
-  '/stack-analyses/{request-id}':
+          content: {}
+        401:
+          description: Request Unauthorized
+          content: {}
+  /stack-analyses/{request-id}:
     get:
       tags:
-        - Scan Services
-      operationId: f8a_scanner.api_v1.stack-analyses-get
-      summary: Get security and other details about an application stack and related recommendations to improve the stack
+      - Scan Services
+      summary: Get security and other details about an application stack and related
+        recommendations to improve the stack
+      operationId: f8a_scanner.api_v2.stack-analyses-get
       parameters:
-        - in: path
-          name: request-id
+      - name: request-id
+        in: path
+        description: stack analysis request id
+        required: true
+        schema:
           type: string
-          required: true
-          description: stack analysis request id
       responses:
-        '200':
-          schema:
-            $ref: "#/definitions/StackAnalysesGetResponse"
+        200:
           description: Detailed response for the requested application component
-        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StackAnalysesGetResponse'
+        401:
           description: Request unauthorized
-        '404':
+          content: {}
+        404:
           description: Data not found
-        '408':
+          content: {}
+        408:
           description: Request has timed out on server
-definitions:
-  Version:
-    title: Component Version Details
-    description: Component version details
-    properties:
-      pecosystem:
-        type: array
-        items:
-          type: string
-      pname:
-        type: array
-        items:
-          type: string
-      version:
-        type: array
-        items:
-          type: string
-      declared_licenses:
-        type: array
-        items:
-          type: string
-      licenses:
-        type: array
-        items:
-          type: string
-      last_updated:
-        type: array
-        items:
-          type: number
-          format: float
-      vertex_label:
-        type: array
-        items:
-          type: string
-      cve_ids:
-        type: array
-        items:
-          type: string
-      description:
-        type: array
-        items:
-          type: string
-      cm_loc:
-        type: array
-        items:
-          type: integer
-      cm_num_files:
-        type: array
-        items:
-          type: integer
-      cm_avg_cyclomatic_complexity:
-        type: array
-        items:
-          type: integer
-      shipped_as_downstream:
-        type: array
-        items:
+          content: {}
+components:
+  schemas:
+    VulnerabilityForUser:
+      title: VulnerabilityForUser
+      allOf:
+        - $ref: '#/components/schemas/ExtendedVulnerabilityFields'
+        - oneOf:
+          - $ref: '#/components/schemas/PublicVulnerability'
+          - $ref: '#/components/schemas/PrivateVulnerability'
+      description: Vulnerability details for registered users
+    VulnerabilityForAnonymous:
+      title: VulnerabilityForAnonymous
+      allOf:
+        - $ref: '#/components/schemas/PublicVulnerability'
+      description: Vulnerability details for unregistered users
+    ExtendedVulnerabilityFields:
+      title: ExtendedVulnerabilityFields
+      type: object
+      properties:
+        malicious:
           type: boolean
-      dependents_count:
-        type: array
-        items:
-          type: integer
-  Package:
-    title: Component Package Specific Details
-    description: Component package details
-    properties:
-      libio_dependents_repos:
-        type: array
-        items:
+        patch_exists:
+          type: boolean
+        fixable:
+          type: boolean
+        exploit:
           type: string
-      libio_latest_release:
-        type: array
-        items:
+        description:
           type: string
-      gh_prs_last_year_opened:
-        type: array
-        items:
-          type: integer
-      libio_latest_version:
-        type: array
-        items:
+        fixed_in:
           type: string
-      last_updated:
-        type: array
-        items:
+        references:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              url:
+                type: string
+      description: Extended Vulnerability details, available only to registered users
+    PublicVulnerability:
+      title: PublicVulnerability
+      description: Publicaly known Vulnerability details with associated CVES
+      type: object
+      properties:
+        cve_ids:
+          type: array
+          items:
+            type: string
+        cvss:
           type: number
           format: float
-      gh_subscribers_count:
-        type: array
-        items:
-          type: number
-      gh_stargazers:
-        type: array
-        items:
-          type: number
-      libio_dependents_projects:
-        type: array
-        items:
+        cvss_v3:
           type: string
-      gh_forks:
-        type: array
-        items:
-          type: integer
-      libio_usedby:
-        type: array
-        items:
+        cwes:
+          type: array
+          items:
+            type: string
+        id:
           type: string
-      gh_issues_last_month_closed:
-        type: array
-        items:
-          type: integer
-      ecosystem:
-        type: array
-        items:
+        severity:
           type: string
-      gh_prs_last_year_closed:
-        type: array
-        items:
-          type: integer
-      gh_issues_last_year_opened:
-        type: array
-        items:
-          type: integer
-      gh_prs_last_month_closed:
-        type: array
-        items:
-          type: integer
-      gh_prs_last_month_opened:
-        type: array
-        items:
-          type: integer
-      vertex_label:
-        type: array
-        items:
-          type: string
-      gh_contributors_count:
-        type: array
-        items:
-          type: integer
-      gh_issues_last_month_opened:
-        type: array
-        items:
-          type: integer
-      gh_issues_last_year_closed:
-        type: array
-        items:
-          type: integer
-      latest_version:
-        type: array
-        items:
-          type: integer
-      gh_open_issues_count:
-        type: array
-        items:
-          type: integer
-      name:
-        type: array
-        items:
-          type: string
-      package_relative_used:
-        type: array
-        items:
-          type: string
-      package_dependents_count:
-        type: array
-        items:
-          type: integer
-      libio_total_releases:
-        type: array
-        items:
-          type: string
-      tokens:
-        type: array
-        items:
-          type: string
-  ComponentAnalysesDataDetails:
-    title: Component Analyses Package and Version
-    description: Component analyses data for package and version
-    properties:
-      version:
-        $ref: "#/definitions/Version"
-      package:
-        $ref: "#/definitions/Package"
-  PremiumVulnerabilityFields:
-    title: PremiumVulnerabilityFields
-    description: Premium Vulnerability details, available only to registered
-    properties:
-      malicious:
-        type: boolean
-      patch_exists:
-        type: boolean
-      fixable:
-        type: boolean
-      exploit:
-        type: string
-      description:
-        type: string
-      fixed_in:
-        type: string
-      references:
-        type: array
-        items:
-          type: object
-          properties:
-            title:
-              type: string
-            url:
-              type: string
-  Vulnerability:
-    title: Vulnerability
-    description: Vulnerability details
-    properties:
-      cve_ids:
-        type: array
-        items:
-          type: string
-      cvss:
-        type: number
-        format: float
-      cvss_v3:
-        type: string
-      cwes:
-        type: array
-        items:
-          type: string
-      id:
-        type: string
-      severity:
-        type: string
-        enum:
+          enum:
           - low
           - medium
           - high
-      title:
-        type: string
-      url:
-        type: string
-      premium_details:
-        description: Premium details about a Vulnerability, available only to registered users
-        $ref: "#/definitions/PremiumVulnerabilityFields"
-  CVE:
-    title: CVE and CVSS information
-    description: CVE details
-    properties:
-      cvss:
-        type: number
-        format: float
-      id:
-        type: string
-  CveDetails:
-    title: CVE Details
-    description: Information of the CVE found
-    properties:
-      cve:
-        type: array
-        items:
-          $ref: "#/definitions/CVE"
-  Recommendation:
-    title: Recommended Version Information
-    description: Recommended version information
-    properties:
-      change_to:
-        type: string
-      component-analyses:
-        $ref: "#/definitions/CveDetails"
-      message:
-        type: string
-  ComponentAnalysesData:
-    title: Component Analyses Data
-    description: Component analyses data
-    properties:
-      data:
-        type: array
-        items:
-          $ref: "#/definitions/ComponentAnalysesDataDetails"
-      recommendation:
-        $ref: "#/definitions/Recommendation"
-  ComponentAnalysesResponse:
-    title: Response of Component Analyses
-    description: Component analyses response
-    properties:
-      result:
-        $ref: "#/definitions/ComponentAnalysesData"
-  UnknownDeps:
-    title: Unknown dependencies
-    description: Unknown dependencies data
-    properties:
-      name:
-        type: string
-      version:
-        type: string
-  KnownDeps:
-    title: Known dependencies
-    description: Dependencies known to the system
-    properties:
-      package:
-        type: string
-      version:
-        type: string
-  UnknownLicenses:
-    title: Unknown licenses
-    description: Data of licenses unknown to the system
-    properties:
-      component_conflict:
-        type: array
-        items:
-          type: object
-      really_unknown:
-        type: array
-        items:
-          type: object
-  LicenseAnalysis:
-    title: License analysis
-    description: License analyses data
-    properties:
-      outlier_packages:
-        type: array
-        items:
-          type: object
-      f8a_stack_licenses:
-        type: array
-        items:
+        title:
           type: string
-      conflict_packages:
-        type: array
-        items:
+        url:
           type: string
-      current_stack_license:
-        type: object
-      unknown_licenses:
-        $ref: "#/definitions/UnknownLicenses"
-  GitHubDetails:
-    title: Github data
-    description: Github details
-    properties:
-      watchers:
-        type: integer
-      first_release_date:
-        type: string
-      total_releases:
-        type: integer
-      issues:
-        type: object
-      pull_requests:
-        type: object
-      dependent_repos:
-        type: integer
-      open_issues_count:
-        type: integer
-      latest_release_duration:
-        type: string
-      forks_count:
-        type: integer
-      contributors:
-        type: integer
-      size:
-        type: string
-      stargazers_count:
-        type: integer
-      used_by:
-        type: array
-        items:
+    PrivateVulnerability:
+      title: PrivateVulnerability
+      properties:
+        id:
           type: string
-      dependent_projects:
-        type: integer
-  Dependencies:
-    title: Analyzed dependencies
-    description: Details of the known dependencies
-    properties:
-      name:
-        type: string
-      latest_version:
-        type: string
-      github:
-        $ref: "#/definitions/GitHubDetails"
-      licenses:
-        type: array
-        items:
+        severity:
           type: string
-      topic_list:
-        type: array
-        items:
+          enum:
+          - low
+          - medium
+          - high
+        title:
           type: string
-      ecosystem:
-        type: string
-      public_vulnerabilities_count:
-        type: integer
-      private_vulnerabilities_count:
-        type: integer
-      public_vulnerabilities:
-        type: array
-        items:
-          $ref: "#/definitions/Vulnerability"
-        description: Publicly known vulnerability details
-      private_vulnerabilities:
-        type: array
-        items:
-          $ref: "#/definitions/Vulnerability"
-        description: Private vulnerability details, available only to registered users
-      affected_direct_deps:
-        type: array
-        description: Lists all direct dependencies of this package
-        items:
-          type: object
+        url:
+          type: string
+      description: Private vulnerability details
+    Package:
+      title: Package
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+      description: Package details
+    PackageWithTransitive:
+      title: PackageWithTransitive
+      allOf:
+        - $ref: '#/components/schemas/Package'
+        - type: object
           properties:
-            package:
-              type: string
-            version:
-              type: string
-      version:
-        type: string
-      osio_user_count:
-        type: integer
-  UserStackInfo:
-    title: Stack statistics
-    description: Stack analyses descriptive statistics
-    properties:
-      unknown_dependencies:
-        type: array
-        items:
-          $ref: "#/definitions/UnknownDeps"
-      ecosystem:
-        type: string
-      unknown_dependencies_count:
-        type: integer
-      analyzed_dependencies:
-        type: array
-        items:
-          $ref: "#/definitions/Dependencies"
-      analyzed_dependencies_count:
-        type: integer
-      license_analysis:
-        $ref: "#/definitions/LicenseAnalysis"
-      distinct_licenses:
-        type: array
-        items:
+            deps:
+              type: array
+              items:
+                $ref: '#/components/schemas/Package'
+      description: Package details with transitives
+    UnknownLicenses:
+      title: UnknownLicenses
+      type: object
+      properties:
+        component_conflict:
+          type: array
+          items:
+            type: object
+            properties: {}
+        really_unknown:
+          type: array
+          items:
+            type: object
+            properties: {}
+      description: Data of licenses unknown to the system
+    LicenseAnalysis:
+      title: LicenseAnalysis
+      type: object
+      properties:
+        outlier_packages:
+          type: array
+          items:
+            type: object
+            properties: {}
+        f8a_stack_licenses:
+          type: array
+          items:
+            type: string
+        conflict_packages:
+          type: array
+          items:
+            type: string
+        current_stack_license:
+          type: object
+          properties: {}
+        unknown_licenses:
+          $ref: '#/components/schemas/UnknownLicenses'
+      description: License analyses data
+    GitHubDetails:
+      title: GitHubDetails
+      type: object
+      properties:
+        watchers:
+          type: integer
+        first_release_date:
           type: string
-      stack_license_conflict:
-        type: boolean
-      dependencies:
-        type: array
-        items:
-          $ref: "#/definitions/KnownDeps"
-      total_licenses:
-        type: integer
-      recommendation_ready:
-        type: boolean
-  RecommendedPackageData:
-    title: Recommended packages data
-    description: Recommended packages data
-    allOf:
-      - $ref: "#/definitions/Dependencies"
-      - properties:
+        total_releases:
+          type: integer
+        issues:
+          type: object
+          properties: {}
+        pull_requests:
+          type: object
+          properties: {}
+        dependent_repos:
+          type: integer
+        open_issues_count:
+          type: integer
+        latest_release_duration:
+          type: string
+        forks_count:
+          type: integer
+        contributors:
+          type: integer
+        size:
+          type: string
+        stargazers_count:
+          type: integer
+        used_by:
+          type: array
+          items:
+            type: string
+        dependent_projects:
+          type: integer
+      description: Github details
+    Dependency:
+      title: Dependency
+      allOf:
+        - $ref: '#/components/schemas/Package'
+        - type: object
+          properties:
+            latest_version:
+              type: string
+            github:
+              $ref: '#/components/schemas/GitHubDetails'
+            licenses:
+              type: array
+              items:
+                type: string
+            topic_list:
+              type: array
+              items:
+                type: string
+            ecosystem:
+              type: string
+            public_vulnerabilities_count:
+              type: integer
+            private_vulnerabilities_count:
+              type: integer
+            public_vulnerabilities:
+              type: array
+              description: Publicly known vulnerability details
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/VulnerabilityForUser'
+                  - $ref: '#/components/schemas/VulnerabilityForAnonymous'
+            private_vulnerabilities:
+              type: array
+              description: Private vulnerability details, available only to registered
+                users
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/VulnerabilityForUser'
+            affected_direct_deps:
+              type: array
+              description: Lists all direct dependencies of this package
+              items:
+                type: object
+                properties:
+                  package:
+                    type: string
+                  version:
+                    type: string
+            osio_user_count:
+              type: integer
+          description: Details of the known dependencies
+    UserStackInfo:
+      title: UserStackInfo
+      type: object
+      properties:
+        unknown_dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Package'
+        ecosystem:
+          type: string
+        unknown_dependencies_count:
+          type: integer
+        analyzed_dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dependency'
+        analyzed_dependencies_count:
+          type: integer
+        license_analysis:
+          $ref: '#/components/schemas/LicenseAnalysis'
+        distinct_licenses:
+          type: array
+          items:
+            type: string
+        stack_license_conflict:
+          type: boolean
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/PackageWithTransitive'
+        total_licenses:
+          type: integer
+        recommendation_ready:
+          type: boolean
+      description: Stack analyses descriptive statistics
+    RecommendedPackageData:
+      title: RecommendedPackageData
+      description: Recommended packages data
+      allOf:
+      - $ref: '#/components/schemas/Dependency'
+      - type: object
+        properties:
           confidence_reason:
             type: number
             format: float
@@ -568,62 +385,56 @@ definitions:
             type: array
             items:
               type: string
-          cooccurrence_count:
-            type: number
-          cooccurrence_probability:
-            type: number
-            format: float
-  StackRecommendation:
-    title: Application recommendation
-    description: Application stack recommendations
-    properties:
-      companion:
-        type: array
-        items:
-          $ref: "#/definitions/RecommendedPackageData"
-      manifest_file_path:
-        type: string
-      usage_outliers:
-        type: array
-        items:
-          type: object
-      missing_packages_pgm:
-        type: array
-        items:
-          type: object
-      input_stack_topics:
-        type: object
-      alternate:
-        type: array
-        items:
-          $ref: "#/definitions/RecommendedPackageData"
-  StackAnalysesResult:
-    title: Stack analyses result
-    description: Stack analyses result data
-    properties:
-      manifest_file_path:
-        type: string
-      user_stack_info:
-        $ref: "#/definitions/UserStackInfo"
-      manifest_name:
-        type: string
-      recommendation:
-        $ref: "#/definitions/StackRecommendation"
-  StackAnalysesGetResponse:
-    title: Stack analyses Get call response
-    description: Response structure for stack analyses
-    properties:
-      result:
-        type: array
-        items:
-          $ref: "#/definitions/StackAnalysesResult"
-  StackAnalysesPostResponse:
-    title: Stack analysis Post call response
-    description: Response structure for stack analyses post
-    properties:
-      id:
-        type: string
-      status:
-        type: string
-      submitted_at:
-        type: string
+    StackRecommendation:
+      title: StackRecommendation
+      type: object
+      properties:
+        companion:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendedPackageData'
+        manifest_file_path:
+          type: string
+        usage_outliers:
+          type: array
+          items:
+            type: object
+            properties: {}
+        alternate:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendedPackageData'
+      description: Application stack recommendations
+    StackAnalysesResult:
+      title: StackAnalysesResult
+      type: object
+      properties:
+        manifest_file_path:
+          type: string
+        user_stack_info:
+          $ref: '#/components/schemas/UserStackInfo'
+        manifest_name:
+          type: string
+        recommendation:
+          $ref: '#/components/schemas/StackRecommendation'
+      description: Stack analyses result data
+    StackAnalysesGetResponse:
+      title: StackAnalysesGetResponse
+      type: object
+      properties:
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/StackAnalysesResult'
+      description: Response structure for stack analyses
+    StackAnalysesPostResponse:
+      title: StackAnalysesPostResponse
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        submitted_at:
+          type: string
+      description: Response structure for stack analyses post
