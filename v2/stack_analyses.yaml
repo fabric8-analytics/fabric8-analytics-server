@@ -122,6 +122,7 @@ components:
       properties:
         malicious:
           type: boolean
+          default: false
         patch_exists:
           type: boolean
         fixable:
