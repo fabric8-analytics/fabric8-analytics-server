@@ -3,7 +3,7 @@ info:
   title: Analytics Core API Specs for Version 2
   version: "2"
 servers:
-- url: https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v1
+- url: https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2
   description: "Fabric8 Server"
 security:
 - tokenAuth: []
@@ -14,7 +14,7 @@ paths:
       - Scan Services
       summary: Get security and other details about a software component and recommendations
         to change to a more secured version
-      operationId: f8a_scanner.api_v1.component-analyses
+      operationId: f8a_scanner.api_v2.component-analyses
       parameters:
       - name: eco
         in: path
@@ -88,11 +88,7 @@ components:
           items:
             type: number
             format: float
-        vertex_label:
-          type: array
-          items:
-            type: string
-        cve_ids:
+        vulnerability_ids:
           type: array
           items:
             type: string
@@ -100,26 +96,6 @@ components:
           type: array
           items:
             type: string
-        cm_loc:
-          type: array
-          items:
-            type: integer
-        cm_num_files:
-          type: array
-          items:
-            type: integer
-        cm_avg_cyclomatic_complexity:
-          type: array
-          items:
-            type: integer
-        shipped_as_downstream:
-          type: array
-          items:
-            type: boolean
-        dependents_count:
-          type: array
-          items:
-            type: integer
       description: Component version details
     Package:
       title: Component Package Specific Details
