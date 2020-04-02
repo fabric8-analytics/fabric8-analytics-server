@@ -3,7 +3,10 @@ info:
   title: Stack Analyses API
   version: "2.0"
 servers:
-- url: /api/v2
+  - url: 'https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2'
+    description: Fabric8 Server
+security:
+  - tokenAuth: []
 paths:
   /stack-analyses:
     post:
@@ -439,3 +442,9 @@ components:
         submitted_at:
           type: string
       description: Response structure for stack analyses post
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      description: 3Scale user key
+      name: user_key
+      in: query
