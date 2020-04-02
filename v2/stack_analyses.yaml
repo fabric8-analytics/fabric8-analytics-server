@@ -6,12 +6,14 @@ servers:
   - url: https://f8a-analytics-2445582058137.{environment}.gw.apicast.io/api/v2
     variables:
       environment:
-        default: api    # Production server
+        default: production # Production server
         enum:
           - production # Production server
           - staging # Staging server
-security:
+
+security: # All endpoints need 3scale userkey
   - tokenAuth: []
+
 paths:
   /stack-analyses:
     post:
@@ -19,7 +21,6 @@ paths:
       - Scan Services
       summary: Initiates a scan to gather security and other details about an application
         stack and related recommendations to improve the stack
-      operationId: f8a_scanner.api_v2.stack-analyses-post
       parameters:
       - name: ecosystem
         in: header
@@ -85,7 +86,6 @@ paths:
       - Scan Services
       summary: Get security and other details about an application stack and related
         recommendations to improve the stack
-      operationId: f8a_scanner.api_v2.stack-analyses-get
       parameters:
       - name: request-id
         in: path
