@@ -4,7 +4,7 @@ info:
   version: "2"
 servers:
 - url: https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2
-  description: "Fabric8 Server"
+  description: "Dependency Analytics Server"
 security:
 - tokenAuth: []
 paths:
@@ -59,177 +59,6 @@ paths:
           content: {}
 components:
   schemas:
-    Version:
-      title: Component Version Details
-      type: object
-      properties:
-        pecosystem:
-          type: array
-          items:
-            type: string
-        pname:
-          type: array
-          items:
-            type: string
-        version:
-          type: array
-          items:
-            type: string
-        declared_licenses:
-          type: array
-          items:
-            type: string
-        licenses:
-          type: array
-          items:
-            type: string
-        last_updated:
-          type: array
-          items:
-            type: number
-            format: float
-        vulnerability_ids:
-          type: array
-          items:
-            type: string
-        description:
-          type: array
-          items:
-            type: string
-      description: Component version details
-    Package:
-      title: Component Package Specific Details
-      type: object
-      properties:
-        libio_dependents_repos:
-          type: array
-          items:
-            type: string
-        libio_latest_release:
-          type: array
-          items:
-            type: string
-        gh_prs_last_year_opened:
-          type: array
-          items:
-            type: integer
-        libio_latest_version:
-          type: array
-          items:
-            type: string
-        last_updated:
-          type: array
-          items:
-            type: number
-            format: float
-        gh_subscribers_count:
-          type: array
-          items:
-            type: number
-        gh_stargazers:
-          type: array
-          items:
-            type: number
-        libio_dependents_projects:
-          type: array
-          items:
-            type: string
-        gh_forks:
-          type: array
-          items:
-            type: integer
-        libio_usedby:
-          type: array
-          items:
-            type: string
-        gh_issues_last_month_closed:
-          type: array
-          items:
-            type: integer
-        ecosystem:
-          type: array
-          items:
-            type: string
-        gh_prs_last_year_closed:
-          type: array
-          items:
-            type: integer
-        gh_issues_last_year_opened:
-          type: array
-          items:
-            type: integer
-        gh_prs_last_month_closed:
-          type: array
-          items:
-            type: integer
-        gh_prs_last_month_opened:
-          type: array
-          items:
-            type: integer
-        vertex_label:
-          type: array
-          items:
-            type: string
-        gh_contributors_count:
-          type: array
-          items:
-            type: integer
-        gh_issues_last_month_opened:
-          type: array
-          items:
-            type: integer
-        gh_issues_last_year_closed:
-          type: array
-          items:
-            type: integer
-        latest_version:
-          type: array
-          items:
-            type: integer
-        gh_open_issues_count:
-          type: array
-          items:
-            type: integer
-        name:
-          type: array
-          items:
-            type: string
-        package_relative_used:
-          type: array
-          items:
-            type: string
-        package_dependents_count:
-          type: array
-          items:
-            type: integer
-        libio_total_releases:
-          type: array
-          items:
-            type: string
-        tokens:
-          type: array
-          items:
-            type: string
-      description: Component package details
-    ComponentAnalysesDataDetails:
-      title: Component Analyses Package and Version
-      type: object
-      properties:
-        version:
-          $ref: '#/components/schemas/Version'
-        package:
-          $ref: '#/components/schemas/Package'
-      description: Component analyses data for package and version
-    CVE:
-      title: CVE and CVSS information
-      type: object
-      properties:
-        cvss:
-          type: number
-          format: float
-        id:
-          type: string
-      description: CVE details
     CveDetails:
       title: CVE Details
       type: object
@@ -237,10 +66,15 @@ components:
         cve:
           type: array
           items:
-            $ref: '#/components/schemas/CVE'
+            type: object
+            properties:
+              id:
+                type: string
+              cvss:
+                type: string
       description: Information of the CVE found
-    VendorRecommendation:
-      title: Vendor Recommendation Information
+    PrivateRecommendation:
+      title: Vendor Private Recommendation Information
       type: object
       properties:
         change_to:
@@ -259,19 +93,36 @@ components:
           type: integer
         vendor_package_link:
           type: string
-      description: Vendor Recommendation information for Standard and Premium Recommendation.
+      description: Vendor Recommendation information for Premium Recommendation.
+
+    PublicRecommendation:
+      title: Vendor Public Recommendation Information
+      type: object
+      properties:
+        change_to:
+          type: string
+        component-analyses:
+          $ref: '#/components/schemas/CveDetails'
+        message:
+          type: string
+        severity:
+          type: string
+        public_vulnerabilities:
+          type: integer
+        vendor_package_link:
+          type: string
+      description: Vendor Recommendation information for Standard Recommendation.
+
     ComponentAnalysesData:
       title: Component Analyses Data
       type: object
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ComponentAnalysesDataDetails'
         recommendation:
           type: object
           items:
-            $ref: '#/components/schemas/VendorRecommendation'
+            oneOf:
+              - $ref: '#/components/schemas/PrivateRecommendation'
+              - $ref: '#/components/schemas/PublicRecommendation'
       description: Component analyses data
     ComponentAnalysesResponse:
       title: Response of Component Analyses
