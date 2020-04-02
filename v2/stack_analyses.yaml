@@ -111,16 +111,16 @@ paths:
           content: {}
 components:
   schemas:
-    VulnerabilityForUser:
-      title: VulnerabilityForUser
+    VulnerabilityForRegisteredUser:
+      title: VulnerabilityForRegisteredUser
       allOf:
         - $ref: '#/components/schemas/ExtendedVulnerabilityFields'
         - oneOf:
           - $ref: '#/components/schemas/PublicVulnerability'
           - $ref: '#/components/schemas/PrivateVulnerability'
       description: Vulnerability details for registered users
-    VulnerabilityForAnonymous:
-      title: VulnerabilityForAnonymous
+    VulnerabilityForFreeTier:
+      title: VulnerabilityForFreeTier
       allOf:
         - $ref: '#/components/schemas/PublicVulnerability'
       description: Vulnerability details for unregistered users
@@ -321,15 +321,15 @@ components:
               description: Publicly known vulnerability details
               items:
                 oneOf:
-                  - $ref: '#/components/schemas/VulnerabilityForUser'
-                  - $ref: '#/components/schemas/VulnerabilityForAnonymous'
+                  - $ref: '#/components/schemas/VulnerabilityForRegisteredUser'
+                  - $ref: '#/components/schemas/VulnerabilityForFreeTier'
             private_vulnerabilities:
               type: array
               description: Private vulnerability details, available only to registered
                 users
               items:
                 oneOf:
-                  - $ref: '#/components/schemas/VulnerabilityForUser'
+                  - $ref: '#/components/schemas/VulnerabilityForRegisteredUser'
             affected_direct_deps:
               type: array
               description: Lists all direct dependencies of this package
