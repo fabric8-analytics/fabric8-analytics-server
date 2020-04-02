@@ -11,7 +11,7 @@ servers:
           - production # Production server
           - staging # Staging server
 
-security: # All endpoints need 3scale userkey
+security: # All endpoints needs 3scale user_key, refer securitySchemes
   - tokenAuth: []
 
 paths:
