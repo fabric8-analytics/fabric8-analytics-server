@@ -59,11 +59,11 @@ paths:
           content: {}
 components:
   schemas:
-    CveDetails:
-      title: CVE Details
+    VulnerabilityDetails:
+      title: Vulnerability Details
       type: object
       properties:
-        cve:
+        vulneability:
           type: array
           items:
             type: object
@@ -72,7 +72,8 @@ components:
                 type: string
               cvss:
                 type: string
-      description: Information of the CVE found
+      description: Information of the vulnerability found
+
     PrivateRecommendation:
       title: Vendor Private Recommendation Information
       type: object
@@ -80,7 +81,7 @@ components:
         change_to:
           type: string
         component-analyses:
-          $ref: '#/components/schemas/CveDetails'
+          $ref: '#/components/schemas/VulnerabilityDetails'
         message:
           type: string
         severity:
@@ -102,7 +103,7 @@ components:
         change_to:
           type: string
         component-analyses:
-          $ref: '#/components/schemas/CveDetails'
+          $ref: '#/components/schemas/VulnerabilityDetails'
         message:
           type: string
         severity:
