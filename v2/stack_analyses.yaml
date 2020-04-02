@@ -3,8 +3,13 @@ info:
   title: Stack Analyses API
   version: "2.0"
 servers:
-  - url: 'https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2'
-    description: Fabric8 Server
+  - url: https://f8a-analytics-2445582058137.{environment}.gw.apicast.io/api/v2
+    variables:
+      environment:
+        default: api    # Production server
+        enum:
+          - production # Production server
+          - staging # Staging server
 security:
   - tokenAuth: []
 paths:
