@@ -86,11 +86,11 @@ components:
           type: string
         severity:
           type: string
-        public_vulnerabilities:
+        public_vulnerabilities_count:
           type: integer
-        private_vulnerabilities:
+        private_vulnerabilities_count:
           type: integer
-        exploitable_vulnerabilities:
+        exploitable_vulnerabilities_count:
           type: integer
         vendor_package_link:
           type: string
@@ -108,7 +108,7 @@ components:
           type: string
         severity:
           type: string
-        public_vulnerabilities:
+        public_vulnerabilities_count:
           type: integer
         vendor_package_link:
           type: string
