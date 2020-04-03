@@ -78,9 +78,11 @@ components:
       title: Vendor Private Recommendation Information
       type: object
       properties:
-        change_to:
+        recommended_version:
           type: string
-        component-analyses:
+        affected_version:
+          type: string
+        component_analyses:
           $ref: '#/components/schemas/VulnerabilityDetails'
         message:
           type: string
@@ -100,9 +102,11 @@ components:
       title: Vendor Public Recommendation Information
       type: object
       properties:
-        change_to:
+        recommended_version:
           type: string
-        component-analyses:
+        affected_version:
+          type: string
+        component_analyses:
           $ref: '#/components/schemas/VulnerabilityDetails'
         message:
           type: string
