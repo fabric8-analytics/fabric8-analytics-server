@@ -73,7 +73,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StackAnalysesPostResponse'
+                $ref: '#/components/schemas/UserStackIdentifier'
         400:
           description: Bad request
           content: {}
@@ -99,7 +99,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StackAnalysesGetResponse'
+                $ref: '#/components/schemas/StackAnalysesReport'
         401:
           description: Request unauthorized
           content: {}
@@ -292,8 +292,8 @@ components:
         dependent_projects:
           type: integer
       description: Github details
-    Dependency:
-      title: Dependency
+    PackageDetailsBase:
+      title: PackageDetailsBase
       allOf:
         - $ref: '#/components/schemas/Package'
         - type: object
@@ -316,20 +316,6 @@ components:
               type: integer
             private_vulnerabilities_count:
               type: integer
-            public_vulnerabilities:
-              type: array
-              description: Publicly known vulnerability details
-              items:
-                oneOf:
-                  - $ref: '#/components/schemas/VulnerabilityForRegisteredUser'
-                  - $ref: '#/components/schemas/VulnerabilityForFreeTier'
-            private_vulnerabilities:
-              type: array
-              description: Private vulnerability details, available only to registered
-                users
-              items:
-                oneOf:
-                  - $ref: '#/components/schemas/VulnerabilityForRegisteredUser'
             affected_direct_deps:
               type: array
               description: Lists all direct dependencies of this package
@@ -342,47 +328,45 @@ components:
                     type: string
             osio_user_count:
               type: integer
-          description: Details of the known dependencies
-    UserStackInfo:
-      title: UserStackInfo
-      type: object
-      properties:
-        unknown_dependencies:
-          type: array
-          items:
-            $ref: '#/components/schemas/Package'
-        ecosystem:
-          type: string
-        unknown_dependencies_count:
-          type: integer
-        analyzed_dependencies:
-          type: array
-          items:
-            $ref: '#/components/schemas/Dependency'
-        analyzed_dependencies_count:
-          type: integer
-        license_analysis:
-          $ref: '#/components/schemas/LicenseAnalysis'
-        distinct_licenses:
-          type: array
-          items:
-            type: string
-        stack_license_conflict:
-          type: boolean
-        dependencies:
-          type: array
-          items:
-            $ref: '#/components/schemas/PackageWithTransitive'
-        total_licenses:
-          type: integer
-        recommendation_ready:
-          type: boolean
-      description: Stack analyses descriptive statistics
+          description: Details of the package
+    PackageDetailsForRegisteredUser:
+      title: PackageDetailsForRegisteredUser
+      allOf:
+        - $ref: '#/components/schemas/PackageDetailsBase'
+        - type: object
+          properties:
+            public_vulnerabilities:
+              type: array
+              description: Publicly known vulnerability details
+              items:
+                $ref: '#/components/schemas/VulnerabilityForRegisteredUser'
+            private_vulnerabilities:
+              type: array
+              description: Private vulnerability details, available only to registered
+                users
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/VulnerabilityForRegisteredUser'
+          description: Details of the package for registered users
+    PackageDetailsForFreeTier:
+      title: PackageDetailsForFreeTier
+      allOf:
+        - $ref: '#/components/schemas/PackageDetailsBase'
+        - type: object
+          properties:
+            public_vulnerabilities:
+              type: array
+              description: Publicly known vulnerability details
+              items:
+                $ref: '#/components/schemas/VulnerabilityForFreeTier'
+          description: Details of the package for free tier users      
     RecommendedPackageData:
       title: RecommendedPackageData
       description: Recommended packages data
       allOf:
-      - $ref: '#/components/schemas/Dependency'
+      - oneOf:
+        - $ref: '#/components/schemas/PackageDetailsForFreeTier'
+        - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
       - type: object
         properties:
           confidence_reason:
@@ -420,15 +404,45 @@ components:
       properties:
         manifest_file_path:
           type: string
-        user_stack_info:
-          $ref: '#/components/schemas/UserStackInfo'
         manifest_name:
           type: string
+        unknown_dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Package'
+        ecosystem:
+          type: string
+        unknown_dependencies_count:
+          type: integer
+        analyzed_dependencies:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/PackageDetailsForFreeTier'
+              - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
+        analyzed_dependencies_count:
+          type: integer
+        license_analysis:
+          $ref: '#/components/schemas/LicenseAnalysis'
+        distinct_licenses:
+          type: array
+          items:
+            type: string
+        stack_license_conflict:
+          type: boolean
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/PackageWithTransitive'
+        total_licenses:
+          type: integer
+        recommendation_ready:
+          type: boolean  
         recommendation:
           $ref: '#/components/schemas/StackRecommendation'
       description: Stack analyses result data
-    StackAnalysesGetResponse:
-      title: StackAnalysesGetResponse
+    StackAnalysesReport:
+      title: StackAnalysesReport
       type: object
       properties:
         result:
@@ -436,8 +450,8 @@ components:
           items:
             $ref: '#/components/schemas/StackAnalysesResult'
       description: Response structure for stack analyses
-    StackAnalysesPostResponse:
-      title: StackAnalysesPostResponse
+    UserStackIdentifier:
+      title: UserStackIdentifier
       type: object
       properties:
         id:
@@ -446,7 +460,7 @@ components:
           type: string
         submitted_at:
           type: string
-      description: Response structure for stack analyses post
+      description: Response structure for stack analyses post call
   securitySchemes:
     tokenAuth:
       type: apiKey
