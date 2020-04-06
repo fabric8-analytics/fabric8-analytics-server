@@ -333,30 +333,27 @@ components:
             osio_user_count:
               type: integer
           description: Details of the package
-    RecommendedVersionForPublicVulnerability:
-      title: RecommendedVersionForPublicVulnerability
+    RecommendedVersionForPublicVulnerabilities:
+      title: RecommendedVersionForPublicVulnerabilities
       properties:
         recommended_version:
             type: string
             example: 3.0.0
       description: Recommended package version which includes only fix public vulnerability
-    RecommendedVersionForPrivateVulnerability:
-      title: RecommendedVersionForPrivateVulnerability
+    RecommendedVersionForPublicAndPrivateVulnerabilities:
+      title: RecommendedVersionForPublicAndPrivateVulnerabilities
       properties:
         recommended_version:
             type: string
             example: 3.0.0
-      description: Recommended package version which includes fix for private vulnerability
+      description: Recommended package version which includes fix for public and private vulnerability
     PackageDetailsForRegisteredUser:
       title: PackageDetailsForRegisteredUser
       allOf:
         - $ref: '#/components/schemas/PackageDetailsBase'
-        - oneof:
-          - $ref: '#/components/schemas/RecommendedVersionForPublicVulnerability'
-          - $ref: '#/components/schemas/RecommendedVersionForPrivateVulnerability'
+        - $ref: '#/components/schemas/RecommendedVersionForPublicAndPrivateVulnerabilities'
         - type: object
           properties:
-            
             public_vulnerabilities:
               type: array
               description: Publicly known vulnerability details
@@ -373,6 +370,7 @@ components:
       title: PackageDetailsForFreeTier
       allOf:
         - $ref: '#/components/schemas/PackageDetailsBase'
+        - $ref: '#/components/schemas/RecommendedVersionForPublicVulnerabilities'
         - type: object
           properties:
             public_vulnerabilities:
