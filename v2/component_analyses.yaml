@@ -137,7 +137,7 @@ components:
               type: integer
             vendor_package_link:
               type: string
-      description: Vendor Recommendation information for Premium Recommendation.
+          description: Vendor Recommendation information for Premium Recommendation.
 
     FreeUser:
       title: Vendor Public Recommendation Information
