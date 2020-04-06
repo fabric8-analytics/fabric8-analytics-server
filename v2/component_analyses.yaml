@@ -66,9 +66,9 @@ paths:
                       recommended_version : 2
                       message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
                       severity: "high"
-                      public_vulnerabilities: 2
-                      private_vulnerabilities: 1
-                      exploitable_vulnerabilities: 0
+                      public_vulnerabilities_count: 2
+                      private_vulnerabilities_count: 1
+                      exploitable_vulnerabilities_count: 0
                       vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
                 FreeUser:
                   value:
@@ -83,7 +83,7 @@ paths:
                       recommended_version : 2
                       message: "2 vulnerabilities within this dependency"
                       severity: "high"
-                      public_vulnerabilities: 2
+                      public_vulnerabilities_count: 2
                       vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
 
         202:
@@ -120,7 +120,7 @@ components:
           type: object
           properties:
             recommended_version:
-              type: string
+              type: integer
             affected_version:
               type: string
             component_analyses:
@@ -147,7 +147,7 @@ components:
           type: object
           properties:
             recommended_version:
-              type: string
+              type: integer
             affected_version:
               type: string
             component_analyses:
