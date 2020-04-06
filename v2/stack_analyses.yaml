@@ -27,7 +27,7 @@ paths:
         description: The ecosystem of the stack analysis being called.
         required: true
         schema:
-          type: string
+          $ref: '#/components/schemas/Ecosystem'
       - name: origin
         in: header
         description: This is required to give an indication as to from where is the
@@ -93,6 +93,7 @@ paths:
         required: true
         schema:
           type: string
+          example: 478eb2dedca34dbc80146805e08e31b4
       responses:
         200:
           description: Detailed response for the requested application component
@@ -100,6 +101,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StackAnalysesReport'
+        202:
+          description: Report generation is inprogress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: 
+                    type: string
+                    example: Analysis for request ID '478eb2dedca34dbc80146805e08e31b4' is in progress
         401:
           description: Request unauthorized
           content: {}
@@ -111,20 +122,14 @@ paths:
           content: {}
 components:
   schemas:
-    VulnerabilityDetailsForRegisteredUser:
-      title: VulnerabilityForRegisteredUser
-      allOf:
-        - $ref: '#/components/schemas/PremiumVulnerabilityFields'
-        - oneOf:
-          - $ref: '#/components/schemas/PublicVulnerabilityDetails'
-          - $ref: '#/components/schemas/PrivateVulnerabilityDetails'
-      description: Vulnerability details for registered users
-    VulnerabilityDetailsForFreeTier:
-      title: VulnerabilityDetailsForFreeTier
-      oneOf:
-        - $ref: '#/components/schemas/PublicVulnerabilityDetails'
-        - $ref: '#/components/schemas/BasicPrivateVulnerabilityDetails'
-      description: Vulnerability details for unregistered users
+    Ecosystem:
+      title: Ecosystem
+      type: string
+      enum:
+        - maven
+        - pypi
+        - npm
+      description: List of supported package ecosystems
     BasicVulnerabilityFields:
       title: VulnerabilityBase
       properties:
@@ -138,20 +143,22 @@ components:
         severity:
           type: string
           enum:
-          - low
-          - medium
-          - high
-          - critical
+            - low
+            - medium
+            - high
+            - critical
         title:
           type: string
           example: SQL Injection
         id:
           type: string
+          example: SNYK-PYTHON-DJANGO-40027
         url:
-          type: string        
+          type: string
+          example: https://snyk.io/vuln/SNYK-PYTHON-DJANGO-4002
       description: Limited private vulnerability details for free tier users
     PremiumVulnerabilityFields:
-      title: ExtendedVulnerabilityFields
+      title: PremiumVulnerabilityFields
       type: object
       properties:
         malicious:
@@ -159,12 +166,19 @@ components:
           default: false
         patch_exists:
           type: boolean
+          default: false
         fixable:
           type: boolean
+          default: false
         exploit:
           type: string
+          example: 
+            - High
+            - Not Defined
         description:
           type: string
+          example: |
+            "## Overview\r\n[`django`](https://pypi.python.org/pypi/django) is a high-level Python Web framework that encourages rapid development and clean, pragmatic design.\r\n\r\nAffected versions of this package expose sensitive information due to not properly restricting the use of a query string that performs certain object filtering. An attacker may obtain sensitive information via a series of requests containing regular expressions, as demonstrated by a `created_by__password__regex` parameter.\r\n\r\n## References\r\n- [Django Vulnerability Description](http://www.djangoproject.com/weblog/2010/dec/22/security/)\r\n- [GitHub Commit](https://github.com/django/django/commit/732198ed5c)\r\n- [Redhat Bugzilla](https://bugzilla.redhat.com/show_bug.cgi?id=665373)\r\n- [Openwall](http://www.openwall.com/lists/oss-security/2011/01/03/5)\r\n- [CVE](https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2010-4534)\r\n"
         fixed_in:
           type: string
         references:
@@ -174,8 +188,10 @@ components:
             properties:
               title:
                 type: string
+                example: Redhat Security Advisory
               url:
                 type: string
+                example: https://access.redhat.com/security/cve/CVE-2013-2186
       description: Extended Vulnerability details, available only to registered users
     PublicVulnerabilityDetails:
       title: PublicVulnerabilityDetails
@@ -188,13 +204,14 @@ components:
               type: array
               items:
                 type: string
+              example: [CVE-2014-0474, CVE-2014-0475]
     PrivateVulnerabilityDetails:
       title: PrivateVulnerabilityDetails
       allOf:
         - $ref: '#/components/schemas/BasicVulnerabilityFields'
       description: Private vulnerability details
-    BasicPrivateVulnerabilityDetails:
-      title: BasicPrivateVulnerabilityDetails
+    LimitedPrivateVulnerabilityDetails:
+      title: LimitedPrivateVulnerabilityDetails
       allOf:
         - $ref: '#/components/schemas/BasicVulnerabilityFields'
       description: Basic private vulnerability details
@@ -219,6 +236,13 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Package'
+              example:
+                - requests:
+                    name: requests
+                    version: 1.2.3
+                - six:
+                    name: six
+                    version: 5.1.1
       description: Package details with transitives
     UnknownLicenses:
       title: UnknownLicenses
@@ -228,13 +252,38 @@ components:
           type: array
           items:
             type: object
-            properties: {}
+            properties:
+              license1:
+                type: string
+              license2:
+                type: string
         really_unknown:
           type: array
           items:
             type: object
-            properties: {}
+            properties:
+              package:
+                type: string
+              license:
+                type: string
       description: Data of licenses unknown to the system
+    ConflictPackages:
+      title: ConflictPackages
+      type: object
+      properties:
+        package1:
+          type: string
+          example: django
+        license1:
+          type: string
+          example: BSD License (BSD)
+        package2:
+          type: string
+          example: rustdoc
+        license2: 
+          type: string
+          example: General Public License V3(GPL)
+      description: Pair of packages which has conflict in license
     LicenseAnalysis:
       title: LicenseAnalysis
       type: object
@@ -244,14 +293,10 @@ components:
           items:
             type: object
             properties: {}
-        derived_stack_licenses:
-          type: array
-          items:
-            type: string
         conflict_packages:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/ConflictPackages'
         current_stack_license:
           type: object
           properties: {}
@@ -264,10 +309,12 @@ components:
       properties:
         watchers:
           type: integer
+          example: 1002
         first_release_date:
           type: string
         total_releases:
           type: integer
+          example: 12
         issues:
           type: object
           properties: {}
@@ -282,18 +329,22 @@ components:
           type: string
         forks_count:
           type: integer
+          example: 123
         contributors:
           type: integer
+          example: 12
         size:
           type: string
         stargazers_count:
           type: integer
+          example: 50000
         used_by:
           type: array
           items:
             type: string
         dependent_projects:
           type: integer
+          example: 1534
       description: Github details
     PackageDetailsBase:
       title: PackageDetailsBase
@@ -310,16 +361,20 @@ components:
               type: array
               items:
                 type: string
+              example:
+                - Apache License, Version 2.0
             topic_list:
               type: array
               items:
                 type: string
             ecosystem:
-              type: string
+              $ref: '#/components/schemas/Ecosystem'
             public_vulnerabilities_count:
               type: integer
+              example: 21
             private_vulnerabilities_count:
               type: integer
+              example: 3
             affected_direct_deps:
               type: array
               description: Lists all direct dependencies of this package
@@ -332,6 +387,7 @@ components:
                     type: string
             osio_user_count:
               type: integer
+              example: 123
           description: Details of the package
     RecommendedVersionForPublicVulnerabilities:
       title: RecommendedVersionForPublicVulnerabilities
@@ -358,13 +414,17 @@ components:
               type: array
               description: Publicly known vulnerability details
               items:
-                $ref: '#/components/schemas/VulnerabilityDetailsForRegisteredUser'
+                allOf:
+                  - $ref: '#/components/schemas/PremiumVulnerabilityFields'
+                  - $ref: '#/components/schemas/PublicVulnerabilityDetails'
             private_vulnerabilities:
               type: array
               description: Private vulnerability details, available only to registered
                 users
               items:
-                $ref: '#/components/schemas/VulnerabilityDetailsForRegisteredUser'
+                allOf:
+                  - $ref: '#/components/schemas/PremiumVulnerabilityFields'
+                  - $ref: '#/components/schemas/PrivateVulnerabilityDetails'
           description: Details of the package for registered users
     PackageDetailsForFreeTier:
       title: PackageDetailsForFreeTier
@@ -377,12 +437,12 @@ components:
               type: array
               description: Publicly known vulnerability details
               items:
-                $ref: '#/components/schemas/VulnerabilityDetailsForFreeTier'
+                $ref: '#/components/schemas/PublicVulnerabilityDetails'
             private_vulnerabilities:
               type: array
               description: Private vulnerability details with limited info
               items:
-                $ref: '#/components/schemas/VulnerabilityDetailsForFreeTier'
+                $ref: '#/components/schemas/LimitedPrivateVulnerabilityDetails'
           description: Details of the package for free tier users      
     RecommendedPackageData:
       title: RecommendedPackageData
@@ -428,16 +488,19 @@ components:
       properties:
         manifest_file_path:
           type: string
+          example: pom.xml
         manifest_name:
           type: string
+          example: dependencies.txt
         unknown_dependencies:
           type: array
           items:
             $ref: '#/components/schemas/Package'
         ecosystem:
-          type: string
+          $ref: '#/components/schemas/Ecosystem'
         unknown_dependencies_count:
           type: integer
+          example: 3
         analyzed_dependencies:
           type: array
           items:
@@ -446,6 +509,7 @@ components:
               - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
         analyzed_dependencies_count:
           type: integer
+          example: 25
         license_analysis:
           $ref: '#/components/schemas/LicenseAnalysis'
         distinct_licenses:
@@ -460,6 +524,7 @@ components:
             $ref: '#/components/schemas/PackageWithTransitives'
         total_licenses:
           type: integer
+          example: 15
         recommendation_ready:
           type: boolean  
         recommendation:
@@ -480,14 +545,43 @@ components:
       properties:
         id:
           type: string
+          example: 229e7da76708fe374d8c10fa752e72989f
         status:
           type: string
+          example: success
         submitted_at:
           type: string
+          example: 2020-04-06 11:56:08.349405
       description: Response structure for stack analyses post call
   securitySchemes:
     tokenAuth:
       type: apiKey
       description: 3Scale user key
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
       name: user_key
       in: query
