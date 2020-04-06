@@ -80,6 +80,7 @@ paths:
         401:
           description: Request Unauthorized
           content: {}
+
   /stack-analyses/{request-id}:
     get:
       tags:
@@ -130,6 +131,7 @@ components:
         - pypi
         - npm
       description: List of supported package ecosystems
+
     BasicVulnerabilityFields:
       title: VulnerabilityBase
       properties:
@@ -157,6 +159,7 @@ components:
           type: string
           example: https://snyk.io/vuln/SNYK-PYTHON-DJANGO-4002
       description: Limited private vulnerability details for free tier users
+
     PremiumVulnerabilityFields:
       title: PremiumVulnerabilityFields
       type: object
@@ -190,10 +193,13 @@ components:
               url:
                 type: string
                 example: https://access.redhat.com/security/cve/CVE-2013-2186
-      description: Extended Vulnerability details, available only to registered users
+      description: |
+        Extended Vulnerability details, available only to registered users
+
     PublicVulnerabilityDetails:
       title: PublicVulnerabilityDetails
-      description: Publicaly known Vulnerability details with associated CVES
+      description: |
+        Publicaly known Vulnerability details with associated CVES
       allOf:
         - $ref: '#/components/schemas/BasicVulnerabilityFields'
         - type: object
@@ -203,16 +209,19 @@ components:
               items:
                 type: string
               example: [CVE-2014-0474, CVE-2014-0475]
+
     PrivateVulnerabilityDetails:
       title: PrivateVulnerabilityDetails
       allOf:
         - $ref: '#/components/schemas/BasicVulnerabilityFields'
       description: Private vulnerability details
+
     LimitedPrivateVulnerabilityDetails:
       title: LimitedPrivateVulnerabilityDetails
       allOf:
         - $ref: '#/components/schemas/BasicVulnerabilityFields'
       description: Basic private vulnerability details
+
     Package:
       title: Package
       type: object
@@ -224,6 +233,7 @@ components:
           type: string
           example: 1.2.1
       description: Package details
+
     PackageWithTransitives:
       title: PackageWithTransitives
       allOf:
@@ -242,6 +252,7 @@ components:
                     name: six
                     version: 5.1.1
       description: Package details with transitives
+
     UnknownLicenses:
       title: UnknownLicenses
       type: object
@@ -269,6 +280,7 @@ components:
                 type: string
                 example: BSD License (BSD)
       description: Data of licenses unknown to the system
+
     ConflictPackages:
       title: ConflictPackages
       type: object
@@ -286,6 +298,7 @@ components:
           type: string
           example: General Public License V3(GPL)
       description: Pair of packages which has conflict in license
+
     LicenseAnalysis:
       title: LicenseAnalysis
       type: object
@@ -305,6 +318,7 @@ components:
         unknown_licenses:
           $ref: '#/components/schemas/UnknownLicenses'
       description: License analyses data
+
     GitHubDetails:
       title: GitHubDetails
       type: object
@@ -348,6 +362,7 @@ components:
           type: integer
           example: 1534
       description: Github details
+
     PackageDetailsBase:
       title: PackageDetailsBase
       allOf:
@@ -391,20 +406,25 @@ components:
               type: integer
               example: 123
           description: Details of the package
+
     RecommendedVersionForPublicVulnerabilities:
       title: RecommendedVersionForPublicVulnerabilities
       properties:
         recommended_version:
             type: string
             example: 3.0.0
-      description: Recommended package version which includes only fix public vulnerability
+      description: |
+        Recommended package version which includes only fix public vulnerability
+
     RecommendedVersionForPublicAndPrivateVulnerabilities:
       title: RecommendedVersionForPublicAndPrivateVulnerabilities
       properties:
         recommended_version:
             type: string
             example: 3.0.0
-      description: Recommended package version which includes fix for public and private vulnerability
+      description: |
+        Recommended package version which includes fix for public and private vulnerability
+
     PackageDetailsForRegisteredUser:
       title: PackageDetailsForRegisteredUser
       allOf:
@@ -421,13 +441,15 @@ components:
                   - $ref: '#/components/schemas/PublicVulnerabilityDetails'
             private_vulnerabilities:
               type: array
-              description: Private vulnerability details, available only to registered
+              description: |
+                Private vulnerability details, available only to registered
                 users
               items:
                 allOf:
                   - $ref: '#/components/schemas/PremiumVulnerabilityFields'
                   - $ref: '#/components/schemas/PrivateVulnerabilityDetails'
           description: Details of the package for registered users
+
     PackageDetailsForFreeTier:
       title: PackageDetailsForFreeTier
       allOf:
@@ -445,7 +467,8 @@ components:
               description: Private vulnerability details with limited info
               items:
                 $ref: '#/components/schemas/LimitedPrivateVulnerabilityDetails'
-          description: Details of the package for free tier users      
+          description: Details of the package for free tier users
+
     RecommendedPackageData:
       title: RecommendedPackageData
       description: Recommended packages data
@@ -465,6 +488,7 @@ components:
             type: array
             items:
               type: string
+
     StackRecommendation:
       title: StackRecommendation
       type: object
@@ -481,6 +505,7 @@ components:
             type: object
             properties: {}
       description: Application stack recommendations
+
     StackAnalysesResult:
       title: StackAnalysesResult
       type: object
@@ -534,6 +559,7 @@ components:
         recommendation:
           $ref: '#/components/schemas/StackRecommendation'
       description: Stack analyses result data
+
     StackAnalysesReport:
       title: StackAnalysesReport
       type: object
@@ -543,6 +569,7 @@ components:
           items:
             $ref: '#/components/schemas/StackAnalysesResult'
       description: Response structure for stack analyses
+
     UserStackIdentifier:
       title: UserStackIdentifier
       type: object
@@ -557,6 +584,7 @@ components:
           type: string
           example: 2020-04-06 11:56:08.349405
       description: Response structure for stack analyses post call
+
   securitySchemes:
     tokenAuth:
       type: apiKey
