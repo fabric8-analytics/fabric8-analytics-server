@@ -99,6 +99,7 @@ components:
   schemas:
     VulnerabilityDetails:
       title: Vulnerability Details
+      description: Information of the vulnerability found
       type: object
       properties:
         vulneability:
@@ -110,10 +111,10 @@ components:
                 type: string
               cvss:
                 type: string
-      description: Information of the vulnerability found
 
     RegisteredUser:
       title: Vendor Private Recommendation Information
+      description: Vendor Recommendation information for Premium Response.
       type: object
       properties:
         recommendation:
@@ -137,10 +138,10 @@ components:
               type: integer
             vendor_package_link:
               type: string
-          description: Vendor Recommendation information for Premium Recommendation.
 
     FreeUser:
       title: Vendor Public Recommendation Information
+      description: Vendor Recommendation information for Standard Response.
       type: object
       properties:
         recommendation:
@@ -160,7 +161,6 @@ components:
               type: integer
             vendor_package_link:
               type: string
-          description: Vendor Recommendation information for Standard Recommendation.
   securitySchemes:
     tokenAuth:
       type: apiKey
