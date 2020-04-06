@@ -163,7 +163,7 @@ components:
       properties:
         malicious:
           type: boolean
-          default: false
+          default: true
         patch_exists:
           type: boolean
           default: false
@@ -172,9 +172,7 @@ components:
           default: false
         exploit:
           type: string
-          example: 
-            - High
-            - Not Defined
+          example: High
         description:
           type: string
           example: |
@@ -255,8 +253,10 @@ components:
             properties:
               license1:
                 type: string
+                example: BSD License (BSD)
               license2:
                 type: string
+                example: General Public License V3(GPL)
         really_unknown:
           type: array
           items:
@@ -264,8 +264,10 @@ components:
             properties:
               package:
                 type: string
+                example: django
               license:
                 type: string
+                example: BSD License (BSD)
       description: Data of licenses unknown to the system
     ConflictPackages:
       title: ConflictPackages
@@ -379,12 +381,12 @@ components:
               type: array
               description: Lists all direct dependencies of this package
               items:
-                type: object
-                properties:
-                  package:
-                    type: string
-                  version:
-                    type: string
+                $ref: '#/components/schemas/Package'
+              example:
+                - name: jinja2
+                  version: 2.5.2
+                - name: django-orm
+                  version: 7.1.0
             osio_user_count:
               type: integer
               example: 123
@@ -456,6 +458,7 @@ components:
           confidence_reason:
             type: number
             format: float
+            example: 83.16431
           reason:
             type: string
           topic_list:
@@ -477,10 +480,6 @@ components:
           items:
             type: object
             properties: {}
-        alternate:
-          type: array
-          items:
-            $ref: '#/components/schemas/RecommendedPackageData'
       description: Application stack recommendations
     StackAnalysesResult:
       title: StackAnalysesResult
@@ -496,11 +495,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Package'
+          example:
+            - name: rocket-db
+              version: 2020.1.alpha
+            - name: jsonp
+              version: 0.0.1
         ecosystem:
           $ref: '#/components/schemas/Ecosystem'
         unknown_dependencies_count:
           type: integer
-          example: 3
+          example: 2
         analyzed_dependencies:
           type: array
           items:
