@@ -69,7 +69,7 @@ paths:
                       public_vulnerabilities: 2
                       private_vulnerabilities: 1
                       exploitable_vulnerabilities: 0
-                      snyk_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+                      vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
                 FreeUser:
                   value:
                     recommendation:
@@ -84,7 +84,7 @@ paths:
                       message: "2 vulnerabilities within this dependency"
                       severity: "high"
                       public_vulnerabilities: 2
-                      snyk_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+                      vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
 
         202:
           description: Package is currently Unavailable. Please try again later
