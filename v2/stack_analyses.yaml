@@ -111,20 +111,46 @@ paths:
           content: {}
 components:
   schemas:
-    VulnerabilityForRegisteredUser:
+    VulnerabilityDetailsForRegisteredUser:
       title: VulnerabilityForRegisteredUser
       allOf:
-        - $ref: '#/components/schemas/ExtendedVulnerabilityFields'
+        - $ref: '#/components/schemas/PremiumVulnerabilityFields'
         - oneOf:
-          - $ref: '#/components/schemas/PublicVulnerability'
-          - $ref: '#/components/schemas/PrivateVulnerability'
+          - $ref: '#/components/schemas/PublicVulnerabilityDetails'
+          - $ref: '#/components/schemas/PrivateVulnerabilityDetails'
       description: Vulnerability details for registered users
-    VulnerabilityForFreeTier:
-      title: VulnerabilityForFreeTier
-      allOf:
-        - $ref: '#/components/schemas/PublicVulnerability'
+    VulnerabilityDetailsForFreeTier:
+      title: VulnerabilityDetailsForFreeTier
+      oneOf:
+        - $ref: '#/components/schemas/PublicVulnerabilityDetails'
+        - $ref: '#/components/schemas/BasicPrivateVulnerabilityDetails'
       description: Vulnerability details for unregistered users
-    ExtendedVulnerabilityFields:
+    BasicVulnerabilityFields:
+      title: VulnerabilityBase
+      properties:
+        cvss:
+          type: number
+          format: float
+          example: 9.8
+        cvss_v3:
+          type: string
+          example: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+        severity:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+          - critical
+        title:
+          type: string
+          example: SQL Injection
+        id:
+          type: string
+        url:
+          type: string        
+      description: Limited private vulnerability details for free tier users
+    PremiumVulnerabilityFields:
       title: ExtendedVulnerabilityFields
       type: object
       properties:
@@ -151,63 +177,40 @@ components:
               url:
                 type: string
       description: Extended Vulnerability details, available only to registered users
-    PublicVulnerability:
-      title: PublicVulnerability
+    PublicVulnerabilityDetails:
+      title: PublicVulnerabilityDetails
       description: Publicaly known Vulnerability details with associated CVES
-      type: object
-      properties:
-        cve_ids:
-          type: array
-          items:
-            type: string
-        cvss:
-          type: number
-          format: float
-        cvss_v3:
-          type: string
-        cwes:
-          type: array
-          items:
-            type: string
-        id:
-          type: string
-        severity:
-          type: string
-          enum:
-          - low
-          - medium
-          - high
-        title:
-          type: string
-        url:
-          type: string
-    PrivateVulnerability:
-      title: PrivateVulnerability
-      properties:
-        id:
-          type: string
-        severity:
-          type: string
-          enum:
-          - low
-          - medium
-          - high
-        title:
-          type: string
-        url:
-          type: string
+      allOf:
+        - $ref: '#/components/schemas/BasicVulnerabilityFields'
+        - type: object
+          properties:
+            cve_ids:
+              type: array
+              items:
+                type: string
+    PrivateVulnerabilityDetails:
+      title: PrivateVulnerabilityDetails
+      allOf:
+        - $ref: '#/components/schemas/BasicVulnerabilityFields'
       description: Private vulnerability details
+    BasicPrivateVulnerabilityDetails:
+      title: BasicPrivateVulnerabilityDetails
+      allOf:
+        - $ref: '#/components/schemas/BasicVulnerabilityFields'
+      description: Basic private vulnerability details
     Package:
       title: Package
       type: object
       properties:
         name:
           type: string
+          example: django
         version:
           type: string
+          example: 1.2.1
       description: Package details
-    PackageWithTransitive:
-      title: PackageWithTransitive
+    PackageWithTransitives:
+      title: PackageWithTransitives
       allOf:
         - $ref: '#/components/schemas/Package'
         - type: object
@@ -241,7 +244,7 @@ components:
           items:
             type: object
             properties: {}
-        f8a_stack_licenses:
+        derived_stack_licenses:
           type: array
           items:
             type: string
@@ -300,6 +303,7 @@ components:
           properties:
             latest_version:
               type: string
+              example: 3.0.5
             github:
               $ref: '#/components/schemas/GitHubDetails'
             licenses:
@@ -329,24 +333,41 @@ components:
             osio_user_count:
               type: integer
           description: Details of the package
+    RecommendedVersionForPublicVulnerability:
+      title: RecommendedVersionForPublicVulnerability
+      properties:
+        recommended_version:
+            type: string
+            example: 3.0.0
+      description: Recommended package version which includes only fix public vulnerability
+    RecommendedVersionForPrivateVulnerability:
+      title: RecommendedVersionForPrivateVulnerability
+      properties:
+        recommended_version:
+            type: string
+            example: 3.0.0
+      description: Recommended package version which includes fix for private vulnerability
     PackageDetailsForRegisteredUser:
       title: PackageDetailsForRegisteredUser
       allOf:
         - $ref: '#/components/schemas/PackageDetailsBase'
+        - oneof:
+          - $ref: '#/components/schemas/RecommendedVersionForPublicVulnerability'
+          - $ref: '#/components/schemas/RecommendedVersionForPrivateVulnerability'
         - type: object
           properties:
+            
             public_vulnerabilities:
               type: array
               description: Publicly known vulnerability details
               items:
-                $ref: '#/components/schemas/VulnerabilityForRegisteredUser'
+                $ref: '#/components/schemas/VulnerabilityDetailsForRegisteredUser'
             private_vulnerabilities:
               type: array
               description: Private vulnerability details, available only to registered
                 users
               items:
-                oneOf:
-                  - $ref: '#/components/schemas/VulnerabilityForRegisteredUser'
+                $ref: '#/components/schemas/VulnerabilityDetailsForRegisteredUser'
           description: Details of the package for registered users
     PackageDetailsForFreeTier:
       title: PackageDetailsForFreeTier
@@ -358,7 +379,12 @@ components:
               type: array
               description: Publicly known vulnerability details
               items:
-                $ref: '#/components/schemas/VulnerabilityForFreeTier'
+                $ref: '#/components/schemas/VulnerabilityDetailsForFreeTier'
+            private_vulnerabilities:
+              type: array
+              description: Private vulnerability details with limited info
+              items:
+                $ref: '#/components/schemas/VulnerabilityDetailsForFreeTier'
           description: Details of the package for free tier users      
     RecommendedPackageData:
       title: RecommendedPackageData
@@ -433,7 +459,7 @@ components:
         dependencies:
           type: array
           items:
-            $ref: '#/components/schemas/PackageWithTransitive'
+            $ref: '#/components/schemas/PackageWithTransitives'
         total_licenses:
           type: integer
         recommendation_ready:
