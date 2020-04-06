@@ -14,7 +14,7 @@ paths:
       - Scan Services
       summary: Get security and other details about a software component and recommendations
         to change to a more secured version
-      operationId: f8a_scanner.api_v2.component-analyses
+      operationId: da_scanner.api_v2.component-analyses
       parameters:
       - name: eco
         in: path
@@ -41,13 +41,51 @@ paths:
           type: string
           enum:
           - snyk
+
       responses:
         200:
           description: Detailed response for the requested application component
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ComponentAnalysesResponse'
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/RegisteredUser'
+                    - $ref: '#/components/schemas/FreeUser'
+              examples:
+                RegisteredUser:
+                  value:
+                    recommendation:
+                      component_analyses:
+                        cve:
+                          - id: "CVE-2018-1002201"
+                            cvss: "1.2"
+
+                          - id: "CVE-2018-1002202"
+                            cvss: "1.3"
+                      recommended_version : 2
+                      message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
+                      severity: "high"
+                      public_vulnerabilities: 2
+                      private_vulnerabilities: 1
+                      exploitable_vulnerabilities: 0
+                      snyk_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+                FreeUser:
+                  value:
+                    recommendation:
+                      component_analyses:
+                        cve:
+                          - id: "CVE-2018-1002201"
+                            cvss: "1.2"
+
+                          - id: "CVE-2018-1002202"
+                            cvss: "1.3"
+                      recommended_version : 2
+                      message: "2 vulnerabilities within this dependency"
+                      severity: "high"
+                      public_vulnerabilities: 2
+                      snyk_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+
         202:
           description: Package is currently Unavailable. Please try again later
           content: {}
@@ -74,68 +112,55 @@ components:
                 type: string
       description: Information of the vulnerability found
 
-    PrivateRecommendation:
+    RegisteredUser:
       title: Vendor Private Recommendation Information
-      type: object
-      properties:
-        recommended_version:
-          type: string
-        affected_version:
-          type: string
-        component_analyses:
-          $ref: '#/components/schemas/VulnerabilityDetails'
-        message:
-          type: string
-        severity:
-          type: string
-        public_vulnerabilities_count:
-          type: integer
-        private_vulnerabilities_count:
-          type: integer
-        exploitable_vulnerabilities_count:
-          type: integer
-        vendor_package_link:
-          type: string
-      description: Vendor Recommendation information for Premium Recommendation.
-
-    PublicRecommendation:
-      title: Vendor Public Recommendation Information
-      type: object
-      properties:
-        recommended_version:
-          type: string
-        affected_version:
-          type: string
-        component_analyses:
-          $ref: '#/components/schemas/VulnerabilityDetails'
-        message:
-          type: string
-        severity:
-          type: string
-        public_vulnerabilities_count:
-          type: integer
-        vendor_package_link:
-          type: string
-      description: Vendor Recommendation information for Standard Recommendation.
-
-    ComponentAnalysesData:
-      title: Component Analyses Data
       type: object
       properties:
         recommendation:
           type: object
-          items:
-            oneOf:
-              - $ref: '#/components/schemas/PrivateRecommendation'
-              - $ref: '#/components/schemas/PublicRecommendation'
-      description: Component analyses data
-    ComponentAnalysesResponse:
-      title: Response of Component Analyses
+          properties:
+            recommended_version:
+              type: string
+            affected_version:
+              type: string
+            component_analyses:
+              $ref: '#/components/schemas/VulnerabilityDetails'
+            message:
+              type: string
+            severity:
+              type: string
+            public_vulnerabilities_count:
+              type: integer
+            private_vulnerabilities_count:
+              type: integer
+            exploitable_vulnerabilities_count:
+              type: integer
+            vendor_package_link:
+              type: string
+      description: Vendor Recommendation information for Premium Recommendation.
+
+    FreeUser:
+      title: Vendor Public Recommendation Information
       type: object
       properties:
-        result:
-          $ref: '#/components/schemas/ComponentAnalysesData'
-      description: Component analyses response
+        recommendation:
+          type: object
+          properties:
+            recommended_version:
+              type: string
+            affected_version:
+              type: string
+            component_analyses:
+              $ref: '#/components/schemas/VulnerabilityDetails'
+            message:
+              type: string
+            severity:
+              type: string
+            public_vulnerabilities_count:
+              type: integer
+            vendor_package_link:
+              type: string
+          description: Vendor Recommendation information for Standard Recommendation.
   securitySchemes:
     tokenAuth:
       type: apiKey
