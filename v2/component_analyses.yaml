@@ -41,6 +41,12 @@ paths:
           type: string
           enum:
           - snyk
+      - name: uuid
+        in: header
+        description: User Identification uuid
+        required: false
+        schema:
+          type: string
 
       responses:
         200:
