@@ -509,6 +509,7 @@ components:
             $ref: '#/components/schemas/RecommendedPackageData'
         manifest_file_path:
           type: string
+          example: pom.xml
         usage_outliers:
           type: array
           items:
