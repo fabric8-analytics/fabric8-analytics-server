@@ -24,12 +24,13 @@ paths:
         an application stack and related recommendations to improve 
         the stack
       parameters:
-      - name: ecosystem
+      - name: uuid
         in: header
-        description: The ecosystem of the stack analysis being called.
-        required: true
+        description: Unique identifier for an User.
+        required: false
         schema:
-          $ref: '#/components/schemas/Ecosystem'
+          type: string
+          format: uuid
       requestBody:
         content:
           multipart/form-data:
@@ -92,7 +93,7 @@ paths:
         required: true
         schema:
           type: string
-          example: 478eb2dedca34dbc80146805e08e31b4
+          example: "478eb2dedca34dbc80146805e08e31b4"
       responses:
         200:
           description: |
