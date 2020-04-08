@@ -19,8 +19,10 @@ paths:
     post:
       tags:
       - Scan Services
-      summary: Initiates a scan to gather security and other details about an application
-        stack and related recommendations to improve the stack
+      summary: |
+        Initiates a scan to gather security and other details about 
+        an application stack and related recommendations to improve 
+        the stack
       parameters:
       - name: ecosystem
         in: header
@@ -28,47 +30,42 @@ paths:
         required: true
         schema:
           $ref: '#/components/schemas/Ecosystem'
-      - name: origin
-        in: header
-        description: This is required to give an indication as to from where is the
-          request getting generated. If from VScode extension, the value which we
-          need to send is 'vscode'.
-        schema:
-          type: string
-          default: vscode
-          enum:
-            - vscode
-      - name: show_transitive
-        in: header
-        description: This is required to enable or disable the transitive support.
-          We need to pass the value as 'true' if transitive is needed. Default value
-          is 'false'.
-        schema:
-          type: boolean
-          default: true
       requestBody:
         content:
           multipart/form-data:
             schema:
               required:
-              - filePath[]
-              - manifest[]
+              - file_path
+              - manifest
+              - ecosystem
+              type: object
               properties:
-                manifest[]:
+                manifest:
                   type: string
-                  description: A manifest file dependencies.txt for maven, npmlist.json
-                    for npm & pylist.json for pypi. Commands to generate these files
-                    are mentioned in the README.md
+                  description: | 
+                    A manifest file dependencies.txt for maven, npmlist.json
+                    for npm & pylist.json for pypi. Commands to 
+                    generate these files are mentioned in the README.md
                   format: binary
-                filePath[]:
+                file_path:
                   type: string
-                  description: The absolute or relative path where the manifest file
-                    is located. This has to be mandatorily provided with the manifest[]
-                    parameter and vice versa.
+                  description: |
+                    The absolute or relative path where the manifest file
+                    is located. This has to be mandatorily provided with 
+                    the manifest[] parameter and vice versa.
+                show_transitive:
+                  type: boolean
+                  default: true
+                  description: |
+                    This is required to enable or disable the 
+                    transitive support.
+                ecosystem:
+                  $ref: '#/components/schemas/Ecosystem'
         required: true
       responses:
         200:
-          description: Response with the unique identifier for the stack analysis
+          description: |
+            Response with the unique identifier for the stack analysis
             request
           content:
             application/json:
@@ -85,8 +82,9 @@ paths:
     get:
       tags:
       - Scan Services
-      summary: Get security and other details about an application stack and related
-        recommendations to improve the stack
+      summary: |
+        Get security and other details about an application stack 
+        and related recommendations to improve the stack.
       parameters:
       - name: request-id
         in: path
@@ -97,7 +95,8 @@ paths:
           example: 478eb2dedca34dbc80146805e08e31b4
       responses:
         200:
-          description: Detailed response for the requested application component
+          description: |
+            Detailed response for the requested application component
           content:
             application/json:
               schema:
@@ -111,7 +110,9 @@ paths:
                 properties:
                   error: 
                     type: string
-                    example: Analysis for request ID '478eb2dedca34dbc80146805e08e31b4' is in progress
+                    example: |
+                      Analysis for request 
+                      ID '478eb2dedca34dbc80146805e08e31b4' is in progress
         401:
           description: Request unauthorized
           content: {}
@@ -141,7 +142,7 @@ components:
           example: 9.8
         cvss_v3:
           type: string
-          example: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+          example: "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
         severity:
           type: string
           enum:
@@ -435,7 +436,8 @@ components:
             type: string
             example: 3.0.0
       description: |
-        Recommended package version which includes only fix public vulnerability
+        Recommended package version which includes only fix 
+        public vulnerability
 
     RecommendedVersionForPublicAndPrivateVulnerabilities:
       title: RecommendedVersionForPublicAndPrivateVulnerabilities
@@ -444,7 +446,8 @@ components:
             type: string
             example: 3.0.0
       description: |
-        Recommended package version which includes fix for public and private vulnerability
+        Recommended package version which includes fix for public 
+        and private vulnerability
 
     PackageDetailsForRegisteredUser:
       title: PackageDetailsForRegisteredUser
@@ -604,7 +607,7 @@ components:
           example: success
         submitted_at:
           type: string
-          example: 2020-04-06 11:56:08.349405
+          example: "2020-04-06 11:56:08.349405"
       description: Response structure for stack analyses post call
 
   securitySchemes:
