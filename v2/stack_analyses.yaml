@@ -177,6 +177,12 @@ components:
           example: true
         exploit:
           type: string
+          enum:
+            - High
+            - Functional
+            - Proof of Concept
+            - Unproven
+            - Not Defined
           example: High
         description:
           type: string
