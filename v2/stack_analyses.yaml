@@ -421,6 +421,11 @@ components:
             osio_user_count:
               type: integer
               example: 123
+            url:
+              type: string
+              example: 
+                - https://snyk.io/vuln/pip:django
+                - https://snyk.io/vuln/pip:jinja2
           description: Details of the package
 
     RecommendedVersionForPublicVulnerabilities:
