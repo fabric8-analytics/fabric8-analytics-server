@@ -51,6 +51,7 @@ paths:
                   oneOf:
                     - $ref: '#/components/schemas/RegisteredUser'
                     - $ref: '#/components/schemas/FreeUser'
+                    - $ref: '#/components/schemas/NoVulnerabilities'
               examples:
                 RegisteredUser:
                   value:
@@ -87,6 +88,9 @@ paths:
                       public_vulnerabilities_count: 2
                       private_vulnerabilities_count: 1
                       registeration_link: "https://app.snyk.io/login"
+                NoVulnerabilities:
+                  value:
+                    recommendation: {}
 
         202:
           description: Package is currently Unavailable. Please try again later
@@ -167,6 +171,15 @@ components:
               type: integer
             registeration_link:
               type: string
+
+    NoVulnerabilities:
+      title: No Vulnerability Response
+      description: No Vulnerability Response.
+      type: object
+      properties:
+        recommendation:
+          type: object
+
   securitySchemes:
     tokenAuth:
       type: apiKey
