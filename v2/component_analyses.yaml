@@ -34,13 +34,6 @@ paths:
         required: true
         schema:
           type: string
-      - name: security-vendor
-        in: header
-        description: Security Vendor
-        schema:
-          type: string
-          enum:
-          - snyk
       - name: uuid
         in: header
         description: User Identification uuid
