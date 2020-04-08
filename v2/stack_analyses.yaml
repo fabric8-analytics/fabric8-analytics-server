@@ -565,6 +565,10 @@ components:
         analyzed_dependencies_count:
           type: integer
           example: 25
+        transitive_count:
+          type: integer
+          default: -1
+          example: 11
         license_analysis:
           $ref: '#/components/schemas/LicenseAnalysis'
         distinct_licenses:
