@@ -44,6 +44,11 @@ paths:
       responses:
         200:
           description: Detailed response for the requested application component
+          headers:
+            uuid:
+              schema:
+                type: string
+              description: User uuid.
           content:
             application/json:
               schema:
@@ -55,7 +60,6 @@ paths:
               examples:
                 RegisteredUser:
                   value:
-                    uuid: "b3a51290-79a3-11ea-bb1f-48f17fb770f5"
                     recommendation:
                       component_analyses:
                         vulnerability:
@@ -74,7 +78,6 @@ paths:
                       vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
                 FreeUser:
                   value:
-                    uuid: "b3a51290-79a3-11ea-bb1f-48f17fb770f5"
                     recommendation:
                       component_analyses:
                         vulnerability:
@@ -92,7 +95,6 @@ paths:
                       registeration_link: "https://app.snyk.io/login"
                 NoVulnerabilities:
                   value:
-                    uuid: "b3a51290-79a3-11ea-bb1f-48f17fb770f5"
                     recommendation: {}
 
         202:
@@ -128,8 +130,6 @@ components:
       description: Vendor Recommendation information for Premium Response.
       type: object
       properties:
-        uuid:
-          type: string
         recommendation:
           type: object
           properties:
@@ -157,8 +157,6 @@ components:
       description: Vendor Recommendation information for Standard Response.
       type: object
       properties:
-        uuid:
-          type: string
         recommendation:
           type: object
           properties:
@@ -184,8 +182,6 @@ components:
       description: No Vulnerability Response.
       type: object
       properties:
-        uuid:
-          type: string
         recommendation:
           type: object
 
