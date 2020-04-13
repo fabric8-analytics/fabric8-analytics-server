@@ -65,6 +65,13 @@ paths:
         required: true
       responses:
         200:
+          headers:
+            uuid:
+              schema:
+                type: string
+                format: uuid
+                description: |
+                  Newly generated Unique identifier for an User.
           description: |
             Response with the unique identifier for the stack analysis
             request
