@@ -27,7 +27,7 @@ paths:
       - name: uuid
         in: header
         description: Unique identifier for an User.
-        required: false
+        required: true
         schema:
           type: string
           format: uuid
@@ -71,7 +71,8 @@ paths:
                 type: string
                 format: uuid
                 description: |
-                  Newly generated Unique identifier for an User.
+                  Newly generated or existing identifier for an User.
+              required: true
           description: |
             Response with the unique identifier for the stack analysis
             request
