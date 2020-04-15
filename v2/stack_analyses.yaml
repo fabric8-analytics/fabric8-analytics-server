@@ -420,16 +420,6 @@ components:
             private_vulnerabilities_count:
               type: integer
               example: 3
-            affected_direct_deps:
-              type: array
-              description: Lists all direct dependencies of this package
-              items:
-                $ref: '#/components/schemas/Package'
-              example:
-                - name: jinja2
-                  version: 2.5.2
-                - name: django-orm
-                  version: 7.1.0
             osio_user_count:
               type: integer
               example: 123
@@ -562,6 +552,11 @@ components:
         manifest_name:
           type: string
           example: dependencies.txt
+        ecosystem:
+          $ref: '#/components/schemas/Ecosystem'
+        unknown_dependencies_count:
+          type: integer
+          example: 2
         unknown_dependencies:
           type: array
           items:
@@ -571,12 +566,10 @@ components:
               version: 2020.1.alpha
             - name: jsonp
               version: 0.0.1
-        ecosystem:
-          $ref: '#/components/schemas/Ecosystem'
-        unknown_dependencies_count:
+        analyzed_direct_dependencies_count:
           type: integer
-          example: 2
-        analyzed_dependencies:
+          example: 25              
+        analyzed_direct_dependencies:
           type: array
           items:
             oneOf:
@@ -587,13 +580,42 @@ components:
               mapping:
                 registered: '#/components/schemas/PackageDetailsForRegisteredUser'
                 freetier: '#/components/schemas/PackageDetailsForFreeTier'
-        analyzed_dependencies_count:
-          type: integer
-          example: 25
+          description: |
+            All direct dependencies details regardless of it's vulnerability status
         transitive_count:
           type: integer
           default: -1
           example: 11
+        vulnerable_transitives_count:
+          type: integer
+          default: -1
+          example: 1        
+        vulnerable_transitives:
+          type: array
+          items:
+            allOf:
+              - type: object
+                properties:
+                  affected_direct_deps:
+                    type: array
+                    description: Lists all direct dependencies of this package
+                    items:
+                      $ref: '#/components/schemas/Package'
+                    example:
+                      - name: jinja2
+                        version: 2.5.2
+                      - name: django-orm
+                        version: 7.1.0
+              - oneOf:
+                - $ref: '#/components/schemas/PackageDetailsForFreeTier'
+                - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
+                discriminator:
+                  propertyName: response_type
+                  mapping:
+                    registered: '#/components/schemas/PackageDetailsForRegisteredUser'
+                    freetier: '#/components/schemas/PackageDetailsForFreeTier' 
+          description: |
+            Transitive details which has vulnerability associated with it.
         license_analysis:
           $ref: '#/components/schemas/LicenseAnalysis'
         distinct_licenses:
