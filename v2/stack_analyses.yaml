@@ -394,6 +394,8 @@ components:
       allOf:
         - $ref: '#/components/schemas/Package'
         - type: object
+          discriminator:
+            propertyName: response_type
           properties:
             latest_version:
               type: string
@@ -436,6 +438,11 @@ components:
               example: 
                 - https://snyk.io/vuln/pip:django
                 - https://snyk.io/vuln/pip:jinja2
+            response_type:
+              type: string
+              enum:
+                - registered
+                - freetier
           description: Details of the package
 
     RecommendedVersionForPublicVulnerabilities:
@@ -509,6 +516,11 @@ components:
       - oneOf:
         - $ref: '#/components/schemas/PackageDetailsForFreeTier'
         - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
+        discriminator:
+          propertyName: response_type
+          mapping:
+            registered: '#/components/schemas/PackageDetailsForRegisteredUser'
+            freetier: '#/components/schemas/PackageDetailsForFreeTier'        
       - type: object
         properties:
           confidence_reason:
@@ -570,6 +582,11 @@ components:
             oneOf:
               - $ref: '#/components/schemas/PackageDetailsForFreeTier'
               - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
+            discriminator:
+              propertyName: response_type
+              mapping:
+                registered: '#/components/schemas/PackageDetailsForRegisteredUser'
+                freetier: '#/components/schemas/PackageDetailsForFreeTier'
         analyzed_dependencies_count:
           type: integer
           example: 25
