@@ -596,7 +596,7 @@ components:
             allOf:
               - type: object
                 properties:
-                  affected_direct_deps:
+                  dependents:
                     type: array
                     description: Lists all direct dependencies of this package
                     items:
@@ -615,7 +615,7 @@ components:
                     registered: '#/components/schemas/PackageDetailsForRegisteredUser'
                     freetier: '#/components/schemas/PackageDetailsForFreeTier' 
           description: |
-            Transitive details which has vulnerability associated with it.
+            Only Transitives which has vulnerability associated with it.
         license_analysis:
           $ref: '#/components/schemas/LicenseAnalysis'
         distinct_licenses:
