@@ -389,13 +389,11 @@ components:
           example: 1534
       description: Github details
 
-    PackageDetailsBase:
-      title: PackageDetailsBase
+    PackageDetails:
+      title: PackageDetails
       allOf:
         - $ref: '#/components/schemas/Package'
         - type: object
-          discriminator:
-            propertyName: response_type
           properties:
             latest_version:
               type: string
@@ -428,11 +426,6 @@ components:
               example: 
                 - https://snyk.io/vuln/pip:django
                 - https://snyk.io/vuln/pip:jinja2
-            response_type:
-              type: string
-              enum:
-                - registered
-                - freetier
           description: Details of the package
 
     RecommendedVersionForPublicVulnerabilities:
@@ -458,7 +451,7 @@ components:
     PackageDetailsForRegisteredUser:
       title: PackageDetailsForRegisteredUser
       allOf:
-        - $ref: '#/components/schemas/PackageDetailsBase'
+        - $ref: '#/components/schemas/PackageDetails'
         - $ref: '#/components/schemas/RecommendedVersionForPublicAndPrivateVulnerabilities'
         - type: object
           properties:
@@ -483,7 +476,7 @@ components:
     PackageDetailsForFreeTier:
       title: PackageDetailsForFreeTier
       allOf:
-        - $ref: '#/components/schemas/PackageDetailsBase'
+        - $ref: '#/components/schemas/PackageDetails'
         - $ref: '#/components/schemas/RecommendedVersionForPublicVulnerabilities'
         - type: object
           properties:
@@ -503,14 +496,7 @@ components:
       title: RecommendedPackageData
       description: Recommended packages data
       allOf:
-      - oneOf:
-        - $ref: '#/components/schemas/PackageDetailsForFreeTier'
-        - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
-        discriminator:
-          propertyName: response_type
-          mapping:
-            registered: '#/components/schemas/PackageDetailsForRegisteredUser'
-            freetier: '#/components/schemas/PackageDetailsForFreeTier'        
+      - $ref: '#/components/schemas/PackageDetails'
       - type: object
         properties:
           confidence_reason:
@@ -541,24 +527,34 @@ components:
             type: object
             properties: {}
       description: Application stack recommendations
-
+      
     StackAnalysesResult:
       title: StackAnalysesResult
       type: object
       properties:
+        registration_status:
+          type: string
+          enum:
+            - registered
+            - freetier
+          required: true
         manifest_file_path:
           type: string
+          required: true
           example: pom.xml
         manifest_name:
           type: string
+          required: true
           example: dependencies.txt
         ecosystem:
           $ref: '#/components/schemas/Ecosystem'
         unknown_dependencies_count:
           type: integer
+          required: true
           example: 2
         unknown_dependencies:
           type: array
+          required: true
           items:
             $ref: '#/components/schemas/Package'
           example:
@@ -568,74 +564,113 @@ components:
               version: 0.0.1
         analyzed_direct_dependencies_count:
           type: integer
+          required: true
           example: 25              
-        analyzed_direct_dependencies:
-          type: array
-          items:
-            oneOf:
-              - $ref: '#/components/schemas/PackageDetailsForFreeTier'
-              - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
-            discriminator:
-              propertyName: response_type
-              mapping:
-                registered: '#/components/schemas/PackageDetailsForRegisteredUser'
-                freetier: '#/components/schemas/PackageDetailsForFreeTier'
-          description: |
-            All direct dependencies details regardless of it's vulnerability status
         transitive_count:
           type: integer
+          required: true
           default: -1
           example: 11
         vulnerable_transitives_count:
           type: integer
+          required: true
           default: -1
-          example: 1        
-        vulnerable_transitives:
-          type: array
-          items:
-            allOf:
-              - type: object
-                properties:
-                  dependents:
-                    type: array
-                    description: Lists all direct dependencies of this package
-                    items:
-                      $ref: '#/components/schemas/Package'
-                    example:
-                      - name: jinja2
-                        version: 2.5.2
-                      - name: django-orm
-                        version: 7.1.0
-              - oneOf:
-                - $ref: '#/components/schemas/PackageDetailsForFreeTier'
-                - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
-                discriminator:
-                  propertyName: response_type
-                  mapping:
-                    registered: '#/components/schemas/PackageDetailsForRegisteredUser'
-                    freetier: '#/components/schemas/PackageDetailsForFreeTier' 
-          description: |
-            Only Transitives which has vulnerability associated with it.
+          example: 1
         license_analysis:
           $ref: '#/components/schemas/LicenseAnalysis'
         distinct_licenses:
           type: array
+          required: true
           items:
             type: string
         stack_license_conflict:
           type: boolean
+          required: true
         dependencies:
           type: array
+          required: true
           items:
             $ref: '#/components/schemas/PackageWithTransitives'
         total_licenses:
           type: integer
+          required: true
           example: 15
         recommendation_ready:
-          type: boolean  
+          type: boolean
+          required: true
         recommendation:
           $ref: '#/components/schemas/StackRecommendation'
       description: Stack analyses result data
+
+    StackAnalysesResultForRegisteredUser:
+      title: StackAnalysesResultForRegisteredUser
+      allOf:
+      - $ref: '#/components/schemas/StackAnalysesResult'      
+      - type: object
+        properties:
+          analyzed_direct_dependencies:
+            type: array
+            items:
+              $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
+            required: true
+            description: |
+              All direct dependencies details regardless of it's vulnerability status
+          vulnerable_transitives:
+            type: array
+            items:
+              allOf:
+                - type: object
+                  properties:
+                    dependents:
+                      type: array
+                      description: Lists all direct dependencies of this package
+                      items:
+                        $ref: '#/components/schemas/Package'
+                      example:
+                        - name: jinja2
+                          version: 2.5.2
+                        - name: django-orm
+                - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
+            description: |
+              Only Transitives which has vulnerability associated with it.
+      description: Stack analyses result for registered user
+      
+    StackAnalysesResultForFreeTier:
+      title: StackAnalysesResultForFreeTier
+      type: object
+      properties:
+        allOf:
+        - $ref: '#/components/schemas/StackAnalysesResult'
+        - type: object
+          required:
+            - registration_link
+          properties:
+            registration_link:
+              type: string
+              format: url
+            analyzed_direct_dependencies:
+              type: array
+              items:
+                $ref: '#/components/schemas/PackageDetailsForFreeTier'
+              description: |
+                All direct dependencies details regardless of it's vulnerability status
+            vulnerable_transitives:
+              type: array
+              items:
+                allOf:
+                  - type: object
+                    properties:
+                      dependents:
+                        type: array
+                        description: Lists all direct dependencies of this package
+                        items:
+                          $ref: '#/components/schemas/Package'
+                        example:
+                          - name: jinja2
+                            version: 2.5.2
+                          - name: django-orm
+                            version: 7.1.0
+                  - $ref: '#/components/schemas/PackageDetailsForFreeTier'
 
     StackAnalysesReport:
       title: StackAnalysesReport
@@ -644,7 +679,11 @@ components:
         result:
           type: array
           items:
-            $ref: '#/components/schemas/StackAnalysesResult'
+            oneOf:
+              - $ref: '#/components/schemas/StackAnalysesResultForRegisteredUser'
+              - $ref: '#/components/schemas/StackAnalysesResultForFreeTier'
+            discriminator:
+              propertyName: registration_link
       description: Response structure for stack analyses
 
     UserStackIdentifier:
