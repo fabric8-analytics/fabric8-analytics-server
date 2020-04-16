@@ -278,6 +278,9 @@ components:
     UnknownLicenses:
       title: UnknownLicenses
       type: object
+      required: 
+        - component_conflict
+        - really_unknown
       properties:
         component_conflict:
           type: array
@@ -306,6 +309,11 @@ components:
     ConflictPackages:
       title: ConflictPackages
       type: object
+      required: 
+        - package1
+        - package2
+        - license1
+        - license2
       properties:
         package1:
           type: string
@@ -324,6 +332,11 @@ components:
     LicenseAnalysis:
       title: LicenseAnalysis
       type: object
+      required: 
+        - outlier_packages
+        - conflict_packages
+        - current_stack_license
+        - unknown_licenses
       properties:
         outlier_packages:
           type: array
@@ -390,6 +403,11 @@ components:
       allOf:
         - $ref: '#/components/schemas/Package'
         - type: object
+          required:
+            - latest_version
+            - ecosystem
+            - public_vulnerabilities_count
+            - private_vulnerabilities_count
           properties:
             latest_version:
               type: string
