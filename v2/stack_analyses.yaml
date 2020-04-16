@@ -531,30 +531,42 @@ components:
     StackAnalysesResult:
       title: StackAnalysesResult
       type: object
+      required:
+        - registration_status
+        - manifest_file_path
+        - manifest_name
+        - ecosystem
+        - unknown_dependencies_count
+        - unknown_dependencies
+        - analyzed_direct_dependencies_count
+        - transitive_count
+        - vulnerable_transitives_count
+        - license_analysis
+        - distinct_licenses
+        - stack_license_conflict
+        - dependencies
+        - total_licenses
+        - recommendation_ready
+        - recommendation
       properties:
         registration_status:
           type: string
           enum:
             - registered
             - freetier
-          required: true
         manifest_file_path:
           type: string
-          required: true
           example: pom.xml
         manifest_name:
           type: string
-          required: true
           example: dependencies.txt
         ecosystem:
           $ref: '#/components/schemas/Ecosystem'
         unknown_dependencies_count:
           type: integer
-          required: true
           example: 2
         unknown_dependencies:
           type: array
-          required: true
           items:
             $ref: '#/components/schemas/Package'
           example:
@@ -564,40 +576,32 @@ components:
               version: 0.0.1
         analyzed_direct_dependencies_count:
           type: integer
-          required: true
           example: 25              
         transitive_count:
           type: integer
-          required: true
           default: -1
           example: 11
         vulnerable_transitives_count:
           type: integer
-          required: true
           default: -1
           example: 1
         license_analysis:
           $ref: '#/components/schemas/LicenseAnalysis'
         distinct_licenses:
           type: array
-          required: true
           items:
             type: string
         stack_license_conflict:
           type: boolean
-          required: true
         dependencies:
           type: array
-          required: true
           items:
             $ref: '#/components/schemas/PackageWithTransitives'
         total_licenses:
           type: integer
-          required: true
           example: 15
         recommendation_ready:
           type: boolean
-          required: true
         recommendation:
           $ref: '#/components/schemas/StackRecommendation'
       description: Stack analyses result data
@@ -607,12 +611,14 @@ components:
       allOf:
       - $ref: '#/components/schemas/StackAnalysesResult'      
       - type: object
+        required:
+          - analyzed_direct_dependencies
+          - vulnerable_transitives
         properties:
           analyzed_direct_dependencies:
             type: array
             items:
               $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
-            required: true
             description: |
               All direct dependencies details regardless of it's vulnerability status
           vulnerable_transitives:
@@ -637,40 +643,41 @@ components:
       
     StackAnalysesResultForFreeTier:
       title: StackAnalysesResultForFreeTier
-      type: object
-      properties:
-        allOf:
-        - $ref: '#/components/schemas/StackAnalysesResult'
-        - type: object
-          required:
-            - registration_link
-          properties:
-            registration_link:
-              type: string
-              format: url
-            analyzed_direct_dependencies:
-              type: array
-              items:
-                $ref: '#/components/schemas/PackageDetailsForFreeTier'
-              description: |
-                All direct dependencies details regardless of it's vulnerability status
-            vulnerable_transitives:
-              type: array
-              items:
-                allOf:
-                  - type: object
-                    properties:
-                      dependents:
-                        type: array
-                        description: Lists all direct dependencies of this package
-                        items:
-                          $ref: '#/components/schemas/Package'
-                        example:
-                          - name: jinja2
-                            version: 2.5.2
-                          - name: django-orm
-                            version: 7.1.0
-                  - $ref: '#/components/schemas/PackageDetailsForFreeTier'
+      allOf:
+      - $ref: '#/components/schemas/StackAnalysesResult'
+      - type: object
+        required:
+          - registration_link
+          - analyzed_direct_dependencies
+          - vulnerable_transitives
+        properties:
+          registration_link:
+            type: string
+            format: url
+          analyzed_direct_dependencies:
+            type: array
+            items:
+              $ref: '#/components/schemas/PackageDetailsForFreeTier'
+            description: |
+              All direct dependencies details regardless of it's vulnerability status
+          vulnerable_transitives:
+            type: array
+            items:
+              allOf:
+                - type: object
+                  properties:
+                    dependents:
+                      type: array
+                      description: Lists all direct dependencies of this package
+                      items:
+                        $ref: '#/components/schemas/Package'
+                      example:
+                        - name: jinja2
+                          version: 2.5.2
+                        - name: django-orm
+                          version: 7.1.0
+                - $ref: '#/components/schemas/PackageDetailsForFreeTier'
+      description: Stack analyses result for free tier user
 
     StackAnalysesReport:
       title: StackAnalysesReport
@@ -683,7 +690,10 @@ components:
               - $ref: '#/components/schemas/StackAnalysesResultForRegisteredUser'
               - $ref: '#/components/schemas/StackAnalysesResultForFreeTier'
             discriminator:
-              propertyName: registration_link
+              propertyName: registration_status
+              mapping:
+                registerd: '#/components/schemas/StackAnalysesResultForRegisteredUser'
+                freetier: '#/components/schemas/StackAnalysesResultForFreeTier'
       description: Response structure for stack analyses
 
     UserStackIdentifier:
