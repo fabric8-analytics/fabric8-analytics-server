@@ -562,6 +562,11 @@ components:
         - total_licenses
         - recommendation_ready
         - recommendation
+      discriminator:
+        propertyName: registration_status
+        mapping:
+          registerd: StackAnalysesResultForRegisteredUser
+          freetier: StackAnalysesResultForFreeTier
       properties:
         registration_status:
           type: string
@@ -703,11 +708,6 @@ components:
             oneOf:
               - $ref: '#/components/schemas/StackAnalysesResultForRegisteredUser'
               - $ref: '#/components/schemas/StackAnalysesResultForFreeTier'
-            discriminator:
-              propertyName: registration_status
-              mapping:
-                registerd: '#/components/schemas/StackAnalysesResultForRegisteredUser'
-                freetier: '#/components/schemas/StackAnalysesResultForFreeTier'
       description: Response structure for stack analyses
 
     UserStackIdentifier:
