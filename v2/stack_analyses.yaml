@@ -143,12 +143,33 @@ components:
       description: List of supported package ecosystems
 
     BasicVulnerabilityFields:
-      title: VulnerabilityBase
+      title: BasicVulnerabilityFields
+      required: 
+        - cvss
+        - cvss_v3
+        - severity
+        - title
+        - id
+        - url
       properties:
+        cve_ids:
+          type: array
+          items:
+            type: string
+          example: 
+            - CVE-2014-0474
+            - CVE-2014-0475
         cvss:
           type: number
           format: float
           example: 9.8
+        cwes:
+          type: array
+          items:
+            type: string
+          example: 
+            - CWE-185
+            - CWE-730
         cvss_v3:
           type: string
           example: "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
@@ -219,38 +240,13 @@ components:
                 example: https://access.redhat.com/security/cve/CVE-2013-2186
       description: |
         Extended Vulnerability details, available only to registered users
-
-    PublicVulnerabilityDetails:
-      title: PublicVulnerabilityDetails
-      description: |
-        Publicaly known Vulnerability details with associated CVES
-      allOf:
-        - $ref: '#/components/schemas/BasicVulnerabilityFields'
-        - type: object
-          properties:
-            cve_ids:
-              type: array
-              items:
-                type: string
-              example: 
-                - CVE-2014-0474
-                - CVE-2014-0475
-
-    PrivateVulnerabilityDetails:
-      title: PrivateVulnerabilityDetails
-      allOf:
-        - $ref: '#/components/schemas/BasicVulnerabilityFields'
-      description: Private vulnerability details
-
-    LimitedPrivateVulnerabilityDetails:
-      title: LimitedPrivateVulnerabilityDetails
-      allOf:
-        - $ref: '#/components/schemas/BasicVulnerabilityFields'
-      description: Basic private vulnerability details
-
+  
     Package:
       title: Package
       type: object
+      required: 
+        - name
+        - version
       properties:
         name:
           type: string
@@ -461,7 +457,7 @@ components:
               items:
                 allOf:
                   - $ref: '#/components/schemas/PremiumVulnerabilityFields'
-                  - $ref: '#/components/schemas/PublicVulnerabilityDetails'
+                  - $ref: '#/components/schemas/BasicVulnerabilityFields'
             private_vulnerabilities:
               type: array
               description: |
@@ -470,7 +466,7 @@ components:
               items:
                 allOf:
                   - $ref: '#/components/schemas/PremiumVulnerabilityFields'
-                  - $ref: '#/components/schemas/PrivateVulnerabilityDetails'
+                  - $ref: '#/components/schemas/BasicVulnerabilityFields'
           description: Details of the package for registered users
 
     PackageDetailsForFreeTier:
@@ -484,12 +480,12 @@ components:
               type: array
               description: Publicly known vulnerability details
               items:
-                $ref: '#/components/schemas/PublicVulnerabilityDetails'
+                $ref: '#/components/schemas/BasicVulnerabilityFields'
             private_vulnerabilities:
               type: array
               description: Private vulnerability details with limited info
               items:
-                $ref: '#/components/schemas/LimitedPrivateVulnerabilityDetails'
+                $ref: '#/components/schemas/BasicVulnerabilityFields'
           description: Details of the package for free tier users
 
     RecommendedPackageData:
