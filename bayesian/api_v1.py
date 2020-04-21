@@ -210,6 +210,7 @@ class ApiEndpoints(Resource):
 
     def get(self):
         """Handle the GET REST API call."""
+        print("ApiEndpoints_get_:_Calling")
         return {'paths': sorted(_resource_paths)}
 
 
