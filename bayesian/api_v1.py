@@ -768,7 +768,7 @@ class StackAnalyses(Resource):
         }
         #  If given ecosystem is not found in above map, than uses the value passed in the request.
         ecosystem = ecosystem_map.get(ecosystem, ecosystem)
-        current_app.logger.info('Final ecosystem: %s'. ecosystem)
+        current_app.logger.info("Final ecosystem: {ecosystem}".format(ecosystem=ecosystem))
 
         if not check_for_accepted_ecosystem(ecosystem):
             raise HTTPError(400, error=f"Error processing request. "
