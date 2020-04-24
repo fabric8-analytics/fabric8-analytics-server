@@ -766,18 +766,19 @@ class StackAnalyses(Resource):
             or os.environ.get('SHOW_TRANSITIVE_REPORT', "false")
         scan_repo_url = request.headers.get('ScanRepoUrl')
 
-        # TODO: is not it better to use map of synonyms, for example?
-        if ecosystem == "node":
-            ecosystem = "npm"
+        # Below ecosystem map tries to find the map entry.
+        ecosystem_map = {
+            "node": "npm",
+            "python": "pypi",
+            "java": "maven"
+        }
+        #  If given ecosystem is not found in above map, than uses the value passed in the request.
+        ecosystem = ecosystem_map.get(ecosystem, ecosystem)
+        current_app.logger.info('Final ecosystem: %s'. ecosystem)
 
-        if ecosystem == "python":
-            ecosystem = "pypi"
-
-        if ecosystem == "golang":
-            ecosystem = "golang"
-
-        if ecosystem == "java":
-            ecosystem = "maven"
+        if not check_for_accepted_ecosystem(ecosystem):
+            raise HTTPError(400, error=f"Error processing request. "
+                                        "'{ecosystem}' ecosystem is not supported".format(ecosystem=ecosystem))
 
         source = request.form.get('source')
         if not (scan_repo_url and ecosystem):
