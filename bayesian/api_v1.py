@@ -838,7 +838,8 @@ class StackAnalyses(Resource):
                 manifest_descriptor = get_manifest_descriptor_by_filename(filename)
                 if manifest_descriptor is None:
                     raise HTTPError(400, error="Error processing request. "
-                            "Manifest file '{filename}' is not supported".format(filename=filename))
+                                               "Manifest file '{filename}' is not supported".format(
+                                               filename=filename))
 
                 # Check if the manifest is valid
                 if not manifest_descriptor.validate(content):
