@@ -766,12 +766,16 @@ class StackAnalyses(Resource):
             "python": "pypi",
             "java": "maven"
         }
-        #  If given ecosystem is not found in above map, than uses the value passed in the request.
+        # If given ecosystem is not found in above map, than uses the value
+        # passed in the request.
         ecosystem = ecosystem_map.get(ecosystem, ecosystem)
-        current_app.logger.info("Final ecosystem: {ecosystem}".format(ecosystem=ecosystem))
+        current_app.logger.info("Final ecosystem: {ecosystem}".format(
+                                    ecosystem=ecosystem))
 
         if not check_for_accepted_ecosystem(ecosystem):
-            raise HTTPError(400, error="Error processing request. '{ecosystem}' ecosystem is not supported".format(ecosystem=ecosystem))
+            raise HTTPError(400, error="Error processing request. "
+                                       "'{ecosystem}' ecosystem is not supported".format(
+                                       ecosystem=ecosystem))
 
         source = request.form.get('source')
         if not (scan_repo_url and ecosystem):
