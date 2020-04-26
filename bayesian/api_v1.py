@@ -779,9 +779,10 @@ class StackAnalyses(Resource):
                                     ecosystem=ecosystem))
 
         if not check_for_accepted_ecosystem(ecosystem):
-            raise HTTPError(400, error="Error processing request. "
-                                       "'{ecosystem}' ecosystem is not supported".format(
-                                       ecosystem=ecosystem))
+            raise HTTPError(400,
+                            error="Error processing request. "
+                                  "'{ecosystem}' ecosystem is not supported".format(
+                                      ecosystem=ecosystem))
 
         source = request.form.get('source')
         if not (scan_repo_url and ecosystem):
