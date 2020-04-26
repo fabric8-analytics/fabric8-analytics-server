@@ -855,7 +855,8 @@ class StackAnalyses(Resource):
                 # Exception is raised when origin is vscode and ecosystem header is not set.
                 manifest['ecosystem'] = ecosystem or manifest_descriptor.ecosystem
             except UnboundLocalError:
-                raise HTTPError(400, error="Error processing request, 'ecosystem' header must be set.")
+                raise HTTPError(400, error="Error processing request, "
+                                           "'ecosystem' header must be set.")
 
             manifests.append(manifest)
 
