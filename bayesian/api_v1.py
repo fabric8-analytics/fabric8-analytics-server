@@ -274,8 +274,8 @@ class ComponentAnalyses(Resource):
                 raise HTTPError(400, msg)
 
         package = case_sensitivity_transform(ecosystem, package)
-        # Querying GraphDB for CVE Info.
 
+        # Querying GraphDB for CVE Info.
         result = get_analyses_from_graph(ecosystem, package, version)
 
         if result is not None:

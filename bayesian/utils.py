@@ -29,7 +29,6 @@ from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 from f8a_worker.setup_celery import init_celery
 
-
 from . import rdb
 from .exceptions import HTTPError
 from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT, CORE_DEPENDENCIES_REPO_URL, \
