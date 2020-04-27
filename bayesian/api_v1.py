@@ -31,7 +31,7 @@ from fabric8a_auth.auth import login_required
 from .auth import get_access_token
 from .exceptions import HTTPError
 from .utils import (get_system_version, retrieve_worker_result,
-                    server_create_component_bookkeeping, GraphAnalyses,
+                    server_create_component_bookkeeping,
                     server_create_analysis, get_analyses_from_graph,
                     search_packages_from_graph, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, RecommendationReason,
@@ -246,7 +246,6 @@ class ComponentAnalyses(Resource):
     @staticmethod
     def get(ecosystem, package, version):
         """Handle the GET REST API call."""
-        security_vendor = request.headers.get('security-vendor', None)
         st = time.time()
         metrics_payload = {
             "pid": os.getpid(),
@@ -275,14 +274,9 @@ class ComponentAnalyses(Resource):
                 raise HTTPError(400, msg)
 
         package = case_sensitivity_transform(ecosystem, package)
-        # Querying GraphDB for CVE Info.
 
-        if security_vendor:
-            graph_obj = GraphAnalyses(ecosystem, package, version, vendor=security_vendor)
-            result = graph_obj.get_analyses_for_snyk()
-        else:
-            # Old Flow
-            result = get_analyses_from_graph(ecosystem, package, version)
+        # Querying GraphDB for CVE Info.
+        result = get_analyses_from_graph(ecosystem, package, version)
 
         if result is not None:
             # Known component for Bayesian
