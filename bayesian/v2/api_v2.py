@@ -352,9 +352,9 @@ class StackAnalyses(Resource):
             if not worker_flow_enabled:
                 # No need to call backbone if its already called via worker flow
                 _session.post(
-                    '{}/api/v2/stack_aggregator'.format(api_url), json=deps,
+                    '{}/api/v1/stack_aggregator'.format(api_url), json=deps,
                     params={'check_license': str(check_license).lower()})
-                _session.post('{}/api/v2/recommender'.format(api_url), json=deps,
+                _session.post('{}/api/v1/recommender'.format(api_url), json=deps,
                               params={'check_license': str(check_license).lower()})
         except (ValueError, json.JSONDecodeError) as e:
             HTTPError(400, "Invalid dependencies encountered. %r" % e)
