@@ -205,7 +205,7 @@ class ComponentAnalyses(Resource):
 
 
 class StackAnalysesPost(Resource):
-    """Implementation of all /stack-analyses REST API calls."""
+    """Implementation of /stack-analyses POST REST API call."""
 
     method_decorators = [login_required]
 
@@ -383,16 +383,20 @@ class StackAnalysesPost(Resource):
     def get():
         """
         Handle the GET REST API without any parameters.
+
         Dummy method, never expected to be called in normal/happy flow.
         Refere to StackAnalysesGet.get() method for actual handling.
         """
         HTTPError(400, "Error processing request. 'request id' missing")
 
 class StackAnalysesGet:
+    """Implementation of /stack-analyses GET REST API request."""
+
     @staticmethod
     def post():
         """
         Handle the POST REST API.
+
         Dummy method, never expected to be called in normal/happy flow.
         Refer to StackAnalysesPost.post() method for actual handling.
         """
