@@ -253,18 +253,20 @@ class StackAnalyses(Resource):
 
         # At least one manifest file path should be present to analyse a stack
         if not filepaths:
-            raise HTTPError(400, error="Error processing request. "
-                                        "Please send a valid manifest file path.")
+            raise HTTPError(400,
+                            error="Error processing request. "
+                                  "Please send a valid manifest file path.")
+
         if len(files) != len(filepaths):
             raise HTTPError(400,
                             error="Error processing request. "
-                                    "Number of manifests and filePaths must be the same.")
+                                  "Number of manifests and filePaths must be the same.")
 
         # At least one manifest file should be present to analyse a stack
         if not files:
             raise HTTPError(400,
                             error="Error processing request. "
-                                    "Please upload a valid manifest files.")
+                                  "Please upload a valid manifest files.")
 
         dt = datetime.datetime.now()
         if sid:
@@ -536,10 +538,10 @@ add_resource_no_matter_slashes(ComponentAnalyses,
                                endpoint='get_component_analyses')
 
 # Stack analyses routes
-add_resource_no_matter_slashes(StackAnalyses, 
+add_resource_no_matter_slashes(StackAnalyses,
                                '/stack-analyses',
                                endpoint='post_stack_analyses')
-add_resource_no_matter_slashes(StackAnalyses, 
+add_resource_no_matter_slashes(StackAnalyses,
                                '/stack-analyses/<external_request_id>',
                                endpoint='get_stack_analyses')
 
