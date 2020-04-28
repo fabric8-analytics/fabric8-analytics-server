@@ -387,7 +387,7 @@ class StackAnalysesPost(Resource):
         Dummy method, never expected to be called in normal/happy flow.
         Refere to StackAnalysesGet.get() method for actual handling.
         """
-        HTTPError(400, "Error processing request. 'request id' missing")
+        raise HTTPError(400, "Api endpoint not supported")
 
 
 class StackAnalysesGet(Resource):
@@ -401,6 +401,7 @@ class StackAnalysesGet(Resource):
         Dummy method, never expected to be called in normal/happy flow.
         Refer to StackAnalysesPost.post() method for actual handling.
         """
+        raise HTTPError(400, "Api endpoint not supported")
 
     @staticmethod
     def get(external_request_id):
