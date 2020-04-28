@@ -1,0 +1,273 @@
+{
+    "requestId": "4d53334e-2672-4a23-b18b-300acaa8473f",
+    "status": {
+        "message": "",
+        "code": 200,
+        "attributes": {}
+    },
+    "result": {
+        "data": [
+            {
+                "epv": [
+                {
+                    "package": {
+                        "last_updated": [
+                            1539242218.92
+                        ],
+                        "libio_dependents_projects": [
+                            "508"
+                        ],
+                        "ecosystem": [
+                            "maven"
+                        ],
+                        "latest_version": [
+                            "-1"
+                        ],
+                        "vertex_label": [
+                            "Package"
+                        ],
+                        "libio_total_releases": [
+                            "13"
+                        ],
+                        "name": [
+                            "commons-fileupload:commons-fileupload"
+                        ],
+                        "latest_version_last_updated": [
+                            "20181011"
+                        ],
+                        "libio_latest_version": [
+                            "1.3.3"
+                        ],
+                        "tokens": [
+                            "commons",
+                            "fileupload"
+                        ],
+                        "libio_dependents_repos": [
+                            "36456"
+                        ],
+                        "libio_latest_release": [
+                            1497049203.0
+                        ]
+                    },
+                    "version": {
+                        "last_updated": [
+                            1539241388.64
+                        ],
+                        "pecosystem": [
+                            "maven"
+                        ],
+                        "pname": [
+                            "commons-fileupload:commons-fileupload"
+                        ],
+                        "vertex_label": [
+                            "Version"
+                        ],
+                        "version": [
+                            "1.2.2"
+                        ]
+                    },
+                    "cve": {
+                        "ecosystem": [
+                            "maven"
+                        ],
+                        "cve_id": [
+                            "CVE-2013-0248"
+                        ],
+                        "cvss_v2": [
+                            3.3
+                        ],
+                        "vertex_label": [
+                            "CVE"
+                        ],
+                        "nvd_status": [
+                            "unknown"
+                        ],
+                        "description": [
+                            "The default configuration of javax.servlet.context.tempdir in Apache Commons FileUpload 1.0 through 1.2.2 uses the /tmp directory for uploaded files, which allows local users to overwrite arbitrary files via an unspecified symlink attack.\n"
+                        ],
+                        "fixed_in": [
+                            "unknown"
+                        ],
+                        "modified_date": [
+                            "20181011"
+                        ]
+                    }
+                },
+                {
+                    "package": {
+                        "last_updated": [
+                            1539242218.92
+                        ],
+                        "libio_dependents_projects": [
+                            "508"
+                        ],
+                        "ecosystem": [
+                            "maven"
+                        ],
+                        "latest_version": [
+                            "-1"
+                        ],
+                        "vertex_label": [
+                            "Package"
+                        ],
+                        "libio_total_releases": [
+                            "13"
+                        ],
+                        "name": [
+                            "commons-fileupload:commons-fileupload"
+                        ],
+                        "latest_version_last_updated": [
+                            "20181011"
+                        ],
+                        "libio_latest_version": [
+                            "1.3.3"
+                        ],
+                        "tokens": [
+                            "commons",
+                            "fileupload"
+                        ],
+                        "libio_dependents_repos": [
+                            "36456"
+                        ],
+                        "libio_latest_release": [
+                            1497049203.0
+                        ]
+                    },
+                    "version": {
+                        "last_updated": [
+                            1539241391.35
+                        ],
+                        "pecosystem": [
+                            "maven"
+                        ],
+                        "pname": [
+                            "commons-fileupload:commons-fileupload"
+                        ],
+                        "vertex_label": [
+                            "Version"
+                        ],
+                        "version": [
+                            "1.2"
+                        ]
+                    },
+                    "cve": {
+                        "ecosystem": [
+                            "maven"
+                        ],
+                        "cve_id": [
+                            "CVE-2013-0248"
+                        ],
+                        "cvss_v2": [
+                            3.3
+                        ],
+                        "vertex_label": [
+                            "CVE"
+                        ],
+                        "nvd_status": [
+                            "unknown"
+                        ],
+                        "description": [
+                            "The default configuration of javax.servlet.context.tempdir in Apache Commons FileUpload 1.0 through 1.2.2 uses the /tmp directory for uploaded files, which allows local users to overwrite arbitrary files via an unspecified symlink attack.\n"
+                        ],
+                        "fixed_in": [
+                            "unknown"
+                        ],
+                        "modified_date": [
+                            "20181011"
+                        ]
+                    }
+                },
+                {
+                    "package": {
+                        "last_updated": [
+                            1539242218.92
+                        ],
+                        "libio_dependents_projects": [
+                            "508"
+                        ],
+                        "ecosystem": [
+                            "maven"
+                        ],
+                        "latest_version": [
+                            "-1"
+                        ],
+                        "vertex_label": [
+                            "Package"
+                        ],
+                        "libio_total_releases": [
+                            "13"
+                        ],
+                        "name": [
+                            "commons-fileupload:commons-fileupload"
+                        ],
+                        "latest_version_last_updated": [
+                            "20181011"
+                        ],
+                        "libio_latest_version": [
+                            "1.3.3"
+                        ],
+                        "tokens": [
+                            "commons",
+                            "fileupload"
+                        ],
+                        "libio_dependents_repos": [
+                            "36456"
+                        ],
+                        "libio_latest_release": [
+                            1497049203.0
+                        ]
+                    },
+                    "version": {
+                        "last_updated": [
+                            1539241392.8
+                        ],
+                        "pecosystem": [
+                            "maven"
+                        ],
+                        "pname": [
+                            "commons-fileupload:commons-fileupload"
+                        ],
+                        "vertex_label": [
+                            "Version"
+                        ],
+                        "version": [
+                            "1.2.1"
+                        ]
+                    },
+                    "cve": {
+                        "ecosystem": [
+                            "maven"
+                        ],
+                        "cve_id": [
+                            "CVE-2013-0248"
+                        ],
+                        "cvss_v2": [
+                            3.3
+                        ],
+                        "vertex_label": [
+                            "CVE"
+                        ],
+                        "nvd_status": [
+                            "unknown"
+                        ],
+                        "description": [
+                            "The default configuration of javax.servlet.context.tempdir in Apache Commons FileUpload 1.0 through 1.2.2 uses the /tmp directory for uploaded files, which allows local users to overwrite arbitrary files via an unspecified symlink attack.\n"
+                        ],
+                        "fixed_in": [
+                            "unknown"
+                        ],
+                        "modified_date": [
+                            "20181011"
+                        ]
+                    }
+                }
+            ]},
+            {
+                "recommended_versions":[
+                    "1.3.3"
+                ]
+            }
+        ],
+        "meta": {}
+    }
+}
