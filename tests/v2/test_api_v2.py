@@ -22,7 +22,6 @@ import json
 import pytest
 from pathlib import Path
 
-from bayesian.v2 import api_v2
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
 
