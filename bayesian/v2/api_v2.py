@@ -389,6 +389,7 @@ class StackAnalysesPost(Resource):
         """
         HTTPError(400, "Error processing request. 'request id' missing")
 
+
 class StackAnalysesGet:
     """Implementation of /stack-analyses GET REST API request."""
 
