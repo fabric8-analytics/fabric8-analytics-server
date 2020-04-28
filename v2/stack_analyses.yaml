@@ -615,7 +615,6 @@ components:
         properties:
           registration_link:
             type: string
-            format: url
           analyzed_dependencies:
             type: array
             items:
