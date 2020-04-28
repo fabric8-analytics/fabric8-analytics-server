@@ -25,10 +25,12 @@ from pathlib import Path
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
 
+
 # Build api URL based on route
 def api_route_for(route):
     """Construct an URL to the endpoint for given route."""
     return '/api/v2' + route
+
 
 # Asset if link does not match expected value
 def assert_pages(response, p=None, n=None):
@@ -125,13 +127,12 @@ def fill_packages_for_paging(app, request):
 
 
 @pytest.mark.usefixtures('client_class')
-class TestApiV1Root(object):
+class TestApiV2Root(object):
     """Basic tests if all endpoints are accessible."""
 
     api_root = {
         "paths": [
             "/api/v2",
-            "/api/v2/component-analyses",
             "/api/v2/component-analyses/<ecosystem>/<package>/<version>",
             "/api/v2/stack-analyses",
             "/api/v2/stack-analyses/<external_request_id>",
@@ -219,6 +220,7 @@ class TestCommonEndpoints(object):
                                content_type='application/json')
         assert res.status_code == 400
 
+
 @pytest.mark.usefixtures('client_class')
 class TestApiV2SystemVersion(object):
     """Tests for the /api/v2/system/version endpoint."""
@@ -228,4 +230,3 @@ class TestApiV2SystemVersion(object):
         res = self.client.get(api_route_for('/system/version/'), headers=accept_json)
         assert res.status_code == 200
         assert set(res.json.keys()) == {'committed_at', 'commit_hash'}
-

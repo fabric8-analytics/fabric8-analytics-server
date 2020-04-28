@@ -1,0 +1,12 @@
+[
+    {
+        "deps": [],
+        "package": "github.com/asaskevich/govalidator",
+        "version": "7b3beb6df3c42abd3509abfc3bcacc0fbfb7c877"
+    },
+    {
+        "deps": [],
+        "package": "github.com/dgrijalva/jwt-go",
+        "version": "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+    }
+]

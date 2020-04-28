@@ -1,0 +1,37 @@
+[
+    {
+        "deps": [
+            {
+                "package": "pytz",
+                "version": "2018.7"
+            }
+        ],
+        "package": "django",
+        "version": "2.1.3"
+    },
+    {
+        "deps": [],
+        "package": "numpy",
+        "version": "1.15.4"
+    },
+    {
+        "deps": [],
+        "package": "pyjwt",
+        "version": "1.6.4"
+    },
+    {
+        "deps": [
+            {
+                "package": "six",
+                "version": "1.11.0"
+            }
+        ],
+        "package": "python-dateutil",
+        "version": "2.7.5"
+    },
+    {
+        "deps": [],
+        "package": "pyyaml",
+        "version": "3.13"
+    }
+]
