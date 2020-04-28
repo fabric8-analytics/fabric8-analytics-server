@@ -388,7 +388,7 @@ class StackAnalysesPost(Resource):
         """
         HTTPError(400, "Error processing request. 'request id' missing")
 
-class StackAnalysisGet:
+class StackAnalysesGet:
     @staticmethod
     def post():
         """
