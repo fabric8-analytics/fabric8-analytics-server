@@ -64,8 +64,7 @@ class Adequacy:
             conv_version = sv.Version.coerce(version)
         except ValueError:
             logger.error(
-                "Unexpected ValueError for the package {} due to version {}".format(
-                    package_name, version))
+                f"Unexpected ValueError for the package {package_name} due to version {version}")
             pass
         finally:
             return conv_version
@@ -80,7 +79,6 @@ class VendorAnalyses:
         self.version = version
         self.package = package
         self.recommendation = dict()
-        self.recommended_version = ""
         self.response_data = dict()
 
     @staticmethod
@@ -94,7 +92,7 @@ class VendorAnalyses:
         logger.info("Checking if package is known.")
         if query_result is None:
             return False
-        result_data = query_result.get('result').get('data')
+        result_data = query_result.get('result', {}).get('data')
         if not (result_data and len(result_data) > 0):
             return False
         return True
@@ -116,12 +114,8 @@ class VendorAnalyses:
                                            self.version).get_data_from_graph()
             if not self.is_package_known(graph_response):
                 # Trigger Unknown Flow on Unknown Packages
-                logger.info("Package {pkg} is not known.".format(pkg=self.package))
+                logger.info(f"Package {self.package} is not known.")
                 return None
-
-            logger.info("latest non cve version for is {ver}".format(
-                ver=self.recommended_version
-            ))
             return ResponseBuilder(
                 self.ecosystem, self.package, self.version).generate_recommendation(graph_response)
 
@@ -139,7 +133,7 @@ class ResponseBuilder():
         self.version = version
         self.package = package
         self._cves = list()
-        self.cve_dict = dict()
+        self.cve_maps = dict()
         self.severity = ""
         self.nocve_version = ""
         self.public_vul = 0
@@ -153,8 +147,8 @@ class ResponseBuilder():
         :return: Json Response
         """
         logger.info("Generating Recommendation")
-        result_data = graph_response['result'].get('data')
-        latest_non_cve_versions = result_data[0].get('package').get(
+        result_data = graph_response.get('result', {}).get('data')
+        latest_non_cve_versions = result_data[0].get('package', {}).get(
                                             'latest_non_cve_version')
         for data in result_data:
             this_version = data.get('version', {}).get('version', [None])[0]
@@ -162,12 +156,13 @@ class ResponseBuilder():
                 if 'cve' in data:
                     self._cves.append(data.get('cve'))
 
-        if not self.has_cves():
+        if not self.has_cves() or latest_non_cve_versions:
+            # If Package has No cves and No Latest Non CVE Versions.
             return dict(recommendation={})
         self.cve_maps = self.get_cve_maps()
         self.nocve_version = self.get_version_without_cves(latest_non_cve_versions)
-        self.get_vulnerabilities_count()
-        self.get_severity()
+        self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
+        self.severity = self.get_severity()
         return self.generate_response()
 
     def get_message(self):
@@ -177,15 +172,13 @@ class ResponseBuilder():
         :return: Message string.
         """
         logger.info("Generating Message String.")
-        message = "{pkg} - {ver} has {pub_vul} public vulnerability with {svr} severity."
-        message += 'Recommendation: use version {rec_ver}.'
-        message = message.format(
-            pkg=self.package,
-            ver=self.version,
-            pub_vul=self.public_vul,
-            svr=self.severity[0],
-            rec_ver=self.nocve_version,
-        )
+        message = f"{self.package} - {self.version} has {self.public_vul} " \
+                  f"known security vulnerability"
+        if self.pvt_vul:
+            # Add Private Vulnerability Info
+            message += f" and {self.pvt_vul} security advisory"
+        message += f" with {self.severity[0]} severity. "                      # Add Severity Info
+        message += f'Recommendation: use version {self.nocve_version}.'     # add recommendation
         return message
 
     def get_version_without_cves(self, latest_non_cve_versions):
@@ -239,8 +232,8 @@ class ResponseBuilder():
             component_analyses=component_analyses_dict,
             message=self.get_message(),
             severity=self.severity[0],
-            public_vulnerabilities_count=self.public_vul,
-            private_vulnerabilities_count=self.pvt_vul,
+            known_security_vulnerability_count=self.public_vul,
+            security_advisory_count=self.pvt_vul,
         )
         return response
 
@@ -251,13 +244,20 @@ class ResponseBuilder():
         :return: None
         """
         logger.info("Get Vulnerabilities count.")
-        self.public_vul = 0
-        self.pvt_vul = 0
-        for cve in self._cves:
-            if cve['snyk_pvt_vulnerability'][0]:
-                self.pvt_vul += 1
-            else:
-                self.public_vul += 1
+        public_vul = 0
+        pvt_vul = 0
+        try:
+            for cve in self._cves:
+                if cve['snyk_pvt_vulnerability'][0]:
+                    pvt_vul += 1
+                else:
+                    public_vul += 1
+        except Exception:
+            logger.error(f"snyk_pvt_vulnerability key not found for "
+                         f"{self.package}, {self.version}, {self.ecosystem}")
+            pass
+
+        return public_vul, pvt_vul
 
     def get_link(self):
         """Generate link to Snyk Vulnerability Page.
@@ -270,8 +270,7 @@ class ResponseBuilder():
             'pypi': 'pip',
             'npm': 'npm'
         }
-        return "https://snyk.io/vuln/{}:{}".format(
-                snyk_ecosystem[self.ecosystem], quote(self.package))
+        return f"https://snyk.io/vuln/{snyk_ecosystem[self.ecosystem]}:{quote(self.package)}"
 
     @staticmethod
     def get_registration_link():
@@ -281,7 +280,7 @@ class ResponseBuilder():
         """
         return "https://app.snyk.io/login"
 
-    def get_exploitable_cves(self):
+    def get_exploitable_cves_counter(self):
         """Calculate total exploitable Vulnerabilities.
 
         possible_values = ["Not Defined", "Unproven", "Proof of Concept", "Functional", "High"]
@@ -290,9 +289,14 @@ class ResponseBuilder():
         logger.info("Generating Exploitable Vulnerabilities Count.")
         exploitable_exploits = ["Proof of Concept", "Functional", "High"]
         exploit_counter = 0
-        for cve in self._cves:
-            if 'exploit' in cve.keys() and cve['exploit'][0] in exploitable_exploits:
-                exploit_counter += 1
+        try:
+            for cve in self._cves:
+                if 'exploit' in cve.keys() and cve['exploit'][0] in exploitable_exploits:
+                    exploit_counter += 1
+        except IndexError:
+            logger.error(f"Exploit not found for EPV: "
+                         f"{self.ecosystem}, {self.package}, {self.version}")
+            return None
         return exploit_counter
 
     def get_total_vulnerabilities(self):
@@ -312,18 +316,22 @@ class ResponseBuilder():
         """
         logger.info("Get maximum severity.")
         severity_levels = {"low": 1, "medium": 2, "high": 3, "critical": 4}
-
-        input_severities = {cve['severity'][0] for cve in self._cves
-                            if 'severity' in cve.keys()}
+        try:
+            input_severities = {cve['severity'][0] for cve in self._cves
+                                if 'severity' in cve.keys()}
+        except IndexError:
+            logger.error(f"Severity not found for EPV: "
+                         f"{self.ecosystem}, {self.package}, {self.version}")
+            return []
 
         if not input_severities.issubset(severity_levels.keys()):
             # Input values contains non recognised values
             return []
 
         max_severe_value = max(map(lambda x: severity_levels[x], input_severities))
-        self.severity = [severity for severity, power_number in severity_levels.items()
-                         if power_number == max_severe_value]
-        return self.severity
+        severity = [severity for severity, power_number in severity_levels.items()
+                    if power_number == max_severe_value]
+        return severity
 
     def get_cve_maps(self):
         """Get all Vulnerabilities Meta Data.
@@ -333,11 +341,11 @@ class ResponseBuilder():
             - Dict: if Vulnerability is present.
         """
         logger.info("Get Vulnerability Meta data.")
-        cve_dict = []
+        cve_list = []
         for cve in self._cves:
-            cve_dict.append(dict(
-                vendor_cve_ids=cve.get('snyk_cve_ids')[0],
-                cvss=str(cve.get('cvss_scores')[0]),
-                is_private=cve.get('snyk_pvt_vulnerability')[0]
+            cve_list.append(dict(
+                vendor_cve_ids=cve.get('snyk_vuln_id', [None])[0],
+                cvss=str(cve.get('cvss_scores', [None])[0]),
+                is_private=cve.get('snyk_pvt_vulnerability', [None])[0]
             ))
-        return cve_dict
+        return cve_list
