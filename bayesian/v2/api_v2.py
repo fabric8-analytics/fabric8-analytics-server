@@ -204,7 +204,7 @@ class ComponentAnalyses(Resource):
             raise HTTPError(404, msg)
 
 
-class StackAnalyses(Resource):
+class StackAnalysesPost(Resource):
     """Implementation of all /stack-analyses REST API calls."""
 
     method_decorators = [login_required]
@@ -381,7 +381,21 @@ class StackAnalyses(Resource):
 
     @staticmethod
     def get():
-        raise HTTError(400, "Error processing request. 'request id' missing")
+        """
+        Handle the GET REST API without any parameters.
+        Dummy method, never expected to be called in normal/happy flow.
+        Refere to StackAnalysesGet.get() method for actual handling.
+        """
+        HTTPError(400, "Error processing request. 'request id' missing")
+
+class StackAnalysisGet:
+    @staticmethod
+    def post():
+        """
+        Handle the POST REST API.
+        Dummy method, never expected to be called in normal/happy flow.
+        Refer to StackAnalysesPost.post() method for actual handling.
+        """
 
     @staticmethod
     def get(external_request_id):
@@ -542,10 +556,10 @@ add_resource_no_matter_slashes(ComponentAnalyses,
                                endpoint='get_component_analyses')
 
 # Stack analyses routes
-add_resource_no_matter_slashes(StackAnalyses,
+add_resource_no_matter_slashes(StackAnalysesPost,
                                '/stack-analyses',
                                endpoint='post_stack_analyses')
-add_resource_no_matter_slashes(StackAnalyses,
+add_resource_no_matter_slashes(StackAnalysesGet,
                                '/stack-analyses/<external_request_id>',
                                endpoint='get_stack_analyses')
 
