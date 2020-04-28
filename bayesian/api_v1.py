@@ -759,28 +759,21 @@ class StackAnalyses(Resource):
         show_transitive = request.headers.get('showTransitiveReport') \
             or os.environ.get('SHOW_TRANSITIVE_REPORT', "false")
         scan_repo_url = request.headers.get('ScanRepoUrl')
+
+        # TODO: is not it better to use map of synonyms, for example?
+        if ecosystem == "node":
+            ecosystem = "npm"
+
+        if ecosystem == "python":
+            ecosystem = "pypi"
+
+        if ecosystem == "golang":
+            ecosystem = "golang"
+
+        if ecosystem == "java":
+            ecosystem = "maven"
+
         source = request.form.get('source')
-
-        # Below ecosystem map tries to find the map entry.
-        ecosystem_map = {
-            "node": "npm",
-            "python": "pypi",
-            "java": "maven"
-        }
-        # If given ecosystem is not found in above map, than uses the value
-        # passed in the request.
-        ecosystem = ecosystem_map.get(ecosystem, ecosystem)
-        current_app.logger.info("Final ecosystem: {ecosystem}".format(
-                                    ecosystem=ecosystem))
-
-        # ecosystem is not mandatory when origin is vscode, it will be read from manifest file,
-        # otherwise API request should have ecosystem.
-        if origin != "vscode" and not check_for_accepted_ecosystem(ecosystem):
-            raise HTTPError(400,
-                            error="Error processing request. "
-                                  "'{ecosystem}' ecosystem is not supported".format(
-                                      ecosystem=ecosystem))
-
         if not (scan_repo_url and ecosystem):
             if github_url is not None:
                 files = fetch_file_from_github_release(url=github_url,
