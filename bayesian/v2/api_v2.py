@@ -222,6 +222,7 @@ class StackAnalyses(Resource):
         origin = request.headers.get('origin')
         show_transitive = request.headers.get('showTransitiveReport') \
             or os.environ.get('SHOW_TRANSITIVE_REPORT', "false")
+        source = request.form.get('source')
 
         # Below ecosystem map tries to find the map entry.
         ecosystem_map = {
@@ -235,13 +236,14 @@ class StackAnalyses(Resource):
         current_app.logger.info("Final ecosystem: {ecosystem}".format(
                                     ecosystem=ecosystem))
 
-        if not check_for_accepted_ecosystem(ecosystem):
+        # ecosystem is not mandatory when origin is vscode, it will be read from manifest file,
+        # otherwise API request should have ecosystem.
+        if origin != "vscode" and not check_for_accepted_ecosystem(ecosystem):
             raise HTTPError(400,
                             error="Error processing request. "
                                   "'{ecosystem}' ecosystem is not supported".format(
                                       ecosystem=ecosystem))
 
-        source = request.form.get('source')
         files = request.files.getlist('manifest[]')
         filepaths = request.values.getlist('filePath[]')
         license_files = request.files.getlist('license[]')

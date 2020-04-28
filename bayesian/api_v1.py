@@ -759,6 +759,7 @@ class StackAnalyses(Resource):
         show_transitive = request.headers.get('showTransitiveReport') \
             or os.environ.get('SHOW_TRANSITIVE_REPORT', "false")
         scan_repo_url = request.headers.get('ScanRepoUrl')
+        source = request.form.get('source')
 
         # Below ecosystem map tries to find the map entry.
         ecosystem_map = {
@@ -772,13 +773,14 @@ class StackAnalyses(Resource):
         current_app.logger.info("Final ecosystem: {ecosystem}".format(
                                     ecosystem=ecosystem))
 
-        if not check_for_accepted_ecosystem(ecosystem):
+        # ecosystem is not mandatory when origin is vscode, it will be read from manifest file,
+        # otherwise API request should have ecosystem.
+        if origin != "vscode" and not check_for_accepted_ecosystem(ecosystem):
             raise HTTPError(400,
                             error="Error processing request. "
                                   "'{ecosystem}' ecosystem is not supported".format(
                                       ecosystem=ecosystem))
 
-        source = request.form.get('source')
         if not (scan_repo_url and ecosystem):
             if github_url is not None:
                 files = fetch_file_from_github_release(url=github_url,
