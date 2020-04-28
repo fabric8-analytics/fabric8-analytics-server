@@ -30,31 +30,32 @@ gremlin_url = "http://{host}:{port}".format(
 class GraphAnalyses:
     """Graph Analyses for Component Analyses."""
 
-    def __init__(self, ecosystem, package, version):
-        """For Flows related to Security Vendor Integrations."""
-        self.ecosystem = ecosystem
-        self.version = version
-        self.package = package
+    query = {
+        "snyk": """
+            g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)
+            .as('version').in('has_version').dedup().as('package').select('version')
+            .coalesce(out('has_snyk_cve').as('cve').select('package','version','cve')
+            .by(valueMap()),select('package','version').by(valueMap()));
+            """
+    }
 
-    def get_data_from_graph(self):
+    @classmethod
+    def get_data_from_graph(cls, ecosystem, package, version, vendor):
         """Query GraphDB for Component Analyses v2.
 
         Query vendor specific GraphDB Node Edge
         :returns: json converted data.
         """
         start = datetime.now()
-        cve_info_query = """
-        g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)
-        .as('version').in('has_version').dedup().as('package').select('version')
-        .coalesce(out('has_snyk_cve').as('cve').select('package','version','cve')
-        .by(valueMap()),select('package','version').by(valueMap()));
-        """
+        cve_info_query = cls.query.get(vendor)
+        assert all(
+            [ecosystem, package, version, vendor, cve_info_query]), "Required Parameters Missing."
         payload = {
             'gremlin': cve_info_query,
             'bindings': {
-                'ecosystem': self.ecosystem,
-                'name': self.package,
-                'version': self.version
+                'ecosystem': ecosystem,
+                'name': package,
+                'version': version
             }
         }
         logger.debug("Executing Gremlin calls with payload {}".format(payload))

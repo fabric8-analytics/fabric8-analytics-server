@@ -1,5 +1,5 @@
 {
-    "requestId": "3d15beb1-9686-488c-9ae1-bd21c8bbeb09",
+    "requestId": "2a30031f-adac-4d10-9240-1435d7964f7a",
     "status": {
         "message": "",
         "code": 200,
@@ -15,38 +15,26 @@
                     "gh_prs_last_year_closed": [
                         -1
                     ],
-                    "libio_usedby": [
-                        "Kong/unirest-java:1337",
-                        "alibaba/fastjson:12182",
-                        "datastax/java-driver:885",
-                        "dropwizard/metrics:5461",
-                        "hazelcast/hazelcast:2370",
-                        "keycloak/keycloak:1884",
-                        "orientechnologies/orientdb:3310",
-                        "spullara/mustache.java:1194",
-                        "swagger-api/swagger-core:4650",
-                        "thymeleaf/thymeleaf:1144"
-                    ],
                     "ecosystem": [
-                        "maven"
+                        "npm"
                     ],
                     "gh_subscribers_count": [
-                        147
+                        405
                     ],
                     "gh_contributors_count": [
                         30
                     ],
                     "latest_version_last_updated": [
-                        "20190811"
+                        "20190806"
                     ],
                     "vertex_label": [
                         "Package"
                     ],
                     "libio_dependents_repos": [
-                        "69193"
+                        "73184"
                     ],
                     "latest_non_cve_version": [
-                        "2.9.9"
+                        "0.8.2"
                     ],
                     "gh_issues_last_year_opened": [
                         -1
@@ -55,29 +43,25 @@
                         -1
                     ],
                     "gh_open_issues_count": [
-                        378
+                        78
                     ],
                     "libio_dependents_projects": [
-                        "3495"
+                        "6490"
                     ],
                     "latest_version": [
-                        "2.10.0.pr1"
+                        "0.8.2"
                     ],
                     "tokens": [
-                        "core",
-                        "com",
-                        "databind",
-                        "fasterxml",
-                        "jackson"
+                        "marked"
                     ],
                     "package_relative_used": [
                         "not used"
                     ],
                     "gh_stargazers": [
-                        2059
+                        21995
                     ],
                     "gh_forks": [
-                        795
+                        2794
                     ],
                     "package_dependents_count": [
                         -1
@@ -89,126 +73,961 @@
                         -1
                     ],
                     "last_updated": [
-                        1565551897.639992
+                        1.5869643797142699E9
                     ],
                     "gh_prs_last_month_closed": [
                         -1
                     ],
+                    "topics": [
+                        "commonmark",
+                        "compiler",
+                        "gfm",
+                        "markdown",
+                        "parser"
+                    ],
                     "libio_total_releases": [
-                        "120"
+                        "57"
+                    ],
+                    "gh_refreshed_on": [
+                        "2020-04-15 14:41:40"
                     ],
                     "gh_prs_last_year_opened": [
                         -1
                     ],
                     "name": [
-                        "com.fasterxml.jackson.core:jackson-databind"
+                        "marked"
                     ],
                     "libio_latest_version": [
-                        "2.9.9.2"
+                        "0.6.3"
                     ],
                     "libio_latest_release": [
-                        1564185600
+                        1.561860713E9
                     ]
                 },
                 "version": {
                     "last_updated": [
-                        1557236163.5504107
+                        1.5852805991408389E9
                     ],
-                    "shipped_as_downstream": [
-                        false
+                    "pecosystem": [
+                        "npm"
                     ],
                     "pname": [
-                        "com.fasterxml.jackson.core:jackson-databind"
+                        "marked"
                     ],
                     "vertex_label": [
                         "Version"
                     ],
-                    "description": [
-                        "General databinding functionality for Jackson: works on core streaming API"
-                    ],
                     "version": [
-                        "2.8.9"
-                    ],
-                    "dependents_count": [
-                        -1
-                    ],
-                    "licenses": [
-                        "Apache 2.0"
-                    ],
-                    "cm_avg_cyclomatic_complexity": [
-                        2.62
-                    ],
-                    "declared_licenses": [
-                        "The Apache Software License"
-                    ],
-                    "pecosystem": [
-                        "maven"
-                    ],
-                    "cm_loc": [
-                        99735
-                    ],
-                    "cm_num_files": [
-                        398
+                        "0.0.6"
                     ]
                 },
                 "cve": {
                     "severity": [
-                        "critical"
+                        "high"
                     ],
-                    "creation_time": [
-                        "2020-02-25"
-                    ],
-                    "scvss_v3": [
-                        "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
-                    ],
-                    "sfixed_in": [
-                        "2.9.0"
+                    "snyk_url": [
+                        "https://snyk.io/vuln/SNYK-JS-MARKED-10009"
                     ],
                     "references": [
-                        "{\"title\": \"Github PR\", \"url\": \"https://bugzilla.redhat.com/show_bug.cgi?id&#x3D;1462702\" },{ \"title\": \"Github Issue\", \"url\": \"https://github.com/FasterXML/jackson-databind/issues/1599\" }"
+                        "GitHub Issue:https://github.com/chjj/marked/issues/497"
                     ],
-                    "methods": [
-                        "some info"
+                    "snyk_cwes": [
+                        "CWE-185",
+                        "CWE-730"
                     ],
                     "vertex_label": [
                         "SCVE"
                     ],
-                    "snecosystem": [
-                        "maven"
+                    "description": [
+                        "## Overview\n[marked](https://github.com/markedjs/marked) is a markdown parser and compiler. Built for speed.\n\nAffected versions of this package are vulnerable to Regular Expressions Denial of Service (ReDoS) when certain types of input are passed in to be parsed.\n\n## Details\nDenial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its original and legitimate users. There are many types of DoS attacks, ranging from trying to clog the network pipes to the system by generating a large volume of traffic from many machines (a Distributed Denial of Service - DDoS - attack) to sending crafted requests that cause a system to crash or take a disproportional amount of time to process.\r\n\r\nThe Regular expression Denial of Service (ReDoS) is a type of Denial of Service attack. Regular expressions are incredibly powerful, but they arent very intuitive and can ultimately end up making it easy for attackers to take your site down.\r\n\r\nLet’s take the following regular expression as an example:\r\n```js\r\nregex = /A(B|C+)+D/\r\n```\r\n\r\nThis regular expression accomplishes the following:\r\n- `A` The string must start with the letter A\r\n- `(B|C+)+` The string must then follow the letter A with either the letter B or some number of occurrences of the letter C (the `+` matches one or more times). The `+` at the end of this section states that we can look for one or more matches of this section.\r\n- `D` Finally, we ensure this section of the string ends with a D\r\n\r\nThe expression would match inputs such as `ABBD`, `ABCCCCD`, `ABCBCCCD` and `ACCCCCD`\r\n\r\nIt most cases, it doesnt take very long for a regex engine to find a match:\r\n\r\n```bash\r\n$ time node -e /A(B|C+)+D/.test(ACCCCCCCCCCCCCCCCCCCCCCCCCCCCD)\r\n0.04s user 0.01s system 95% cpu 0.052 total\r\n\r\n$ time node -e /A(B|C+)+D/.test(ACCCCCCCCCCCCCCCCCCCCCCCCCCCCX)\r\n1.79s user 0.02s system 99% cpu 1.812 total\r\n```\r\n\r\nThe entire process of testing it against a 30 characters long string takes around ~52ms. But when given an invalid string, it takes nearly two seconds to complete the test, over ten times as long as it took to test a valid string. The dramatic difference is due to the way regular expressions get evaluated.\r\n\r\nMost Regex engines will work very similarly (with minor differences). The engine will match the first possible way to accept the current character and proceed to the next one. If it then fails to match the next one, it will backtrack and see if there was another way to digest the previous character. If it goes too far down the rabbit hole only to find out the string doesn’t match in the end, and if many characters have multiple valid regex paths, the number of backtracking steps can become very large, resulting in what is known as _catastrophic backtracking_.\r\n\r\nLets look at how our expression runs into this problem, using a shorter string: ACCCX. While it seems fairly straightforward, there are still four different ways that the engine could match those three Cs:\r\n1. CCC\r\n2. CC+C\r\n3. C+CC\r\n4. C+C+C.\r\n\r\nThe engine has to try each of those combinations to see if any of them potentially match against the expression. When you combine that with the other steps the engine must take, we can use [RegEx 101 debugger](https://regex101.com/debugger) to see the engine has to take a total of 38 steps before it can determine the string doesnt match.\r\n\r\nFrom there, the number of steps the engine must use to validate a string just continues to grow.\r\n\r\n| String | Number of Cs | Number of steps |\r\n| -------|-------------:| -----:|\r\n| ACCCX | 3 | 38\r\n| ACCCCX | 4 | 71\r\n| ACCCCCX | 5 | 136\r\n| ACCCCCCCCCCCCCCX | 14 | 65,553\r\n\r\n\r\nBy the time the string includes 14 Cs, the engine has to take over 65,000 steps just to see if the string is valid. These extreme situations can cause them to work very slowly (exponentially related to input size, as shown above), allowing an attacker to exploit this and can cause the service to excessively consume CPU, resulting in a Denial of Service.\n\n\n## Remediation\nUgrade to marked v0.3.4 or later.\n\n## References\n- [GitHub Issue](https://github.com/chjj/marked/issues/497)\n"
                     ],
-                    "surl": [
-                        "https://snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-31507"
+                    "cvss_scores": [
+                        7.5
                     ],
-                    "sdescription": [
-                        "## Overview\nAffected versions of blah blah"
+                    "modified_date": [
+                        "20200327"
                     ],
                     "title": [
-                        "Deserialization of Untrusted Data"
+                        "Regular Expression Denial of Service (DoS)"
+                    ],
+                    "snyk_ecosystem": [
+                        "npm"
                     ],
                     "malicious": [
-                        "false"
+                        false
                     ],
-                    "scwes": [
-                        "CWE-502"
+                    "snyk_cvss_v3": [
+                        "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
                     ],
-                    "sn_id": [
-                        "111"
+                    "snyk_vuln_id": [
+                        "SNYK-JS-MARKED-10009"
+                    ],
+                    "snyk_pvt_vulnerability": [
+                        true
                     ],
                     "exploit": [
                         "Not Defined"
                     ],
                     "patch_exists": [
-                        "false"
-                    ],
-                    "cvss": [
-                        9.8
+                        true
                     ],
                     "fixable": [
-                        "true"
+                        true
+                    ]
+                }
+            },
+            {
+                "package": {
+                    "gh_issues_last_month_opened": [
+                        -1
                     ],
-                    "scve_ids": [
-                        "CVE-2017-7525",
-                        "CVE-2017-7526"
+                    "gh_prs_last_year_closed": [
+                        -1
+                    ],
+                    "ecosystem": [
+                        "npm"
+                    ],
+                    "gh_subscribers_count": [
+                        405
+                    ],
+                    "gh_contributors_count": [
+                        30
+                    ],
+                    "latest_version_last_updated": [
+                        "20190806"
+                    ],
+                    "vertex_label": [
+                        "Package"
+                    ],
+                    "libio_dependents_repos": [
+                        "73184"
+                    ],
+                    "latest_non_cve_version": [
+                        "0.8.2"
+                    ],
+                    "gh_issues_last_year_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_month_closed": [
+                        -1
+                    ],
+                    "gh_open_issues_count": [
+                        78
+                    ],
+                    "libio_dependents_projects": [
+                        "6490"
+                    ],
+                    "latest_version": [
+                        "0.8.2"
+                    ],
+                    "tokens": [
+                        "marked"
+                    ],
+                    "package_relative_used": [
+                        "not used"
+                    ],
+                    "gh_stargazers": [
+                        21995
+                    ],
+                    "gh_forks": [
+                        2794
+                    ],
+                    "package_dependents_count": [
+                        -1
+                    ],
+                    "gh_prs_last_month_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_year_closed": [
+                        -1
+                    ],
+                    "last_updated": [
+                        1.5869643797142699E9
+                    ],
+                    "gh_prs_last_month_closed": [
+                        -1
+                    ],
+                    "topics": [
+                        "commonmark",
+                        "compiler",
+                        "gfm",
+                        "markdown",
+                        "parser"
+                    ],
+                    "libio_total_releases": [
+                        "57"
+                    ],
+                    "gh_refreshed_on": [
+                        "2020-04-15 14:41:40"
+                    ],
+                    "gh_prs_last_year_opened": [
+                        -1
+                    ],
+                    "name": [
+                        "marked"
+                    ],
+                    "libio_latest_version": [
+                        "0.6.3"
+                    ],
+                    "libio_latest_release": [
+                        1.561860713E9
+                    ]
+                },
+                "version": {
+                    "last_updated": [
+                        1.5852805991408389E9
+                    ],
+                    "pecosystem": [
+                        "npm"
+                    ],
+                    "pname": [
+                        "marked"
+                    ],
+                    "vertex_label": [
+                        "Version"
+                    ],
+                    "version": [
+                        "0.0.6"
+                    ]
+                },
+                "cve": {
+                    "severity": [
+                        "high"
+                    ],
+                    "snyk_url": [
+                        "https://snyk.io/vuln/SNYK-JS-MARKED-10377"
+                    ],
+                    "references": [
+                        "GitHub Commit:https://github.com/chjj/marked/commit/cd2f6f5b7091154c5526e79b5f3bfb4d15995a51"
+                    ],
+                    "snyk_cwes": [
+                        "CWE-79"
+                    ],
+                    "vertex_label": [
+                        "SCVE"
+                    ],
+                    "description": [
+                        "## Overview\n[`marked`](https://www.npmjs.com/package/marked) is a markdown parser and compiler used for rendering markdown content to html.\n\nAffected versions of the package are vulnerable to Cross-site Scripting (XSS). Data URIs enable embedding small files in line in HTML documents, provided in the URL itself.\nAttackers can craft malicious web pages containing either HTML or script code that utilizes the data URI scheme, allowing them to bypass access controls or steal sensitive information.\n\nAn example of data URI used to deliver javascript code. The data holds `<script>alert(XSS)</script>` tag in base64 encoded format.\n```html\n[xss link](data:text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4K)\n``` \n\n## Details\nCross-Site Scripting (XSS) attacks occur when an attacker tricks a user’s browser to execute malicious JavaScript code in the context of a victim’s domain. Such scripts can steal the user’s session cookies for the domain, scrape or modify its content, and perform or modify actions on the user’s behalf, actions typically blocked by the browser’s Same Origin Policy.\r\n\r\nThese attacks are possible by escaping the context of the web application and injecting malicious scripts in an otherwise trusted website. These scripts can introduce additional attributes (say, a new option in a dropdown list or a new link to a malicious site) and can potentially execute code on the clients side, unbeknown to the victim. This occurs when characters like `<` `>` `` `` are not escaped properly.\r\n\r\nThere are a few types of XSS:\r\n- **Persistent XSS** is an attack in which the malicious code persists into the web app’s database.\r\n- **Reflected XSS** is an which the website echoes back a portion of the request. The attacker needs to trick the user into clicking a malicious link (for instance through a phishing email or malicious JS on another page), which triggers the XSS attack.\r\n- **DOM-based XSS** is an that occurs purely in the browser when client-side JavaScript echoes back a portion of the URL onto the page. DOM-Based XSS is notoriously hard to detect, as the server never gets a chance to see the attack taking place.\n\n\n## Remediation\nUpgrade `marked` to version 0.3.7 or higher.\nAlso, you can patch the vulnerability using [Snyk wizard](https://snyk.io/docs/using-snyk/#wizard).\n\n## References\n- [GitHub Commit](https://github.com/chjj/marked/commit/cd2f6f5b7091154c5526e79b5f3bfb4d15995a51)\n"
+                    ],
+                    "cvss_scores": [
+                        7.5
+                    ],
+                    "snyk_cve_ids": [
+                        "CVE-2017-1000427"
+                    ],
+                    "modified_date": [
+                        "20200327"
+                    ],
+                    "title": [
+                        "Cross-site Scripting (XSS) via Data URIs"
+                    ],
+                    "snyk_ecosystem": [
+                        "npm"
+                    ],
+                    "malicious": [
+                        false
+                    ],
+                    "snyk_cvss_v3": [
+                        "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+                    ],
+                    "snyk_vuln_id": [
+                        "SNYK-JS-MARKED-10377"
+                    ],
+                    "snyk_pvt_vulnerability": [
+                        false
+                    ],
+                    "exploit": [
+                        "Not Defined"
+                    ],
+                    "patch_exists": [
+                        true
+                    ],
+                    "fixable": [
+                        true
+                    ]
+                }
+            },
+            {
+                "package": {
+                    "gh_issues_last_month_opened": [
+                        -1
+                    ],
+                    "gh_prs_last_year_closed": [
+                        -1
+                    ],
+                    "ecosystem": [
+                        "npm"
+                    ],
+                    "gh_subscribers_count": [
+                        405
+                    ],
+                    "gh_contributors_count": [
+                        30
+                    ],
+                    "latest_version_last_updated": [
+                        "20190806"
+                    ],
+                    "vertex_label": [
+                        "Package"
+                    ],
+                    "libio_dependents_repos": [
+                        "73184"
+                    ],
+                    "latest_non_cve_version": [
+                        "0.8.2"
+                    ],
+                    "gh_issues_last_year_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_month_closed": [
+                        -1
+                    ],
+                    "gh_open_issues_count": [
+                        78
+                    ],
+                    "libio_dependents_projects": [
+                        "6490"
+                    ],
+                    "latest_version": [
+                        "0.8.2"
+                    ],
+                    "tokens": [
+                        "marked"
+                    ],
+                    "package_relative_used": [
+                        "not used"
+                    ],
+                    "gh_stargazers": [
+                        21995
+                    ],
+                    "gh_forks": [
+                        2794
+                    ],
+                    "package_dependents_count": [
+                        -1
+                    ],
+                    "gh_prs_last_month_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_year_closed": [
+                        -1
+                    ],
+                    "last_updated": [
+                        1.5869643797142699E9
+                    ],
+                    "gh_prs_last_month_closed": [
+                        -1
+                    ],
+                    "topics": [
+                        "commonmark",
+                        "compiler",
+                        "gfm",
+                        "markdown",
+                        "parser"
+                    ],
+                    "libio_total_releases": [
+                        "57"
+                    ],
+                    "gh_refreshed_on": [
+                        "2020-04-15 14:41:40"
+                    ],
+                    "gh_prs_last_year_opened": [
+                        -1
+                    ],
+                    "name": [
+                        "marked"
+                    ],
+                    "libio_latest_version": [
+                        "0.6.3"
+                    ],
+                    "libio_latest_release": [
+                        1.561860713E9
+                    ]
+                },
+                "version": {
+                    "last_updated": [
+                        1.5852805991408389E9
+                    ],
+                    "pecosystem": [
+                        "npm"
+                    ],
+                    "pname": [
+                        "marked"
+                    ],
+                    "vertex_label": [
+                        "Version"
+                    ],
+                    "version": [
+                        "0.0.6"
+                    ]
+                },
+                "cve": {
+                    "severity": [
+                        "medium"
+                    ],
+                    "snyk_url": [
+                        "https://snyk.io/vuln/SNYK-JS-MARKED-10010"
+                    ],
+                    "snyk_cwes": [
+                        "CWE-74"
+                    ],
+                    "vertex_label": [
+                        "SCVE"
+                    ],
+                    "description": [
+                        "## Overview\nMarked comes with an option to sanitize user output to help protect against content injection attacks.\n\nsanitize: true\n\nEven if this option is set, marked is vulnerable to content injection in multiple locations if untrusted user input is allowed to be provided into marked and that output is passed to the browser.\n\nInjection is possible in two locations\n- gfm codeblocks (language)\n- javascript urls\n\n_Source: [Node Security Project](https://nodesecurity.io/advisories/22)_\n\n## Remediation\nUpgrade to version 0.3.1 or later\n\n## References\n\n"
+                    ],
+                    "cvss_scores": [
+                        6.5
+                    ],
+                    "snyk_cve_ids": [
+                        "CVE-2014-1850",
+                        "CVE-2014-3743"
+                    ],
+                    "modified_date": [
+                        "20200327"
+                    ],
+                    "title": [
+                        "Multiple Content Injection Vulnerabilities"
+                    ],
+                    "snyk_ecosystem": [
+                        "npm"
+                    ],
+                    "malicious": [
+                        false
+                    ],
+                    "snyk_cvss_v3": [
+                        "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+                    ],
+                    "snyk_vuln_id": [
+                        "SNYK-JS-MARKED-10010"
+                    ],
+                    "snyk_pvt_vulnerability": [
+                        false
+                    ],
+                    "exploit": [
+                        "Not Defined"
+                    ],
+                    "patch_exists": [
+                        false
+                    ],
+                    "fixable": [
+                        true
+                    ]
+                }
+            },
+            {
+                "package": {
+                    "gh_issues_last_month_opened": [
+                        -1
+                    ],
+                    "gh_prs_last_year_closed": [
+                        -1
+                    ],
+                    "ecosystem": [
+                        "npm"
+                    ],
+                    "gh_subscribers_count": [
+                        405
+                    ],
+                    "gh_contributors_count": [
+                        30
+                    ],
+                    "latest_version_last_updated": [
+                        "20190806"
+                    ],
+                    "vertex_label": [
+                        "Package"
+                    ],
+                    "libio_dependents_repos": [
+                        "73184"
+                    ],
+                    "latest_non_cve_version": [
+                        "0.8.2"
+                    ],
+                    "gh_issues_last_year_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_month_closed": [
+                        -1
+                    ],
+                    "gh_open_issues_count": [
+                        78
+                    ],
+                    "libio_dependents_projects": [
+                        "6490"
+                    ],
+                    "latest_version": [
+                        "0.8.2"
+                    ],
+                    "tokens": [
+                        "marked"
+                    ],
+                    "package_relative_used": [
+                        "not used"
+                    ],
+                    "gh_stargazers": [
+                        21995
+                    ],
+                    "gh_forks": [
+                        2794
+                    ],
+                    "package_dependents_count": [
+                        -1
+                    ],
+                    "gh_prs_last_month_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_year_closed": [
+                        -1
+                    ],
+                    "last_updated": [
+                        1.5869643797142699E9
+                    ],
+                    "gh_prs_last_month_closed": [
+                        -1
+                    ],
+                    "topics": [
+                        "commonmark",
+                        "compiler",
+                        "gfm",
+                        "markdown",
+                        "parser"
+                    ],
+                    "libio_total_releases": [
+                        "57"
+                    ],
+                    "gh_refreshed_on": [
+                        "2020-04-15 14:41:40"
+                    ],
+                    "gh_prs_last_year_opened": [
+                        -1
+                    ],
+                    "name": [
+                        "marked"
+                    ],
+                    "libio_latest_version": [
+                        "0.6.3"
+                    ],
+                    "libio_latest_release": [
+                        1.561860713E9
+                    ]
+                },
+                "version": {
+                    "last_updated": [
+                        1.5852805991408389E9
+                    ],
+                    "pecosystem": [
+                        "npm"
+                    ],
+                    "pname": [
+                        "marked"
+                    ],
+                    "vertex_label": [
+                        "Version"
+                    ],
+                    "version": [
+                        "0.0.6"
+                    ]
+                },
+                "cve": {
+                    "severity": [
+                        "high"
+                    ],
+                    "snyk_url": [
+                        "https://snyk.io/vuln/SNYK-JS-MARKED-10782"
+                    ],
+                    "references": [
+                        "GitHub Issue - Release 0.3.9 status:https://github.com/chjj/marked/pull/958",
+                        "Github Issue:https://github.com/chjj/marked/issues/937"
+                    ],
+                    "snyk_cwes": [
+                        "CWE-400"
+                    ],
+                    "vertex_label": [
+                        "SCVE"
+                    ],
+                    "description": [
+                        "## Overview\n[`marked`](https://www.npmjs.com/package/marked) is a full-featured markdown parser and compiler.\n\nAffected versions of this package are vulnerable to Regular expression Denial of Service (ReDoS) attacks when parsing the input markdown content (1,000 characters costs around 6 seconds matching time).\n\n## Details\nDenial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its original and legitimate users. There are many types of DoS attacks, ranging from trying to clog the network pipes to the system by generating a large volume of traffic from many machines (a Distributed Denial of Service - DDoS - attack) to sending crafted requests that cause a system to crash or take a disproportional amount of time to process.\r\n\r\nThe Regular expression Denial of Service (ReDoS) is a type of Denial of Service attack. Regular expressions are incredibly powerful, but they arent very intuitive and can ultimately end up making it easy for attackers to take your site down.\r\n\r\nLet’s take the following regular expression as an example:\r\n```js\r\nregex = /A(B|C+)+D/\r\n```\r\n\r\nThis regular expression accomplishes the following:\r\n- `A` The string must start with the letter A\r\n- `(B|C+)+` The string must then follow the letter A with either the letter B or some number of occurrences of the letter C (the `+` matches one or more times). The `+` at the end of this section states that we can look for one or more matches of this section.\r\n- `D` Finally, we ensure this section of the string ends with a D\r\n\r\nThe expression would match inputs such as `ABBD`, `ABCCCCD`, `ABCBCCCD` and `ACCCCCD`\r\n\r\nIt most cases, it doesnt take very long for a regex engine to find a match:\r\n\r\n```bash\r\n$ time node -e /A(B|C+)+D/.test(ACCCCCCCCCCCCCCCCCCCCCCCCCCCCD)\r\n0.04s user 0.01s system 95% cpu 0.052 total\r\n\r\n$ time node -e /A(B|C+)+D/.test(ACCCCCCCCCCCCCCCCCCCCCCCCCCCCX)\r\n1.79s user 0.02s system 99% cpu 1.812 total\r\n```\r\n\r\nThe entire process of testing it against a 30 characters long string takes around ~52ms. But when given an invalid string, it takes nearly two seconds to complete the test, over ten times as long as it took to test a valid string. The dramatic difference is due to the way regular expressions get evaluated.\r\n\r\nMost Regex engines will work very similarly (with minor differences). The engine will match the first possible way to accept the current character and proceed to the next one. If it then fails to match the next one, it will backtrack and see if there was another way to digest the previous character. If it goes too far down the rabbit hole only to find out the string doesn’t match in the end, and if many characters have multiple valid regex paths, the number of backtracking steps can become very large, resulting in what is known as _catastrophic backtracking_.\r\n\r\nLets look at how our expression runs into this problem, using a shorter string: ACCCX. While it seems fairly straightforward, there are still four different ways that the engine could match those three Cs:\r\n1. CCC\r\n2. CC+C\r\n3. C+CC\r\n4. C+C+C.\r\n\r\nThe engine has to try each of those combinations to see if any of them potentially match against the expression. When you combine that with the other steps the engine must take, we can use [RegEx 101 debugger](https://regex101.com/debugger) to see the engine has to take a total of 38 steps before it can determine the string doesnt match.\r\n\r\nFrom there, the number of steps the engine must use to validate a string just continues to grow.\r\n\r\n| String | Number of Cs | Number of steps |\r\n| -------|-------------:| -----:|\r\n| ACCCX | 3 | 38\r\n| ACCCCX | 4 | 71\r\n| ACCCCCX | 5 | 136\r\n| ACCCCCCCCCCCCCCX | 14 | 65,553\r\n\r\n\r\nBy the time the string includes 14 Cs, the engine has to take over 65,000 steps just to see if the string is valid. These extreme situations can cause them to work very slowly (exponentially related to input size, as shown above), allowing an attacker to exploit this and can cause the service to excessively consume CPU, resulting in a Denial of Service.\n\n\n## Remediation\nUpgrade `marked` to version 0.3.9 or higher.\nIn the meantime, you can patch the vulnerability using [Snyk wizard](https://snyk.io/docs/using-snyk/#wizard).\n\n## References\n- [Github Issue](https://github.com/chjj/marked/issues/937)\n- [GitHub Issue - Release 0.3.9 status](https://github.com/chjj/marked/pull/958)\n"
+                    ],
+                    "cvss_scores": [
+                        7.5
+                    ],
+                    "snyk_cve_ids": [
+                        "CVE-2017-16114"
+                    ],
+                    "modified_date": [
+                        "20200327"
+                    ],
+                    "title": [
+                        "Regular Expression Denial of Service (ReDoS)"
+                    ],
+                    "snyk_ecosystem": [
+                        "npm"
+                    ],
+                    "malicious": [
+                        false
+                    ],
+                    "snyk_cvss_v3": [
+                        "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                    ],
+                    "snyk_vuln_id": [
+                        "SNYK-JS-MARKED-10782"
+                    ],
+                    "snyk_pvt_vulnerability": [
+                        false
+                    ],
+                    "exploit": [
+                        "Not Defined"
+                    ],
+                    "patch_exists": [
+                        true
+                    ],
+                    "fixable": [
+                        true
+                    ]
+                }
+            },
+            {
+                "package": {
+                    "gh_issues_last_month_opened": [
+                        -1
+                    ],
+                    "gh_prs_last_year_closed": [
+                        -1
+                    ],
+                    "ecosystem": [
+                        "npm"
+                    ],
+                    "gh_subscribers_count": [
+                        405
+                    ],
+                    "gh_contributors_count": [
+                        30
+                    ],
+                    "latest_version_last_updated": [
+                        "20190806"
+                    ],
+                    "vertex_label": [
+                        "Package"
+                    ],
+                    "libio_dependents_repos": [
+                        "73184"
+                    ],
+                    "latest_non_cve_version": [
+                        "0.8.2"
+                    ],
+                    "gh_issues_last_year_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_month_closed": [
+                        -1
+                    ],
+                    "gh_open_issues_count": [
+                        78
+                    ],
+                    "libio_dependents_projects": [
+                        "6490"
+                    ],
+                    "latest_version": [
+                        "0.8.2"
+                    ],
+                    "tokens": [
+                        "marked"
+                    ],
+                    "package_relative_used": [
+                        "not used"
+                    ],
+                    "gh_stargazers": [
+                        21995
+                    ],
+                    "gh_forks": [
+                        2794
+                    ],
+                    "package_dependents_count": [
+                        -1
+                    ],
+                    "gh_prs_last_month_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_year_closed": [
+                        -1
+                    ],
+                    "last_updated": [
+                        1.5869643797142699E9
+                    ],
+                    "gh_prs_last_month_closed": [
+                        -1
+                    ],
+                    "topics": [
+                        "commonmark",
+                        "compiler",
+                        "gfm",
+                        "markdown",
+                        "parser"
+                    ],
+                    "libio_total_releases": [
+                        "57"
+                    ],
+                    "gh_refreshed_on": [
+                        "2020-04-15 14:41:40"
+                    ],
+                    "gh_prs_last_year_opened": [
+                        -1
+                    ],
+                    "name": [
+                        "marked"
+                    ],
+                    "libio_latest_version": [
+                        "0.6.3"
+                    ],
+                    "libio_latest_release": [
+                        1.561860713E9
+                    ]
+                },
+                "version": {
+                    "last_updated": [
+                        1.5852805991408389E9
+                    ],
+                    "pecosystem": [
+                        "npm"
+                    ],
+                    "pname": [
+                        "marked"
+                    ],
+                    "vertex_label": [
+                        "Version"
+                    ],
+                    "version": [
+                        "0.0.6"
+                    ]
+                },
+                "cve": {
+                    "severity": [
+                        "medium"
+                    ],
+                    "snyk_url": [
+                        "https://snyk.io/vuln/SNYK-JS-MARKED-10008"
+                    ],
+                    "references": [
+                        "GITHUB.COM:https://github.com/chjj/marked/issues/492"
+                    ],
+                    "snyk_cwes": [
+                        "CWE-74"
+                    ],
+                    "vertex_label": [
+                        "SCVE"
+                    ],
+                    "description": [
+                        "## Overview\n\nMarked 0.3.2 and earlier is vulnerable to content injection even when `sanitize: true` is enabled.\n\n`[xss link](vbscript:alert(1&#41;)`\n\nwill get a link\n\n`<a href=vbscript:alert(1)>xss link</a>`\n\nThis script does not work in IE 11 edge mode, but works in IE 10 compatibility view.\n\n_Source: [Node Security Project](https://nodesecurity.io/advisories/24)_\n\n## Remediation\n\nUpgrade to version 0.3.3 or greater.\n\n## References\n\n- https://github.com/chjj/marked/issues/492\n"
+                    ],
+                    "cvss_scores": [
+                        6.5
+                    ],
+                    "snyk_cve_ids": [
+                        "CVE-2015-1370"
+                    ],
+                    "modified_date": [
+                        "20200327"
+                    ],
+                    "title": [
+                        "VBScript Content Injection"
+                    ],
+                    "snyk_ecosystem": [
+                        "npm"
+                    ],
+                    "malicious": [
+                        false
+                    ],
+                    "snyk_cvss_v3": [
+                        "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+                    ],
+                    "snyk_vuln_id": [
+                        "SNYK-JS-MARKED-10008"
+                    ],
+                    "snyk_pvt_vulnerability": [
+                        false
+                    ],
+                    "exploit": [
+                        "Not Defined"
+                    ],
+                    "patch_exists": [
+                        true
+                    ],
+                    "fixable": [
+                        true
+                    ]
+                }
+            },
+            {
+                "package": {
+                    "gh_issues_last_month_opened": [
+                        -1
+                    ],
+                    "gh_prs_last_year_closed": [
+                        -1
+                    ],
+                    "ecosystem": [
+                        "npm"
+                    ],
+                    "gh_subscribers_count": [
+                        405
+                    ],
+                    "gh_contributors_count": [
+                        30
+                    ],
+                    "latest_version_last_updated": [
+                        "20190806"
+                    ],
+                    "vertex_label": [
+                        "Package"
+                    ],
+                    "libio_dependents_repos": [
+                        "73184"
+                    ],
+                    "latest_non_cve_version": [
+                        "0.8.2"
+                    ],
+                    "gh_issues_last_year_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_month_closed": [
+                        -1
+                    ],
+                    "gh_open_issues_count": [
+                        78
+                    ],
+                    "libio_dependents_projects": [
+                        "6490"
+                    ],
+                    "latest_version": [
+                        "0.8.2"
+                    ],
+                    "tokens": [
+                        "marked"
+                    ],
+                    "package_relative_used": [
+                        "not used"
+                    ],
+                    "gh_stargazers": [
+                        21995
+                    ],
+                    "gh_forks": [
+                        2794
+                    ],
+                    "package_dependents_count": [
+                        -1
+                    ],
+                    "gh_prs_last_month_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_year_closed": [
+                        -1
+                    ],
+                    "last_updated": [
+                        1.5869643797142699E9
+                    ],
+                    "gh_prs_last_month_closed": [
+                        -1
+                    ],
+                    "topics": [
+                        "commonmark",
+                        "compiler",
+                        "gfm",
+                        "markdown",
+                        "parser"
+                    ],
+                    "libio_total_releases": [
+                        "57"
+                    ],
+                    "gh_refreshed_on": [
+                        "2020-04-15 14:41:40"
+                    ],
+                    "gh_prs_last_year_opened": [
+                        -1
+                    ],
+                    "name": [
+                        "marked"
+                    ],
+                    "libio_latest_version": [
+                        "0.6.3"
+                    ],
+                    "libio_latest_release": [
+                        1.561860713E9
+                    ]
+                },
+                "version": {
+                    "last_updated": [
+                        1.5852805991408389E9
+                    ],
+                    "pecosystem": [
+                        "npm"
+                    ],
+                    "pname": [
+                        "marked"
+                    ],
+                    "vertex_label": [
+                        "Version"
+                    ],
+                    "version": [
+                        "0.0.6"
+                    ]
+                },
+                "cve": {
+                    "severity": [
+                        "high"
+                    ],
+                    "snyk_url": [
+                        "https://snyk.io/vuln/SNYK-JS-MARKED-10099"
+                    ],
+                    "references": [
+                        "GitHub Commit:https://github.com/chjj/marked/pull/592/commits/2cff85979be8e7a026a9aca35542c470cf5da523",
+                        "GitHub PR:https://github.com/chjj/marked/pull/592"
+                    ],
+                    "snyk_cwes": [
+                        "CWE-79"
+                    ],
+                    "vertex_label": [
+                        "SCVE"
+                    ],
+                    "description": [
+                        "## Overview\n[`marked`](https://www.npmjs.com/package/marked) is a markdown parser and compiler used for rendering markdown content to html. \n\nIt is vulnerable to content injection attack allowing the attacker to bypass its output sanitization (`sanitize: true`) protection. Using the [HTML Coded Character Set](https://www.w3.org/MarkUp/html-spec/html-spec_13.html#SEC13), attackers can inject `javascript:` code snippets into the output. For example, the following input `javascript&#x58document;alert&#40;1&#41;`  will result in `alert(1)` being executed when the user clicks on the link.\n\n## Details\nCross-Site Scripting (XSS) attacks occur when an attacker tricks a user’s browser to execute malicious JavaScript code in the context of a victim’s domain. Such scripts can steal the user’s session cookies for the domain, scrape or modify its content, and perform or modify actions on the user’s behalf, actions typically blocked by the browser’s Same Origin Policy.\r\n\r\nThese attacks are possible by escaping the context of the web application and injecting malicious scripts in an otherwise trusted website. These scripts can introduce additional attributes (say, a new option in a dropdown list or a new link to a malicious site) and can potentially execute code on the clients side, unbeknown to the victim. This occurs when characters like `<` `>` `` `` are not escaped properly.\r\n\r\nThere are a few types of XSS:\r\n- **Persistent XSS** is an attack in which the malicious code persists into the web app’s database.\r\n- **Reflected XSS** is an which the website echoes back a portion of the request. The attacker needs to trick the user into clicking a malicious link (for instance through a phishing email or malicious JS on another page), which triggers the XSS attack.\r\n- **DOM-based XSS** is an that occurs purely in the browser when client-side JavaScript echoes back a portion of the URL onto the page. DOM-Based XSS is notoriously hard to detect, as the server never gets a chance to see the attack taking place.\n\n\n## Remediation\nUpgrade `marked` to version 0.3.6 or higher.\nAlso, you can patch the vulnerability using [Snyk wizard](https://snyk.io/docs/using-snyk/#wizard).\n\n## References\n- [GitHub PR](https://github.com/chjj/marked/pull/592)\n- [GitHub Commit](https://github.com/chjj/marked/pull/592/commits/2cff85979be8e7a026a9aca35542c470cf5da523)\n"
+                    ],
+                    "cvss_scores": [
+                        8.8
+                    ],
+                    "snyk_cve_ids": [
+                        "CVE-2016-10531"
+                    ],
+                    "modified_date": [
+                        "20200327"
+                    ],
+                    "title": [
+                        "Content & Code Injection (XSS)"
+                    ],
+                    "snyk_ecosystem": [
+                        "npm"
+                    ],
+                    "malicious": [
+                        false
+                    ],
+                    "snyk_cvss_v3": [
+                        "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
+                    ],
+                    "snyk_vuln_id": [
+                        "SNYK-JS-MARKED-10099"
+                    ],
+                    "snyk_pvt_vulnerability": [
+                        false
+                    ],
+                    "exploit": [
+                        "Not Defined"
+                    ],
+                    "patch_exists": [
+                        true
+                    ],
+                    "fixable": [
+                        true
                     ]
                 }
             }

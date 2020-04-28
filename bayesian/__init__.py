@@ -35,7 +35,7 @@ def create_app(configfile=None):
     # do the imports here to not shadow e.g. "import bayesian.frontend.api_v1"
     # by Blueprint imported here
     from .api_v1 import api_v1
-    from bayesian.v2.api_v2 import api_v2
+    from bayesian.api.api_v2 import api_v2
     from .utils import JSONEncoderWithExtraTypes
     app = Flask(__name__)
     AppConfig(app, configfile)

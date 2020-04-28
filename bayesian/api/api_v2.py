@@ -18,7 +18,7 @@
 import urllib
 import time
 from requests_futures.sessions import FuturesSession
-from flask import Blueprint, current_app, request, g
+from flask import Blueprint, request, g
 from flask.json import jsonify
 from flask_restful import Api, Resource
 from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
@@ -30,7 +30,8 @@ from bayesian.utils import (get_system_version,
                             check_for_accepted_ecosystem)
 import os
 from fabric8a_auth.errors import AuthError
-from bayesian.v2.utility import VendorAnalyses
+from bayesian.utility.security_vendor import VendorAnalyses
+from collections import namedtuple
 
 errors = {
         'AuthError': {
@@ -69,9 +70,6 @@ def readiness():
 @api_v2.route('/liveness')
 def liveness():
     """Handle the /liveness REST API call."""
-    # Check database connection
-    current_app.logger.debug("Liveness probe - trying to connect to database "
-                             "and execute a query")
     return jsonify({}), 200
 
 
@@ -122,78 +120,70 @@ class ComponentAnalyses(Resource):
             "package": package,
             "version": version
         }
+        response_template = namedtuple("response_template", ["message", "status"])
         logger.info("Executed v2 API")
         package = urllib.parse.unquote(package)
         if not check_for_accepted_ecosystem(ecosystem):
-            msg = "Ecosystem {ecosystem} is not supported for this request".format(
-                ecosystem=ecosystem
-            )
+            msg = f"Ecosystem {ecosystem} is not supported for this request"
             raise HTTPError(400, msg)
         if ecosystem == 'maven':
             try:
                 package = MavenCoordinates.normalize_str(package)
             except ValueError:
-                msg = "Invalid maven format - {pkg}".format(
-                    pkg=package
-                )
+                msg = f"Invalid maven format - {package}"
                 metrics_payload.update({"status_code": 400, "value": time.time() - st})
                 _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
                 raise HTTPError(400, msg)
         package = case_sensitivity_transform(ecosystem, package)
 
-        # Querying GraphDB for Vendor Specific CVE Info.
-        graph_obj = VendorAnalyses(ecosystem, package, version)
-        result = graph_obj.get_vendor_analyses()
+        # Perform Component Analyses on Vendor specific Graph Edge.
+        analyses_result = VendorAnalyses(ecosystem, package, version).get_vendor_analyses()
 
-        if result is not None:
-            # Known component for Bayesian
+        if analyses_result is not None:
+            # Known component for Fabric8 Analytics
             server_create_component_bookkeeping(ecosystem, package, version, g.decoded_token)
 
             metrics_payload.update({"status_code": 200, "value": time.time() - st})
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
-            return result
+            return analyses_result
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
-            # Enter the unknown path
+            # Trigger the unknown component ingestion.
             server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
                                    api_flow=True, force=False, force_graph_sync=True)
-            msg = "Package {ecosystem}/{package}/{version} is unavailable. " \
+            msg = f"Package {ecosystem}/{package}/{version} is unavailable. " \
                   "The package will be available shortly," \
-                  " please retry after some time.".format(ecosystem=ecosystem, package=package,
-                                                          version=version)
+                  " please retry after some time."
 
             metrics_payload.update({"status_code": 202, "value": time.time() - st})
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
 
-            return {'error': msg}, 202
-        else:
-            # no data has been found
-            server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
-                                   api_flow=False, force=False, force_graph_sync=True)
-            msg = "No data found for {ecosystem} package " \
-                  "{package}/{version}".format(ecosystem=ecosystem,
-                                               package=package, version=version)
+            return response_template({'error': msg}, 202)
 
-            metrics_payload.update({"status_code": 404, "value": time.time() - st})
-            _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
+        # No data has been found and INVOKE_API_WORKERS flag is down.
+        server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
+                               api_flow=False, force=False, force_graph_sync=True)
+        msg = f"No data found for {ecosystem} package {package}/{version}"
 
-            raise HTTPError(404, msg)
+        metrics_payload.update({"status_code": 404, "value": time.time() - st})
+        _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
+
+        raise HTTPError(404, msg)
 
 
 @api_v2.route('/_error')
 def error():
     """Implement the endpoint used by httpd, which redirects its errors to it."""
     try:
-        status = int(request.environ['REDIRECT_STATUS'])
+        status = int(os.getenv("REDIRECT_STATUS"))
     except Exception:
         # if there's an exception, it means that a client accessed this directly;
         #  in this case, we want to make it look like the endpoint is not here
         return api_404_handler()
     msg = 'Unknown error'
-    # for now, we just provide specific error for stuff that already happened;
-    #  before adding more, I'd like to see them actually happening with reproducers
     if status == 401:
         msg = 'Authentication failed'
+        raise AuthError(status, msg)
     elif status == 405:
         msg = 'Method not allowed for this endpoint'
     raise HTTPError(status, msg)
@@ -234,7 +224,10 @@ add_resource_no_matter_slashes(SystemVersion, '/system/version')
 @api_v2.errorhandler(HTTPError)
 def handle_http_error(err):
     """Handle HTTPError exceptions."""
-    return jsonify({'error': err.error}), err.status_code
+    try:
+        return jsonify({'error': err.error}), err.status_code
+    except AttributeError:
+        return jsonify({'error': err.data.get('error')}), err.code
 
 
 @api_v2.errorhandler(AuthError)
