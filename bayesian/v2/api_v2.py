@@ -380,6 +380,10 @@ class StackAnalyses(Resource):
             raise HTTPError(500, "Error updating log for request {t}".format(t=sid)) from e
 
     @staticmethod
+    def get():
+        raise HTTError(400, "Error processing request. 'request id' missing")
+
+    @staticmethod
     def get(external_request_id):
         """Handle the GET REST API call."""
         # TODO: reduce cyclomatic complexity

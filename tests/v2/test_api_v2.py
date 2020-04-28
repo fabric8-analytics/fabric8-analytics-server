@@ -206,20 +206,6 @@ class TestCommonEndpoints(object):
                               headers=accept_json)
         assert res.status_code == 400
 
-    def test_component_analyses1(self):
-        """Test the /component-analyses endpoint for POST."""
-        data = [
-            {
-                "ecosystem": "abcd",
-                "package": "hhh",
-                "version": "tttt"
-            }
-        ]
-        res = self.client.post(api_route_for('/component-analyses'),
-                               data=json.dumps(data),
-                               content_type='application/json')
-        assert res.status_code == 400
-
 
 @pytest.mark.usefixtures('client_class')
 class TestApiV2SystemVersion(object):
