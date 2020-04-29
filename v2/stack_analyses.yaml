@@ -549,7 +549,6 @@ components:
         - manifest_name
         - ecosystem
         - unknown_dependencies
-        - transitive_count
         - license_analysis
         - dependencies
         - recommendation
@@ -578,10 +577,6 @@ components:
               version: 2020.1.alpha
             - name: jsonp
               version: 0.0.1
-        transitive_count:
-          type: integer
-          default: -1
-          example: 11
         license_analysis:
           $ref: '#/components/schemas/LicenseAnalysis'
         recommendation:
