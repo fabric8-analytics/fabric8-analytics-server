@@ -274,8 +274,8 @@ class ComponentAnalyses(Resource):
                 raise HTTPError(400, msg)
 
         package = case_sensitivity_transform(ecosystem, package)
-        # Querying GraphDB for CVE Info.
 
+        # Querying GraphDB for CVE Info.
         result = get_analyses_from_graph(ecosystem, package, version)
 
         if result is not None:
@@ -827,14 +827,17 @@ class StackAnalyses(Resource):
                 # check if manifest files with given name are supported
                 manifest_descriptor = get_manifest_descriptor_by_filename(filename)
                 if manifest_descriptor is None:
-                    raise HTTPError(400, error="Manifest file '{filename}' is not supported".format(
-                        filename=filename))
+                    raise HTTPError(400,
+                                    error="Error processing request. "
+                                          "Manifest file '{filename}' is not supported".format(
+                                               filename=filename))
 
                 # Check if the manifest is valid
                 if not manifest_descriptor.validate(content):
                     raise HTTPError(400,
                                     error="Error processing request. Please upload a valid "
-                                          "manifest file '{filename}'".format(filename=filename))
+                                          "manifest file '{filename}'".format(
+                                               filename=filename))
 
             # Record the response details for this manifest file
 
@@ -845,7 +848,8 @@ class StackAnalyses(Resource):
                 # Exception is raised when origin is vscode and ecosystem header is not set.
                 manifest['ecosystem'] = ecosystem or manifest_descriptor.ecosystem
             except UnboundLocalError:
-                raise HTTPError(400, error="ecosystem header must be set.")
+                raise HTTPError(400, error="Error processing request, "
+                                           "'ecosystem' header must be set.")
 
             manifests.append(manifest)
 

@@ -15,29 +15,37 @@
 #
 """Definition of all v2 REST API endpoints of the server module."""
 
+import os
 import urllib
 import time
+
 from requests_futures.sessions import FuturesSession
 from flask import Blueprint, current_app, request, g
 from flask.json import jsonify
 from flask_restful import Api, Resource
-from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
-from fabric8a_auth.auth import login_required
+
+from bayesian.v2.utility import VendorAnalyses
+from bayesian.v2.stack_analyses import StackAnalyses
+
 from bayesian.exceptions import HTTPError
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
                             check_for_accepted_ecosystem)
-import os
+
+from fabric8a_auth.auth import login_required
 from fabric8a_auth.errors import AuthError
-from bayesian.v2.utility import VendorAnalyses
+
+from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
+
 
 errors = {
-        'AuthError': {
-                         'status': 401,
-                         'message': 'Authentication failed',
-                         'some_description': 'Authentication failed'
-                     }}
+    'AuthError': {
+        'status': 401,
+        'message': 'Authentication failed',
+        'some_description': 'Authentication failed'
+    }
+}
 
 api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 rest_api_v2 = Api(api_v2, errors=errors)
@@ -180,6 +188,38 @@ class ComponentAnalyses(Resource):
             raise HTTPError(404, msg)
 
 
+class StackAnalysesPost(Resource):
+    """Implementation of /stack-analyses POST REST API call."""
+
+    @staticmethod
+    def get():
+        """Enpoint not supported, refer to StackAnalysesGet class for 'get' method."""
+        error_message = "API endpoint 'get' not supported."
+        current_app.logger.error(error_message)
+        raise HTTPError(404, error=error_message)
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        return StackAnalyses.post()
+
+
+class StackAnalysesGet(Resource):
+    """Implementation of /stack-analyses GET REST API request."""
+
+    @staticmethod
+    def get(external_request_id):
+        """Handle the GET REST API call."""
+        return StackAnalyses.get(external_request_id)
+
+    @staticmethod
+    def post(external_request_id):
+        """Enpoint not supported, refer to StackAnalysesPost class for 'post' method."""
+        error_message = "API endpoint 'post' not supported."
+        current_app.logger.error(error_message)
+        raise HTTPError(404, error=error_message)
+
+
 @api_v2.route('/_error')
 def error():
     """Implement the endpoint used by httpd, which redirects its errors to it."""
@@ -223,10 +263,20 @@ def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
+add_resource_no_matter_slashes(SystemVersion, '/system/version')
+
+# Component analyses routes
 add_resource_no_matter_slashes(ComponentAnalyses,
                                '/component-analyses/<ecosystem>/<package>/<version>',
-                               endpoint='get_component_analysis')
-add_resource_no_matter_slashes(SystemVersion, '/system/version')
+                               endpoint='get_component_analyses')
+
+# Stack analyses routes
+add_resource_no_matter_slashes(StackAnalysesPost,
+                               '/stack-analyses',
+                               endpoint='post_stack_analyses')
+add_resource_no_matter_slashes(StackAnalysesGet,
+                               '/stack-analyses/<external_request_id>',
+                               endpoint='get_stack_analyses')
 
 
 # ERROR HANDLING

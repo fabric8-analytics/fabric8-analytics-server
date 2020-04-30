@@ -1,0 +1,218 @@
+{
+    "requestId": "3d15beb1-9686-488c-9ae1-bd21c8bbeb09",
+    "status": {
+        "message": "",
+        "code": 200,
+        "attributes": {}
+    },
+    "result": {
+        "data": [
+            {
+                "package": {
+                    "gh_issues_last_month_opened": [
+                        -1
+                    ],
+                    "gh_prs_last_year_closed": [
+                        -1
+                    ],
+                    "libio_usedby": [
+                        "Kong/unirest-java:1337",
+                        "alibaba/fastjson:12182",
+                        "datastax/java-driver:885",
+                        "dropwizard/metrics:5461",
+                        "hazelcast/hazelcast:2370",
+                        "keycloak/keycloak:1884",
+                        "orientechnologies/orientdb:3310",
+                        "spullara/mustache.java:1194",
+                        "swagger-api/swagger-core:4650",
+                        "thymeleaf/thymeleaf:1144"
+                    ],
+                    "ecosystem": [
+                        "maven"
+                    ],
+                    "gh_subscribers_count": [
+                        147
+                    ],
+                    "gh_contributors_count": [
+                        30
+                    ],
+                    "latest_version_last_updated": [
+                        "20190811"
+                    ],
+                    "vertex_label": [
+                        "Package"
+                    ],
+                    "libio_dependents_repos": [
+                        "69193"
+                    ],
+                    "latest_non_cve_version": [
+                        "2.9.9"
+                    ],
+                    "gh_issues_last_year_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_month_closed": [
+                        -1
+                    ],
+                    "gh_open_issues_count": [
+                        378
+                    ],
+                    "libio_dependents_projects": [
+                        "3495"
+                    ],
+                    "latest_version": [
+                        "2.10.0.pr1"
+                    ],
+                    "tokens": [
+                        "core",
+                        "com",
+                        "databind",
+                        "fasterxml",
+                        "jackson"
+                    ],
+                    "package_relative_used": [
+                        "not used"
+                    ],
+                    "gh_stargazers": [
+                        2059
+                    ],
+                    "gh_forks": [
+                        795
+                    ],
+                    "package_dependents_count": [
+                        -1
+                    ],
+                    "gh_prs_last_month_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_year_closed": [
+                        -1
+                    ],
+                    "last_updated": [
+                        1565551897.639992
+                    ],
+                    "gh_prs_last_month_closed": [
+                        -1
+                    ],
+                    "libio_total_releases": [
+                        "120"
+                    ],
+                    "gh_prs_last_year_opened": [
+                        -1
+                    ],
+                    "name": [
+                        "com.fasterxml.jackson.core:jackson-databind"
+                    ],
+                    "libio_latest_version": [
+                        "2.9.9.2"
+                    ],
+                    "libio_latest_release": [
+                        1564185600
+                    ]
+                },
+                "version": {
+                    "last_updated": [
+                        1557236163.5504107
+                    ],
+                    "shipped_as_downstream": [
+                        false
+                    ],
+                    "pname": [
+                        "com.fasterxml.jackson.core:jackson-databind"
+                    ],
+                    "vertex_label": [
+                        "Version"
+                    ],
+                    "description": [
+                        "General databinding functionality for Jackson: works on core streaming API"
+                    ],
+                    "version": [
+                        "2.8.9"
+                    ],
+                    "dependents_count": [
+                        -1
+                    ],
+                    "licenses": [
+                        "Apache 2.0"
+                    ],
+                    "cm_avg_cyclomatic_complexity": [
+                        2.62
+                    ],
+                    "declared_licenses": [
+                        "The Apache Software License"
+                    ],
+                    "pecosystem": [
+                        "maven"
+                    ],
+                    "cm_loc": [
+                        99735
+                    ],
+                    "cm_num_files": [
+                        398
+                    ]
+                },
+                "cve": {
+                    "severity": [
+                        "critical"
+                    ],
+                    "creation_time": [
+                        "2020-02-25"
+                    ],
+                    "scvss_v3": [
+                        "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                    ],
+                    "sfixed_in": [
+                        "2.9.0"
+                    ],
+                    "references": [
+                        "{\"title\": \"Github PR\", \"url\": \"https://bugzilla.redhat.com/show_bug.cgi?id&#x3D;1462702\" },{ \"title\": \"Github Issue\", \"url\": \"https://github.com/FasterXML/jackson-databind/issues/1599\" }"
+                    ],
+                    "methods": [
+                        "some info"
+                    ],
+                    "vertex_label": [
+                        "SCVE"
+                    ],
+                    "snecosystem": [
+                        "maven"
+                    ],
+                    "surl": [
+                        "https://snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-31507"
+                    ],
+                    "sdescription": [
+                        "## Overview\nAffected versions of blah blah"
+                    ],
+                    "title": [
+                        "Deserialization of Untrusted Data"
+                    ],
+                    "malicious": [
+                        "false"
+                    ],
+                    "scwes": [
+                        "CWE-502"
+                    ],
+                    "sn_id": [
+                        "111"
+                    ],
+                    "exploit": [
+                        "Not Defined"
+                    ],
+                    "patch_exists": [
+                        "false"
+                    ],
+                    "cvss": [
+                        9.8
+                    ],
+                    "fixable": [
+                        "true"
+                    ],
+                    "scve_ids": [
+                        "CVE-2017-7525",
+                        "CVE-2017-7526"
+                    ]
+                }
+            }
+        ],
+        "meta": {}
+    }
+}
