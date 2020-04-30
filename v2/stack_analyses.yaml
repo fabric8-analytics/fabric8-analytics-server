@@ -550,7 +550,6 @@ components:
         - ecosystem
         - unknown_dependencies
         - license_analysis
-        - dependencies
         - recommendation
       discriminator:
         propertyName: registration_status
