@@ -555,7 +555,7 @@ components:
       discriminator:
         propertyName: registration_status
         mapping:
-          registerd: StackAnalysesResultForRegisteredUser
+          registered: StackAnalysesResultForRegisteredUser
           freetier: StackAnalysesResultForFreeTier
       properties:
         registration_status:
