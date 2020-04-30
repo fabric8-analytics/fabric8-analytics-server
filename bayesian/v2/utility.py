@@ -93,14 +93,7 @@ class VendorAnalyses:
         logger.info("Checking if package is known.")
         if query_result is None:
             return False
-<<<<<<< HEAD
         result_data = query_result.get('result', {}).get('data')
-=======
-        result_data = query_result.get('result')
-        if result_data is None:
-            return False
-        result_data = result_data.get('data')
->>>>>>> 4fdbcea... Added test cases for V2 api and corrected failing utility test cases
         if not (result_data and len(result_data) > 0):
             return False
         return True
@@ -155,19 +148,9 @@ class ResponseBuilder():
         :return: Json Response
         """
         logger.info("Generating Recommendation")
-<<<<<<< HEAD
         result_data = graph_response.get('result', {}).get('data')
         latest_non_cve_versions = result_data[0].get('package', {}).get(
                                             'latest_non_cve_version')
-=======
-        result_data = graph_response['result'].get('data')
-        package = result_data[0].get('package')
-        if package is None:
-            return dict(recommendation={})
-
-        latest_non_cve_versions = package.get('latest_non_cve_version')
-
->>>>>>> 4fdbcea... Added test cases for V2 api and corrected failing utility test cases
         for data in result_data:
             this_version = data.get('version', {}).get('version', [None])[0]
             if this_version == self.version:
