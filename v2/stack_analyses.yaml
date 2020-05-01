@@ -554,8 +554,8 @@ components:
       discriminator:
         propertyName: registration_status
         mapping:
-          registered: StackAnalysesResultForRegisteredUser
-          freetier: StackAnalysesResultForFreeTier
+          registered: '#/components/schemas/StackAnalysesResultForRegisteredUser'
+          freetier: '#/components/schemas/StackAnalysesResultForFreeTier'
       properties:
         registration_status:
           $ref: '#/components/schemas/RegistrationStatus'
