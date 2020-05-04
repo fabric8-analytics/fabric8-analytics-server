@@ -193,54 +193,56 @@ components:
 
     PremiumVulnerabilityFields:
       title: PremiumVulnerabilityFields
-      type: object
-      properties:
-        malicious:
-          type: boolean
-          default: true
-        patch_exists:
-          type: boolean
-          default: false
-          example: true
-        fixable:
-          type: boolean
-          default: false
-          example: true
-        exploit:
-          type: string
-          enum:
-            - High
-            - Functional
-            - Proof of Concept
-            - Unproven
-            - Not Defined
-          example: High
-        description:
-          type: string
-          example: |
-            "## Overview\r\n[`django`](https://pypi.python.org/pypi/django) is a high-level Python Web framework that encourages rapid development and clean, pragmatic design.\r\n\r\nAffected versions of this package expose sensitive information due to not properly restricting the use of a query string that performs certain object filtering. An attacker may obtain sensitive information via a series of requests containing regular expressions, as demonstrated by a `created_by__password__regex` parameter.\r\n\r\n## References\r\n- [Django Vulnerability Description](http://www.djangoproject.com/weblog/2010/dec/22/security/)\r\n- [GitHub Commit](https://github.com/django/django/commit/732198ed5c)\r\n- [Redhat Bugzilla](https://bugzilla.redhat.com/show_bug.cgi?id=665373)\r\n- [Openwall](http://www.openwall.com/lists/oss-security/2011/01/03/5)\r\n- [CVE](https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2010-4534)\r\n"
-        fixed_in:
-          type: array
-          items:
-            type: string
-          example:
-            - 2.6.7
-            - 2.7.5
-            - 2.8.0
-        references:
-          type: array
-          items:
-            type: object
-            properties:
-              title:
+      allOf:
+        - $ref: '#/components/schemas/BasicVulnerabilityFields'
+        - type: object
+          properties:
+            malicious:
+              type: boolean
+              default: true
+            patch_exists:
+              type: boolean
+              default: false
+              example: true
+            fixable:
+              type: boolean
+              default: false
+              example: true
+            exploit:
+              type: string
+              enum:
+                - High
+                - Functional
+                - Proof of Concept
+                - Unproven
+                - Not Defined
+              example: High
+            description:
+              type: string
+              example: |
+                "## Overview\r\n[`django`](https://pypi.python.org/pypi/django) is a high-level Python Web framework that encourages rapid development and clean, pragmatic design.\r\n\r\nAffected versions of this package expose sensitive information due to not properly restricting the use of a query string that performs certain object filtering. An attacker may obtain sensitive information via a series of requests containing regular expressions, as demonstrated by a `created_by__password__regex` parameter.\r\n\r\n## References\r\n- [Django Vulnerability Description](http://www.djangoproject.com/weblog/2010/dec/22/security/)\r\n- [GitHub Commit](https://github.com/django/django/commit/732198ed5c)\r\n- [Redhat Bugzilla](https://bugzilla.redhat.com/show_bug.cgi?id=665373)\r\n- [Openwall](http://www.openwall.com/lists/oss-security/2011/01/03/5)\r\n- [CVE](https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2010-4534)\r\n"
+            fixed_in:
+              type: array
+              items:
                 type: string
-                example: Redhat Security Advisory
-              url:
-                type: string
-                example: https://access.redhat.com/security/cve/CVE-2013-2186
-      description: |
-        Extended Vulnerability details, available only to registered users
-  
+              example:
+                - 2.6.7
+                - 2.7.5
+                - 2.8.0
+            references:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    example: Redhat Security Advisory
+                  url:
+                    type: string
+                    example: https://access.redhat.com/security/cve/CVE-2013-2186
+          description: |
+            Extended Vulnerability details, available only to registered users
+
     Package:
       title: Package
       type: object
@@ -254,46 +256,40 @@ components:
         version:
           type: string
           example: 1.2.1
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Package'
+          example:
+            - requests:
+                name: requests
+                version: 1.2.3
+            - six:
+                name: six
+                version: 5.1.1          
       description: Package details
-
-    PackageWithTransitives:
-      title: PackageWithTransitives
-      allOf:
-        - $ref: '#/components/schemas/Package'
-        - type: object
-          properties:
-            deps:
-              type: array
-              items:
-                $ref: '#/components/schemas/Package'
-              example:
-                - requests:
-                    name: requests
-                    version: 1.2.3
-                - six:
-                    name: six
-                    version: 5.1.1
-      description: Package details with transitives
 
     UnknownLicenses:
       title: UnknownLicenses
       type: object
-      required: 
-        - component_conflict
-        - really_unknown
       properties:
         component_conflict:
           type: array
           items:
             type: object
             properties:
+              package:
+                type: string
+                example: django
               license1:
                 type: string
                 example: BSD License (BSD)
               license2:
                 type: string
                 example: General Public License V3(GPL)
-        really_unknown:
+          description: |
+            List of conflicting licenses
+        unknowns:
           type: array
           items:
             type: object
@@ -304,7 +300,9 @@ components:
               license:
                 type: string
                 example: BSD License (BSD)
-      description: Data of licenses unknown to the system
+            description: |
+              List of licenses which are unknown to the platform.
+      description: Licesens which are unknown to the platform.
 
     ConflictPackages:
       title: ConflictPackages
@@ -352,6 +350,15 @@ components:
           properties: {}
         unknown_licenses:
           $ref: '#/components/schemas/UnknownLicenses'
+        distinct_licenses:
+          type: array
+          items:
+            type: string
+        stack_license_conflict:
+          type: boolean
+        total_licenses:
+          type: integer
+          example: 15          
       description: License analyses data
 
     GitHubDetails:
@@ -404,10 +411,10 @@ components:
         - $ref: '#/components/schemas/Package'
         - type: object
           required:
+            - name
+            - version
             - latest_version
             - ecosystem
-            - public_vulnerabilities_count
-            - private_vulnerabilities_count
           properties:
             latest_version:
               type: string
@@ -420,21 +427,8 @@ components:
                 type: string
               example:
                 - Apache License, Version 2.0
-            topic_list:
-              type: array
-              items:
-                type: string
             ecosystem:
               $ref: '#/components/schemas/Ecosystem'
-            public_vulnerabilities_count:
-              type: integer
-              example: 21
-            private_vulnerabilities_count:
-              type: integer
-              example: 3
-            osio_user_count:
-              type: integer
-              example: 123
             url:
               type: string
               example: 
@@ -442,56 +436,41 @@ components:
                 - https://snyk.io/vuln/pip:jinja2
           description: Details of the package
 
-    RecommendedVersionForPublicVulnerabilities:
-      title: RecommendedVersionForPublicVulnerabilities
-      properties:
-        recommended_version:
-            type: string
-            example: 3.0.0
-      description: |
-        Recommended package version which includes only fix 
-        public vulnerability
-
-    RecommendedVersionForPublicAndPrivateVulnerabilities:
-      title: RecommendedVersionForPublicAndPrivateVulnerabilities
-      properties:
-        recommended_version:
-            type: string
-            example: 3.0.0
-      description: |
-        Recommended package version which includes fix for public 
-        and private vulnerability
-
     PackageDetailsForRegisteredUser:
       title: PackageDetailsForRegisteredUser
       allOf:
         - $ref: '#/components/schemas/PackageDetails'
-        - $ref: '#/components/schemas/RecommendedVersionForPublicAndPrivateVulnerabilities'
         - type: object
           properties:
             public_vulnerabilities:
               type: array
               description: Publicly known vulnerability details
               items:
-                allOf:
-                  - $ref: '#/components/schemas/PremiumVulnerabilityFields'
-                  - $ref: '#/components/schemas/BasicVulnerabilityFields'
+                $ref: '#/components/schemas/PremiumVulnerabilityFields'
             private_vulnerabilities:
               type: array
               description: |
                 Private vulnerability details, available only to registered
                 users
               items:
-                allOf:
-                  - $ref: '#/components/schemas/PremiumVulnerabilityFields'
-                  - $ref: '#/components/schemas/BasicVulnerabilityFields'
+                $ref: '#/components/schemas/PremiumVulnerabilityFields'
+            recommended_version:
+              type: string
+              example: 3.0.0
+              description: |
+                Recommended package version which includes fix for both public and private vulnerabilities.
+            vulnerable_dependencies:
+              type: array
+              items:
+                $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
+              description: |
+                List of dependencies which are vulnerable.
           description: Details of the package for registered users
 
     PackageDetailsForFreeTier:
       title: PackageDetailsForFreeTier
       allOf:
         - $ref: '#/components/schemas/PackageDetails'
-        - $ref: '#/components/schemas/RecommendedVersionForPublicVulnerabilities'
         - type: object
           properties:
             public_vulnerabilities:
@@ -504,6 +483,17 @@ components:
               description: Private vulnerability details with limited info
               items:
                 $ref: '#/components/schemas/BasicVulnerabilityFields'
+            recommended_version:
+              type: string
+              example: 3.0.0
+              description: |
+                Recommended package version which includes fix for public vulnerabilities.
+            vulnerable_dependencies:
+              type: array
+              items:
+                $ref: '#/components/schemas/PackageDetailsForFreeTier'    
+              description: |
+                List of dependencies which are vulnerable.
           description: Details of the package for free tier users
 
     RecommendedPackageData:
@@ -523,7 +513,7 @@ components:
             type: array
             items:
               type: string
-
+              
     StackRecommendation:
       title: StackRecommendation
       type: object
@@ -540,7 +530,15 @@ components:
           items:
             type: object
             properties: {}
-      description: Application stack recommendations
+      description: Application stack recommendations              
+              
+    RegistrationStatus:
+      title: RegistrationStatus
+      type: string
+      enum:
+        - registered
+        - freetier
+      default: freetier
       
     StackAnalysesResult:
       title: StackAnalysesResult
@@ -550,29 +548,17 @@ components:
         - manifest_file_path
         - manifest_name
         - ecosystem
-        - unknown_dependencies_count
         - unknown_dependencies
-        - analyzed_direct_dependencies_count
-        - transitive_count
-        - vulnerable_transitives_count
         - license_analysis
-        - distinct_licenses
-        - stack_license_conflict
-        - dependencies
-        - total_licenses
-        - recommendation_ready
         - recommendation
       discriminator:
         propertyName: registration_status
         mapping:
-          registerd: StackAnalysesResultForRegisteredUser
-          freetier: StackAnalysesResultForFreeTier
+          registered: '#/components/schemas/StackAnalysesResultForRegisteredUser'
+          freetier: '#/components/schemas/StackAnalysesResultForFreeTier'
       properties:
         registration_status:
-          type: string
-          enum:
-            - registered
-            - freetier
+          $ref: '#/components/schemas/RegistrationStatus'
         manifest_file_path:
           type: string
           example: pom.xml
@@ -581,9 +567,6 @@ components:
           example: dependencies.txt
         ecosystem:
           $ref: '#/components/schemas/Ecosystem'
-        unknown_dependencies_count:
-          type: integer
-          example: 2
         unknown_dependencies:
           type: array
           items:
@@ -593,34 +576,8 @@ components:
               version: 2020.1.alpha
             - name: jsonp
               version: 0.0.1
-        analyzed_direct_dependencies_count:
-          type: integer
-          example: 25              
-        transitive_count:
-          type: integer
-          default: -1
-          example: 11
-        vulnerable_transitives_count:
-          type: integer
-          default: -1
-          example: 1
         license_analysis:
           $ref: '#/components/schemas/LicenseAnalysis'
-        distinct_licenses:
-          type: array
-          items:
-            type: string
-        stack_license_conflict:
-          type: boolean
-        dependencies:
-          type: array
-          items:
-            $ref: '#/components/schemas/PackageWithTransitives'
-        total_licenses:
-          type: integer
-          example: 15
-        recommendation_ready:
-          type: boolean
         recommendation:
           $ref: '#/components/schemas/StackRecommendation'
       description: Stack analyses result data
@@ -631,33 +588,14 @@ components:
       - $ref: '#/components/schemas/StackAnalysesResult'      
       - type: object
         required:
-          - analyzed_direct_dependencies
-          - vulnerable_transitives
+          - analyzed_dependencies
         properties:
-          analyzed_direct_dependencies:
+          analyzed_dependencies:
             type: array
             items:
               $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
             description: |
               All direct dependencies details regardless of it's vulnerability status
-          vulnerable_transitives:
-            type: array
-            items:
-              allOf:
-                - type: object
-                  properties:
-                    dependents:
-                      type: array
-                      description: Lists all direct dependencies of this package
-                      items:
-                        $ref: '#/components/schemas/Package'
-                      example:
-                        - name: jinja2
-                          version: 2.5.2
-                        - name: django-orm
-                - $ref: '#/components/schemas/PackageDetailsForRegisteredUser'
-            description: |
-              Only Transitives which has vulnerability associated with it.
       description: Stack analyses result for registered user
       
     StackAnalysesResultForFreeTier:
@@ -667,35 +605,16 @@ components:
       - type: object
         required:
           - registration_link
-          - analyzed_direct_dependencies
-          - vulnerable_transitives
+          - analyzed_dependencies
         properties:
           registration_link:
             type: string
-            format: url
-          analyzed_direct_dependencies:
+          analyzed_dependencies:
             type: array
             items:
               $ref: '#/components/schemas/PackageDetailsForFreeTier'
             description: |
               All direct dependencies details regardless of it's vulnerability status
-          vulnerable_transitives:
-            type: array
-            items:
-              allOf:
-                - type: object
-                  properties:
-                    dependents:
-                      type: array
-                      description: Lists all direct dependencies of this package
-                      items:
-                        $ref: '#/components/schemas/Package'
-                      example:
-                        - name: jinja2
-                          version: 2.5.2
-                        - name: django-orm
-                          version: 7.1.0
-                - $ref: '#/components/schemas/PackageDetailsForFreeTier'
       description: Stack analyses result for free tier user
 
     StackAnalysesReport:
