@@ -550,7 +550,7 @@ components:
         - started_at
         - ended_at
         - uuid
-        - request_id
+        - external_request_id
         - registration_status
         - manifest_file_path
         - manifest_name
