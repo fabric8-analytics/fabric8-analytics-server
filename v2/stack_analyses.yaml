@@ -546,9 +546,6 @@ components:
       title: StackAnalysesResult
       type: object
       required:
-        - version
-        - started_at
-        - ended_at
         - uuid
         - external_request_id
         - registration_status
@@ -564,21 +561,12 @@ components:
           registered: '#/components/schemas/StackAnalysesResultForRegisteredUser'
           freetier: '#/components/schemas/StackAnalysesResultForFreeTier'
       properties:
-        version:
+        uuid:
           type: string
-          example: v2
-        started_at:
-          type: string
-          example: "2020-04-06 11:56:08.349405"
-        ended_at:
-          type: string
-          example: "2020-04-06 11:58:18.349405"
+          format: uuid      
         external_request_id:
           type: string
           example: "229e7da76708fe374d8c10fa752e72989f"
-        uuid:
-          type: string
-          format: uuid
         registration_status:
           $ref: '#/components/schemas/RegistrationStatus'
         manifest_file_path:
