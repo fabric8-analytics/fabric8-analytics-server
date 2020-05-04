@@ -573,9 +573,12 @@ components:
         ended_at:
           type: string
           example: "2020-04-06 11:58:18.349405"
-        request_id:
+        external_request_id:
           type: string
           example: "229e7da76708fe374d8c10fa752e72989f"
+        uuid:
+          type: string
+          format: uuid
         registration_status:
           $ref: '#/components/schemas/RegistrationStatus'
         manifest_file_path:
