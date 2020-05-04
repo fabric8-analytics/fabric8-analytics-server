@@ -547,7 +547,6 @@ components:
       type: object
       required:
         - uuid
-        - external_request_id
         - registration_status
         - manifest_file_path
         - manifest_name
@@ -564,9 +563,6 @@ components:
         uuid:
           type: string
           format: uuid      
-        external_request_id:
-          type: string
-          example: "229e7da76708fe374d8c10fa752e72989f"
         registration_status:
           $ref: '#/components/schemas/RegistrationStatus'
         manifest_file_path:
