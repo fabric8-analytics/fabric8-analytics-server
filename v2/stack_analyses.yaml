@@ -22,7 +22,7 @@ paths:
       summary: |
         Initiates a scan to gather security and other details about 
         an application stack and related recommendations to improve 
-        the stack
+        the stack.
       parameters:
       - name: uuid
         in: header
@@ -87,7 +87,7 @@ paths:
           description: Request Unauthorized
           content: {}
 
-  /stack-analyses/{request-id}:
+  /stack-analyses/{request_id}:
     get:
       tags:
       - Scan Services
@@ -95,7 +95,7 @@ paths:
         Get security and other details about an application stack 
         and related recommendations to improve the stack.
       parameters:
-      - name: request-id
+      - name: request_id
         in: path
         description: stack analysis request id
         required: true
@@ -109,7 +109,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StackAnalysesReport'
+                oneOf:
+                - $ref: '#/components/schemas/StackAnalysesResultForRegisteredUser'
+                - $ref: '#/components/schemas/StackAnalysesResultForFreeTier'
         202:
           description: Report generation is inprogress
           content:
@@ -544,6 +546,11 @@ components:
       title: StackAnalysesResult
       type: object
       required:
+        - version
+        - started_at
+        - finished_at
+        - uuid
+        - external_request_id
         - registration_status
         - manifest_file_path
         - manifest_name
@@ -557,6 +564,15 @@ components:
           registered: '#/components/schemas/StackAnalysesResultForRegisteredUser'
           freetier: '#/components/schemas/StackAnalysesResultForFreeTier'
       properties:
+        version:
+          type: string
+          example: v2
+        started_at:
+          type: string
+          example: "2020-04-06 11:56:08.349405"
+        finished_at:
+          type: string
+          example: "2020-04-06 11:58:18.349405"      
         registration_status:
           $ref: '#/components/schemas/RegistrationStatus'
         manifest_file_path:
@@ -617,18 +633,6 @@ components:
               All direct dependencies details regardless of it's vulnerability status
       description: Stack analyses result for free tier user
 
-    StackAnalysesReport:
-      title: StackAnalysesReport
-      type: object
-      properties:
-        result:
-          type: array
-          items:
-            oneOf:
-              - $ref: '#/components/schemas/StackAnalysesResultForRegisteredUser'
-              - $ref: '#/components/schemas/StackAnalysesResultForFreeTier'
-      description: Response structure for stack analyses
-
     UserStackIdentifier:
       title: UserStackIdentifier
       type: object
@@ -642,7 +646,8 @@ components:
         submitted_at:
           type: string
           example: "2020-04-06 11:56:08.349405"
-      description: Response structure for stack analyses post call
+      description: |
+        Response structure for stack analyses post call.
 
   securitySchemes:
     tokenAuth:
