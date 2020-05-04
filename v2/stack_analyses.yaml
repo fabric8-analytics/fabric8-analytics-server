@@ -548,9 +548,9 @@ components:
       required:
         - version
         - started_at
-        - finished_at
+        - ended_at
         - uuid
-        - external_request_id
+        - request_id
         - registration_status
         - manifest_file_path
         - manifest_name
@@ -570,9 +570,12 @@ components:
         started_at:
           type: string
           example: "2020-04-06 11:56:08.349405"
-        finished_at:
+        ended_at:
           type: string
-          example: "2020-04-06 11:58:18.349405"      
+          example: "2020-04-06 11:58:18.349405"
+        request_id:
+          type: string
+          example: "229e7da76708fe374d8c10fa752e72989f"
         registration_status:
           $ref: '#/components/schemas/RegistrationStatus'
         manifest_file_path:
