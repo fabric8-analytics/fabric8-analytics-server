@@ -1,7 +1,7 @@
 """Test APIs v2."""
 
 import pytest
-from bayesian.api.api_v2 import ApiEndpoints, ComponentAnalyses, _session
+from bayesian.api.api_v2 import ApiEndpoints, ComponentAnalysesApi, _session
 import unittest
 from unittest.mock import patch, Mock
 from bayesian.exceptions import HTTPError
@@ -81,7 +81,7 @@ class TestCommonEndpoints():
         assert response.json == {'error': 'Ecosystem unknown is not supported for this request'}
 
 
-class TestComponentAnalyses(unittest.TestCase):
+class TestComponentAnalysesApi(unittest.TestCase):
     """Component Analyses Unit Tests."""
 
     @patch('bayesian.api.api_v2.g')
@@ -93,7 +93,7 @@ class TestComponentAnalyses(unittest.TestCase):
     def test_get_component_analyses(self, _sensitive, _request,
                                     _analyses, _bookkeeping, _session, _g):
         """CA GET: No Analyses Data found, without INVOKE_API_WORKERS flag, Raises HTTP Error."""
-        ca = ComponentAnalyses()
+        ca = ComponentAnalysesApi()
         self.assertRaises(HTTPError, ca.get, "npm", "pkg", "ver")
 
     @patch('bayesian.api.api_v2.g')
@@ -102,11 +102,11 @@ class TestComponentAnalyses(unittest.TestCase):
     @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    @patch('bayesian.api.api_v2.VendorAnalyses.get_vendor_analyses', return_value=None)
+    @patch('bayesian.api.api_v2.ComponentAnalyses.get_vendor_analyses', return_value=None)
     def test_get_component_analyses_with_invoke_api_workers(
             self, _vendor, _sensitive, _request, _analyses, _bookkeeping, _session, _g):
         """CA GET: No Analyses Data found with API worker flag."""
-        ca = ComponentAnalyses()
+        ca = ComponentAnalysesApi()
         with patch.dict('os.environ', {'INVOKE_API_WORKERS': '1'}):
             response = ca.get("npm", "pkg", "ver")
             self.assertEqual(response.status, 202)
@@ -119,12 +119,12 @@ class TestComponentAnalyses(unittest.TestCase):
     @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    @patch('bayesian.api.api_v2.VendorAnalyses.get_vendor_analyses')
+    @patch('bayesian.api.api_v2.ComponentAnalyses.get_vendor_analyses')
     def test_get_component_analyses_with_result_not_none(
             self, _vendor_analyses, _sensitive, _request, _analyses, _bookkeeping, _session, _g):
         """CA GET: with VALID result."""
         result = 'my_package_analyses_result'
         _vendor_analyses.return_value = result
-        ca = ComponentAnalyses()
+        ca = ComponentAnalysesApi()
         analyses_result = ca.get("npm", "pkg", "ver")
         self.assertEqual(analyses_result, result)

@@ -30,7 +30,7 @@ gremlin_url = "http://{host}:{port}".format(
 class GraphAnalyses:
     """Graph Analyses for Component Analyses."""
 
-    query = {
+    component_analyses_query = {
         "snyk": """
             g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)
             .as('version').in('has_version').dedup().as('package').select('version')
@@ -40,14 +40,14 @@ class GraphAnalyses:
     }
 
     @classmethod
-    def get_data_from_graph(cls, ecosystem, package, version, vendor):
+    def get_ca_data_from_graph(cls, ecosystem, package, version, vendor):
         """Query GraphDB for Component Analyses v2.
 
         Query vendor specific GraphDB Node Edge
         :returns: json converted data.
         """
         start = datetime.now()
-        cve_info_query = cls.query.get(vendor)
+        cve_info_query = cls.component_analyses_query.get(vendor)
         assert all(
             [ecosystem, package, version, vendor, cve_info_query]), "Required Parameters Missing."
         payload = {

@@ -18,55 +18,12 @@
 from urllib.parse import quote
 import logging
 from bayesian.utility.db_gateway import GraphAnalyses
-import semantic_version as sv
-
+from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic
 
 logger = logging.getLogger(__file__)
 
 
-def version_info_tuple(version):
-    """Return version information in form of (major, minor, patch, build) for a given Version.
-
-    : type version: semantic_version.base.Version
-    : param version: The semantic version whole details are needed.
-    : return: A tuple in form of Version.(major, minor, patch, build)
-    """
-    if type(version) == sv.base.Version:
-        return (version.major,
-                version.minor,
-                version.patch,
-                version.build)
-    return (0, 0, 0, tuple())
-
-
-def convert_version_to_proper_semantic(version, package_name=None):
-    """Perform Semantic versioning.
-
-    : type version: string
-    : param version: The raw input version that needs to be converted.
-    : type return: semantic_version.base.Version
-    : return: The semantic version of raw input version.
-    """
-    conv_version = sv.Version.coerce('0.0.0')
-    try:
-        if version in ('', '-1', None):
-            version = '0.0.0'
-        """Needed for maven version like 1.5.2.RELEASE to be converted to
-        1.5.2 - RELEASE for semantic version to work."""
-        version = version.replace('.', '-', 3)
-        version = version.replace('-', '.', 2)
-        # Needed to add this so that -RELEASE is account as a Version.build
-        version = version.replace('-', '+', 3)
-        conv_version = sv.Version.coerce(version)
-    except ValueError:
-        logger.error(
-            f"Unexpected ValueError for the package {package_name} due to version {version}")
-        pass
-    finally:
-        return conv_version
-
-
-class VendorAnalyses:
+class ComponentAnalyses:
     """Vendor specific class for Component Analyses API v2."""
 
     def __init__(self, ecosystem, package, version):
@@ -105,13 +62,13 @@ class VendorAnalyses:
         """
         logger.info('Executing Vendor Specific Analyses')
         try:
-            graph_response = GraphAnalyses.get_data_from_graph(
+            graph_response = GraphAnalyses.get_ca_data_from_graph(
                 self.ecosystem, self.package, self.version, vendor='snyk')
             if not self.is_package_known(graph_response):
                 # Trigger Unknown Flow on Unknown Packages
                 logger.info(f"Package {self.package} is not known.")
                 return None
-            return ResponseBuilder(
+            return ComponentAnalysisResponseBuilder(
                 self.ecosystem, self.package, self.version).generate_recommendation(graph_response)
 
         except Exception as e:
@@ -119,7 +76,7 @@ class VendorAnalyses:
             return None
 
 
-class ResponseBuilder():
+class ComponentAnalysisResponseBuilder:
     """Vendor specific response builder for Component Analyses v2."""
 
     def __init__(self, ecosystem, package, version):

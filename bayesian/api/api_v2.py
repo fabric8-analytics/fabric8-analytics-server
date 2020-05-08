@@ -30,7 +30,7 @@ from bayesian.utils import (get_system_version,
                             check_for_accepted_ecosystem)
 import os
 from fabric8a_auth.errors import AuthError
-from bayesian.utility.security_vendor import VendorAnalyses
+from bayesian.utility.v2_response_builder import ComponentAnalyses
 from collections import namedtuple
 
 errors = {
@@ -91,7 +91,7 @@ class SystemVersion(Resource):
         return get_system_version()
 
 
-class ComponentAnalyses(Resource):
+class ComponentAnalysesApi(Resource):
     """Implementation of all /component-analyses REST API calls."""
 
     method_decorators = [login_required]
@@ -137,7 +137,7 @@ class ComponentAnalyses(Resource):
         package = case_sensitivity_transform(ecosystem, package)
 
         # Perform Component Analyses on Vendor specific Graph Edge.
-        analyses_result = VendorAnalyses(ecosystem, package, version).get_vendor_analyses()
+        analyses_result = ComponentAnalyses(ecosystem, package, version).get_vendor_analyses()
 
         if analyses_result is not None:
             # Known component for Fabric8 Analytics
@@ -213,7 +213,7 @@ def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
-add_resource_no_matter_slashes(ComponentAnalyses,
+add_resource_no_matter_slashes(ComponentAnalysesApi,
                                '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
 add_resource_no_matter_slashes(SystemVersion, '/system/version')
