@@ -30,7 +30,7 @@ from bayesian.utils import (get_system_version,
                             check_for_accepted_ecosystem)
 import os
 from fabric8a_auth.errors import AuthError
-from bayesian.utility.v2_ca_response_builder import ComponentAnalyses
+from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from collections import namedtuple
 import logging
 
