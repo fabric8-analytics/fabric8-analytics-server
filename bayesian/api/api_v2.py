@@ -15,24 +15,30 @@
 #
 """Definition of all v2 REST API endpoints of the server module."""
 
-import urllib
+import os
 import time
+import urllib
+import logging
+
 from requests_futures.sessions import FuturesSession
-from flask import Blueprint, request, g
+from collections import namedtuple
+
+from flask import Blueprint, request, g, current_app
 from flask.json import jsonify
 from flask_restful import Api, Resource
+
 from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
 from fabric8a_auth.auth import login_required
+from fabric8a_auth.errors import AuthError
 from bayesian.exceptions import HTTPError
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
-                            check_for_accepted_ecosystem)
-import os
-from fabric8a_auth.errors import AuthError
+                            check_for_accepted_ecosystem,
+                            request_timed_out)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
-from collections import namedtuple
-import logging
+from bayesian.utility.v2.sa_response_builder import StackAnalysesResponseBuilder
+from bayesian.utility.v2.stack_analyses import StackAnalyses
 
 errors = {
         'AuthError': {
@@ -172,6 +178,90 @@ class ComponentAnalysesApi(Resource):
         raise HTTPError(404, msg)
 
 
+class StackAnalysesApi(Resource):
+    """Implements stack analysis REST APIs.
+
+    Implements /api/v2/stack-analyses REST APIs for POST and GET calls.
+    """
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def get(external_request_id):
+        """Handle /api/v2/stack-analyses GET REST API."""
+        current_app.logger.debug("GET request_id: {}".format(external_request_id))
+
+        # 1. Set stack analyses object
+        sa = StackAnalyses()
+
+        # 2. Read request data for the request
+        db_result = sa.get_request_data(external_request_id)
+        if db_result is None:
+            error_message = "Invalid request ID '{}'.".format(external_request_id)
+            current_app.logger.error(error_message)
+            raise HTTPError(404, error=error_message)
+
+        # 3. Read stack results for the request
+        stack_result = sa.get_stack_result(external_request_id)
+
+        # 4. Read recommendation data for the request
+        recm_data = sa.get_recommendation_data(external_request_id)
+
+        # 5. If stack or reco is missing, either we are in progress or we have timedout.
+        if stack_result is None or recm_data is None:
+            # If the response is not ready and the timeout period is over, send error 408
+            if request_timed_out(db_result):
+                error_message = "Stack analysis request {} has timed out. Please retry " \
+                                "with a new analysis.".format(external_request_id)
+                current_app.logger.error(error_message)
+                raise HTTPError(408, error=error_message)
+            else:
+                error_message = "Analysis for request ID '{}' is in progress".format(
+                    external_request_id)
+                current_app.logger.error(error_message)
+                return {'error': error_message}, 202
+
+        # 6. Some rare case when workers have not updated the result
+        if stack_result == -1 and recm_data == -1:
+            error_message = "Worker result for request ID '{}' doesn't exist yet".format(
+                external_request_id)
+            current_app.logger.error(error_message)
+            raise HTTPError(404, error=error_message)
+
+        # 7. Assemble final GET response and return
+        sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
+                                                           stack_result, recm_data)
+        return sa_response_builder.get_response()
+
+    @staticmethod
+    def post():
+        """Handle /api/v2/stack-analyses POST REST API."""
+        # 1. Read mandatory params
+        manifest = request.files.get("manifest") or None
+        file_path = request.form.get("file_path") or None
+        ecosystem = request.form.get("ecosystem") or None
+
+        current_app.logger.debug("Mandatory params :: manifest: {} file_path: {} "
+                                 "ecosystem: {}".format(manifest, file_path, ecosystem))
+
+        # 2. Read optional params and set default value as per V2 spec.
+        show_transitive = request.form.get("show_transitive") or "true"
+
+        current_app.logger.info("Optional params :: show_transitive: {}".format(show_transitive))
+
+        # 3. Initiate stack analyses object
+        sa = StackAnalyses(ecosystem, manifest, file_path, show_transitive)
+
+        # 4. Validate all post params as per v2 spec.
+        sa.validate_params()
+
+        # 5. Prepare post request
+        sa.prepare_request()
+
+        # 6. Post request
+        return sa.post_request()
+
+
 @api_v2.route('/_error')
 def error():
     """Implement the endpoint used by httpd, which redirects its errors to it."""
@@ -214,14 +304,23 @@ def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
+add_resource_no_matter_slashes(SystemVersion, '/system/version')
+
+# Component analyses routes
 add_resource_no_matter_slashes(ComponentAnalysesApi,
                                '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
-add_resource_no_matter_slashes(SystemVersion, '/system/version')
+
+# Stack analyses routes
+add_resource_no_matter_slashes(StackAnalysesApi,
+                               '/stack-analyses',
+                               endpoint='post_stack_analyses')
+add_resource_no_matter_slashes(StackAnalysesApi,
+                               '/stack-analyses/<external_request_id>',
+                               endpoint='get_stack_analyses')
 
 
 # ERROR HANDLING
-
 @api_v2.errorhandler(HTTPError)
 def handle_http_error(err):
     """Handle HTTPError exceptions."""
