@@ -32,6 +32,7 @@ import os
 from fabric8a_auth.errors import AuthError
 from bayesian.utility.v2_ca_response_builder import ComponentAnalyses
 from collections import namedtuple
+import logging
 
 errors = {
         'AuthError': {
@@ -56,7 +57,6 @@ METRICS_SERVICE_URL = "http://{}:{}".format(
 
 worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
 _session = FuturesSession(max_workers=worker_count)
-import logging
 _resource_paths = []
 logger = logging.getLogger(__file__)
 
