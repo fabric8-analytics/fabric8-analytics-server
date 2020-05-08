@@ -30,7 +30,7 @@ from bayesian.utils import (get_system_version,
                             check_for_accepted_ecosystem)
 import os
 from fabric8a_auth.errors import AuthError
-from bayesian.utility.v2_response_builder import ComponentAnalyses
+from bayesian.utility.v2_ca_response_builder import ComponentAnalyses
 from collections import namedtuple
 
 errors = {
@@ -137,7 +137,8 @@ class ComponentAnalysesApi(Resource):
         package = case_sensitivity_transform(ecosystem, package)
 
         # Perform Component Analyses on Vendor specific Graph Edge.
-        analyses_result = ComponentAnalyses(ecosystem, package, version).get_vendor_analyses()
+        analyses_result = ComponentAnalyses(
+            ecosystem, package, version).get_component_analyses_response()
 
         if analyses_result is not None:
             # Known component for Fabric8 Analytics

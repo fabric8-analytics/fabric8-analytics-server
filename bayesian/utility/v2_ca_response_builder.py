@@ -50,7 +50,7 @@ class ComponentAnalyses:
             return False
         return True
 
-    def get_vendor_analyses(self):
+    def get_component_analyses_response(self):
         """Fetch analysis for given package+version from the graph database.
 
         Fetch analysis for given package+version from the graph database.

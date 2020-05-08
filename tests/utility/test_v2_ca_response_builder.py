@@ -16,7 +16,7 @@
 """Test Utility for All Utility Functions."""
 
 
-from bayesian.utility.v2_response_builder import ComponentAnalyses, \
+from bayesian.utility.v2_ca_response_builder import ComponentAnalyses, \
     ComponentAnalysisResponseBuilder
 from urllib.parse import quote
 from unittest.mock import patch
@@ -64,19 +64,19 @@ class VendorAnalysesTest(unittest.TestCase):
     @patch('bayesian.utility.db_gateway.GraphAnalyses.get_ca_data_from_graph', return_value=None)
     def test_get_vendor_analyses(_graph):
         """Test Function for vendor analyses."""
-        analyses = ComponentAnalyses('eco', 'pkg', 'ver').get_vendor_analyses()
+        analyses = ComponentAnalyses('eco', 'pkg', 'ver').get_component_analyses_response()
         assert analyses is None
 
     @staticmethod
-    @patch('bayesian.utility.v2_response_builder'
+    @patch('bayesian.utility.v2_ca_response_builder'
            '.ComponentAnalysisResponseBuilder.generate_recommendation')
-    @patch('bayesian.utility.v2_response_builder'
+    @patch('bayesian.utility.v2_ca_response_builder'
            '.ComponentAnalyses.is_package_known', return_value=True)
     @patch('bayesian.utility.db_gateway.GraphAnalyses.get_ca_data_from_graph')
     def test_get_vendor_analyses_response_builder(_graph, _known, _recommendation):
         """Test function for vendor analyses response builder."""
         _recommendation.return_value = 'kuchbhi'
-        analyses = ComponentAnalyses('eco', 'pkg', 'ver').get_vendor_analyses()
+        analyses = ComponentAnalyses('eco', 'pkg', 'ver').get_component_analyses_response()
         assert analyses == 'kuchbhi'
 
     @staticmethod
@@ -84,7 +84,7 @@ class VendorAnalysesTest(unittest.TestCase):
            '.GraphAnalyses.get_ca_data_from_graph', return_value=Exception)
     def test_get_vendor_analyses_response_builder_exception(_graph):
         """Generates exception. Test Exception Block."""
-        analyses = ComponentAnalyses('eco', 'pkg', 'ver').get_vendor_analyses()
+        analyses = ComponentAnalyses('eco', 'pkg', 'ver').get_component_analyses_response()
         assert analyses is None
 
 
@@ -106,17 +106,17 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
             self.eco, self.pkg, self.ver).generate_recommendation(self.graph_response)
         self.assertEqual(response, dict(recommendation={}))
 
-    @patch('bayesian.utility.v2_response_builder'
+    @patch('bayesian.utility.v2_ca_response_builder'
            '.ComponentAnalysisResponseBuilder.generate_response', return_value={})
-    @patch('bayesian.utility.v2_response_builder'
+    @patch('bayesian.utility.v2_ca_response_builder'
            '.ComponentAnalysisResponseBuilder.get_severity')
-    @patch('bayesian.utility.v2_response_builder'
+    @patch('bayesian.utility.v2_ca_response_builder'
            '.ComponentAnalysisResponseBuilder.get_vulnerabilities_count')
-    @patch('bayesian.utility.v2_response_builder'
+    @patch('bayesian.utility.v2_ca_response_builder'
            '.ComponentAnalysisResponseBuilder.get_version_without_cves')
-    @patch('bayesian.utility.v2_response_builder'
+    @patch('bayesian.utility.v2_ca_response_builder'
            '.ComponentAnalysisResponseBuilder.get_cve_maps', return_value=[])
-    @patch('bayesian.utility.v2_response_builder'
+    @patch('bayesian.utility.v2_ca_response_builder'
            '.ComponentAnalysisResponseBuilder.has_cves', return_value=True)
     def test_generate_recommendation_same_version(self, _hascve, _cvemaps, _nocve,
                                                   _vulcount, _severity, _response):
@@ -169,11 +169,11 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
         version = response_obj.get_version_without_cves(['2', '3'])
         self.assertEqual(version, '3')
 
-    @patch('bayesian.utility.v2_response_builder.'
+    @patch('bayesian.utility.v2_ca_response_builder.'
            'ComponentAnalysisResponseBuilder.get_cve_maps')
-    @patch('bayesian.utility.v2_response_builder.'
+    @patch('bayesian.utility.v2_ca_response_builder.'
            'ComponentAnalysisResponseBuilder.get_registration_link')
-    @patch('bayesian.utility.v2_response_builder.'
+    @patch('bayesian.utility.v2_ca_response_builder.'
            'ComponentAnalysisResponseBuilder.get_message')
     def test_generate_response(self, _mock_msg, _mock_link, _mock_maps):
         """Test Response Generator Function."""
