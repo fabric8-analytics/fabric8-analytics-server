@@ -102,7 +102,7 @@ class TestComponentAnalysesApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    @patch('bayesian.utility.v2_ca_response_builder.'
+    @patch('bayesian.utility.v2.ca_response_builder.'
            'ComponentAnalyses.get_component_analyses_response', return_value=None)
     def test_get_component_analyses_with_invoke_api_workers(
             self, _vendor, _sensitive, _request, _analyses, _bookkeeping, _session, _g):
@@ -120,7 +120,7 @@ class TestComponentAnalysesApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    @patch('bayesian.utility.v2_ca_response_builder.'
+    @patch('bayesian.utility.v2.ca_response_builder.'
            'ComponentAnalyses.get_component_analyses_response')
     def test_get_component_analyses_with_result_not_none(
             self, _vendor_analyses, _sensitive, _request, _analyses, _bookkeeping, _session, _g):
