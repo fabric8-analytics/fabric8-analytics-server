@@ -6,3 +6,4 @@ pytest-cov
 requests
 jsonschema
 pylint
+semantic_version
