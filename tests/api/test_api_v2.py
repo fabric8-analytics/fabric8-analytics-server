@@ -1,11 +1,13 @@
 """Test APIs v2."""
 
+import os
+import io
 import pytest
-from bayesian.api.api_v2 import ApiEndpoints, ComponentAnalysesApi, _session
 import unittest
+from pathlib import Path
 from unittest.mock import patch, Mock
 from bayesian.exceptions import HTTPError
-import os
+from bayesian.api.api_v2 import ApiEndpoints, ComponentAnalysesApi, _session
 
 
 def api_route_for(route):
@@ -34,18 +36,18 @@ class TestCommonEndpoints():
 
     def test_readiness(self, accept_json):
         """Test the /readiness endpoint."""
-        res = self.client.get(api_route_for('/readiness'), headers=accept_json)
-        assert res.status_code == 200
+        response = self.client.get(api_route_for('/readiness'), headers=accept_json)
+        assert response.status_code == 200
 
     def test_liveness(self, accept_json):
         """Test the /liveness endpoint."""
-        res = self.client.get(api_route_for('/liveness'), headers=accept_json)
-        assert res.status_code == 200
+        response = self.client.get(api_route_for('/liveness'), headers=accept_json)
+        assert response.status_code == 200
 
     def test_system_version(self, accept_json):
         """Test the /system/version endpoint."""
-        responese = self.client.get(api_route_for('/system/version'), headers=accept_json)
-        assert responese.status_code == 200
+        response = self.client.get(api_route_for('/system/version'), headers=accept_json)
+        assert response.status_code == 200
 
     def test_error_exception(self, accept_json):
         """Test the /error endpoint. Direct Access."""
@@ -130,3 +132,179 @@ class TestComponentAnalysesApi(unittest.TestCase):
         ca = ComponentAnalysesApi()
         analyses_result = ca.get("npm", "pkg", "ver")
         self.assertEqual(analyses_result, result)
+
+
+@pytest.mark.usefixtures('client_class')
+class TestStackAnalysesApi(object):
+    """Stack Analyses Unit Tests."""
+
+    def test_sa_get_with_invalid_id(self, accept_json):
+        """Test get endpoint with invalid request id."""
+        res = self.client.get(api_route_for('/stack-analyses/invalid_id'), headers=accept_json)
+        assert res.status_code == 404
+
+    def test_sa_post_missing_all_params(self, accept_json):
+        """Test post endpoint without and params."""
+        res = self.client.post(api_route_for('/stack-analyses'), headers=accept_json)
+
+        # Expecting authentication error [400]
+        assert res.status_code == 400
+
+    def test_sa_post_missing_manifest_params(self, accept_json):
+        """Test post request without manifest param."""
+        data = {
+            "file_path": "/tmp/bin",
+            "ecosystem": "pypi"
+        }
+
+        headers = {
+            "x-3scale-account-secret": "not-set"
+        }
+
+        res = self.client.post(api_route_for('/stack-analyses'),
+                               data=data,
+                               content_type='multipart/form-data',
+                               headers=headers,
+                               )
+        # Expecting  missing manifest error
+        assert res.status_code == 400
+
+    def test_sa_post_missing_file_path_params(self, accept_json):
+        """Test post request without file_path param."""
+        data = {
+            "manifest": (io.StringIO(str(Path(__file__).parent /
+                                         "../data/manifests/202/npmlist.json")).read(),
+                         "npmlist.json"),
+            "ecosystem": "npm"
+        }
+
+        headers = {
+            "x-3scale-account-secret": "not-set"
+        }
+
+        res = self.client.post(api_route_for('/stack-analyses'),
+                               data=data,
+                               content_type='multipart/form-data',
+                               headers=headers,
+                               )
+        # Expecting  missing file_path error
+        assert res.status_code == 400
+
+    def test_sa_post_missing_ecosystem_params(self, accept_json):
+        """Test post request without ecosystem param."""
+        data = {
+            "manifest": (io.StringIO(str(Path(__file__).parent /
+                                         "../data/manifests/202/npmlist.json")).read(),
+                         "npmlist.json"),
+            "file_path": "/tmp/bin"
+        }
+
+        headers = {
+            "x-3scale-account-secret": "not-set"
+        }
+
+        res = self.client.post(api_route_for('/stack-analyses'),
+                               data=data,
+                               content_type='multipart/form-data',
+                               headers=headers,
+                               )
+        # Expecting  missing ecosystem error
+        assert res.status_code == 400
+
+    def test_sa_post_invalid_ecosystem_params(self, accept_json):
+        """Test post request with invalid ecosystem value in param."""
+        data = {
+            "manifest": (io.StringIO(str(Path(__file__).parent /
+                                         "../data/manifests/202/npmlist.json")).read(),
+                         "npmlist.json"),
+            "file_path": "/tmp/bin",
+            "ecosystem": ".net_ecosystem"
+        }
+
+        headers = {
+            "x-3scale-account-secret": "not-set"
+        }
+
+        res = self.client.post(api_route_for('/stack-analyses'),
+                               data=data,
+                               content_type='multipart/form-data',
+                               headers=headers,
+                               )
+        # Expecting  invalid ecosystem error
+        assert res.status_code == 400
+
+    def test_sa_post_valid_request_202(self, accept_json):
+        """Test post with a valid params, just ensuring 202 response."""
+        data = {
+            "manifest": (io.StringIO(str(Path(__file__).parent /
+                                         "../data/manifests/202/npmlist.json")).read(),
+                         "npmlist.json"),
+            "file_path": "/tmp/bin",
+            "ecosystem": "npm"
+        }
+
+        headers = {
+            "x-3scale-account-secret": "not-set"
+        }
+
+        res = self.client.post(api_route_for('/stack-analyses'),
+                               data=data,
+                               content_type='multipart/form-data',
+                               headers=headers,
+                               )
+        assert res.status_code == 200
+
+        # Ensure 202 upon immediate get query.
+        stack_id = res.json['id']
+        res = self.client.get(api_route_for('/stack-analyses/') + stack_id,
+                              headers=headers)
+        assert res.status_code == 202
+
+    def test_sa_post_valid_request_400(self, accept_json):
+        """Test post with invalid manifest file content."""
+        data = {
+            "manifest": (io.StringIO(str(Path(__file__).parent /
+                                         "../data/manifests/400/npmlist.json")).read(),
+                         "npmlist.json"),
+            "file_path": "/tmp/bin",
+            "ecosystem": "npm"
+        }
+
+        headers = {
+            "x-3scale-account-secret": "not-set"
+        }
+
+        res = self.client.post(api_route_for('/stack-analyses'),
+                               data=data,
+                               content_type='multipart/form-data',
+                               headers=headers,
+                               )
+        # Expecting exception due to invalid maniest file content
+        assert res.status_code == 400
+
+    def test_sa_post_request_with_mapped_ecosystem(self, accept_json):
+        """Test post with correct ecosystem that need to be mapped to support ecosystem."""
+        data = {
+            "manifest": (io.StringIO(str(Path(__file__).parent /
+                                         "../data/manifests/202/npmlist.json")).read(),
+                         "npmlist.json"),
+            "file_path": "/tmp/bin",
+            "ecosystem": "node"
+        }
+
+        headers = {
+            "x-3scale-account-secret": "not-set"
+        }
+
+        res = self.client.post(api_route_for('/stack-analyses'),
+                               data=data,
+                               content_type='multipart/form-data',
+                               headers=headers,
+                               )
+
+        assert res.status_code == 200
+
+        # Ensure 202 upon immediate get query.
+        stack_id = res.json['id']
+        res = self.client.get(api_route_for('/stack-analyses/') + stack_id, headers=headers)
+        assert res.status_code == 202
