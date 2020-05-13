@@ -11,15 +11,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 # Author: Deepak Sharma <deepshar@redhat.com>
 #
 """All communications with Graph DB and RDS from API v2 are done here."""
 
-from datetime import datetime
-import logging
-from requests import post
 import os
 import json
+import logging
+from datetime import datetime
+from requests import post
+from bayesian import rdb
+from bayesian.utils import (fetch_sa_request,
+                            retrieve_worker_result)
+
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.dialects.postgresql import insert
+
+from f8a_worker.models import StackAnalysisRequest
 
 logger = logging.getLogger(__file__)
 gremlin_url = "http://{host}:{port}".format(
@@ -63,3 +72,48 @@ class GraphAnalyses:
         elapsed_seconds = (datetime.now() - start).total_seconds()
         logger.info("Gremlin request took {} seconds.".format(elapsed_seconds))
         return query_result.json()
+
+
+class RdbAnalyses:
+    """RDB Interface class used by stack analyses flow.
+
+    Provides interfaces to save and read request post data for stack analyses v2.
+    """
+
+    @classmethod
+    def get_request_data(cls, request_id):
+        """Read request data for given request id from RDS."""
+        return fetch_sa_request(rdb, request_id)
+
+    @classmethod
+    def get_stack_result(cls, request_id):
+        """Read and return stack result from RDS."""
+        return retrieve_worker_result(rdb, request_id, 'stack_aggregator_v2')
+
+    @classmethod
+    def get_recommendation_data(cls, request_id):
+        """Read and return recommendation data from RDS."""
+        return retrieve_worker_result(rdb, request_id, 'recommendation_v2')
+
+    @classmethod
+    def save_post_request(cls, request_id, submit_time, manifest, deps):
+        """Save the post request data into RDS."""
+        try:
+            insert_stmt = insert(StackAnalysisRequest).values(
+                id=request_id,
+                submitTime=submit_time,
+                requestJson={'manifest': manifest},
+                dep_snapshot=deps
+            )
+            do_update_stmt = insert_stmt.on_conflict_do_update(
+                index_elements=['id'],
+                set_=dict(dep_snapshot=deps)
+            )
+            rdb.session.execute(do_update_stmt)
+            rdb.session.commit()
+
+            return 0
+        except SQLAlchemyError as e:
+            logger.exception("Error updating log for request {}, exception {}".format(
+                request_id, e))
+            return -1

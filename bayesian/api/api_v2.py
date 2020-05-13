@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 # Author: Deepak Sharma <deepshar@redhat.com>
 #
 """Definition of all v2 REST API endpoints of the server module."""
@@ -23,7 +24,7 @@ import logging
 from requests_futures.sessions import FuturesSession
 from collections import namedtuple
 
-from flask import Blueprint, request, g, current_app
+from flask import Blueprint, request, g
 from flask.json import jsonify
 from flask_restful import Api, Resource
 
@@ -34,11 +35,12 @@ from bayesian.exceptions import HTTPError
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
-                            check_for_accepted_ecosystem,
-                            request_timed_out)
+                            resolved_files_exist,
+                            check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import StackAnalysesResponseBuilder
 from bayesian.utility.v2.stack_analyses import StackAnalyses
+from bayesian.utility.db_gateway import RdbAnalyses
 
 errors = {
         'AuthError': {
@@ -189,77 +191,100 @@ class StackAnalysesApi(Resource):
     @staticmethod
     def get(external_request_id):
         """Handle /api/v2/stack-analyses GET REST API."""
-        current_app.logger.debug("GET request_id: {}".format(external_request_id))
+        logger.debug("GET request_id: {}".format(external_request_id))
 
-        # 1. Set stack analyses object
-        sa = StackAnalyses()
-
-        # 2. Read request data for the request
-        db_result = sa.get_request_data(external_request_id)
+        # 1. Read request data for the request
+        db_result = RdbAnalyses.get_request_data(external_request_id)
         if db_result is None:
-            error_message = "Invalid request ID '{}'.".format(external_request_id)
-            current_app.logger.error(error_message)
+            error_message = 'Invalid request ID {}.'.format(external_request_id)
+            logger.error(error_message)
             raise HTTPError(404, error=error_message)
 
-        # 3. Read stack results for the request
-        stack_result = sa.get_stack_result(external_request_id)
+        # 2. Read stack results for the request
+        stack_result = RdbAnalyses.get_stack_result(external_request_id)
 
         # 4. Read recommendation data for the request
-        recm_data = sa.get_recommendation_data(external_request_id)
+        recm_data = RdbAnalyses.get_recommendation_data(external_request_id)
 
-        # 5. If stack or reco is missing, either we are in progress or we have timedout.
-        if stack_result is None or recm_data is None:
-            # If the response is not ready and the timeout period is over, send error 408
-            if request_timed_out(db_result):
-                error_message = "Stack analysis request {} has timed out. Please retry " \
-                                "with a new analysis.".format(external_request_id)
-                current_app.logger.error(error_message)
-                raise HTTPError(408, error=error_message)
-            else:
-                error_message = "Analysis for request ID '{}' is in progress".format(
-                    external_request_id)
-                current_app.logger.error(error_message)
-                return {'error': error_message}, 202
-
-        # 6. Some rare case when workers have not updated the result
-        if stack_result == -1 and recm_data == -1:
-            error_message = "Worker result for request ID '{}' doesn't exist yet".format(
-                external_request_id)
-            current_app.logger.error(error_message)
-            raise HTTPError(404, error=error_message)
-
-        # 7. Assemble final GET response and return
-        sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
+        # 5. Assemble final GET response and return
+        sa_response_builder = StackAnalysesResponseBuilder(external_request_id, db_result,
                                                            stack_result, recm_data)
-        return sa_response_builder.get_response()
+
+        # 6. If there was no exception raise, means request is ready to be served.
+        response_status, response_data = sa_response_builder.get_response()
+        if response_status == 200 or response_status == 202:
+            logger.debug('OK :: {} => {}'.format(response_status, response_data))
+            return response_data
+
+        # 7. Default case of HTTP error
+        logger.error('Error :: {} => {}'.format(response_status, response_data))
+        raise HTTPError(response_status, error=response_data)
 
     @staticmethod
     def post():
         """Handle /api/v2/stack-analyses POST REST API."""
         # 1. Read mandatory params
-        manifest = request.files.get("manifest") or None
-        file_path = request.form.get("file_path") or None
-        ecosystem = request.form.get("ecosystem") or None
+        manifest = request.files.get('manifest') or None
+        file_path = request.form.get('file_path') or None
+        ecosystem = request.form.get('ecosystem') or None
 
-        current_app.logger.debug("Mandatory params :: manifest: {} file_path: {} "
-                                 "ecosystem: {}".format(manifest, file_path, ecosystem))
+        logger.debug('Mandatory params :: manifest: {} file_path: {} ecosystem: {}'.format(
+            manifest, file_path, ecosystem))
 
         # 2. Read optional params and set default value as per V2 spec.
-        show_transitive = request.form.get("show_transitive") or "true"
+        show_transitive = request.form.get('show_transitive') or 'true'
 
-        current_app.logger.info("Optional params :: show_transitive: {}".format(show_transitive))
+        logger.info('Optional params :: show_transitive: {}'.format(show_transitive))
 
-        # 3. Initiate stack analyses object
-        sa = StackAnalyses(ecosystem, manifest, file_path, show_transitive)
+        # 3. Validate post params.
+        # Manifest is mandatory and must be a string.
+        if manifest is None or not resolved_files_exist(manifest.filename):
+            error_message = 'Error processing request. Manifest is missing its value "{}" is ' \
+                            'invalid / not supported'.format(manifest)
+            logger.error(error_message)
+            raise HTTPError(400, error=error_message)
 
-        # 4. Validate all post params as per v2 spec.
-        sa.validate_params()
+        # File path is mandatory and must be a string.
+        if file_path is None or not isinstance(file_path, str):
+            error_message = 'Error processing request. File path is missing / its value ' \
+                            '"{}" is invalid'.format(file_path)
+            logger.error(error_message)
+            raise HTTPError(400, error=error_message)
 
-        # 5. Prepare post request
-        sa.prepare_request()
+        # Ecosystem  is mandatory and must be a string.
+        if ecosystem is None or not isinstance(ecosystem, str):
+            error_message = 'Error processing request. Ecosystem is missing / its value "{}" ' \
+                            'is invalid'.format(ecosystem)
+            logger.error(error_message)
+            raise HTTPError(400, error=error_message)
+
+        # Ecosystem should be a valid value
+        if not check_for_accepted_ecosystem(ecosystem):
+            error_message = 'Error processing request. "{}" ecosystem is not supported'.format(
+                ecosystem)
+            logger.error(error_message)
+            raise HTTPError(400, error=error_message)
+
+        # 4. Build manifest info from manifest file and path. It read content in utf-8 encoding.
+        manifest_file_info = {
+            'filename': manifest.filename,
+            'filepath': file_path,
+            'content': manifest.read().decode('utf-8')
+        }
+        logger.info(manifest_file_info)
+
+        # 5. Initiate stack analyses object
+        sa = StackAnalyses(None, ecosystem, manifest_file_info, show_transitive)
 
         # 6. Post request
-        return sa.post_request()
+        response_status, response_data = sa.post_request()
+        if response_status == 200 or response_status == 202:
+            logger.debug('OK :: {} => {}'.format(response_status, response_data))
+            return response_data, response_status
+
+        # 7. Default case of HTTP error
+        logger.error('Error :: {} => {}'.format(response_status, response_data))
+        raise HTTPError(response_status, error=response_data)
 
 
 @api_v2.route('/_error')
