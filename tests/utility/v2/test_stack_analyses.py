@@ -27,7 +27,7 @@ class TestStackAnalyses(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Read Vendor Data from JSON.
+        """Fill in manifest file info required by all test cases."""
         cls.manifest_file_info = {
             'filename': 'npmlist.json',
             'filepath': '/tmp/bin',
@@ -48,33 +48,33 @@ class TestStackAnalyses(unittest.TestCase):
         assert status == 400
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
-           return_value=500)
+           return_value=-1)
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_recommendations_request',
-           return_value=500)
+           return_value=-1)
     def test_sa_backbone_error(self, _recommendations_request, _aggregate_request):
-        """Check if 400 is raise upon invalid manifest file."""
+        """Check if 500 is raise upon invalid response from backbone server."""
         sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
         status, data = sa.post_request()
         assert status == 500
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
-           return_value=200)
+           return_value=0)
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_recommendations_request',
-           return_value=200)
+           return_value=0)
     @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request', return_value=-1)
     def test_sa_rdb_error(self, _post_request, _recommendations_request, _aggregate_request):
-        """Check if 400 is raise upon invalid manifest file."""
+        """Check if 500 is raise upon request save failure."""
         sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
         status, data = sa.post_request()
         assert status == 500
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
-           return_value=200)
+           return_value=0)
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_recommendations_request',
-           return_value=200)
+           return_value=0)
     @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request', return_value=0)
     def test_sa_success(self, _post_request, _recommendations_request, _aggregate_request):
-        """Check if 400 is raise upon invalid manifest file."""
+        """Success stack analyses flow."""
         sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
         status, data = sa.post_request()
         assert status == 200

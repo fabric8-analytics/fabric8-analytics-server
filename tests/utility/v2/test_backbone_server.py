@@ -39,11 +39,11 @@ class TestBackboneServer(unittest.TestCase):
     @patch('bayesian.utility.v2.backbone_server.BackboneServer.session.post',
            side_effect=Exception('Mock exception'))
     def test_recm_request_error(self, _post):
-        """Test aggregate post request with empty data."""
+        """Test recommendation post request with empty data."""
         assert BackboneServer.post_recommendations_request({}, {}) == -1
 
     @patch('bayesian.utility.v2.backbone_server.BackboneServer.session.post',
            return_value={})
     def test_recm_request_success(self, _post):
-        """Test aggregate post request with correct data."""
+        """Test recommendation post request with correct data."""
         assert BackboneServer.post_recommendations_request({}, {}) == 0

@@ -117,8 +117,8 @@ class StackAnalyses():
             'check_license': 'false'
         }
         # Post Backbone stack_aggregator call.
-        if BackboneServer.post_aggregate_request(request_body, request_params) != 200 or \
-           BackboneServer.post_recommendations_request(request_body, request_params) != 200:
+        if BackboneServer.post_aggregate_request(request_body, request_params) != 0 or \
+           BackboneServer.post_recommendations_request(request_body, request_params) != 0:
             return 500, 'Error while reaching backend service'
 
         return 200, data['deps']

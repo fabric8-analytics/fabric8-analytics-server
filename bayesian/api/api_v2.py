@@ -239,7 +239,7 @@ class StackAnalysesApi(Resource):
         # 3. Validate post params.
         # Manifest is mandatory and must be a string.
         if manifest is None or not resolved_files_exist(manifest.filename):
-            error_message = 'Error processing request. Manifest is missing its value "{}" is ' \
+            error_message = 'Error processing request. Manifest is missing its value {} is ' \
                             'invalid / not supported'.format(manifest)
             logger.error(error_message)
             raise HTTPError(400, error=error_message)
@@ -247,20 +247,20 @@ class StackAnalysesApi(Resource):
         # File path is mandatory and must be a string.
         if file_path is None or not isinstance(file_path, str):
             error_message = 'Error processing request. File path is missing / its value ' \
-                            '"{}" is invalid'.format(file_path)
+                            '{} is invalid'.format(file_path)
             logger.error(error_message)
             raise HTTPError(400, error=error_message)
 
         # Ecosystem  is mandatory and must be a string.
         if ecosystem is None or not isinstance(ecosystem, str):
-            error_message = 'Error processing request. Ecosystem is missing / its value "{}" ' \
+            error_message = 'Error processing request. Ecosystem is missing / its value {} ' \
                             'is invalid'.format(ecosystem)
             logger.error(error_message)
             raise HTTPError(400, error=error_message)
 
         # Ecosystem should be a valid value
         if not check_for_accepted_ecosystem(ecosystem):
-            error_message = 'Error processing request. "{}" ecosystem is not supported'.format(
+            error_message = 'Error processing request. {} ecosystem is not supported'.format(
                 ecosystem)
             logger.error(error_message)
             raise HTTPError(400, error=error_message)

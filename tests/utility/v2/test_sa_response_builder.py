@@ -28,7 +28,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
     def test_sa_response_builder_worker_error(self, _timed_out):
-        """Test stack analyses response build with missing 'task_result' field"""
+        """Test SA response builder with invalid values for stack result and recm data."""
         stack_result = -1
         recm_data = -1
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
@@ -38,7 +38,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
     def test_sa_response_builder_inprogress(self, _timed_out):
-        """Test stack analyses response build with both data"""
+        """Test SA response builder with None data."""
         stack_result = None
         recm_data = None
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
@@ -48,7 +48,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=True)
     def test_sa_response_builder_timeout(self, _timed_out):
-        """Test stack analyses response build with missing 'task_result' field"""
+        """Test SA response builder with missing recm data."""
         stack_result = None
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/backbone/v2_stack_result.json') as f:
@@ -61,7 +61,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
     def test_sa_response_builder_500(self, _timed_out):
-        """Test stack analyses response build with missing 'task_result' field"""
+        """Test SA response builder with missing 'task_result' in stack result data."""
         stack_result = None
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/backbone/v2_stack_result.json') as f:
@@ -81,7 +81,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
     def test_sa_response_builder_200(self, _timed_out):
-        """Test stack analyses response build with missing 'task_result' field"""
+        """Test SA response builder with all proper data."""
         stack_result = None
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/backbone/v2_stack_result.json') as f:
