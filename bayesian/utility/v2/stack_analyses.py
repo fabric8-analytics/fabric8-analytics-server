@@ -86,7 +86,8 @@ class StackAnalyses():
                     packages.append({
                         'name': p.get('package', ''),
                         'version': p.get('version', ''),
-                        'dependencies': p.get('deps', [])
+                        'dependencies': [{'name': pkg['package'], 'version': pkg['version']}
+                                         for pkg in p.get('deps', [])]
                     })
 
             return 200, {'deps': deps, 'packages': packages}
