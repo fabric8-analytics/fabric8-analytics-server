@@ -17,6 +17,7 @@
 """Stack analyses API v2 response builder class."""
 
 import logging
+from bayesian.exceptions import HTTPError
 from bayesian.utils import request_timed_out
 
 logger = logging.getLogger(__file__)
@@ -39,16 +40,10 @@ class StackAnalysesResponseBuilder:
     def get_response(self):
         """Aggregate, build and return json response for the given request id."""
         # If request is invalid, it will raise HTTPError with proper message.
-        if self._is_request_invalid():
-            error_message = 'Worker result for request ID {} does not exist yet'.format(
-                self.external_request_id)
-            logger.error(error_message)
-            return 404, error_message
+        self._is_request_invalid()
 
         # If request is inprogress or timeout, it will raise HTTPError with proper message.
-        response_status, response_data = self._is_request_inprogress()
-        if response_status != 200:
-            return response_status, response_data
+        self._is_request_inprogress()
 
         # Proceed with building actual response from data.
         stack_task_result = None
@@ -63,7 +58,7 @@ class StackAnalysesResponseBuilder:
             recommendations = self.recm_data.get('task_result', {}).get('recommendations', [{}])[0]
 
         if stack_task_result is not None:
-            response_data = {
+            return {
                 'version': stack_audit.get('version', None),
                 'started_at': stack_audit.get('started_at', None),
                 'ended_at': stack_audit.get('ended_at', None),
@@ -82,17 +77,19 @@ class StackAnalysesResponseBuilder:
                 'registration_link': stack_task_result.get('registration_link', ''),
                 'analyzed_dependencies': stack_task_result.get('analyzed_dependencies', [])
             }
-            response_status = 200
         else:
-            response_data = 'Enable to fetch the result for request id {}'.format(
+            error_message = 'Unable to fetch the result for request id {}'.format(
                 self.external_request_id)
-            response_status = 500
-
-        return response_status, response_data
+            logger.exception(error_message)
+            raise HTTPError(500, error_message)
 
     def _is_request_invalid(self):
         """If request is invalid than it shall raise an exception."""
-        return self.stack_result == -1 and self.recm_data == -1
+        if self.stack_result == -1 and self.recm_data == -1:
+            error_message = 'Worker result for request ID {} does not exist yet'.format(
+                            self.external_request_id)
+            logger.exception(error_message)
+            raise HTTPError(404, error_message)
 
     def _is_request_inprogress(self):
         """Check if request is in progress."""
@@ -102,11 +99,9 @@ class StackAnalysesResponseBuilder:
                 error_message = 'Stack analysis request {} has timed out. Please retry ' \
                                 'with a new analysis.'.format(self.external_request_id)
                 logger.error(error_message)
-                return 408, error_message
+                raise HTTPError(408, error_message)
             else:
                 error_message = 'Analysis for request ID {} is in progress'.format(
                     self.external_request_id)
                 logger.error(error_message)
-                return 202, {'error': error_message}
-
-        return 200, {}
+                raise HTTPError(202, error_message)

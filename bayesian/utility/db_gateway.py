@@ -22,6 +22,7 @@ import logging
 from datetime import datetime
 from requests import post
 from bayesian import rdb
+from bayesian.exceptions import HTTPError
 from bayesian.utils import (fetch_sa_request,
                             retrieve_worker_result)
 
@@ -83,7 +84,12 @@ class RdbAnalyses:
     @classmethod
     def get_request_data(cls, request_id):
         """Read request data for given request id from RDS."""
-        return fetch_sa_request(rdb, request_id)
+        db_result = fetch_sa_request(rdb, request_id)
+        if db_result is None:
+            error_message = 'Invalid request ID {}.'.format(request_id)
+            logger.exception(error_message)
+            raise HTTPError(404, error_message)
+        return db_result
 
     @classmethod
     def get_stack_result(cls, request_id):
@@ -111,9 +117,7 @@ class RdbAnalyses:
             )
             rdb.session.execute(do_update_stmt)
             rdb.session.commit()
-
-            return 0
         except SQLAlchemyError as e:
             logger.exception("Error updating log for request {}, exception {}".format(
                 request_id, e))
-            return -1
+            raise HTTPError(500, 'Error while saving request {}'.format(request_id))

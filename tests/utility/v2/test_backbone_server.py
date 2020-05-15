@@ -18,6 +18,7 @@
 
 import unittest
 from unittest.mock import patch
+from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.backbone_server import BackboneServer
 
 
@@ -28,22 +29,22 @@ class TestBackboneServer(unittest.TestCase):
            side_effect=Exception('Mock exception'))
     def test_agg_request_error(self, _post):
         """Test aggregate post request with empty data."""
-        assert BackboneServer.post_aggregate_request({}, {}) == -1
+        self.assertRaises(HTTPError, BackboneServer.post_aggregate_request, {}, {})
 
     @patch('bayesian.utility.v2.backbone_server.BackboneServer.session.post',
            return_value={})
     def test_agg_request_success(self, _post):
         """Test aggregate post request with correct data."""
-        assert BackboneServer.post_aggregate_request({}, {}) == 0
+        self.assertEqual(BackboneServer.post_aggregate_request({}, {}), None)
 
     @patch('bayesian.utility.v2.backbone_server.BackboneServer.session.post',
            side_effect=Exception('Mock exception'))
     def test_recm_request_error(self, _post):
         """Test recommendation post request with empty data."""
-        assert BackboneServer.post_recommendations_request({}, {}) == -1
+        self.assertRaises(HTTPError, BackboneServer.post_recommendations_request, {}, {})
 
     @patch('bayesian.utility.v2.backbone_server.BackboneServer.session.post',
            return_value={})
     def test_recm_request_success(self, _post):
         """Test recommendation post request with correct data."""
-        assert BackboneServer.post_recommendations_request({}, {}) == 0
+        self.assertEqual(BackboneServer.post_recommendations_request({}, {}), None)

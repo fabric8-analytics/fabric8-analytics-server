@@ -20,6 +20,7 @@ import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.sa_response_builder import StackAnalysesResponseBuilder
 
 
@@ -33,8 +34,8 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         recm_data = -1
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
                                                            stack_result, recm_data)
-        status, data = sa_response_builder.get_response()
-        assert status == 404
+        # Expect HTTP 404 error.
+        self.assertRaises(HTTPError, sa_response_builder.get_response)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
     def test_sa_response_builder_inprogress(self, _timed_out):
@@ -43,8 +44,8 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         recm_data = None
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
                                                            stack_result, recm_data)
-        status, data = sa_response_builder.get_response()
-        assert status == 202
+        # Raises HTTP 202 error for request in progress
+        self.assertRaises(HTTPError, sa_response_builder.get_response)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=True)
     def test_sa_response_builder_timeout(self, _timed_out):
@@ -56,8 +57,8 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         recm_data = None
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
                                                            stack_result, recm_data)
-        status, data = sa_response_builder.get_response()
-        assert status == 408
+        # Raises HTTP 408 error
+        self.assertRaises(HTTPError, sa_response_builder.get_response)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
     def test_sa_response_builder_500(self, _timed_out):
@@ -76,8 +77,8 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
             recm_data = json.load(f)
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
                                                            stack_result, recm_data)
-        status, data = sa_response_builder.get_response()
-        assert status == 500
+        # Raises HTTP 500 error
+        self.assertRaises(HTTPError, sa_response_builder.get_response)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
     def test_sa_response_builder_200(self, _timed_out):
@@ -92,5 +93,6 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
             recm_data = json.load(f)
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
                                                            stack_result, recm_data)
-        status, data = sa_response_builder.get_response()
-        assert status == 200
+        response = sa_response_builder.get_response()
+        self.assertIsInstance(response, dict)
+        self.assertIn('version', response)

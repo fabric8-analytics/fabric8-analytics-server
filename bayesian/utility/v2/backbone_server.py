@@ -19,6 +19,7 @@
 import os
 import logging
 from requests_futures.sessions import FuturesSession
+from bayesian.exceptions import HTTPError
 
 logger = logging.getLogger(__file__)
 
@@ -48,11 +49,9 @@ class BackboneServer:
                 '{}/api/v2/stack_aggregator'.format(BackboneServer.backbone_host),
                 json=body,
                 params=params)
-            return 0
         except Exception as e:
-            logger.exception('Exception in aggregator api :: {}'.format(e))
-            print('Exception in aggregator api :: {}'.format(e))
-            return -1
+            logger.exception('Aggregator api throws exception {}'.format(e))
+            raise HTTPError(500, error="Error while reaching aggregator service")
 
     @classmethod
     def post_recommendations_request(cls, body, params):
@@ -66,7 +65,6 @@ class BackboneServer:
                 '{}/api/v2/recommender'.format(BackboneServer.backbone_host),
                 json=body,
                 params=params)
-            return 0
         except Exception as e:
-            logger.exception('Exception in recommender api :: {}'.format(e))
-            return -1
+            logger.exception('Recommender api throws exception {}'.format(e))
+            raise HTTPError(500, error="Error while reaching recommender service")

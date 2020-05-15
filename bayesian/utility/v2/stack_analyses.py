@@ -21,6 +21,7 @@ import uuid
 import json
 import logging
 from bayesian.dependency_finder import DependencyFinder
+from bayesian.exceptions import HTTPError
 from bayesian.utility.db_gateway import RdbAnalyses
 from bayesian.utility.v2.backbone_server import BackboneServer
 
@@ -51,22 +52,18 @@ class StackAnalyses():
         self._request_date_str = str(datetime.datetime.now())
 
         # Make backbone request
-        status, data = self._make_backbone_request()
-        if status != 200:
-            return status, data
+        deps = self._make_backbone_request()
 
         # Finally save results in RDS and upon success return request id.
-        if RdbAnalyses.save_post_request(request_id=self.external_request_id,
-                                         submit_time=self._request_date_str,
-                                         manifest=self.manifest_file_info,
-                                         deps=data) != 0:
-            return 500, 'Error updating db for request {}'.format(self.external_request_id)
-        else:
-            return 200, {
-                'status': 'success',
-                'submitted_at': self._request_date_str,
-                'id': self.external_request_id
-            }
+        RdbAnalyses.save_post_request(request_id=self.external_request_id,
+                                      submit_time=self._request_date_str,
+                                      manifest=self.manifest_file_info,
+                                      deps=deps)
+        return {
+            'status': 'success',
+            'submitted_at': self._request_date_str,
+            'id': self.external_request_id
+        }
 
     def _read_deps_and_packages(self):
         """Read dependencies and packages information from manifest file content."""
@@ -90,18 +87,15 @@ class StackAnalyses():
                                          for pkg in p.get('deps', [])]
                     })
 
-            return 200, {'deps': deps, 'packages': packages}
+            return {'deps': deps, 'packages': packages}
         except (ValueError, json.JSONDecodeError) as e:
             logger.exception('Invalid dependencies encountered. {}'.format(e))
-
-        return 400, None
+            raise HTTPError(400, 'Error while parsing dependencies information')
 
     def _make_backbone_request(self):
         """Perform backbone request for stack_aggregator and recommender."""
         # Read deps and packages from manifest
-        status, data = self._read_deps_and_packages()
-        if status != 200:
-            return 400, 'Error while parsing dependencies information'
+        data = self._read_deps_and_packages()
 
         # Set backbone API request body and params.
         request_body = {
@@ -118,8 +112,7 @@ class StackAnalyses():
             'check_license': 'false'
         }
         # Post Backbone stack_aggregator call.
-        if BackboneServer.post_aggregate_request(request_body, request_params) != 0 or \
-           BackboneServer.post_recommendations_request(request_body, request_params) != 0:
-            return 500, 'Error while reaching backend service'
+        BackboneServer.post_aggregate_request(request_body, request_params)
+        BackboneServer.post_recommendations_request(request_body, request_params)
 
-        return 200, data['deps']
+        return data['deps']

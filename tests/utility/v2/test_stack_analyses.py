@@ -19,6 +19,7 @@
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.stack_analyses import StackAnalyses
 
 
@@ -44,37 +45,39 @@ class TestStackAnalyses(unittest.TestCase):
                             '/data/manifests/400/npmlist.json').read()
         }
         sa = StackAnalyses(None, 'npm', manifest_file_info, True)
-        status, data = sa.post_request()
-        assert status == 400
+        self.assertRaises(HTTPError, sa.post_request)
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
-           return_value=-1)
+           side_effect=HTTPError(500, error="Mock error"))
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_recommendations_request',
-           return_value=-1)
+           side_effect=HTTPError(500, error="Mock error"))
     def test_sa_backbone_error(self, _recommendations_request, _aggregate_request):
         """Check if 500 is raise upon invalid response from backbone server."""
         sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
-        status, data = sa.post_request()
-        assert status == 500
+        self.assertRaises(HTTPError, sa.post_request)
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
-           return_value=0)
+           side_effect=None)
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_recommendations_request',
-           return_value=0)
-    @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request', return_value=-1)
+           side_effect=None)
+    @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request',
+           side_effect=HTTPError(500, 'Mock exception'))
     def test_sa_rdb_error(self, _post_request, _recommendations_request, _aggregate_request):
         """Check if 500 is raise upon request save failure."""
         sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
-        status, data = sa.post_request()
-        assert status == 500
+        self.assertRaises(HTTPError, sa.post_request)
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
-           return_value=0)
+           side_effect=None)
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_recommendations_request',
-           return_value=0)
-    @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request', return_value=0)
+           side_effect=None)
+    @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request',
+           side_effect=None)
     def test_sa_success(self, _post_request, _recommendations_request, _aggregate_request):
         """Success stack analyses flow."""
         sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
-        status, data = sa.post_request()
-        assert status == 200
+        response = sa.post_request()
+        self.assertIsInstance(response, dict)
+        self.assertIn('status', response)
+        self.assertEqual(response['status'], 'success')
+        self.assertIn('id', response)

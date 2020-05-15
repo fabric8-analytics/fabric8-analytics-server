@@ -195,10 +195,6 @@ class StackAnalysesApi(Resource):
 
         # 1. Read request data for the request
         db_result = RdbAnalyses.get_request_data(external_request_id)
-        if db_result is None:
-            error_message = 'Invalid request ID {}.'.format(external_request_id)
-            logger.error(error_message)
-            raise HTTPError(404, error=error_message)
 
         # 2. Read stack results for the request
         stack_result = RdbAnalyses.get_stack_result(external_request_id)
@@ -211,14 +207,7 @@ class StackAnalysesApi(Resource):
                                                            stack_result, recm_data)
 
         # 6. If there was no exception raise, means request is ready to be served.
-        response_status, response_data = sa_response_builder.get_response()
-        if response_status == 200 or response_status == 202:
-            logger.debug('OK :: {} => {}'.format(response_status, response_data))
-            return response_data
-
-        # 7. Default case of HTTP error
-        logger.error('Error :: {} => {}'.format(response_status, response_data))
-        raise HTTPError(response_status, error=response_data)
+        return sa_response_builder.get_response()
 
     @staticmethod
     def post():
@@ -277,14 +266,7 @@ class StackAnalysesApi(Resource):
         sa = StackAnalyses(None, ecosystem, manifest_file_info, show_transitive)
 
         # 6. Post request
-        response_status, response_data = sa.post_request()
-        if response_status == 200 or response_status == 202:
-            logger.debug('OK :: {} => {}'.format(response_status, response_data))
-            return response_data, response_status
-
-        # 7. Default case of HTTP error
-        logger.error('Error :: {} => {}'.format(response_status, response_data))
-        raise HTTPError(response_status, error=response_data)
+        return sa.post_request()
 
 
 @api_v2.route('/_error')
