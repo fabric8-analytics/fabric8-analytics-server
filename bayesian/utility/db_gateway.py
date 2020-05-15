@@ -81,43 +81,46 @@ class RdbAnalyses:
     Provides interfaces to save and read request post data for stack analyses v2.
     """
 
-    @classmethod
-    def get_request_data(cls, request_id):
+    def __init__(self, request_id, submit_time=None, manifest=None, deps=None):
+        """Set request id."""
+        self.request_id = request_id
+        self.submit_time = submit_time
+        self.manifest = manifest
+        self.deps = deps
+
+    def get_request_data(self):
         """Read request data for given request id from RDS."""
-        db_result = fetch_sa_request(rdb, request_id)
+        db_result = fetch_sa_request(rdb, self.request_id)
         if db_result is None:
-            error_message = 'Invalid request ID {}.'.format(request_id)
+            error_message = 'Invalid request ID {}.'.format(self.request_id)
             logger.exception(error_message)
             raise HTTPError(404, error_message)
         return db_result
 
-    @classmethod
-    def get_stack_result(cls, request_id):
+    def get_stack_result(self):
         """Read and return stack result from RDS."""
-        return retrieve_worker_result(rdb, request_id, 'stack_aggregator_v2')
+        return retrieve_worker_result(rdb, self.request_id, 'stack_aggregator_v2')
 
-    @classmethod
-    def get_recommendation_data(cls, request_id):
+    def get_recommendation_data(self):
         """Read and return recommendation data from RDS."""
-        return retrieve_worker_result(rdb, request_id, 'recommendation_v2')
+        return retrieve_worker_result(rdb, self.request_id, 'recommendation_v2')
 
-    @classmethod
-    def save_post_request(cls, request_id, submit_time, manifest, deps):
+    def save_post_request(self):
         """Save the post request data into RDS."""
         try:
             insert_stmt = insert(StackAnalysisRequest).values(
-                id=request_id,
-                submitTime=submit_time,
-                requestJson={'manifest': manifest},
-                dep_snapshot=deps
+                id=self.request_id,
+                submitTime=self.submit_time,
+                requestJson={'manifest': self.manifest},
+                dep_snapshot=self.deps
             )
             do_update_stmt = insert_stmt.on_conflict_do_update(
                 index_elements=['id'],
-                set_=dict(dep_snapshot=deps)
+                set_=dict(dep_snapshot=self.deps)
             )
             rdb.session.execute(do_update_stmt)
             rdb.session.commit()
         except SQLAlchemyError as e:
             logger.exception("Error updating log for request {}, exception {}".format(
-                request_id, e))
-            raise HTTPError(500, 'Error while saving request {}'.format(request_id))
+                self.request_id, e))
+            raise HTTPError(500, 'Error while saving request {}'.format(self.request_id))

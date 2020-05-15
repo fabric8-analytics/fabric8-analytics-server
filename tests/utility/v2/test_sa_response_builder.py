@@ -17,6 +17,7 @@
 """Test stack analyses response builder class."""
 
 import json
+import pytest
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -28,40 +29,58 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
     """Stack Analyses Response Builder Unit Tests."""
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
-    def test_sa_response_builder_worker_error(self, _timed_out):
+    @patch('bayesian.utility.db_gateway.RdbAnalyses')
+    def test_sa_response_builder_worker_error(self, _rdb_analyses, _timed_out):
         """Test SA response builder with invalid values for stack result and recm data."""
-        stack_result = -1
-        recm_data = -1
-        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
-                                                           stack_result, recm_data)
+        _rdb_analyses.get_request_data.return_value = None
+        _rdb_analyses.get_stack_result.return_value = -1
+        _rdb_analyses.get_recommendation_data.return_value = -1
+        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
+                                                           _rdb_analyses)
         # Expect HTTP 404 error.
-        self.assertRaises(HTTPError, sa_response_builder.get_response)
+        with pytest.raises(HTTPError) as http_error:
+            assert sa_response_builder.get_response()
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 404)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
-    def test_sa_response_builder_inprogress(self, _timed_out):
+    @patch('bayesian.utility.db_gateway.RdbAnalyses')
+    def test_sa_response_builder_inprogress(self, _rdb_analyses, _timed_out):
         """Test SA response builder with None data."""
-        stack_result = None
-        recm_data = None
-        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
-                                                           stack_result, recm_data)
+        _rdb_analyses.get_request_data.return_value = None
+        _rdb_analyses.get_stack_result.return_value = None
+        _rdb_analyses.get_recommendation_data.return_value = None
+        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
+                                                           _rdb_analyses)
         # Raises HTTP 202 error for request in progress
-        self.assertRaises(HTTPError, sa_response_builder.get_response)
+        with pytest.raises(HTTPError) as http_error:
+            assert sa_response_builder.get_response()
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 202)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=True)
-    def test_sa_response_builder_timeout(self, _timed_out):
+    @patch('bayesian.utility.db_gateway.RdbAnalyses')
+    def test_sa_response_builder_timeout(self, _rdb_analyses, _timed_out):
         """Test SA response builder with missing recm data."""
         stack_result = None
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/backbone/v2_stack_result.json') as f:
             stack_result = json.load(f)
-        recm_data = None
-        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
-                                                           stack_result, recm_data)
+
+        _rdb_analyses.get_request_data.return_value = None
+        _rdb_analyses.get_stack_result.return_value = stack_result
+        _rdb_analyses.get_recommendation_data.return_value = None
+        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
+                                                           _rdb_analyses)
         # Raises HTTP 408 error
-        self.assertRaises(HTTPError, sa_response_builder.get_response)
+        with pytest.raises(HTTPError) as http_error:
+            assert sa_response_builder.get_response()
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 408)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
-    def test_sa_response_builder_500(self, _timed_out):
+    @patch('bayesian.utility.db_gateway.RdbAnalyses')
+    def test_sa_response_builder_500(self, _rdb_analyses, _timed_out):
         """Test SA response builder with missing 'task_result' in stack result data."""
         stack_result = None
         with open(str(Path(__file__).parent.parent.parent) +
@@ -75,24 +94,36 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/backbone/v2_recm_data.json') as f:
             recm_data = json.load(f)
-        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
-                                                           stack_result, recm_data)
+
+        _rdb_analyses.get_request_data.return_value = None
+        _rdb_analyses.get_stack_result.return_value = stack_result
+        _rdb_analyses.get_recommendation_data.return_value = recm_data
+        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
+                                                           _rdb_analyses)
         # Raises HTTP 500 error
-        self.assertRaises(HTTPError, sa_response_builder.get_response)
+        with pytest.raises(HTTPError) as http_error:
+            assert sa_response_builder.get_response()
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 500)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
-    def test_sa_response_builder_200(self, _timed_out):
+    @patch('bayesian.utility.db_gateway.RdbAnalyses')
+    def test_sa_response_builder_200(self, _rdb_analyses, _timed_out):
         """Test SA response builder with all proper data."""
         stack_result = None
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/backbone/v2_stack_result.json') as f:
             stack_result = json.load(f)
+
         recm_data = None
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/backbone/v2_recm_data.json') as f:
             recm_data = json.load(f)
-        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID', None,
-                                                           stack_result, recm_data)
+
+        _rdb_analyses.get_request_data.return_value = None
+        _rdb_analyses.get_stack_result.return_value = stack_result
+        _rdb_analyses.get_recommendation_data.return_value = recm_data
+        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
+                                                           _rdb_analyses)
         response = sa_response_builder.get_response()
-        self.assertIsInstance(response, dict)
         self.assertIn('version', response)

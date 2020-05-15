@@ -30,15 +30,18 @@ class StackAnalysesResponseBuilder:
     analyses response for V1.
     """
 
-    def __init__(self, external_request_id, db_result, stack_result, recm_data):
+    def __init__(self, external_request_id, rdb_analyses):
         """Response Builder, Build Json Response for Stack Analyses."""
         self.external_request_id = external_request_id
-        self.db_result = db_result
-        self.stack_result = stack_result
-        self.recm_data = recm_data
+        self.rdb_analyses = rdb_analyses
 
     def get_response(self):
         """Aggregate, build and return json response for the given request id."""
+        # Get db result, stack result and recm data from rdb.
+        self._db_result = self.rdb_analyses.get_request_data()
+        self._stack_result = self.rdb_analyses.get_stack_result()
+        self._recm_data = self.rdb_analyses.get_recommendation_data()
+
         # If request is invalid, it will raise HTTPError with proper message.
         self._is_request_invalid()
 
@@ -50,12 +53,12 @@ class StackAnalysesResponseBuilder:
         stack_audit = None
         recommendations = []
 
-        if self.stack_result is not None and 'task_result' in self.stack_result:
-            stack_task_result = self.stack_result.get('task_result', None)
+        if self._stack_result is not None and 'task_result' in self._stack_result:
+            stack_task_result = self._stack_result.get('task_result')
             stack_audit = stack_task_result.get('_audit', {})
 
-        if self.recm_data is not None and 'task_result' in self.recm_data:
-            recommendations = self.recm_data.get('task_result', {}).get('recommendations', [{}])[0]
+        if self._recm_data is not None and 'task_result' in self._recm_data:
+            recommendations = self._recm_data.get('task_result', {}).get('recommendations', [{}])[0]
 
         if stack_task_result is not None:
             return {
@@ -85,7 +88,7 @@ class StackAnalysesResponseBuilder:
 
     def _is_request_invalid(self):
         """If request is invalid than it shall raise an exception."""
-        if self.stack_result == -1 and self.recm_data == -1:
+        if self._stack_result == -1 and self._recm_data == -1:
             error_message = 'Worker result for request ID {} does not exist yet'.format(
                             self.external_request_id)
             logger.exception(error_message)
@@ -93,9 +96,9 @@ class StackAnalysesResponseBuilder:
 
     def _is_request_inprogress(self):
         """Check if request is in progress."""
-        if self.stack_result is None or self.recm_data is None:
+        if self._stack_result is None or self._recm_data is None:
             # If the response is not ready and the timeout period is over, send error 408
-            if request_timed_out(self.db_result):
+            if request_timed_out(self._db_result):
                 error_message = 'Stack analysis request {} has timed out. Please retry ' \
                                 'with a new analysis.'.format(self.external_request_id)
                 logger.error(error_message)

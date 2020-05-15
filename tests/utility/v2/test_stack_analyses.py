@@ -16,6 +16,7 @@
 #
 """Test stack analyses class."""
 
+import pytest
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -45,7 +46,10 @@ class TestStackAnalyses(unittest.TestCase):
                             '/data/manifests/400/npmlist.json').read()
         }
         sa = StackAnalyses(None, 'npm', manifest_file_info, True)
-        self.assertRaises(HTTPError, sa.post_request)
+        with pytest.raises(HTTPError) as http_error:
+            sa.post_request()
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 400)
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
            side_effect=HTTPError(500, error="Mock error"))
@@ -54,7 +58,10 @@ class TestStackAnalyses(unittest.TestCase):
     def test_sa_backbone_error(self, _recommendations_request, _aggregate_request):
         """Check if 500 is raise upon invalid response from backbone server."""
         sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
-        self.assertRaises(HTTPError, sa.post_request)
+        with pytest.raises(HTTPError) as http_error:
+            sa.post_request()
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 500)
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
            side_effect=None)
@@ -65,7 +72,10 @@ class TestStackAnalyses(unittest.TestCase):
     def test_sa_rdb_error(self, _post_request, _recommendations_request, _aggregate_request):
         """Check if 500 is raise upon request save failure."""
         sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
-        self.assertRaises(HTTPError, sa.post_request)
+        with pytest.raises(HTTPError) as http_error:
+            sa.post_request()
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 500)
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
            side_effect=None)

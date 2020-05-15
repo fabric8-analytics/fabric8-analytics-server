@@ -158,7 +158,10 @@ class TestStackAnalysesGetApi(unittest.TestCase):
         expected_result = 'Stack analyses response for inprogress request'
         _get_response.side_effect = HTTPError(202, expected_result)
         sa = StackAnalysesApi()
-        self.assertRaises(HTTPError, sa.get, 'request_id')
+        with pytest.raises(HTTPError) as http_error:
+            sa.get('request_id')
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 202)
 
     @patch('bayesian.api.api_v2.RdbAnalyses.get_request_data', return_value={})
     @patch('bayesian.api.api_v2.RdbAnalyses.get_stack_result', return_value={})
@@ -169,7 +172,10 @@ class TestStackAnalysesGetApi(unittest.TestCase):
         """Get request with 500 error."""
         _get_response.side_effect = HTTPError(500, 'Mock database error')
         sa = StackAnalysesApi()
-        self.assertRaises(HTTPError, sa.get, 'request_id')
+        with pytest.raises(HTTPError) as http_error:
+            sa.get('request_id')
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 500)
 
 
 @pytest.mark.usefixtures('client_class')

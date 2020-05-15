@@ -16,6 +16,7 @@
 #
 """Test backbone server interface class."""
 
+import pytest
 import unittest
 from unittest.mock import patch
 from bayesian.exceptions import HTTPError
@@ -29,7 +30,10 @@ class TestBackboneServer(unittest.TestCase):
            side_effect=Exception('Mock exception'))
     def test_agg_request_error(self, _post):
         """Test aggregate post request with empty data."""
-        self.assertRaises(HTTPError, BackboneServer.post_aggregate_request, {}, {})
+        with pytest.raises(HTTPError) as http_error:
+            BackboneServer.post_aggregate_request({}, {})
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 500)
 
     @patch('bayesian.utility.v2.backbone_server.BackboneServer.session.post',
            return_value={})
@@ -41,7 +45,10 @@ class TestBackboneServer(unittest.TestCase):
            side_effect=Exception('Mock exception'))
     def test_recm_request_error(self, _post):
         """Test recommendation post request with empty data."""
-        self.assertRaises(HTTPError, BackboneServer.post_recommendations_request, {}, {})
+        with pytest.raises(HTTPError) as http_error:
+            BackboneServer.post_recommendations_request({}, {})
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 500)
 
     @patch('bayesian.utility.v2.backbone_server.BackboneServer.session.post',
            return_value={})

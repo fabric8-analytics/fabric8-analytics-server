@@ -55,6 +55,10 @@ def create_app(configfile=None):
     app.route('/api')(lambda: redirect(url_for('api_v1.apiendpoints__slashless')))
     # Likewise for base URL, and make that accessible by name
 
+    # Configure CORS, DONE ONLY FOR DEV TESTING, SHOULD NEVER APPEAR IN PRODUCTION.
+    from flask_cors import CORS
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+
     @app.route('/')
     def base_url():
         return redirect(url_for('api_v1.apiendpoints__slashless'))

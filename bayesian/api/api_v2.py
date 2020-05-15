@@ -193,20 +193,11 @@ class StackAnalysesApi(Resource):
         """Handle /api/v2/stack-analyses GET REST API."""
         logger.debug("GET request_id: {}".format(external_request_id))
 
-        # 1. Read request data for the request
-        db_result = RdbAnalyses.get_request_data(external_request_id)
+        # 1. Assemble final GET response and return
+        sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
+                                                           RdbAnalyses(external_request_id))
 
-        # 2. Read stack results for the request
-        stack_result = RdbAnalyses.get_stack_result(external_request_id)
-
-        # 4. Read recommendation data for the request
-        recm_data = RdbAnalyses.get_recommendation_data(external_request_id)
-
-        # 5. Assemble final GET response and return
-        sa_response_builder = StackAnalysesResponseBuilder(external_request_id, db_result,
-                                                           stack_result, recm_data)
-
-        # 6. If there was no exception raise, means request is ready to be served.
+        # 2. If there was no exception raise, means request is ready to be served.
         return sa_response_builder.get_response()
 
     @staticmethod

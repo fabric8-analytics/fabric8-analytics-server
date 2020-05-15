@@ -18,6 +18,7 @@
 
 import os
 import json
+import pytest
 import unittest
 from unittest.mock import patch
 
@@ -67,31 +68,43 @@ class TestRdbAnalyses(unittest.TestCase):
     @patch('bayesian.utility.db_gateway.fetch_sa_request', return_value={})
     def test_get_request_data_success(self, _fetch_sa_request):
         """Test get SA request data."""
-        self.assertEqual(RdbAnalyses.get_request_data('dummy_request_id'), {})
+        rdbAnalyses = RdbAnalyses('dummy_request_id')
+        self.assertEqual(rdbAnalyses.get_request_data(), {})
 
     @patch('bayesian.utility.db_gateway.fetch_sa_request', return_value=None)
     def test_get_request_data_error(self, _fetch_sa_request):
-        """Test get SA request data."""
-        self.assertRaises(HTTPError, RdbAnalyses.get_request_data, 'dummy_request_id')
+        """Test get SA request data with return as 404 error."""
+        rdbAnalyses = RdbAnalyses('dummy_request_id')
+        with pytest.raises(HTTPError) as http_error:
+            rdbAnalyses.get_request_data()
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 404)
 
     @patch('bayesian.utility.db_gateway.retrieve_worker_result', return_value={})
     def test_get_stack_result(self, _fetch_sa_request):
         """Test get SA stack result."""
-        self.assertEqual(RdbAnalyses.get_stack_result('dummy_request_id'), {})
+        rdbAnalyses = RdbAnalyses('dummy_request_id')
+        self.assertEqual(rdbAnalyses.get_stack_result(), {})
 
     @patch('bayesian.utility.db_gateway.retrieve_worker_result', return_value={})
     def test_get_recommendation_data(self, _fetch_sa_request):
         """Test get SA recommendation data."""
-        self.assertEqual(RdbAnalyses.get_recommendation_data('dummy_request_id'), {})
+        rdbAnalyses = RdbAnalyses('dummy_request_id')
+        self.assertEqual(rdbAnalyses.get_recommendation_data(), {})
 
     @patch('bayesian.utility.db_gateway.rdb.session.execute',
            side_effect=SQLAlchemyError('Mock exception'))
     def test_save_post_request_error(self, _execute):
         """Test error save request that raises exception."""
-        self.assertRaises(HTTPError, RdbAnalyses.save_post_request, 'dummy_request_id', '', {}, {})
+        rdbAnalyses = RdbAnalyses('dummy_request_id', '', {}, {})
+        with pytest.raises(HTTPError) as http_error:
+            rdbAnalyses.save_post_request()
+        self.assertIs(http_error.type, HTTPError)
+        self.assertEqual(http_error.value.code, 500)
 
     @patch('bayesian.utility.db_gateway.rdb.session.execute', return_value=0)
     @patch('bayesian.utility.db_gateway.rdb.session.commit', return_value=0)
     def test_save_post_request_success(self, _commit, _execute):
         """Test success save request."""
-        self.assertEqual(RdbAnalyses.save_post_request('dummy_request_id', '', {}, {}), None)
+        rdbAnalyses = RdbAnalyses('dummy_request_id', '', {}, {})
+        self.assertEqual(rdbAnalyses.save_post_request(), None)

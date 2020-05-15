@@ -55,10 +55,9 @@ class StackAnalyses():
         deps = self._make_backbone_request()
 
         # Finally save results in RDS and upon success return request id.
-        RdbAnalyses.save_post_request(request_id=self.external_request_id,
-                                      submit_time=self._request_date_str,
-                                      manifest=self.manifest_file_info,
-                                      deps=deps)
+        rdbAnalyses = RdbAnalyses(self.external_request_id, self._request_date_str,
+                                  self.manifest_file_info, deps)
+        rdbAnalyses.save_post_request()
         return {
             'status': 'success',
             'submitted_at': self._request_date_str,
