@@ -37,6 +37,8 @@ class StackAnalysesResponseBuilder:
 
     def get_response(self):
         """Aggregate, build and return json response for the given request id."""
+        logger.debug('SA Get request id: {}'.format(self.external_request_id))
+
         # Get db result, stack result and recm data from rdb.
         self._db_result = self.rdb_analyses.get_request_data()
         self._stack_result = self.rdb_analyses.get_stack_result()
@@ -51,14 +53,14 @@ class StackAnalysesResponseBuilder:
         # Proceed with building actual response from data.
         stack_task_result = None
         stack_audit = None
-        recommendations = []
+        recommendation = {}
 
         if self._stack_result is not None and 'task_result' in self._stack_result:
             stack_task_result = self._stack_result.get('task_result')
             stack_audit = stack_task_result.get('_audit', {})
 
         if self._recm_data is not None and 'task_result' in self._recm_data:
-            recommendations = self._recm_data.get('task_result', {}).get('recommendations', [{}])[0]
+            recommendation = self._recm_data.get('task_result')
 
         if stack_task_result is not None:
             return {
@@ -72,11 +74,7 @@ class StackAnalysesResponseBuilder:
                 'ecosystem': stack_task_result.get('ecosystem', ''),
                 'unknown_dependencies': stack_task_result.get('unknown_dependencies', ''),
                 'license_analysis': stack_task_result.get('license_analysis', ''),
-                'recommendation': {
-                    'companion': recommendations.get('companion', []),
-                    'manifest_file_path': recommendations.get('manifest_file_path', ''),
-                    'usage_outliers': recommendations.get('usage_outliers', [])
-                },
+                'recommendation': recommendation,
                 'registration_link': stack_task_result.get('registration_link', ''),
                 'analyzed_dependencies': stack_task_result.get('analyzed_dependencies', [])
             }
