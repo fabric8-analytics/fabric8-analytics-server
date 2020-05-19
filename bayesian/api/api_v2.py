@@ -23,6 +23,7 @@ import logging
 
 from requests_futures.sessions import FuturesSession
 from collections import namedtuple
+from pydantic.error_wrappers import ValidationError
 
 from flask import Blueprint, request, g
 from flask.json import jsonify
@@ -35,12 +36,13 @@ from bayesian.exceptions import HTTPError
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
-                            resolved_files_exist,
                             check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import StackAnalysesResponseBuilder
 from bayesian.utility.v2.stack_analyses import StackAnalyses
+from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
 from bayesian.utility.db_gateway import RdbAnalyses
+
 
 errors = {
         'AuthError': {
@@ -203,60 +205,23 @@ class StackAnalysesApi(Resource):
     @staticmethod
     def post():
         """Handle /api/v2/stack-analyses POST REST API."""
-        # 1. Read mandatory params
-        manifest = request.files.get('manifest') or None
-        file_path = request.form.get('file_path') or None
-        ecosystem = request.form.get('ecosystem') or None
+        sa_post_request = None
+        try:
+            # 1. Validate and build request object.
+            sa_post_request = StackAnalysesPostRequest(**request.form, **request.files)
 
-        logger.debug('Mandatory params :: manifest: {} file_path: {} ecosystem: {}'.format(
-            manifest, file_path, ecosystem))
-
-        # 2. Read optional params and set default value as per V2 spec.
-        show_transitive = request.form.get('show_transitive') or 'true'
-
-        logger.info('Optional params :: show_transitive: {}'.format(show_transitive))
-
-        # 3. Validate post params.
-        # Manifest is mandatory and must be a string.
-        if manifest is None or not resolved_files_exist(manifest.filename):
-            error_message = 'Error processing request. Manifest is missing its value {} is ' \
-                            'invalid / not supported'.format(manifest)
-            logger.error(error_message)
+        except ValidationError as e:
+            # 2. Check of invalid params and raise exception.
+            error_message = 'Validation error(s) in the request.'
+            for error in e.errors():
+                error_message += ' {} => {}.'.format(error['loc'][0], error['msg'])
+            logger.exception(error_message)
             raise HTTPError(400, error=error_message)
 
-        # File path is mandatory and must be a string.
-        if file_path is None or not isinstance(file_path, str):
-            error_message = 'Error processing request. File path is missing / its value ' \
-                            '{} is invalid'.format(file_path)
-            logger.error(error_message)
-            raise HTTPError(400, error=error_message)
+        # 3. Initiate stack analyses object
+        sa = StackAnalyses(None, sa_post_request)
 
-        # Ecosystem  is mandatory and must be a string.
-        if ecosystem is None or not isinstance(ecosystem, str):
-            error_message = 'Error processing request. Ecosystem is missing / its value {} ' \
-                            'is invalid'.format(ecosystem)
-            logger.error(error_message)
-            raise HTTPError(400, error=error_message)
-
-        # Ecosystem should be a valid value
-        if not check_for_accepted_ecosystem(ecosystem):
-            error_message = 'Error processing request. {} ecosystem is not supported'.format(
-                ecosystem)
-            logger.error(error_message)
-            raise HTTPError(400, error=error_message)
-
-        # 4. Build manifest info from manifest file and path. It read content in utf-8 encoding.
-        manifest_file_info = {
-            'filename': manifest.filename,
-            'filepath': file_path,
-            'content': manifest.read().decode('utf-8')
-        }
-        logger.info(manifest_file_info)
-
-        # 5. Initiate stack analyses object
-        sa = StackAnalyses(None, ecosystem, manifest_file_info, show_transitive)
-
-        # 6. Post request
+        # 4. Post request
         return sa.post_request()
 
 

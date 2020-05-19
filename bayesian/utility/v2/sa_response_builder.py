@@ -43,7 +43,7 @@ class StackAnalysesResponseBuilder:
         self._recm_data = self.rdb_analyses.get_recommendation_data()
 
         # If request is invalid, it will raise HTTPError with proper message.
-        self._is_request_invalid()
+        self._raise_if_invalid()
 
         # If request is inprogress or timeout, it will raise HTTPError with proper message.
         self._is_request_inprogress()
@@ -86,7 +86,7 @@ class StackAnalysesResponseBuilder:
             logger.exception(error_message)
             raise HTTPError(500, error_message)
 
-    def _is_request_invalid(self):
+    def _raise_if_invalid(self):
         """If request is invalid than it shall raise an exception."""
         if self._stack_result == -1 and self._recm_data == -1:
             error_message = 'Worker result for request ID {} does not exist yet'.format(
@@ -106,5 +106,5 @@ class StackAnalysesResponseBuilder:
             else:
                 error_message = 'Analysis for request ID {} is in progress'.format(
                     self.external_request_id)
-                logger.error(error_message)
+                logger.warning(error_message)
                 raise HTTPError(202, error_message)

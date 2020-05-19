@@ -135,12 +135,8 @@ class TestComponentAnalysesApi(unittest.TestCase):
 class TestStackAnalysesGetApi(unittest.TestCase):
     """Stack Analyses Unit Tests."""
 
-    @patch('bayesian.api.api_v2.RdbAnalyses.get_request_data', return_value={})
-    @patch('bayesian.api.api_v2.RdbAnalyses.get_stack_result', return_value={})
-    @patch('bayesian.api.api_v2.RdbAnalyses.get_recommendation_data', return_value={})
     @patch('bayesian.api.api_v2.StackAnalysesResponseBuilder.get_response')
-    def test_sa_get_request_success(self, _get_response, _recommendation_data, _stack_result,
-                                    _request_data):
+    def test_sa_get_request_success(self, _get_response):
         """Test success get request."""
         expected_result = 'Stack analyses success response'
         _get_response.return_value = expected_result
@@ -148,12 +144,8 @@ class TestStackAnalysesGetApi(unittest.TestCase):
         response = sa.get('request_id')
         self.assertEqual(response, expected_result)
 
-    @patch('bayesian.api.api_v2.RdbAnalyses.get_request_data', return_value={})
-    @patch('bayesian.api.api_v2.RdbAnalyses.get_stack_result', return_value={})
-    @patch('bayesian.api.api_v2.RdbAnalyses.get_recommendation_data', return_value={})
     @patch('bayesian.api.api_v2.StackAnalysesResponseBuilder.get_response')
-    def test_sa_get_request_progress(self, _get_response, _recommendation_data, _stack_result,
-                                     _request_data):
+    def test_sa_get_request_progress(self, _get_response):
         """Get request that is progress i.e., not yet completed."""
         expected_result = 'Stack analyses response for inprogress request'
         _get_response.side_effect = HTTPError(202, expected_result)
@@ -163,12 +155,8 @@ class TestStackAnalysesGetApi(unittest.TestCase):
         self.assertIs(http_error.type, HTTPError)
         self.assertEqual(http_error.value.code, 202)
 
-    @patch('bayesian.api.api_v2.RdbAnalyses.get_request_data', return_value={})
-    @patch('bayesian.api.api_v2.RdbAnalyses.get_stack_result', return_value={})
-    @patch('bayesian.api.api_v2.RdbAnalyses.get_recommendation_data', return_value={})
     @patch('bayesian.api.api_v2.StackAnalysesResponseBuilder.get_response')
-    def test_sa_get_request_error(self, _get_response, _recommendation_data, _stack_result,
-                                  _request_data):
+    def test_sa_get_request_error(self, _get_response):
         """Get request with 500 error."""
         _get_response.side_effect = HTTPError(500, 'Mock database error')
         sa = StackAnalysesApi()
@@ -273,25 +261,3 @@ class TestStackAnalysesPostApi(unittest.TestCase):
                                     content_type='multipart/form-data')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json.get('status'), 'success')
-
-    @patch('bayesian.api.api_v2.StackAnalyses.post_request')
-    def test_sa_post_success_202(self, _post_request):
-        """Success post request that returns 202."""
-        expected_result = "This is mock success response with 202"
-        _post_request.side_effect = HTTPError(202, expected_result)
-        response = self.client.post(api_route_for('/stack-analyses'),
-                                    data=self.post_data,
-                                    content_type='multipart/form-data')
-        self.assertEqual(response.status_code, 202)
-        self.assertEqual(response.json.get('error'), expected_result)
-
-    @patch('bayesian.api.api_v2.StackAnalyses.post_request')
-    def test_sa_post_error_500(self, _post_request):
-        """Test error post request. Expecting http error 500."""
-        expected_result = "This is mock error 500"
-        _post_request.side_effect = HTTPError(500, expected_result)
-        response = self.client.post(api_route_for('/stack-analyses'),
-                                    data=self.post_data,
-                                    content_type='multipart/form-data')
-        self.assertEqual(response.status_code, 500)
-        self.assertEqual(response.json.get('error'), expected_result)

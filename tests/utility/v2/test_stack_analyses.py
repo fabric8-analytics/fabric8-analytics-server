@@ -22,72 +22,67 @@ from pathlib import Path
 from unittest.mock import patch
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.stack_analyses import StackAnalyses
+from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
+from werkzeug.datastructures import FileStorage
 
 
 class TestStackAnalyses(unittest.TestCase):
     """Stack Analyses Unit Tests."""
 
-    @classmethod
-    def setUpClass(cls):
-        """Fill in manifest file info required by all test cases."""
-        cls.manifest_file_info = {
-            'filename': 'npmlist.json',
-            'filepath': '/tmp/bin',
-            'content': open(str(Path(__file__).parent.parent.parent) +
-                            '/data/manifests/202/npmlist.json').read()
-        }
-
     def test_sa_invalid_manifest_file(self):
         """Check if 400 is raise upon invalid manifest file."""
-        manifest_file_info = {
-            'filename': 'npmlist.json',
-            'filepath': '/tmp/bin',
-            'content': open(str(Path(__file__).parent.parent.parent) +
-                            '/data/manifests/400/npmlist.json').read()
-        }
-        sa = StackAnalyses(None, 'npm', manifest_file_info, True)
-        with pytest.raises(HTTPError) as http_error:
-            sa.post_request()
-        self.assertIs(http_error.type, HTTPError)
-        self.assertEqual(http_error.value.code, 400)
+        with open(str(Path(__file__).parent.parent.parent) +
+                  '/data/manifests/400/npmlist.json', 'rb') as fp:
+            fs = FileStorage(stream=fp, filename='npmlist.json')
+            sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
+                                                       ecosystem='npm', show_transitive=True)
+            sa = StackAnalyses(None, sa_post_request)
+            with pytest.raises(HTTPError) as http_error:
+                sa.post_request()
+            self.assertIs(http_error.type, HTTPError)
+            self.assertEqual(http_error.value.code, 400)
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
            side_effect=HTTPError(500, error="Mock error"))
-    @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_recommendations_request',
-           side_effect=HTTPError(500, error="Mock error"))
-    def test_sa_backbone_error(self, _recommendations_request, _aggregate_request):
+    def test_sa_backbone_error(self, _aggregate_request):
         """Check if 500 is raise upon invalid response from backbone server."""
-        sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
-        with pytest.raises(HTTPError) as http_error:
-            sa.post_request()
-        self.assertIs(http_error.type, HTTPError)
-        self.assertEqual(http_error.value.code, 500)
+        with open(str(Path(__file__).parent.parent.parent) +
+                  '/data/manifests/202/npmlist.json', 'rb') as fp:
+            fs = FileStorage(stream=fp, filename='npmlist.json')
+            sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
+                                                       ecosystem='npm', show_transitive=True)
+            sa = StackAnalyses(None, sa_post_request)
+            with pytest.raises(HTTPError) as http_error:
+                sa.post_request()
+            self.assertIs(http_error.type, HTTPError)
+            self.assertEqual(http_error.value.code, 500)
 
-    @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
-           side_effect=None)
-    @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_recommendations_request',
-           side_effect=None)
     @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request',
            side_effect=HTTPError(500, 'Mock exception'))
-    def test_sa_rdb_error(self, _post_request, _recommendations_request, _aggregate_request):
+    def test_sa_rdb_error(self, _post_request):
         """Check if 500 is raise upon request save failure."""
-        sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
-        with pytest.raises(HTTPError) as http_error:
-            sa.post_request()
-        self.assertIs(http_error.type, HTTPError)
-        self.assertEqual(http_error.value.code, 500)
+        with open(str(Path(__file__).parent.parent.parent) +
+                  '/data/manifests/202/npmlist.json', 'rb') as fp:
+            fs = FileStorage(stream=fp, filename='npmlist.json')
+            sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
+                                                       ecosystem='npm', show_transitive=True)
+            sa = StackAnalyses(None, sa_post_request)
+            with pytest.raises(HTTPError) as http_error:
+                sa.post_request()
+            self.assertIs(http_error.type, HTTPError)
+            self.assertEqual(http_error.value.code, 500)
 
-    @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
-           side_effect=None)
-    @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_recommendations_request',
-           side_effect=None)
-    @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request',
-           side_effect=None)
-    def test_sa_success(self, _post_request, _recommendations_request, _aggregate_request):
+    @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request', side_effect=None)
+    def test_sa_success(self, _post_request):
         """Success stack analyses flow."""
-        sa = StackAnalyses(None, 'npm', self.manifest_file_info, True)
-        response = sa.post_request()
-        self.assertIsInstance(response, dict)
-        self.assertIn('status', response)
-        self.assertEqual(response['status'], 'success')
-        self.assertIn('id', response)
+        with open(str(Path(__file__).parent.parent.parent) +
+                  '/data/manifests/202/npmlist.json', 'rb') as fp:
+            fs = FileStorage(stream=fp, filename='npmlist.json')
+            sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
+                                                       ecosystem='npm', show_transitive=True)
+            sa = StackAnalyses(None, sa_post_request)
+            response = sa.post_request()
+            self.assertIsInstance(response, dict)
+            self.assertIn('status', response)
+            self.assertEqual(response['status'], 'success')
+            self.assertIn('id', response)
