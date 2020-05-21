@@ -22,7 +22,6 @@ import logging
 from datetime import datetime
 from requests import post
 from bayesian import rdb
-from bayesian.exceptions import HTTPError
 from bayesian.utils import (fetch_sa_request,
                             retrieve_worker_result)
 
@@ -94,7 +93,7 @@ class RdbAnalyses:
         if db_result is None:
             error_message = 'Invalid request ID {}.'.format(self.request_id)
             logger.exception(error_message)
-            raise HTTPError(404, error_message)
+            raise RDBInvalidRequestException(error_message)
         return db_result
 
     def get_stack_result(self):
@@ -123,4 +122,28 @@ class RdbAnalyses:
         except SQLAlchemyError as e:
             logger.exception("Error updating log for request {}, exception {}".format(
                 self.request_id, e))
-            raise HTTPError(500, 'Error while saving request {}'.format(self.request_id))
+            raise RDBSaveException('Error while saving request {}'.format(self.request_id))
+
+
+class RDBSaveException(Exception):
+    """Representation of RDB exception.
+
+    Contains details information on exception caused by RDB server.
+    """
+
+    def __init__(self, message):
+        """Call the superclass constructor and set custom message."""
+        super().__init__(self, message)
+        self.message = message
+
+
+class RDBInvalidRequestException(Exception):
+    """Exception raised when RDB is queried with wrong / invalid request id.
+
+    Indicate RDB could not get any result data for a given request id.
+    """
+
+    def __init__(self, message):
+        """Call the superclass constructor and set custom message."""
+        super().__init__(self, message)
+        self.message = message

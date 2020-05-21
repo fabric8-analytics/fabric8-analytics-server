@@ -19,7 +19,6 @@
 import os
 import logging
 from requests_futures.sessions import FuturesSession
-from bayesian.exceptions import HTTPError
 
 logger = logging.getLogger(__file__)
 
@@ -51,7 +50,7 @@ class BackboneServer:
                 params=params)
         except Exception as e:
             logger.exception('Aggregator api throws exception {}'.format(e))
-            raise HTTPError(500, error="Error while reaching aggregator service")
+            raise BackboneServerException('Error while reaching aggregator service')
 
     @classmethod
     def post_recommendations_request(cls, body, params):
@@ -67,4 +66,16 @@ class BackboneServer:
                 params=params)
         except Exception as e:
             logger.exception('Recommender api throws exception {}'.format(e))
-            raise HTTPError(500, error="Error while reaching recommender service")
+            raise BackboneServerException('Error while reaching recommender service')
+
+
+class BackboneServerException(Exception):
+    """Representation of Backbone server exception.
+
+    Contains details information on exception caused by backbone server request.
+    """
+
+    def __init__(self, message):
+        """Call the superclass constructor and set custom message."""
+        super().__init__(self, message)
+        self.message = message

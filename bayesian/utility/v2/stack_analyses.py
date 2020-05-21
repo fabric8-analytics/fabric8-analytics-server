@@ -21,7 +21,6 @@ import uuid
 import json
 import logging
 from bayesian.dependency_finder import DependencyFinder
-from bayesian.exceptions import HTTPError
 from bayesian.utility.db_gateway import RdbAnalyses
 from bayesian.utility.v2.backbone_server import BackboneServer
 
@@ -93,7 +92,7 @@ class StackAnalyses():
             return {'deps': deps, 'packages': packages}
         except (ValueError, json.JSONDecodeError) as e:
             logger.exception('Invalid dependencies encountered. {}'.format(e))
-            raise HTTPError(400, 'Error while parsing dependencies information')
+            raise SAInvalidInputException('Error while parsing dependencies information')
 
     def _make_backbone_request(self):
         """Perform backbone request for stack_aggregator and recommender."""
@@ -120,3 +119,15 @@ class StackAnalyses():
         BackboneServer.post_recommendations_request(request_body, request_params)
 
         return data['deps']
+
+
+class SAInvalidInputException(Exception):
+    """Exception raised when given input data is not valid.
+
+    This exception is raised specially when parsing dependency information from manifest file.
+    """
+
+    def __init__(self, message):
+        """Call the superclass constructor and set custom message."""
+        super().__init__(self, message)
+        self.message = message

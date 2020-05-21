@@ -29,7 +29,7 @@ from flask import Blueprint, request, g
 from flask.json import jsonify
 from flask_restful import Api, Resource
 
-from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
+from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required
 from fabric8a_auth.errors import AuthError
 from bayesian.exceptions import HTTPError
@@ -38,18 +38,58 @@ from bayesian.utils import (get_system_version,
                             server_create_analysis,
                             check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
-from bayesian.utility.v2.sa_response_builder import StackAnalysesResponseBuilder
-from bayesian.utility.v2.stack_analyses import StackAnalyses
+from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
+                                                     SARBRequestInvalidException,
+                                                     SARBRequestInprogressException,
+                                                     SARBRequestTimeoutException)
+from bayesian.utility.v2.stack_analyses import StackAnalyses, SAInvalidInputException
 from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
-from bayesian.utility.db_gateway import RdbAnalyses
+from bayesian.utility.v2.backbone_server import BackboneServerException
+from bayesian.utility.db_gateway import RdbAnalyses, RDBSaveException, RDBInvalidRequestException
 
 
 errors = {
-        'AuthError': {
-                         'status': 401,
-                         'message': 'Authentication failed',
-                         'some_description': 'Authentication failed'
-                     }}
+    'AuthError': {
+         'status': 401,
+         'message': 'Authentication failed',
+         'some_description': 'Authentication failed'
+     },
+    'BackboneServerException': {
+        'status': 500,
+        'message': 'Error while reaching aggregator/recommender service',
+        'some_description': 'Exception raised by backbone server request'
+    },
+    'RDBSaveException': {
+        'status': 500,
+        'message': 'Error while saving request',
+        'some_description': 'Exception raised while saving data to RDB'
+    },
+    'RDBInvalidRequestException': {
+        'status': 400,
+        'message': 'Invalid request ID',
+        'some_description': 'Exception raised when request id is invalid'
+    },
+    'SARBRequestInvalidException': {
+        'status': 400,
+        'message': 'Worker result for request ID does not exist yet',
+        'some_description': 'Exception raised when result data is not fetch for a request id'
+    },
+    'SARBRequestInprogressException': {
+        'status': 202,
+        'message': 'Analysis for request ID is in progress',
+        'some_description': 'Exception raised when request id is in process'
+    },
+    'SARBRequestTimeoutException': {
+        'status': 408,
+        'message': 'Stack analysis request has timed out. Please retry with a new analysis',
+        'some_description': 'Exception raised when request id is timed out'
+    },
+    'SAInvalidInputException': {
+        'status': 400,
+        'message': 'Invalid dependencies encountered',
+        'some_description': 'Exception raised during parsing manifest file'
+    }
+}
 
 api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 rest_api_v2 = Api(api_v2, errors=errors)
@@ -297,6 +337,33 @@ def handle_http_error(err):
 def api_401_handler(err):
     """Handle AuthError exceptions."""
     return jsonify(error=err.error), err.status_code
+
+
+@api_v2.errorhandler(BackboneServerException)
+@api_v2.errorhandler(RDBSaveException)
+def api_500_handler(err):
+    """Handle AuthError exceptions."""
+    return jsonify(error=err.message), 500
+
+
+@api_v2.errorhandler(RDBInvalidRequestException)
+@api_v2.errorhandler(SARBRequestInvalidException)
+@api_v2.errorhandler(SAInvalidInputException)
+def api_400_handler(err):
+    """Handle AuthError exceptions."""
+    return jsonify(error=err.message), 400
+
+
+@api_v2.errorhandler(SARBRequestInprogressException)
+def api_202_handler(err):
+    """Handle AuthError exceptions."""
+    return jsonify(error=err.message), 202
+
+
+@api_v2.errorhandler(SARBRequestTimeoutException)
+def api_408_handler(err):
+    """Handle AuthError exceptions."""
+    return jsonify(error=err.message), 408
 
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498

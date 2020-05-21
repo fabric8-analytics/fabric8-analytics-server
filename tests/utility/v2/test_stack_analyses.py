@@ -20,9 +20,10 @@ import pytest
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from bayesian.exceptions import HTTPError
-from bayesian.utility.v2.stack_analyses import StackAnalyses
+from bayesian.utility.v2.stack_analyses import StackAnalyses, SAInvalidInputException
 from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
+from bayesian.utility.v2.backbone_server import BackboneServerException
+from bayesian.utility.db_gateway import RDBSaveException
 from werkzeug.datastructures import FileStorage
 
 
@@ -37,13 +38,12 @@ class TestStackAnalyses(unittest.TestCase):
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
             sa = StackAnalyses(sa_post_request)
-            with pytest.raises(HTTPError) as http_error:
+            with pytest.raises(Exception) as exception:
                 sa.post_request()
-            self.assertIs(http_error.type, HTTPError)
-            self.assertEqual(http_error.value.code, 400)
+            self.assertIs(exception.type, SAInvalidInputException)
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
-           side_effect=HTTPError(500, error="Mock error"))
+           side_effect=BackboneServerException('Mock error'))
     def test_sa_backbone_error(self, _aggregate_request):
         """Check if 500 is raise upon invalid response from backbone server."""
         with open(str(Path(__file__).parent.parent.parent) +
@@ -52,13 +52,12 @@ class TestStackAnalyses(unittest.TestCase):
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
             sa = StackAnalyses(sa_post_request)
-            with pytest.raises(HTTPError) as http_error:
+            with pytest.raises(Exception) as exception:
                 sa.post_request()
-            self.assertIs(http_error.type, HTTPError)
-            self.assertEqual(http_error.value.code, 500)
+            self.assertIs(exception.type, BackboneServerException)
 
     @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request',
-           side_effect=HTTPError(500, 'Mock exception'))
+           side_effect=RDBSaveException('Mock exception'))
     def test_sa_rdb_error(self, _post_request):
         """Check if 500 is raise upon request save failure."""
         with open(str(Path(__file__).parent.parent.parent) +
@@ -67,10 +66,9 @@ class TestStackAnalyses(unittest.TestCase):
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
             sa = StackAnalyses(sa_post_request)
-            with pytest.raises(HTTPError) as http_error:
+            with pytest.raises(Exception) as exception:
                 sa.post_request()
-            self.assertIs(http_error.type, HTTPError)
-            self.assertEqual(http_error.value.code, 500)
+            self.assertIs(exception.type, RDBSaveException)
 
     @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request', side_effect=None)
     def test_sa_success(self, _post_request):

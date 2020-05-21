@@ -22,9 +22,8 @@ import pytest
 import unittest
 from unittest.mock import patch
 
-from bayesian.exceptions import HTTPError
-from bayesian.utility.db_gateway import GraphAnalyses
-from bayesian.utility.db_gateway import RdbAnalyses
+from bayesian.utility.db_gateway import (GraphAnalyses, RdbAnalyses, RDBSaveException,
+                                         RDBInvalidRequestException)
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -75,10 +74,9 @@ class TestRdbAnalyses(unittest.TestCase):
     def test_get_request_data_error(self, _fetch_sa_request):
         """Test get SA request data with return as 404 error."""
         rdbAnalyses = RdbAnalyses('dummy_request_id')
-        with pytest.raises(HTTPError) as http_error:
+        with pytest.raises(Exception) as exception:
             rdbAnalyses.get_request_data()
-        self.assertIs(http_error.type, HTTPError)
-        self.assertEqual(http_error.value.code, 404)
+        self.assertIs(exception.type, RDBInvalidRequestException)
 
     @patch('bayesian.utility.db_gateway.retrieve_worker_result', return_value={})
     def test_get_stack_result(self, _fetch_sa_request):
@@ -97,10 +95,9 @@ class TestRdbAnalyses(unittest.TestCase):
     def test_save_post_request_error(self, _execute):
         """Test error save request that raises exception."""
         rdbAnalyses = RdbAnalyses('dummy_request_id', '', {}, {})
-        with pytest.raises(HTTPError) as http_error:
+        with pytest.raises(Exception) as exception:
             rdbAnalyses.save_post_request()
-        self.assertIs(http_error.type, HTTPError)
-        self.assertEqual(http_error.value.code, 500)
+        self.assertIs(exception.type, RDBSaveException)
 
     @patch('bayesian.utility.db_gateway.rdb.session.execute', return_value=0)
     @patch('bayesian.utility.db_gateway.rdb.session.commit', return_value=0)

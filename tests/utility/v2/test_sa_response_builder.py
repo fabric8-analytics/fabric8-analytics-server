@@ -21,8 +21,10 @@ import pytest
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from bayesian.exceptions import HTTPError
-from bayesian.utility.v2.sa_response_builder import StackAnalysesResponseBuilder
+from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
+                                                     SARBRequestInvalidException,
+                                                     SARBRequestInprogressException,
+                                                     SARBRequestTimeoutException)
 
 
 class TestStackAnalysesResponseBuilder(unittest.TestCase):
@@ -37,11 +39,10 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_recommendation_data.return_value = -1
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
                                                            _rdb_analyses)
-        # Expect HTTP 404 error.
-        with pytest.raises(HTTPError) as http_error:
+        # Expect SARBRequestInvalidException error.
+        with pytest.raises(Exception) as exception:
             assert sa_response_builder.get_response()
-        self.assertIs(http_error.type, HTTPError)
-        self.assertEqual(http_error.value.code, 404)
+        self.assertIs(exception.type, SARBRequestInvalidException)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
     @patch('bayesian.utility.db_gateway.RdbAnalyses')
@@ -52,11 +53,10 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_recommendation_data.return_value = None
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
                                                            _rdb_analyses)
-        # Raises HTTP 202 error for request in progress
-        with pytest.raises(HTTPError) as http_error:
+        # Raises SARBRequestInprogressException error for request in progress
+        with pytest.raises(Exception) as exception:
             assert sa_response_builder.get_response()
-        self.assertIs(http_error.type, HTTPError)
-        self.assertEqual(http_error.value.code, 202)
+        self.assertIs(exception.type, SARBRequestInprogressException)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=True)
     @patch('bayesian.utility.db_gateway.RdbAnalyses')
@@ -72,11 +72,10 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_recommendation_data.return_value = None
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
                                                            _rdb_analyses)
-        # Raises HTTP 408 error
-        with pytest.raises(HTTPError) as http_error:
+        # Raises SARBRequestTimeoutException error
+        with pytest.raises(Exception) as exception:
             assert sa_response_builder.get_response()
-        self.assertIs(http_error.type, HTTPError)
-        self.assertEqual(http_error.value.code, 408)
+        self.assertIs(exception.type, SARBRequestTimeoutException)
 
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
     @patch('bayesian.utility.db_gateway.RdbAnalyses')

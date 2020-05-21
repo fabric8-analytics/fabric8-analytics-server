@@ -17,7 +17,6 @@
 """Stack analyses API v2 response builder class."""
 
 import logging
-from bayesian.exceptions import HTTPError
 from bayesian.utils import request_timed_out
 
 logger = logging.getLogger(__file__)
@@ -44,10 +43,10 @@ class StackAnalysesResponseBuilder:
         self._stack_result = self.rdb_analyses.get_stack_result()
         self._recm_data = self.rdb_analyses.get_recommendation_data()
 
-        # If request is invalid, it will raise HTTPError with proper message.
+        # If request is invalid, it will raise exception with proper message.
         self._raise_if_invalid()
 
-        # If request is inprogress or timeout, it will raise HTTPError with proper message.
+        # If request is inprogress or timeout, it will raise exception with proper message.
         self._raise_if_inprogress_or_timeout()
 
         # Proceed with building actual response from data.
@@ -76,7 +75,7 @@ class StackAnalysesResponseBuilder:
             error_message = 'Worker result for request ID {} does not exist yet'.format(
                             self.external_request_id)
             logger.exception(error_message)
-            raise HTTPError(404, error_message)
+            raise SARBRequestInvalidException(error_message)
 
     def _raise_if_inprogress_or_timeout(self):
         """Check if request is in progress."""
@@ -86,9 +85,45 @@ class StackAnalysesResponseBuilder:
                 error_message = 'Stack analysis request {} has timed out. Please retry ' \
                                 'with a new analysis.'.format(self.external_request_id)
                 logger.error(error_message)
-                raise HTTPError(408, error_message)
+                raise SARBRequestTimeoutException(error_message)
             else:
                 error_message = 'Analysis for request ID {} is in progress'.format(
                     self.external_request_id)
                 logger.warning(error_message)
-                raise HTTPError(202, error_message)
+                raise SARBRequestInprogressException(error_message)
+
+
+class SARBRequestInvalidException(Exception):
+    """Exception raised when both stack result and recommendation data is empty in RDB.
+
+    Indicate RDB could not get either result data / recommendation data for a given request id.
+    """
+
+    def __init__(self, message):
+        """Call the superclass constructor and set custom message."""
+        super().__init__(self, message)
+        self.message = message
+
+
+class SARBRequestInprogressException(Exception):
+    """Exception raised when request is in progress.
+
+    Indicate stack analyses backbone service is still processing the given request id.
+    """
+
+    def __init__(self, message):
+        """Call the superclass constructor and set custom message."""
+        super().__init__(self, message)
+        self.message = message
+
+
+class SARBRequestTimeoutException(Exception):
+    """Exception raised when request timeout.
+
+    Indicate given request id was timed out while generating stack analyses data.
+    """
+
+    def __init__(self, message):
+        """Call the superclass constructor and set custom message."""
+        super().__init__(self, message)
+        self.message = message

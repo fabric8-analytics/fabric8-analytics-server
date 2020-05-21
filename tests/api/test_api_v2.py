@@ -7,7 +7,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, Mock
 from bayesian.exceptions import HTTPError
-from bayesian.api.api_v2 import _session, ApiEndpoints, ComponentAnalysesApi, StackAnalysesApi
+from bayesian.api.api_v2 import _session, ApiEndpoints, ComponentAnalysesApi
+from bayesian.utility.db_gateway import RDBSaveException, RDBInvalidRequestException
+from bayesian.utility.v2.sa_response_builder import (SARBRequestInvalidException,
+                                                     SARBRequestInprogressException,
+                                                     SARBRequestTimeoutException)
 
 
 def api_route_for(route):
@@ -132,38 +136,47 @@ class TestComponentAnalysesApi(unittest.TestCase):
         self.assertEqual(analyses_result, result)
 
 
+@pytest.mark.usefixtures('client_class')
 class TestStackAnalysesGetApi(unittest.TestCase):
     """Stack Analyses Unit Tests."""
 
-    @patch('bayesian.api.api_v2.StackAnalysesResponseBuilder.get_response')
+    @patch('bayesian.api.api_v2.StackAnalysesResponseBuilder.get_response',
+           return_value='mock return value')
     def test_sa_get_request_success(self, _get_response):
         """Test success get request."""
-        expected_result = 'Stack analyses success response'
-        _get_response.return_value = expected_result
-        sa = StackAnalysesApi()
-        response = sa.get('request_id')
-        self.assertEqual(response, expected_result)
+        response = self.client.get(api_route_for('/stack-analyses/request_id'))
+        self.assertEqual(response.status_code, 200)
+
+    @patch('bayesian.api.api_v2.StackAnalysesResponseBuilder.get_response')
+    def test_sa_get_invalid_request(self, _get_response):
+        """Get request that is progress i.e., not yet completed."""
+        expected_result = 'Stack analyses response for invalid request'
+        _get_response.side_effect = SARBRequestInvalidException(expected_result)
+        response = self.client.get(api_route_for('/stack-analyses/request_id'))
+        self.assertEqual(response.status_code, 400)
 
     @patch('bayesian.api.api_v2.StackAnalysesResponseBuilder.get_response')
     def test_sa_get_request_progress(self, _get_response):
         """Get request that is progress i.e., not yet completed."""
         expected_result = 'Stack analyses response for inprogress request'
-        _get_response.side_effect = HTTPError(202, expected_result)
-        sa = StackAnalysesApi()
-        with pytest.raises(HTTPError) as http_error:
-            sa.get('request_id')
-        self.assertIs(http_error.type, HTTPError)
-        self.assertEqual(http_error.value.code, 202)
+        _get_response.side_effect = SARBRequestInprogressException(expected_result)
+        response = self.client.get(api_route_for('/stack-analyses/request_id'))
+        self.assertEqual(response.status_code, 202)
+
+    @patch('bayesian.api.api_v2.StackAnalysesResponseBuilder.get_response')
+    def test_sa_get_request_timeout(self, _get_response):
+        """Get request that is progress i.e., not yet completed."""
+        expected_result = 'Stack analyses response for request timeout'
+        _get_response.side_effect = SARBRequestTimeoutException(expected_result)
+        response = self.client.get(api_route_for('/stack-analyses/request_id'))
+        self.assertEqual(response.status_code, 408)
 
     @patch('bayesian.api.api_v2.StackAnalysesResponseBuilder.get_response')
     def test_sa_get_request_error(self, _get_response):
         """Get request with 500 error."""
-        _get_response.side_effect = HTTPError(500, 'Mock database error')
-        sa = StackAnalysesApi()
-        with pytest.raises(HTTPError) as http_error:
-            sa.get('request_id')
-        self.assertIs(http_error.type, HTTPError)
-        self.assertEqual(http_error.value.code, 500)
+        _get_response.side_effect = RDBInvalidRequestException('Mock database error')
+        response = self.client.get(api_route_for('/stack-analyses/request_id'))
+        self.assertEqual(response.status_code, 400)
 
 
 @pytest.mark.usefixtures('client_class')
@@ -247,6 +260,15 @@ class TestStackAnalysesPostApi(unittest.TestCase):
                                     data=data,
                                     content_type='multipart/form-data')
         self.assertEqual(response.status_code, 400)
+
+    @patch('bayesian.api.api_v2.StackAnalyses.post_request')
+    def test_sa_post_success_500(self, _post_request):
+        """Success post request with all valid data."""
+        _post_request.side_effect = RDBSaveException('mock exception')
+        response = self.client.post(api_route_for('/stack-analyses'),
+                                    data=self.post_data,
+                                    content_type='multipart/form-data')
+        self.assertEqual(response.status_code, 500)
 
     @patch('bayesian.api.api_v2.StackAnalyses.post_request')
     def test_sa_post_success_200(self, _post_request):
