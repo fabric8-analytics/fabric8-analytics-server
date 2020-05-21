@@ -48,41 +48,27 @@ class StackAnalysesResponseBuilder:
         self._raise_if_invalid()
 
         # If request is inprogress or timeout, it will raise HTTPError with proper message.
-        self._is_request_inprogress()
+        self._raise_if_inprogress_or_timeout()
 
         # Proceed with building actual response from data.
-        stack_task_result = None
-        stack_audit = None
-        recommendation = {}
+        stack_task_result = self._stack_result.get('task_result')
+        stack_audit = stack_task_result.get('_audit', {})
 
-        if self._stack_result is not None and 'task_result' in self._stack_result:
-            stack_task_result = self._stack_result.get('task_result')
-            stack_audit = stack_task_result.get('_audit', {})
-
-        if self._recm_data is not None and 'task_result' in self._recm_data:
-            recommendation = self._recm_data.get('task_result')
-
-        if stack_task_result is not None:
-            return {
-                'version': stack_audit.get('version', None),
-                'started_at': stack_audit.get('started_at', None),
-                'ended_at': stack_audit.get('ended_at', None),
-                'external_request_id': self.external_request_id,
-                'registration_status': stack_task_result.get('registration_status', ''),
-                'manifest_file_path': stack_task_result.get('manifest_file_path', ''),
-                'manifest_name': stack_task_result.get('manifest_name', ''),
-                'ecosystem': stack_task_result.get('ecosystem', ''),
-                'unknown_dependencies': stack_task_result.get('unknown_dependencies', ''),
-                'license_analysis': stack_task_result.get('license_analysis', ''),
-                'recommendation': recommendation,
-                'registration_link': stack_task_result.get('registration_link', ''),
-                'analyzed_dependencies': stack_task_result.get('analyzed_dependencies', [])
-            }
-        else:
-            error_message = 'Unable to fetch the result for request id {}'.format(
-                self.external_request_id)
-            logger.exception(error_message)
-            raise HTTPError(500, error_message)
+        return {
+            'version': stack_audit.get('version', None),
+            'started_at': stack_audit.get('started_at', None),
+            'ended_at': stack_audit.get('ended_at', None),
+            'external_request_id': self.external_request_id,
+            'registration_status': stack_task_result.get('registration_status', ''),
+            'manifest_file_path': stack_task_result.get('manifest_file_path', ''),
+            'manifest_name': stack_task_result.get('manifest_name', ''),
+            'ecosystem': stack_task_result.get('ecosystem', ''),
+            'unknown_dependencies': stack_task_result.get('unknown_dependencies', ''),
+            'license_analysis': stack_task_result.get('license_analysis', ''),
+            'recommendation': self._recm_data.get('task_result', {}),
+            'registration_link': stack_task_result.get('registration_link', ''),
+            'analyzed_dependencies': stack_task_result.get('analyzed_dependencies', [])
+        }
 
     def _raise_if_invalid(self):
         """If request is invalid than it shall raise an exception."""
@@ -92,7 +78,7 @@ class StackAnalysesResponseBuilder:
             logger.exception(error_message)
             raise HTTPError(404, error_message)
 
-    def _is_request_inprogress(self):
+    def _raise_if_inprogress_or_timeout(self):
         """Check if request is in progress."""
         if self._stack_result is None or self._recm_data is None:
             # If the response is not ready and the timeout period is over, send error 408

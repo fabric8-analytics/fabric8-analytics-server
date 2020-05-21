@@ -36,7 +36,7 @@ class TestStackAnalyses(unittest.TestCase):
             fs = FileStorage(stream=fp, filename='npmlist.json')
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(None, sa_post_request)
+            sa = StackAnalyses(sa_post_request)
             with pytest.raises(HTTPError) as http_error:
                 sa.post_request()
             self.assertIs(http_error.type, HTTPError)
@@ -51,7 +51,7 @@ class TestStackAnalyses(unittest.TestCase):
             fs = FileStorage(stream=fp, filename='npmlist.json')
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(None, sa_post_request)
+            sa = StackAnalyses(sa_post_request)
             with pytest.raises(HTTPError) as http_error:
                 sa.post_request()
             self.assertIs(http_error.type, HTTPError)
@@ -66,7 +66,7 @@ class TestStackAnalyses(unittest.TestCase):
             fs = FileStorage(stream=fp, filename='npmlist.json')
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(None, sa_post_request)
+            sa = StackAnalyses(sa_post_request)
             with pytest.raises(HTTPError) as http_error:
                 sa.post_request()
             self.assertIs(http_error.type, HTTPError)
@@ -80,7 +80,7 @@ class TestStackAnalyses(unittest.TestCase):
             fs = FileStorage(stream=fp, filename='npmlist.json')
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(None, sa_post_request)
+            sa = StackAnalyses(sa_post_request)
             response = sa.post_request()
             self.assertIsInstance(response, dict)
             self.assertIn('status', response)

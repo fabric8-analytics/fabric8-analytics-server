@@ -219,7 +219,7 @@ class StackAnalysesApi(Resource):
             raise HTTPError(400, error=error_message)
 
         # 3. Initiate stack analyses object
-        sa = StackAnalyses(None, sa_post_request)
+        sa = StackAnalyses(sa_post_request)
 
         # 4. Post request
         return sa.post_request()

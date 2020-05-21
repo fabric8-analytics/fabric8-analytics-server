@@ -34,9 +34,8 @@ class StackAnalyses():
     Implements methods to support stack analyses post and get REST APIs calls.
     """
 
-    def __init__(self, external_request_id=None, params=None):
+    def __init__(self, params):
         """Initialize params to be used for ."""
-        self.external_request_id = external_request_id
         self.params = params
 
     def post_request(self):
@@ -53,20 +52,20 @@ class StackAnalyses():
         logger.info('manifest_file_info: {}'.format(self._manifest_file_info))
 
         # Generate unique request id using UUID, also record timestamp in readable form
-        self.external_request_id = str(uuid.uuid4().hex)
+        self._new_request_id = str(uuid.uuid4().hex)
         date_str = str(datetime.datetime.now())
 
         # Make backbone request
         deps = self._make_backbone_request()
 
         # Finally save results in RDS and upon success return request id.
-        rdbAnalyses = RdbAnalyses(self.external_request_id, date_str,
+        rdbAnalyses = RdbAnalyses(self._new_request_id, date_str,
                                   self._manifest_file_info, deps)
         rdbAnalyses.save_post_request()
         return {
             'status': 'success',
             'submitted_at': date_str,
-            'id': self.external_request_id
+            'id': self._new_request_id
         }
 
     def _read_deps_and_packages(self):
@@ -105,7 +104,7 @@ class StackAnalyses():
         # Set backbone API request body and params.
         request_body = {
             'registration_status': 'freetier',
-            'external_request_id': self.external_request_id,
+            'external_request_id': self._new_request_id,
             'ecosystem': self.params.ecosystem,
             'packages': data['packages'],
             'manifest_file': self._manifest_file_info['filename'],
