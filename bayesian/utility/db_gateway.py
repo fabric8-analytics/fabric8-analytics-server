@@ -22,8 +22,7 @@ import logging
 from datetime import datetime
 from requests import post
 from bayesian import rdb
-from bayesian.utils import (fetch_sa_request,
-                            retrieve_worker_result)
+from bayesian.utils import fetch_sa_request, retrieve_worker_result
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
@@ -89,11 +88,19 @@ class RdbAnalyses:
 
     def get_request_data(self):
         """Read request data for given request id from RDS."""
-        db_result = fetch_sa_request(rdb, self.request_id)
+        db_result = None
+        try:
+            db_result = fetch_sa_request(rdb, self.request_id)
+        except Exception as e:
+            error_message = 'DB query failed for request ID {}.'.format(self.request_id)
+            logger.exception(error_message)
+            raise RDBInvalidRequestException(error_message) from e
+
         if db_result is None:
             error_message = 'Invalid request ID {}.'.format(self.request_id)
             logger.exception(error_message)
             raise RDBInvalidRequestException(error_message)
+
         return db_result
 
     def get_stack_result(self):
@@ -122,7 +129,7 @@ class RdbAnalyses:
         except SQLAlchemyError as e:
             logger.exception("Error updating log for request {}, exception {}".format(
                 self.request_id, e))
-            raise RDBSaveException('Error while saving request {}'.format(self.request_id))
+            raise RDBSaveException('Error while saving request {}'.format(self.request_id)) from e
 
 
 class RDBSaveException(Exception):
@@ -131,10 +138,7 @@ class RDBSaveException(Exception):
     Contains details information on exception caused by RDB server.
     """
 
-    def __init__(self, message):
-        """Call the superclass constructor and set custom message."""
-        super().__init__(self, message)
-        self.message = message
+    pass
 
 
 class RDBInvalidRequestException(Exception):
@@ -143,7 +147,4 @@ class RDBInvalidRequestException(Exception):
     Indicate RDB could not get any result data for a given request id.
     """
 
-    def __init__(self, message):
-        """Call the superclass constructor and set custom message."""
-        super().__init__(self, message)
-        self.message = message
+    pass

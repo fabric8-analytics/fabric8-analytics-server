@@ -92,7 +92,7 @@ class StackAnalyses():
             return {'deps': deps, 'packages': packages}
         except (ValueError, json.JSONDecodeError) as e:
             logger.exception('Invalid dependencies encountered. {}'.format(e))
-            raise SAInvalidInputException('Error while parsing dependencies information')
+            raise SAInvalidInputException('Error while parsing dependencies information') from e
 
     def _make_backbone_request(self):
         """Perform backbone request for stack_aggregator and recommender."""
@@ -127,7 +127,4 @@ class SAInvalidInputException(Exception):
     This exception is raised specially when parsing dependency information from manifest file.
     """
 
-    def __init__(self, message):
-        """Call the superclass constructor and set custom message."""
-        super().__init__(self, message)
-        self.message = message
+    pass

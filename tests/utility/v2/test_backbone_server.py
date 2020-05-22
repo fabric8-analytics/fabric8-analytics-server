@@ -32,6 +32,7 @@ class TestBackboneServer(unittest.TestCase):
         with pytest.raises(Exception) as exception:
             BackboneServer.post_aggregate_request({}, {})
         self.assertIs(exception.type, BackboneServerException)
+        self.assertEqual(exception.value.args[0], 'Error while reaching aggregator service')
 
     @patch('bayesian.utility.v2.backbone_server.BackboneServer.session.post',
            return_value={})
@@ -46,6 +47,7 @@ class TestBackboneServer(unittest.TestCase):
         with pytest.raises(Exception) as exception:
             BackboneServer.post_recommendations_request({}, {})
         self.assertIs(exception.type, BackboneServerException)
+        self.assertEqual(exception.value.args[0], 'Error while reaching recommender service')
 
     @patch('bayesian.utility.v2.backbone_server.BackboneServer.session.post',
            return_value={})

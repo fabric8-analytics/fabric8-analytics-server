@@ -99,10 +99,7 @@ class SARBRequestInvalidException(Exception):
     Indicate RDB could not get either result data / recommendation data for a given request id.
     """
 
-    def __init__(self, message):
-        """Call the superclass constructor and set custom message."""
-        super().__init__(self, message)
-        self.message = message
+    pass
 
 
 class SARBRequestInprogressException(Exception):
@@ -111,10 +108,7 @@ class SARBRequestInprogressException(Exception):
     Indicate stack analyses backbone service is still processing the given request id.
     """
 
-    def __init__(self, message):
-        """Call the superclass constructor and set custom message."""
-        super().__init__(self, message)
-        self.message = message
+    pass
 
 
 class SARBRequestTimeoutException(Exception):
@@ -123,7 +117,4 @@ class SARBRequestTimeoutException(Exception):
     Indicate given request id was timed out while generating stack analyses data.
     """
 
-    def __init__(self, message):
-        """Call the superclass constructor and set custom message."""
-        super().__init__(self, message)
-        self.message = message
+    pass

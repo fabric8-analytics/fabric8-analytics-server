@@ -50,7 +50,7 @@ class BackboneServer:
                 params=params)
         except Exception as e:
             logger.exception('Aggregator api throws exception {}'.format(e))
-            raise BackboneServerException('Error while reaching aggregator service')
+            raise BackboneServerException('Error while reaching aggregator service') from e
 
     @classmethod
     def post_recommendations_request(cls, body, params):
@@ -66,7 +66,7 @@ class BackboneServer:
                 params=params)
         except Exception as e:
             logger.exception('Recommender api throws exception {}'.format(e))
-            raise BackboneServerException('Error while reaching recommender service')
+            raise BackboneServerException('Error while reaching recommender service') from e
 
 
 class BackboneServerException(Exception):
@@ -75,7 +75,4 @@ class BackboneServerException(Exception):
     Contains details information on exception caused by backbone server request.
     """
 
-    def __init__(self, message):
-        """Call the superclass constructor and set custom message."""
-        super().__init__(self, message)
-        self.message = message
+    pass
