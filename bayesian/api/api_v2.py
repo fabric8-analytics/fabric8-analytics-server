@@ -31,7 +31,6 @@ from flask_restful import Api, Resource
 
 from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required
-from fabric8a_auth.errors import AuthError
 from bayesian.exceptions import HTTPError
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
@@ -48,8 +47,15 @@ from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.db_gateway import RdbAnalyses, RDBSaveException, RDBInvalidRequestException
 
 
+errors = {
+    'AuthError': {
+        'status': 401,
+        'error': 'Authentication failed'
+    }
+}
+
 api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
-rest_api_v2 = Api(api_v2)
+rest_api_v2 = Api(api_v2, errors=errors)
 
 
 ANALYSIS_ACCESS_COUNT_KEY = 'access_count'
@@ -197,7 +203,16 @@ class StackAnalysesApi(Resource):
                                                            RdbAnalyses(external_request_id))
 
         # 2. If there was no exception raise, means request is ready to be served.
-        return sa_response_builder.get_response()
+        try:
+            return sa_response_builder.get_response()
+        except SARBRequestInvalidException as e:
+            raise HTTPError(400, e.args[0]) from e
+        except RDBInvalidRequestException as e:
+            raise HTTPError(400, e.args[0]) from e
+        except SARBRequestInprogressException as e:
+            raise HTTPError(202, e.args[0]) from e
+        except SARBRequestTimeoutException as e:
+            raise HTTPError(408, e.args[0]) from e
 
     @staticmethod
     def post():
@@ -219,7 +234,14 @@ class StackAnalysesApi(Resource):
         sa = StackAnalyses(sa_post_request)
 
         # 4. Post request
-        return sa.post_request()
+        try:
+            return sa.post_request()
+        except SAInvalidInputException as e:
+            raise HTTPError(400, e.args[0]) from e
+        except BackboneServerException as e:
+            raise HTTPError(500, e.args[0])
+        except RDBSaveException as e:
+            raise HTTPError(500, e.args[0])
 
 
 @api_v2.route('/_error')
@@ -234,7 +256,6 @@ def error():
     msg = 'Unknown error'
     if status == 401:
         msg = 'Authentication failed'
-        raise AuthError(status, msg)
     elif status == 405:
         msg = 'Method not allowed for this endpoint'
     raise HTTPError(status, msg)
@@ -281,50 +302,13 @@ add_resource_no_matter_slashes(StackAnalysesApi,
 
 
 # ERROR HANDLING
-@api_v2.app_errorhandler(HTTPError)
+@api_v2.errorhandler(HTTPError)
 def handle_http_error(err):
     """Handle HTTPError exceptions."""
     try:
         return jsonify({'error': err.error}), err.status_code
     except AttributeError:
         return jsonify({'error': err.data.get('error')}), err.code
-
-
-@api_v2.app_errorhandler(AuthError)
-def api_401_handler(err):
-    """Handle AuthError exceptions."""
-    return jsonify(error=err.error), err.status_code
-
-
-@api_v2.app_errorhandler(BackboneServerException)
-@api_v2.app_errorhandler(RDBSaveException)
-def api_500_handler(err):
-    """Handle BackboneServerException, RDBSaveException exceptions."""
-    return jsonify(error=err.args[0]), 500
-
-
-@api_v2.app_errorhandler(RDBInvalidRequestException)
-@api_v2.app_errorhandler(SARBRequestInvalidException)
-@api_v2.app_errorhandler(SAInvalidInputException)
-def api_400_handler(err):
-    """Handle multiple exceptions.
-
-    Error handler for RDBInvalidRequestException, SARBRequestInvalidException,
-    SAInvalidInputException exceptions.
-    """
-    return jsonify(error=err.args[0]), 400
-
-
-@api_v2.app_errorhandler(SARBRequestInprogressException)
-def api_202_handler(err):
-    """Handle SARBRequestInprogressException exceptions."""
-    return jsonify(error=err.args[0]), 202
-
-
-@api_v2.app_errorhandler(SARBRequestTimeoutException)
-def api_408_handler(err):
-    """Handle SARBRequestTimeoutException exceptions."""
-    return jsonify(error=err.args[0]), 408
 
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498

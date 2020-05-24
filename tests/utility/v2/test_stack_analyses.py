@@ -42,6 +42,18 @@ class TestStackAnalyses(unittest.TestCase):
                 sa.post_request()
             self.assertIs(exception.type, SAInvalidInputException)
 
+    def test_sa_mismatch_manifest_file_and_ecosystem(self):
+        """Check if 400 is raise upon mismatch between manifest file content and ecosystem type."""
+        with open(str(Path(__file__).parent.parent.parent) +
+                  '/data/manifests/202/npmlist.json', 'rb') as fp:
+            fs = FileStorage(stream=fp, filename='npmlist.json')
+            sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
+                                                       ecosystem='pypi', show_transitive=True)
+            sa = StackAnalyses(sa_post_request)
+            with pytest.raises(Exception) as exception:
+                sa.post_request()
+            self.assertIs(exception.type, SAInvalidInputException)
+
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
            side_effect=BackboneServerException('Mock error'))
     def test_sa_backbone_error(self, _aggregate_request):

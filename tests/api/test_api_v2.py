@@ -9,6 +9,7 @@ from unittest.mock import patch, Mock
 from bayesian.exceptions import HTTPError
 from bayesian.api.api_v2 import _session, ApiEndpoints, ComponentAnalysesApi
 from bayesian.utility.db_gateway import RDBSaveException, RDBInvalidRequestException
+from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.v2.sa_response_builder import (SARBRequestInvalidException,
                                                      SARBRequestInprogressException,
                                                      SARBRequestTimeoutException)
@@ -216,6 +217,20 @@ class TestStackAnalysesPostApi(unittest.TestCase):
                                     content_type='multipart/form-data')
         self.assertEqual(response.status_code, 400)
 
+    def test_sa_post_invalid_manifest_file_content(self):
+        """Post request with invalid manifest file content. Expecting http error 400."""
+        data = {
+            'manifest': (io.StringIO(str(Path(__file__).parent /
+                                         '../data/manifests/400/npmlist.json')).read(),
+                         'npmlist.json'),
+            'file_path': '/tmp/bin',
+            'ecosystem': 'pypi'
+        }
+        response = self.client.post(api_route_for('/stack-analyses'),
+                                    data=data,
+                                    content_type='multipart/form-data')
+        self.assertEqual(response.status_code, 400)
+
     def test_sa_post_missing_file_path(self):
         """Post request without file path param. Expecting http error 400."""
         data = self.post_data
@@ -262,7 +277,16 @@ class TestStackAnalysesPostApi(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     @patch('bayesian.api.api_v2.StackAnalyses.post_request')
-    def test_sa_post_success_500(self, _post_request):
+    def test_sa_post_backbone_server_error(self, _post_request):
+        """Success post request with all valid data."""
+        _post_request.side_effect = BackboneServerException('mock exception')
+        response = self.client.post(api_route_for('/stack-analyses'),
+                                    data=self.post_data,
+                                    content_type='multipart/form-data')
+        self.assertEqual(response.status_code, 500)
+
+    @patch('bayesian.api.api_v2.StackAnalyses.post_request')
+    def test_sa_post_rdb_save_error(self, _post_request):
         """Success post request with all valid data."""
         _post_request.side_effect = RDBSaveException('mock exception')
         response = self.client.post(api_route_for('/stack-analyses'),

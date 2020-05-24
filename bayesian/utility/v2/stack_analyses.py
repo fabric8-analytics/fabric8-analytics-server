@@ -88,11 +88,14 @@ class StackAnalyses():
                         'dependencies': [{'name': pkg['package'], 'version': pkg['version']}
                                          for pkg in p.get('deps', [])]
                     })
-
             return {'deps': deps, 'packages': packages}
         except (ValueError, json.JSONDecodeError) as e:
             logger.exception('Invalid dependencies encountered. {}'.format(e))
             raise SAInvalidInputException('Error while parsing dependencies information') from e
+        except Exception as e:
+            logger.exception('Unknown exception encountered while parsing deps. {}'.format(e))
+            raise SAInvalidInputException('Unknown error while parsing dependencies '
+                                          'information') from e
 
     def _make_backbone_request(self):
         """Perform backbone request for stack_aggregator and recommender."""
