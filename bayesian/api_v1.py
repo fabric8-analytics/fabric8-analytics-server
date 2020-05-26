@@ -152,7 +152,7 @@ def paginated(func):
             elif len(res) == 2:
                 res, code = func_res
             else:
-                raise HTTPError('Internal error', 500)
+                raise HTTPError(500, 'Internal error')
 
         args = pagination_parser.parse_args()
         page, per_page = args['page'], args['per_page']

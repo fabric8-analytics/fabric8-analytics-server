@@ -55,6 +55,10 @@ def create_app(configfile=None):
     app.route('/api')(lambda: redirect(url_for('api_v1.apiendpoints__slashless')))
     # Likewise for base URL, and make that accessible by name
 
+    # Configure CORS.
+    from flask_cors import CORS
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+
     @app.route('/')
     def base_url():
         return redirect(url_for('api_v1.apiendpoints__slashless'))
@@ -68,8 +72,9 @@ def create_app(configfile=None):
     @app.after_request
     def access_control_allow_origin(response):
         response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "authorization, content-type"
-        response.headers["Access-Control-Allow-Methods"] = "DELETE, GET, HEAD, OPTIONS,"\
+        response.headers["Access-Control-Allow-Headers"] = "authorization, content-type, " \
+            "x-3scale-account-secret"
+        response.headers["Access-Control-Allow-Methods"] = "DELETE, GET, HEAD, OPTIONS, " \
             "PATCH, POST, PUT"
         response.headers["Allow"] = "GET, HEAD, OPTIONS, PATCH, POST, PUT"
         return response

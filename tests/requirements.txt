@@ -18,6 +18,7 @@ lazy-object-proxy==1.2.2  # via astroid
 markupsafe==0.23          # via jinja2
 mccabe==0.5.2             # via pylint
 py==1.4.31                # via pytest
+pydantic==1.5.1           # via -r requirements.in
 pylint==1.6.4             # via -r requirements.in
 pytest-cov==2.5.1         # via -r requirements.in
 pytest-flask==0.10.0      # via -r requirements.in

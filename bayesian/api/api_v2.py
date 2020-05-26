@@ -11,35 +11,48 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 # Author: Deepak Sharma <deepshar@redhat.com>
 #
 """Definition of all v2 REST API endpoints of the server module."""
 
-import urllib
+import os
 import time
+import urllib
+import logging
+
 from requests_futures.sessions import FuturesSession
+from collections import namedtuple
+from pydantic.error_wrappers import ValidationError
+
 from flask import Blueprint, request, g
 from flask.json import jsonify
 from flask_restful import Api, Resource
-from f8a_worker.utils import (MavenCoordinates, case_sensitivity_transform)
+
+from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required
 from bayesian.exceptions import HTTPError
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
                             check_for_accepted_ecosystem)
-import os
-from fabric8a_auth.errors import AuthError
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
-from collections import namedtuple
-import logging
+from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
+                                                     SARBRequestInvalidException,
+                                                     SARBRequestInprogressException,
+                                                     SARBRequestTimeoutException)
+from bayesian.utility.v2.stack_analyses import StackAnalyses, SAInvalidInputException
+from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
+from bayesian.utility.v2.backbone_server import BackboneServerException
+from bayesian.utility.db_gateway import RdbAnalyses, RDBSaveException, RDBInvalidRequestException
+
 
 errors = {
-        'AuthError': {
-                         'status': 401,
-                         'message': 'Authentication failed',
-                         'some_description': 'Authentication failed'
-                     }}
+    'AuthError': {
+        'status': 401,
+        'error': 'Authentication failed'
+    }
+}
 
 api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 rest_api_v2 = Api(api_v2, errors=errors)
@@ -172,6 +185,65 @@ class ComponentAnalysesApi(Resource):
         raise HTTPError(404, msg)
 
 
+class StackAnalysesApi(Resource):
+    """Implements stack analysis REST APIs.
+
+    Implements /api/v2/stack-analyses REST APIs for POST and GET calls.
+    """
+
+    method_decorators = [login_required]
+
+    @staticmethod
+    def get(external_request_id):
+        """Handle /api/v2/stack-analyses GET REST API."""
+        logger.debug("GET request_id: {}".format(external_request_id))
+
+        # 1. Build response builder with id and RDB object.
+        sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
+                                                           RdbAnalyses(external_request_id))
+
+        # 2. If there was no exception raise, means request is ready to be served.
+        try:
+            return sa_response_builder.get_response()
+        except SARBRequestInvalidException as e:
+            raise HTTPError(400, e.args[0]) from e
+        except RDBInvalidRequestException as e:
+            raise HTTPError(400, e.args[0]) from e
+        except SARBRequestInprogressException as e:
+            raise HTTPError(202, e.args[0]) from e
+        except SARBRequestTimeoutException as e:
+            raise HTTPError(408, e.args[0]) from e
+
+    @staticmethod
+    def post():
+        """Handle /api/v2/stack-analyses POST REST API."""
+        sa_post_request = None
+        try:
+            # 1. Validate and build request object.
+            sa_post_request = StackAnalysesPostRequest(**request.form, **request.files)
+
+        except ValidationError as e:
+            # 2. Check of invalid params and raise exception.
+            error_message = 'Validation error(s) in the request.'
+            for error in e.errors():
+                error_message += ' {} => {}.'.format(error['loc'][0], error['msg'])
+            logger.exception(error_message)
+            raise HTTPError(400, error=error_message) from e
+
+        # 3. Initiate stack analyses object
+        sa = StackAnalyses(sa_post_request)
+
+        # 4. Post request
+        try:
+            return sa.post_request()
+        except SAInvalidInputException as e:
+            raise HTTPError(400, e.args[0]) from e
+        except BackboneServerException as e:
+            raise HTTPError(500, e.args[0])
+        except RDBSaveException as e:
+            raise HTTPError(500, e.args[0])
+
+
 @api_v2.route('/_error')
 def error():
     """Implement the endpoint used by httpd, which redirects its errors to it."""
@@ -184,7 +256,6 @@ def error():
     msg = 'Unknown error'
     if status == 401:
         msg = 'Authentication failed'
-        raise AuthError(status, msg)
     elif status == 405:
         msg = 'Method not allowed for this endpoint'
     raise HTTPError(status, msg)
@@ -214,14 +285,23 @@ def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
+add_resource_no_matter_slashes(SystemVersion, '/system/version')
+
+# Component analyses routes
 add_resource_no_matter_slashes(ComponentAnalysesApi,
                                '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
-add_resource_no_matter_slashes(SystemVersion, '/system/version')
+
+# Stack analyses routes
+add_resource_no_matter_slashes(StackAnalysesApi,
+                               '/stack-analyses',
+                               endpoint='post_stack_analyses')
+add_resource_no_matter_slashes(StackAnalysesApi,
+                               '/stack-analyses/<external_request_id>',
+                               endpoint='get_stack_analyses')
 
 
 # ERROR HANDLING
-
 @api_v2.errorhandler(HTTPError)
 def handle_http_error(err):
     """Handle HTTPError exceptions."""
@@ -229,12 +309,6 @@ def handle_http_error(err):
         return jsonify({'error': err.error}), err.status_code
     except AttributeError:
         return jsonify({'error': err.data.get('error')}), err.code
-
-
-@api_v2.errorhandler(AuthError)
-def api_401_handler(err):
-    """Handle AuthError exceptions."""
-    return jsonify(error=err.error), err.status_code
 
 
 # workaround https://github.com/mitsuhiko/flask/issues/1498
