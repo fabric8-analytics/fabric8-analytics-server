@@ -419,28 +419,19 @@ class CveByDateEcosystemUtils:
     .in("has_cve").valueMap()\
     """
 
-    # Get CVEs by date & ecosystem
-    cve_nodes_by_date_ecosystem_script_template = """\
-    g.V().has('modified_date', modified_date)\
-    .has('cecosystem',ecosystem)\
-    .has('cve_sources',cve_sources)\
-    .valueMap()\
-    """
-
     cve_nodes_by_date_ecosystem_script_template_all = """\
     g.V().has('modified_date', modified_date)\
     .has('cecosystem',ecosystem)\
     .valueMap()\
     """
 
-    def __init__(self, cve_id, cve_sources='all', bydate=None,
+    def __init__(self, cve_id, bydate=None,
                  ecosystem='all', date_range=7):
         """Initialize CvaeDate Ecosystem Utils."""
         self._cve_id = cve_id
         if cve_id is None:
             self._bydate = bydate
             self._ecosystem = ecosystem
-            self._cve_sources = cve_sources
             self._date_range = date_range
 
     def get_cves_by_date_ecosystem(self):
@@ -453,14 +444,11 @@ class CveByDateEcosystemUtils:
             for dt in didx:
                 dt = datetime.datetime.strftime(dt, '%Y%m%d')
                 # Gremlin script execution
-                script = self.cve_nodes_by_date_ecosystem_script_template_all \
-                    if self._cve_sources == 'all' \
-                    else self.cve_nodes_by_date_ecosystem_script_template
+                script = self.cve_nodes_by_date_ecosystem_script_template_all
 
                 self._ecosystem = self._ecosystem.lower()
                 bindings = {
-                    'modified_date': dt, 'ecosystem': self._ecosystem,
-                    'cve_sources': self._cve_sources
+                    'modified_date': dt, 'ecosystem': self._ecosystem
                 }
                 """Call Gremlin and get the CVE information."""
                 json_payload = self.prepare_payload(script, bindings)
@@ -503,7 +491,6 @@ class CveByDateEcosystemUtils:
                 "description": cve.get('description', [None])[0],
                 "ecosystem": cve.get('cecosystem', [None])[0],
                 "fixed_in": cve.get('fixed_in', [None])[0],
-                "cve_sources": cve.get('cve_sources', [None])[0],
                 "link": "https://nvd.nist.gov/vuln/detail/" +
                         cve.get('cve_id', [''])[0]
             }

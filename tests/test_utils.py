@@ -447,7 +447,7 @@ def test_get_cves_by_date_ecosystem_add(mocker):
     mocker.return_value = mock_response = Mock()
     mock_response.json.return_value = mocker_input_cve
 
-    cve = CveByDateEcosystemUtils(None, 'all', '20190509', 'npm', 2)
+    cve = CveByDateEcosystemUtils(None, '20190509', 'npm', 2)
     response = cve.get_cves_by_date_ecosystem()
 
     assert response
