@@ -7,3 +7,4 @@ requests
 jsonschema
 pylint
 semantic_version
+pydantic
