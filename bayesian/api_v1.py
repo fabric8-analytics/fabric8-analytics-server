@@ -1152,11 +1152,10 @@ class CveByDateEcosystem(Resource):
             msg = 'Invalid datetime specified. Please specify in YYYYMMDD format'
             raise HTTPError(400, msg)
         try:
-            cve_sources = request.args.get('cve_sources', 'all')
             date_range = int(request.args.get('date_range', 7))
             if date_range <= 0:
                 raise HTTPError(400, error="date_range parameter should be a positive integer")
-            getcve = CveByDateEcosystemUtils(None, cve_sources,
+            getcve = CveByDateEcosystemUtils(None,
                                              modified_date, ecosystem, date_range)
             result = getcve.get_cves_by_date_ecosystem()
         except Exception as e:

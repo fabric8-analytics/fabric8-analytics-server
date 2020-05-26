@@ -171,11 +171,6 @@ paths:
         required: false
         type: integer
         format: int64
-      - in: query
-        name: cve_sources
-        description: specifying cve sources for the query
-        required: false
-        type: string
       responses:
         '200':
           description: "successful operation"
