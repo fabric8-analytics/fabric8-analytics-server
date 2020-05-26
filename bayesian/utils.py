@@ -28,7 +28,7 @@ from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 from f8a_worker.setup_celery import init_celery
-from urllib.parse import quote
+
 
 from . import rdb
 from .exceptions import HTTPError
@@ -327,98 +327,6 @@ def search_packages_from_graph(tokens):
             pkg_list.append(pkg_map)
 
     return {'result': pkg_list}
-
-
-class GraphAnalyses:
-    """It Queries GraphDB Based on vendor and returns json converted data."""
-
-    def __init__(self, ecosystem, package, version, vendor=None):
-        """For Flows related to Security Vendor Integrations."""
-        self.vendor = vendor
-        self.ecosystem = ecosystem
-        self.version = version
-        self.package = package
-
-    def get_analyses_for_snyk(self):
-        """Fetch analysis for given package+version from the graph database.
-
-        It finally builds and returns JSON Response. This is vendor specific Function.
-        """
-        logger.debug('Executing Vendor Analyses')
-        cve_info_query = """
-            g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)
-            .as('version').in('has_version').dedup().as('package').select('version')
-            .coalesce(out('has_snyk_cve').as('cve').select('package','version','cve')
-            .by(valueMap()),select('package','version').by(valueMap()));
-            """
-        payload = {
-            'gremlin': cve_info_query,
-            'bindings': {
-                'ecosystem': self.ecosystem,
-                'name': self.package,
-                'version': self.version
-            }
-        }
-        start = datetime.datetime.now()
-        try:
-            clubbed_data = []
-            logger.debug("Executing Gremlin calls with payload {}".format(payload))
-            graph_req = post(gremlin_url, data=json.dumps(payload))
-
-            if graph_req is None:
-                return None
-
-            resp = graph_req.json()
-            result_data = resp['result'].get('data')
-
-            if not (result_data and len(result_data) > 0):
-                # trigger unknown component flow in API for missing package
-                return None
-
-            clubbed_data.append({
-                "epv": result_data
-            })
-
-            if "cve" in result_data[0]:
-                # if cve if present
-                recommended_version = result_data[0].get('package', {}).get(
-                                                'latest_non_cve_version', {})
-                clubbed_data.append({
-                    "recommended_versions": recommended_version,
-                    "snyk_pkg_link": self.get_link(),
-                })
-                logger.info("latest non cve version for {eco} {pkg} is {ver}".format(
-                    eco=self.ecosystem,
-                    pkg=self.package,
-                    ver=recommended_version
-                ))
-            else:
-                clubbed_data.append({
-                    "recommended_versions": []
-                })
-
-        except Exception as e:
-            logger.debug(' '.join([type(e), ':', str(e)]))
-            return None
-
-        finally:
-            elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-            epv = "{e}/{p}/{v}".format(e=self.ecosystem, p=self.package, v=self.version)
-            logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
-                                                                        t=elapsed_seconds))
-        logger.debug('Generating Recommendation')
-        return generate_recommendation(clubbed_data, self.package, self.version)
-
-    def get_link(self):
-        """Generate link to Snyk Vulnerability Page."""
-        logger.debug('Generate Synk link')
-        snyk_ecosystem = {
-            'maven': 'maven',
-            'pypi': 'pip',
-            'npm': 'npm'
-        }
-        return "https://snyk.io/vuln/{}:{}".format(
-                snyk_ecosystem[self.ecosystem], quote(self.package))
 
 
 def get_analyses_from_graph(ecosystem, package, version):
