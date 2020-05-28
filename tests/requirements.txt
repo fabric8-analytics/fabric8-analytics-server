@@ -26,6 +26,7 @@ pytest==3.0.3             # via -r requirements.in, pytest-cov, pytest-flask
 python-dateutil==2.5.3    # via freezegun
 requests==2.11.1          # via -r requirements.in
 semantic-version==2.8.4   # via -r requirements.in
-six==1.10.0               # via astroid, freezegun, pylint, python-dateutil
+six==1.10.0               # via astroid, freezegun, pylint, python-dateutil, tenacity
+tenacity==6.2.0           # via -r requirements.in
 werkzeug==0.11.11         # via flask, pytest-flask
 wrapt==1.10.8             # via astroid

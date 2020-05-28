@@ -3,16 +3,15 @@
 import logging
 import os
 
+from f8a_worker.setup_celery import init_selinon
 from flask import Flask
 from flask import g
 from flask import redirect
 from flask import url_for
 from flask_appconfig import AppConfig
-from flask_sqlalchemy import SQLAlchemy
 from flask_cache import Cache
+from flask_sqlalchemy import SQLAlchemy
 from raven.contrib.flask import Sentry
-
-from f8a_worker.setup_celery import init_selinon
 
 
 def setup_logging(app):
@@ -34,9 +33,10 @@ def create_app(configfile=None):
     """Create the web application and define basic endpoints."""
     # do the imports here to not shadow e.g. "import bayesian.frontend.api_v1"
     # by Blueprint imported here
-    from .api_v1 import api_v1
+    from bayesian.api_v1 import api_v1
     from bayesian.api.api_v2 import api_v2
-    from .utils import JSONEncoderWithExtraTypes
+    from bayesian.api.user_api import user_api
+    from bayesian.utils import JSONEncoderWithExtraTypes
     app = Flask(__name__)
     AppConfig(app, configfile)
 
@@ -51,6 +51,7 @@ def create_app(configfile=None):
 
     app.register_blueprint(api_v1)
     app.register_blueprint(api_v2)
+    app.register_blueprint(user_api)
     # Redirect to latest API version if /api is accessed
     app.route('/api')(lambda: redirect(url_for('api_v1.apiendpoints__slashless')))
     # Likewise for base URL, and make that accessible by name

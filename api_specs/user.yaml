@@ -1,0 +1,109 @@
+openapi: 3.0.0
+servers:
+    - url: https://f8a-analytics-2445582058137.{environment}.gw.apicast.io/user
+      variables:
+        environment:
+          default: production
+          enum:
+            - production
+            - staging
+info:
+  title: User API
+  description: User API
+  version: "1.0.0"
+paths:
+  /user:
+    post:
+      tags:
+        - user
+      summary: add an user
+      responses:
+        '200':
+          description: user created
+          content:
+            application/json:
+              schema:
+                properties:
+                  user_id:
+                    type: string
+                    format: uuid
+                    example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        '401':
+          description: Request unauthorized
+        '400':
+          description: Bad Request
+
+  /user/{user_id}:
+    get:
+      tags:
+        - user
+      summary: search for a user
+      parameters:
+        - in: path
+          name: user_id
+          description: user id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: user details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetails'
+        '401':
+          description: Request unauthorized
+        '400':
+          description: Bad Request
+    put:
+      tags:
+        - user
+      summary: update a user
+      parameters:
+        - in: path
+          name: user_id
+          description: user id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - snyk_api_token
+              properties:
+                snyk_api_token:
+                  type: string
+                  example: f917sksq1
+      responses:
+        '200':
+          description: user details
+          content:
+            application/json:
+              schema:
+                properties:
+                  user_id:
+                    type: string
+                    format: uuid
+                    example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        '401':
+          description: Request unauthorized
+        '400':
+          description: Bad Request
+components:
+  schemas:
+    UserDetails:
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        status:
+          type: string
+          example: REGISTERED

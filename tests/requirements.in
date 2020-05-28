@@ -8,3 +8,4 @@ jsonschema
 pylint
 semantic_version
 pydantic
+tenacity
