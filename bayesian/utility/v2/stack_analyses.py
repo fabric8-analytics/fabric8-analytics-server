@@ -37,6 +37,9 @@ class StackAnalyses():
         """Initialize params to be used for ."""
         self.params = params
 
+        # Convert show_transitive bool to json as required by dependency finder and backbone api
+        self.params.show_transitive = json.dumps(self.params.show_transitive)
+
     def post_request(self):
         """Make stack analyses POST request."""
         logger.debug('SA Post request with ecosys: {} fl name: {} path: {} '
@@ -77,6 +80,7 @@ class StackAnalyses():
             d = DependencyFinder()
             deps = d.scan_and_find_dependencies(self.params.ecosystem, [self._manifest_file_info],
                                                 self.params.show_transitive)
+            logger.info('deps: {}'.format(deps))
 
             # Build package details.
             resolved = deps.get('result', [{}])[0].get('details', [{}])[0].get('_resolved', None)
@@ -88,6 +92,7 @@ class StackAnalyses():
                         'dependencies': [{'name': pkg['package'], 'version': pkg['version']}
                                          for pkg in p.get('deps', [])]
                     })
+            logger.debug('result: {}'.format({'deps': deps, 'packages': packages}))
             return {'deps': deps, 'packages': packages}
         except (ValueError, json.JSONDecodeError) as e:
             logger.exception('Invalid dependencies encountered. {}'.format(e))
