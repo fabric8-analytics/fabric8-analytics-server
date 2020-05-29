@@ -37,9 +37,6 @@ class StackAnalyses():
         """Initialize params to be used for ."""
         self.params = params
 
-        # Convert show_transitive bool to json as required by dependency finder and backbone api
-        self.params.show_transitive = json.dumps(self.params.show_transitive)
-
     def post_request(self):
         """Make stack analyses POST request."""
         logger.debug('SA Post request with ecosys: {} fl name: {} path: {} '
@@ -79,7 +76,7 @@ class StackAnalyses():
             # Dependency finder
             d = DependencyFinder()
             deps = d.scan_and_find_dependencies(self.params.ecosystem, [self._manifest_file_info],
-                                                self.params.show_transitive)
+                                                json.dumps(self.params.show_transitive))
             logger.info('deps: {}'.format(deps))
 
             # Build package details.
@@ -92,6 +89,7 @@ class StackAnalyses():
                         'dependencies': [{'name': pkg['package'], 'version': pkg['version']}
                                          for pkg in p.get('deps', [])]
                     })
+
             logger.debug('result: {}'.format({'deps': deps, 'packages': packages}))
             return {'deps': deps, 'packages': packages}
         except (ValueError, json.JSONDecodeError) as e:
@@ -122,6 +120,8 @@ class StackAnalyses():
             'persist': 'true',
             'check_license': 'false'
         }
+        logger.info('request_body: {} request_params: {}'.format(request_body, request_params))
+
         # Post Backbone stack_aggregator call.
         BackboneServer.post_aggregate_request(request_body, request_params)
         BackboneServer.post_recommendations_request(request_body, request_params)
