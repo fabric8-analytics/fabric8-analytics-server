@@ -76,7 +76,8 @@ class StackAnalyses():
             # Dependency finder
             d = DependencyFinder()
             deps = d.scan_and_find_dependencies(self.params.ecosystem, [self._manifest_file_info],
-                                                self.params.show_transitive)
+                                                json.dumps(self.params.show_transitive))
+            logger.info('deps: {}'.format(deps))
 
             # Build package details.
             resolved = deps.get('result', [{}])[0].get('details', [{}])[0].get('_resolved', None)
@@ -88,6 +89,8 @@ class StackAnalyses():
                         'dependencies': [{'name': pkg['package'], 'version': pkg['version']}
                                          for pkg in p.get('deps', [])]
                     })
+
+            logger.debug('result: {}'.format({'deps': deps, 'packages': packages}))
             return {'deps': deps, 'packages': packages}
         except (ValueError, json.JSONDecodeError) as e:
             logger.exception('Invalid dependencies encountered. {}'.format(e))
@@ -117,6 +120,8 @@ class StackAnalyses():
             'persist': 'true',
             'check_license': 'false'
         }
+        logger.info('request_body: {} request_params: {}'.format(request_body, request_params))
+
         # Post Backbone stack_aggregator call.
         BackboneServer.post_aggregate_request(request_body, request_params)
         BackboneServer.post_recommendations_request(request_body, request_params)
