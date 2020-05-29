@@ -14,18 +14,6 @@ from bayesian.utility.user_utils import UserException
 user_api = Blueprint('user_api', __name__, url_prefix='/user')
 
 
-@user_api.route('/readiness')
-def readiness():
-    """Handle the /readiness REST API call."""
-    return jsonify({}), 200
-
-
-@user_api.route('/liveness')
-def liveness():
-    """Handle the /liveness REST API call."""
-    return jsonify({}), 200
-
-
 @user_api.route('/<user_id>', methods=['GET'])
 @login_required
 def get_user(user_id):
