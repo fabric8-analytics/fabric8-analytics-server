@@ -112,7 +112,7 @@ class StackAnalyses():
             'external_request_id': self._new_request_id,
             'ecosystem': self.params.ecosystem,
             'packages': data['packages'],
-            'manifest_file': self._manifest_file_info['filename'],
+            'manifest_name': self._manifest_file_info['filename'],
             'manifest_file_path': self._manifest_file_info['filepath'],
             'show_transitive': self.params.show_transitive
         }
