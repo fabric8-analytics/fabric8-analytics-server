@@ -291,7 +291,7 @@ components:
                 example: General Public License V3(GPL)
           description: |
             List of conflicting licenses
-        unknowns:
+        unknown:
           type: array
           items:
             type: object
@@ -338,6 +338,22 @@ components:
         - current_stack_license
         - unknown_licenses
       properties:
+        reason:
+          type: string
+          example: |
+            Cannot calculate stack license due to unknown dependencies or license not supported.
+        status:
+          type: string
+          enum:
+            - ComponentConflict
+            - StackConflict
+            - Successful
+            - Unknown
+            - Failure
+        recommended_licenses:
+          type: array
+          items:
+            type: string
         outlier_packages:
           type: array
           items:
@@ -356,11 +372,6 @@ components:
           type: array
           items:
             type: string
-        stack_license_conflict:
-          type: boolean
-        total_licenses:
-          type: integer
-          example: 15          
       description: License analyses data
 
     GitHubDetails:
@@ -368,13 +379,13 @@ components:
       type: object
       properties:
         watchers:
-          type: integer
-          example: 1002
+          type: string
+          example: "100K"
         first_release_date:
           type: string
         total_releases:
-          type: integer
-          example: 12
+          type: string
+          example: "12"
         issues:
           type: object
           properties: {}
@@ -382,29 +393,29 @@ components:
           type: object
           properties: {}
         dependent_repos:
-          type: integer
+          type: string
         open_issues_count:
-          type: integer
+          type: string
         latest_release_duration:
           type: string
         forks_count:
-          type: integer
-          example: 123
+          type: string
+          example: "123"
         contributors:
-          type: integer
-          example: 12
+          type: string
+          example: "12"
         size:
           type: string
         stargazers_count:
-          type: integer
-          example: 50000
+          type: string
+          example: "50K"
         used_by:
           type: array
           items:
             type: string
         dependent_projects:
-          type: integer
-          example: 1534
+          type: string
+          example: "11K"
       description: Github details
 
     PackageDetails:
@@ -505,11 +516,11 @@ components:
       - $ref: '#/components/schemas/PackageDetails'
       - type: object
         properties:
-          confidence_reason:
+          cooccurrence_probability:
             type: number
             format: float
             example: 83.16431
-          reason:
+          cooccurrence_count:
             type: string
           topic_list:
             type: array
