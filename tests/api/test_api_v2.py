@@ -95,6 +95,21 @@ class TestComponentAnalysesApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
+    def test_get_component_analyses_with_skip_unknown_package_flow(self, _sensitive, _request,
+                                                                   _analyses, _bookkeeping,
+                                                                   _session, _g):
+        """No Analyses Data found, with SKIP_UNKNOWN_PACKAGE_FLOW flag, Raises HTTP Error."""
+        with patch.dict('os.environ', {'SKIP_UNKNOWN_PACKAGE_FLOW': '1'}):
+            ca = ComponentAnalysesApi()
+            self.assertRaises(HTTPError, ca.get, 'npm', 'pkg', 'ver')
+        self.assertNotIn('SKIP_UNKNOWN_PACKAGE_FLOW', os.environ)
+
+    @patch('bayesian.api.api_v2.g')
+    @patch('bayesian.api.api_v2._session')
+    @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
+    @patch('bayesian.api.api_v2.server_create_analysis')
+    @patch('bayesian.api.api_v2.request')
+    @patch('bayesian.api.api_v2.case_sensitivity_transform')
     def test_get_component_analyses(self, _sensitive, _request,
                                     _analyses, _bookkeeping, _session, _g):
         """CA GET: No Analyses Data found, without INVOKE_API_WORKERS flag, Raises HTTP Error."""

@@ -63,6 +63,8 @@ objects:
                 key: sentry_dsn
           - name: INVOKE_API_WORKERS
             value: "1"
+          - name: SKIP_UNKNOWN_PACKAGE_FLOW
+            value: "0"
           - name: SHOW_TRANSITIVE_REPORT
             value: ${SHOW_TRANSITIVE_REPORT}
           - name: POSTGRESQL_DATABASE
