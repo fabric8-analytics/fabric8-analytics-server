@@ -116,12 +116,12 @@ class ComponentAnalysesApi(Resource):
         Component Analyses:
             - If package is Known (exists in GraphDB (Snyk Edge) returns Json formatted response.
             - If package is not Known:
-                - SKIP_UNKNOWN_PACKAGE_FLOW flag is up: Skips the unknow package and returns 404
-                - SKIP_UNKONWN_PACKAGE_FLOW flag is down: Than checks below condition.
-                    - INVOKE_API_WORKERS flag is up: Trigger bayesianApiFlow to fetch
-                                                     Package details
-                    - INVOKE_API_WORKERS flag is down: Trigger bayesianFlow to fetch
-                                                       Package details
+                - DISABLE_UNKNOWN_PACKAGE_FLOW flag is 1: Skips the unknown package and returns 202
+                - DISABLE_UNKONWN_PACKAGE_FLOW flag is 0: Than checks below condition.
+                    - INVOKE_API_WORKERS flag is 1: Trigger bayesianApiFlow to fetch
+                                                    Package details
+                    - INVOKE_API_WORKERS flag is 0: Trigger bayesianFlow to fetch
+                                                    Package details
 
         :return:
             JSON Response
@@ -164,14 +164,11 @@ class ComponentAnalysesApi(Resource):
             metrics_payload.update({"status_code": 200, "value": time.time() - st})
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
             return analyses_result
-        elif os.environ.get("SKIP_UNKNOWN_PACKAGE_FLOW", "") == "1":
+        elif os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1":
             msg = f"No data found for {ecosystem} package {package}/{version} " \
-                   "and skip unknown package flow is enabled"
+                   "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
 
-            metrics_payload.update({"status_code": 404, "value": time.time() - st})
-            _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
-
-            raise HTTPError(404, msg)
+            raise HTTPError(202, msg)
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
             # Trigger the unknown component ingestion.
