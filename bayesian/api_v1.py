@@ -310,7 +310,7 @@ class ComponentAnalyses(Resource):
             msg = f"No data found for {ecosystem} package {package}/{version} " \
                    "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
 
-            raise HTTPError(202, msg)
+            return {'error': msg}, 202
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
             # Enter the unknown path

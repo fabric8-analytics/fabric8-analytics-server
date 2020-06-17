@@ -101,7 +101,9 @@ class TestComponentAnalysesApi(unittest.TestCase):
         """No Analyses Data found, with DISABLE_UNKNOWN_PACKAGE_FLOW flag, Raises HTTP Error."""
         with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
             ca = ComponentAnalysesApi()
-            self.assertRaises(HTTPError, ca.get, 'npm', 'pkg', 'ver')
+            response = ca.get('npm', 'pkg', 'ver')
+            self.assertEqual(response.status, 202)
+            self.assertIsInstance(response, tuple)
 
     @patch('bayesian.api.api_v2.g')
     @patch('bayesian.api.api_v2._session')
