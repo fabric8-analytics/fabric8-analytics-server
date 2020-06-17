@@ -22,7 +22,6 @@ from urllib.parse import quote
 from unittest.mock import patch
 import unittest
 from urllib.parse import urlparse
-from bayesian.utils import convert_version_to_proper_semantic
 
 
 class VendorAnalysesTest(unittest.TestCase):
@@ -87,20 +86,6 @@ class VendorAnalysesTest(unittest.TestCase):
         """Generates exception. Test Exception Block."""
         analyses = ComponentAnalyses('eco', 'pkg', 'ver').get_component_analyses_response()
         assert analyses is None
-
-    def test_version_formatting(self):
-        """Test Version formatting."""
-        version = "2.8.0"
-        sem_version = convert_version_to_proper_semantic(version)
-        result = ComponentAnalyses('eco', 'pkg', 'ver').version_formatting(sem_version)
-        self.assertEqual(result, "2.8")
-
-    def test_version_formatting_non_zero(self):
-        """Test Version formatting. Non Zero at end."""
-        version = "2.8.7"
-        sem_version = convert_version_to_proper_semantic(version)
-        result = ComponentAnalyses('eco', 'pkg', 'ver').version_formatting(sem_version)
-        self.assertEqual(result, "2.8.7")
 
 
 class ComponentAnalysisResponseBuilderTest(unittest.TestCase):

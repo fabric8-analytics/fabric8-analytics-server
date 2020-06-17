@@ -19,8 +19,6 @@ from urllib.parse import quote
 import logging
 from bayesian.utility.db_gateway import GraphAnalyses
 from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic
-import semantic_version as sv
-
 
 logger = logging.getLogger(__file__)
 
@@ -35,21 +33,6 @@ class ComponentAnalyses:
         self.package = package
         self.recommendation = dict()
         self.response_data = dict()
-
-    @staticmethod
-    def version_formatting(version) -> str:
-        """Return version formatting in form of (major, minor, patch) for a given sem Version.
-
-        : type version: semantic_version.base.Version
-        : param version: The semantic version whole details are needed.
-        : return: A string in form of Version.(major, minor, patch)
-        """
-        if type(version) == sv.base.Version:
-            if str(version.patch) == '0':
-                return f"{version.major}.{version.minor}"
-
-            return f"{version.major}.{version.minor}.{version.patch}"
-        return version
 
     @staticmethod
     def is_package_known(query_result):
@@ -79,9 +62,8 @@ class ComponentAnalyses:
         """
         logger.info('Executing Vendor Specific Analyses')
         try:
-            version = self.version_formatting(convert_version_to_proper_semantic(self.version))
             graph_response = GraphAnalyses.get_ca_data_from_graph(
-                self.ecosystem, self.package, version, vendor='snyk')
+                self.ecosystem, self.package, self.version, vendor='snyk')
             if not self.is_package_known(graph_response):
                 # Trigger Unknown Flow on Unknown Packages
                 logger.info(f"Package {self.package} is not known.")
