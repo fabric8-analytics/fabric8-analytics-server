@@ -5,6 +5,7 @@ import io
 from pathlib import Path
 import pytest
 import json
+from unittest.mock import patch
 from bayesian import api_v1
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
@@ -209,6 +210,13 @@ class TestCommonEndpoints(object):
         res = self.client.get(api_route_for('/component-analyses/abb/cc/dd'),
                               headers=accept_json)
         assert res.status_code == 400
+
+    def test_component_analyses_disable_unknown_package_flow(self, accept_json):
+        """Test the /component-analyses endpoint for GET."""
+        with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
+            res = self.client.get(api_route_for('/component-analyses/npm/server-unknown/1.7.1'),
+                                  headers=accept_json)
+            assert res.status_code == 202
 
     def test_component_analyses1(self):
         """Test the /component-analyses endpoint for POST."""

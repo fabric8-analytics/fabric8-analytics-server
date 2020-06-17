@@ -63,6 +63,8 @@ objects:
                 key: sentry_dsn
           - name: INVOKE_API_WORKERS
             value: "1"
+          - name: DISABLE_UNKNOWN_PACKAGE_FLOW
+            value: ${DISABLE_UNKNOWN_PACKAGE_FLOW}
           - name: SHOW_TRANSITIVE_REPORT
             value: ${SHOW_TRANSITIVE_REPORT}
           - name: POSTGRESQL_DATABASE
@@ -197,6 +199,12 @@ parameters:
   required: false
   name: FLASK_LOGGING_LEVEL
   value: "WARNING"
+
+- description: Flag to enable or disable the unknown package ingetion flow
+  displayName: DISABLE UNKNOWN PACKAGE FLOW
+  required: false
+  name: DISABLE_UNKNOWN_PACKAGE_FLOW
+  value: "0"
 
 - description: Flag to enable or disable the transitive report from stack report
   displayName: SHOW TRANSITIVE REPORT

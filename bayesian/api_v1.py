@@ -245,7 +245,21 @@ class ComponentAnalyses(Resource):
 
     @staticmethod
     def get(ecosystem, package, version):
-        """Handle the GET REST API call."""
+        """Handle the GET REST API call.
+
+        Component Analyses:
+            - If package is Known (exists in GraphDB) returns Json formatted response.
+            - If package is not Known:
+                - DISABLE_UNKNOWN_PACKAGE_FLOW flag is 1: Skips the unknown package and returns 202
+                - DISABLE_UNKONWN_PACKAGE_FLOW flag is 0: Than checks below condition.
+                    - INVOKE_API_WORKERS flag is 1: Trigger bayesianApiFlow to fetch
+                                                    Package details
+                    - INVOKE_API_WORKERS flag is 0: Trigger bayesianFlow to fetch
+                                                    Package details
+
+        :return:
+            JSON Response
+        """
         st = time.time()
         metrics_payload = {
             "pid": os.getpid(),
@@ -273,10 +287,16 @@ class ComponentAnalyses(Resource):
                 _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
                 raise HTTPError(400, msg)
 
-        package = case_sensitivity_transform(ecosystem, package)
-        # Querying GraphDB for CVE Info.
+        result = None
+        # Exception is raised when an unknown package is requested. Ignoring this with below
+        # try-except block as further flow takes care of unknown package flow.
+        try:
+            package = case_sensitivity_transform(ecosystem, package)
 
-        result = get_analyses_from_graph(ecosystem, package, version)
+            # Querying GraphDB for CVE Info.
+            result = get_analyses_from_graph(ecosystem, package, version)
+        except Exception as e:
+            current_app.logger.info(e)
 
         if result is not None:
             # Known component for Bayesian
@@ -286,6 +306,11 @@ class ComponentAnalyses(Resource):
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
 
             return result
+        elif os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1":
+            msg = f"No data found for {ecosystem} package {package}/{version} " \
+                   "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
+
+            return {'error': msg}, 202
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
             # Enter the unknown path
