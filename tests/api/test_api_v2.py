@@ -98,7 +98,7 @@ class TestComponentAnalysesApi(unittest.TestCase):
     def test_get_component_analyses_with_disable_unknown_package_flow(self, _sensitive, _request,
                                                                       _analyses, _bookkeeping,
                                                                       _session, _g):
-        """No Analyses Data found, with DISABLE_UNKNOWN_PACKAGE_FLOW flag, Raises HTTP Error."""
+        """No Analyses Data found, with DISABLE_UNKNOWN_PACKAGE_FLOW flag, returns 202."""
         with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
             ca = ComponentAnalysesApi()
             response = ca.get('npm', 'pkg', 'ver')
