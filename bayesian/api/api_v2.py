@@ -261,7 +261,7 @@ def error():
     except Exception:
         # if there's an exception, it means that a client accessed this directly;
         #  in this case, we want to make it look like the endpoint is not here
-        return api_404_handler()
+        return api_404_handler("/api/v2/")
     msg = 'Unknown error'
     if status == 401:
         msg = 'Authentication failed'
