@@ -20,7 +20,7 @@ import os
 import time
 import urllib
 import logging
-
+import re
 from requests_futures.sessions import FuturesSession
 from collections import namedtuple
 from pydantic.error_wrappers import ValidationError
@@ -140,6 +140,12 @@ class ComponentAnalysesApi(Resource):
         response_template = namedtuple("response_template", ["message", "status"])
         logger.info("Executed v2 API")
         package = urllib.parse.unquote(package)
+
+        if re.findall('[!@#$%^&*()]', version):
+            # Version should not contain special Characters.
+            return response_template(
+                {'error': "Package version should not have special characters."}, 400)
+
         if not check_for_accepted_ecosystem(ecosystem):
             msg = f"Ecosystem {ecosystem} is not supported for this request"
             raise HTTPError(400, msg)
