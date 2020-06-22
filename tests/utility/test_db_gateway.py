@@ -78,14 +78,6 @@ class TestRdbAnalyses(unittest.TestCase):
             rdbAnalyses.get_request_data()
         self.assertIs(exception.type, RDBInvalidRequestException)
 
-    @patch('bayesian.utility.db_gateway.fetch_sa_request', side_effect=Exception('mock exception'))
-    def test_get_request_data_exception(self, _fetch_sa_request):
-        """Test get SA request data with return as 404 error."""
-        rdbAnalyses = RdbAnalyses('dummy_request_id')
-        with pytest.raises(Exception) as exception:
-            rdbAnalyses.get_request_data()
-        self.assertIs(exception.type, RDBInvalidRequestException)
-
     @patch('bayesian.utility.db_gateway.retrieve_worker_result', return_value={})
     def test_get_stack_result(self, _fetch_sa_request):
         """Test get SA stack result."""

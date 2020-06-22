@@ -217,7 +217,7 @@ class StackAnalysesApi(Resource):
         except SARBRequestInvalidException as e:
             raise HTTPError(400, e.args[0]) from e
         except RDBInvalidRequestException as e:
-            raise HTTPError(400, e.args[0]) from e
+            raise HTTPError(404, e.args[0]) from e
         except SARBRequestInprogressException as e:
             raise HTTPError(202, e.args[0]) from e
         except SARBRequestTimeoutException as e:

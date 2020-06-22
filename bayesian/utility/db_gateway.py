@@ -88,18 +88,13 @@ class RdbAnalyses:
 
     def get_request_data(self):
         """Read request data for given request id from RDS."""
-        try:
-            db_result = fetch_sa_request(rdb, self.request_id)
-            if db_result is None:
-                error_message = 'Invalid request ID {}.'.format(self.request_id)
-                logger.exception(error_message)
-                raise RDBInvalidRequestException(error_message)
-
-            return db_result
-        except Exception as e:
-            error_message = 'DB query failed for request ID {}.'.format(self.request_id)
+        db_result = fetch_sa_request(rdb, self.request_id)
+        if db_result is None:
+            error_message = 'Invalid request ID {}.'.format(self.request_id)
             logger.exception(error_message)
-            raise RDBInvalidRequestException(error_message) from e
+            raise RDBInvalidRequestException(error_message)
+
+        return db_result
 
     def get_stack_result(self):
         """Read and return stack result from RDS."""
