@@ -261,7 +261,7 @@ def error():
     except Exception:
         # if there's an exception, it means that a client accessed this directly;
         #  in this case, we want to make it look like the endpoint is not here
-        return api_404_handler()
+        return api_404_handler("/api/v2/")
     msg = 'Unknown error'
     if status == 401:
         msg = 'Authentication failed'
@@ -324,6 +324,7 @@ def handle_http_error(err):
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined
 # after this
 @api_v2.route('/<path:invalid_path>')
-def api_404_handler():
+def api_404_handler(invalid_path):
     """Handle all other routes not defined above."""
-    return jsonify(error='Cannot match given query to any API v2 endpoint'), 404
+    return jsonify(error=f'Cannot match given query to any API v2 endpoint. '
+                         f'Invalid path {invalid_path}'), 404
