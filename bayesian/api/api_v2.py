@@ -278,7 +278,7 @@ class StackAnalysesPostApi(Resource):
     @staticmethod
     def get():
         """Invalid method for this class, required to proper throw proper 405."""
-        raise HTTPError(405, "Method not allowed")
+        raise HTTPError(400, "Request id missing")
 
 
 @api_v2.route('/_error')
