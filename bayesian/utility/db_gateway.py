@@ -88,7 +88,14 @@ class RdbAnalyses:
 
     def get_request_data(self):
         """Read request data for given request id from RDS."""
-        db_result = fetch_sa_request(rdb, self.request_id)
+        db_result = None
+        try:
+            db_result = fetch_sa_request(rdb, self.request_id)
+        except Exception as e:
+            error_message = 'Internal database server error for {}.'.format(self.request_id)
+            logger.exception(error_message)
+            raise RDBServerException(error_message) from e
+
         if db_result is None:
             error_message = 'Invalid request ID {}.'.format(self.request_id)
             logger.exception(error_message)
@@ -138,6 +145,15 @@ class RDBInvalidRequestException(Exception):
     """Exception raised when RDB is queried with wrong / invalid request id.
 
     Indicate RDB could not get any result data for a given request id.
+    """
+
+    pass
+
+
+class RDBServerException(Exception):
+    """Exception raised when there is a n unknown exception raised while accessing RDB.
+
+    Indicate RDB could not be reached / unknown exception raised during request.
     """
 
     pass
