@@ -201,7 +201,7 @@ class ComponentAnalysesApi(Resource):
         raise HTTPError(404, msg)
 
 
-class StackAnalysesApi(Resource):
+class StackAnalysesGetApi(Resource):
     """Implements stack analysis REST APIs.
 
     Implements /api/v2/stack-analyses REST APIs for POST and GET calls.
@@ -233,6 +233,20 @@ class StackAnalysesApi(Resource):
             raise HTTPError(408, e.args[0]) from e
 
     @staticmethod
+    def post(external_request_id):
+        """Invalid method for this class, required to throw proper 405 error."""
+        raise HTTPError(405, "Method not allowed")
+
+
+class StackAnalysesPostApi(Resource):
+    """Implements stack analysis REST APIs.
+
+    Implements /api/v2/stack-analyses REST APIs for POST and GET calls.
+    """
+
+    method_decorators = [login_required]
+
+    @staticmethod
     def post():
         """Handle /api/v2/stack-analyses POST REST API."""
         sa_post_request = None
@@ -260,6 +274,11 @@ class StackAnalysesApi(Resource):
             raise HTTPError(500, e.args[0])
         except RDBSaveException as e:
             raise HTTPError(500, e.args[0])
+
+    @staticmethod
+    def get():
+        """Invalid method for this class, required to proper throw proper 405."""
+        raise HTTPError(405, "Method not allowed")
 
 
 @api_v2.route('/_error')
@@ -311,10 +330,10 @@ add_resource_no_matter_slashes(ComponentAnalysesApi,
                                endpoint='get_component_analysis')
 
 # Stack analyses routes
-add_resource_no_matter_slashes(StackAnalysesApi,
+add_resource_no_matter_slashes(StackAnalysesPostApi,
                                '/stack-analyses',
                                endpoint='post_stack_analyses')
-add_resource_no_matter_slashes(StackAnalysesApi,
+add_resource_no_matter_slashes(StackAnalysesGetApi,
                                '/stack-analyses/<external_request_id>',
                                endpoint='get_stack_analyses')
 
