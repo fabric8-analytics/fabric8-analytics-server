@@ -44,7 +44,8 @@ from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilde
 from bayesian.utility.v2.stack_analyses import StackAnalyses, SAInvalidInputException
 from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
 from bayesian.utility.v2.backbone_server import BackboneServerException
-from bayesian.utility.db_gateway import RdbAnalyses, RDBSaveException, RDBInvalidRequestException
+from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
+                                         RDBInvalidRequestException, RDBServerException)
 
 
 errors = {
@@ -223,7 +224,9 @@ class StackAnalysesApi(Resource):
         except SARBRequestInvalidException as e:
             raise HTTPError(400, e.args[0]) from e
         except RDBInvalidRequestException as e:
-            raise HTTPError(400, e.args[0]) from e
+            raise HTTPError(404, e.args[0]) from e
+        except RDBServerException as e:
+            raise HTTPError(500, e.args[0]) from e
         except SARBRequestInprogressException as e:
             raise HTTPError(202, e.args[0]) from e
         except SARBRequestTimeoutException as e:

@@ -201,7 +201,13 @@ class TestStackAnalysesGetApi(unittest.TestCase):
         """Get request with 500 error."""
         _get_response.side_effect = RDBInvalidRequestException('Mock database error')
         response = self.client.get(api_route_for('/stack-analyses/request_id'))
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 404)
+
+    @patch('bayesian.utility.db_gateway.fetch_sa_request', side_effect=Exception('mock exception'))
+    def test_get_request_data_exception(self, _fetch_sa_request):
+        """Test get SA request data with return as 404 error."""
+        response = self.client.get(api_route_for('/stack-analyses/request_id'))
+        self.assertEqual(response.status_code, 500)
 
 
 @pytest.mark.usefixtures('client_class')
