@@ -126,21 +126,22 @@ class ComponentAnalysisResponseBuilder:
         if self.public_vul and self.pvt_vul:
             # Add Private Vulnerability and Public Vul Info only
             message += f"{self.public_vul} known security vulnerability "
-            message += f"and {self.pvt_vul} security advisory with {self.severity[0]} severity. "
+            message += f"and {self.pvt_vul} security advisory with {len(self.severity)} " \
+                       f"having {self.severity[0]} severity. "
             message += f'Recommendation: use version {self.nocve_version}.'
             return message
 
         if self.public_vul:
             # Add Public Vulnerability Info only
             message += f"{self.public_vul} known security vulnerability with " \
-                       f"{self.severity[0]} severity. "
+                       f"{len(self.severity)} having {self.severity[0]} severity. "
             message += f'Recommendation: use version {self.nocve_version}.'
             return message
 
         if self.pvt_vul:
             # Add Private Vulnerability Info only
             message += f"{self.pvt_vul} security advisory"
-            message += f" with {self.severity[0]} severity. "
+            message += f" with {len(self.severity)} having {self.severity[0]} severity. "
         return message
 
     def get_version_without_cves(self, latest_non_cve_versions):

@@ -79,6 +79,14 @@ class TestCommonEndpoints():
         monkeypatch.delattr(_session, 'post')
         assert response.json == {'error': 'Invalid maven format - package'}
 
+    def test_get_component_analyses_invalid_version(self, accept_json, monkeypatch):
+        """Test Component Analyses get. Invalid Version."""
+        monkeypatch.setattr(_session, 'post', Mock)
+        response = self.client.get(
+            api_route_for('/component-analyses/maven/package/2.7.*'), headers=accept_json)
+        monkeypatch.delattr(_session, 'post')
+        assert response.json == {'error': "Package version should not have special characters."}
+
     def test_get_component_analyses_unknown_ecosystem(self, accept_json):
         """CA GET: Invalid Ecosystem."""
         response = self.client.get(
