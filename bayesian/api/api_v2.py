@@ -228,7 +228,8 @@ class StackAnalysesApi(Resource):
         except RDBServerException as e:
             raise HTTPError(500, e.args[0]) from e
         except SARBRequestInprogressException as e:
-            raise HTTPError(202, e.args[0]) from e
+            # Request is in progress is not error, so lets not raise exception.
+            return {'error': e.args[0]}, 202
         except SARBRequestTimeoutException as e:
             raise HTTPError(408, e.args[0]) from e
 
