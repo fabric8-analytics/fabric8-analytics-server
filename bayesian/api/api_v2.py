@@ -201,10 +201,10 @@ class ComponentAnalysesApi(Resource):
         raise HTTPError(404, msg)
 
 
-class StackAnalysesGetApi(Resource):
-    """Implements stack analysis REST APIs.
+class StackAnalysesApiWithId(Resource):
+    """Implements stack analysis REST APIs with request id.
 
-    Implements /api/v2/stack-analyses REST APIs for POST and GET calls.
+    Implements /api/v2/stack-analyses/<Request Id> REST APIs for POST and GET calls.
     """
 
     method_decorators = [login_required]
@@ -238,7 +238,7 @@ class StackAnalysesGetApi(Resource):
         raise HTTPError(405, "Method not allowed")
 
 
-class StackAnalysesPostApi(Resource):
+class StackAnalysesApi(Resource):
     """Implements stack analysis REST APIs.
 
     Implements /api/v2/stack-analyses REST APIs for POST and GET calls.
@@ -330,10 +330,10 @@ add_resource_no_matter_slashes(ComponentAnalysesApi,
                                endpoint='get_component_analysis')
 
 # Stack analyses routes
-add_resource_no_matter_slashes(StackAnalysesPostApi,
+add_resource_no_matter_slashes(StackAnalysesApi,
                                '/stack-analyses',
                                endpoint='post_stack_analyses')
-add_resource_no_matter_slashes(StackAnalysesGetApi,
+add_resource_no_matter_slashes(StackAnalysesApiWithId,
                                '/stack-analyses/<external_request_id>',
                                endpoint='get_stack_analyses')
 
