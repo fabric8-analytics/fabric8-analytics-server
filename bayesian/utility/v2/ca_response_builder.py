@@ -285,16 +285,17 @@ class ComponentAnalysisResponseBuilder:
         We have predefined expected severity values and their ranks.(severity_levels)
         Steps followed:
         1. filter/clean input_severities.
-        2. Calculate highest rank present in Input severities.
-        3. find max_severity corresponding to highest rank.
+        2. Calculate highest Power Number present in Input severities.
+        3. find max_severity corresponding to highest number.
         4. filter input_severities matching max_severity.
 
         :return: Highest ranking severities among all input_severities.
         """
         logger.info("Get maximum severity.")
+        # format {"severity": "Power Number"}
         severity_levels = {"low": 1, "medium": 2, "high": 3, "critical": 4}
         try:
-            # Fetch all severities levels from Input
+            # Fetch all severities from Input
             input_severities = [cve['severity'][0] for cve in self._cves
                                 if 'severity' in cve.keys()]
         except IndexError:
@@ -302,14 +303,15 @@ class ComponentAnalysisResponseBuilder:
                          f"{self.ecosystem}, {self.package}, {self.version}")
             return []
 
-        # Maximum Severity Rank from Input
-        max_severe_rank_in_input = max(map(lambda x: severity_levels[x], input_severities))
+        # Highest Severity Power Number from Input
+        highest_severe_number_in_input = max(map(lambda x: severity_levels[x], input_severities))
 
-        # Find Severity value corresponding to rank
-        max_severity = [severity for severity, power_number in severity_levels.items()
-                        if power_number == max_severe_rank_in_input]
-        # filtering input_severities equal to max_severity found.
-        return list(filter(lambda x: x == max_severity[0], input_severities))
+        # Find Severity Name corresponding to Power Number
+        highest_severity_name_in_input = [severity for severity, power_number in severity_levels.items()
+                        if power_number == highest_severe_number_in_input]
+
+        # List out all highest_severity_name_in_input in input_severities.
+        return list(filter(lambda x: x == highest_severity_name_in_input[0], input_severities))
 
     def get_cve_maps(self):
         """Get all Vulnerabilities Meta Data.
