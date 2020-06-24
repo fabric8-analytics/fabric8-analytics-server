@@ -282,18 +282,20 @@ class ComponentAnalysisResponseBuilder:
     def get_severity(self) -> list:
         """Severity Calculator.
 
-        We have predefined expected severity values and their ranks.(severity_levels)
-        Steps followed:
+        We have predefined expected severity values and their severity_levels
+        This method returns list of highest severity present in input.
+        Ex ['high', 'high', 'low' ] -> ['high', 'high']
+        Procedure followed:
         1. filter/clean input_severities.
-        2. Calculate highest Power Number present in Input severities.
-        3. find max_severity corresponding to highest number.
-        4. filter input_severities matching max_severity.
+        2. Calculate highest severity_level present in Input severities.
+        3. find highest_severity_name_in_input corresponding to that severity_level.
+        4. filter input_severities matching highest_severity_name_in_input.
 
         :return: Highest ranking severities among all input_severities.
         """
         logger.info("Get maximum severity.")
-        # format {"severity": "Power Number"}
-        severity_levels = {"low": 1, "medium": 2, "high": 3, "critical": 4}
+        # format {"severity": "Severity level"}
+        defined_severities_dict = {"low": 1, "medium": 2, "high": 3, "critical": 4}
         try:
             # Fetch all severities from Input
             input_severities = [cve['severity'][0] for cve in self._cves
@@ -303,12 +305,12 @@ class ComponentAnalysisResponseBuilder:
                          f"{self.ecosystem}, {self.package}, {self.version}")
             return []
 
-        # Highest Severity Power Number from Input
-        highest_severe_number_in_input = max(map(lambda x: severity_levels[x], input_severities))
+        # Highest Severity Level in Input
+        highest_severe_number_in_input = max(map(lambda x: defined_severities_dict[x], input_severities))
 
-        # Find Severity Name corresponding to Power Number
-        highest_severity_name_in_input = [severity for severity, power_number in severity_levels.items()
-                        if power_number == highest_severe_number_in_input]
+        # Find Severity Name corresponding to Severity level found in Previous step.
+        highest_severity_name_in_input = [severity for severity, severity_level in defined_severities_dict.items()
+                        if severity_level == highest_severe_number_in_input]
 
         # List out all highest_severity_name_in_input in input_severities.
         return list(filter(lambda x: x == highest_severity_name_in_input[0], input_severities))
