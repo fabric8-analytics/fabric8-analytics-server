@@ -304,13 +304,14 @@ class ComponentAnalysisResponseBuilder:
             logger.error(f"Severity not found for EPV: "
                          f"{self.ecosystem}, {self.package}, {self.version}")
             return []
-
         # Highest Severity Level in Input
-        highest_severe_number_in_input = max(map(lambda x: defined_severities_dict[x], input_severities))
+        highest_severe_number_in_input = max(
+            map(lambda x: defined_severities_dict[x], input_severities))
 
         # Find Severity Name corresponding to Severity level found in Previous step.
-        highest_severity_name_in_input = [severity for severity, severity_level in defined_severities_dict.items()
-                        if severity_level == highest_severe_number_in_input]
+        highest_severity_name_in_input = [
+            severity for severity, severity_level in defined_severities_dict.items()
+            if severity_level == highest_severe_number_in_input]
 
         # List out all highest_severity_name_in_input in input_severities.
         return list(filter(lambda x: x == highest_severity_name_in_input[0], input_severities))
