@@ -282,20 +282,13 @@ class ComponentAnalysisResponseBuilder:
     def get_severity(self) -> list:
         """Severity Calculator.
 
-        We have predefined expected severity values and their severity_levels
+        We have predefined expected severity values from vendor
         This method returns list of highest severity present in input.
         Ex ['high', 'high', 'low' ] -> ['high', 'high']
-        Procedure followed:
-        1. filter/clean input_severities.
-        2. Calculate highest severity_level present in Input severities.
-        3. find highest_severity_name_in_input corresponding to that severity_level.
-        4. filter input_severities matching highest_severity_name_in_input.
 
         :return: Highest ranking severities among all input_severities.
         """
         logger.info("Get maximum severity.")
-        # format {"severity": "Severity level"}
-        defined_severities_dict = {"low": 1, "medium": 2, "high": 3, "critical": 4}
         try:
             # Fetch all severities from Input
             input_severities = [cve['severity'][0] for cve in self._cves
@@ -304,17 +297,22 @@ class ComponentAnalysisResponseBuilder:
             logger.error(f"Severity not found for EPV: "
                          f"{self.ecosystem}, {self.package}, {self.version}")
             return []
-        # Highest Severity Level in Input
-        highest_severe_number_in_input = max(
-            map(lambda x: defined_severities_dict[x], input_severities))
 
-        # Find Severity Name corresponding to Severity level found in Previous step.
-        highest_severity_name_in_input = [
-            severity for severity, severity_level in defined_severities_dict.items()
-            if severity_level == highest_severe_number_in_input]
+        # All conditional checks are in order of precedence.
+        if 'critical' in input_severities:
+            highest_severity_name_in_input = 'critical'
+        elif 'high' in input_severities:
+            highest_severity_name_in_input = 'high'
+        elif 'medium' in input_severities:
+            highest_severity_name_in_input = 'medium'
+        elif 'low' in input_severities:
+            highest_severity_name_in_input = 'low'
+        else:
+            raise Exception(f"Invalid Severity value for epv "
+                            f"{self.ecosystem},{self.package} and {self.version} ")
 
         # List out all highest_severity_name_in_input in input_severities.
-        return list(filter(lambda x: x == highest_severity_name_in_input[0], input_severities))
+        return list(filter(lambda x: x == highest_severity_name_in_input, input_severities))
 
     def get_cve_maps(self):
         """Get all Vulnerabilities Meta Data.
