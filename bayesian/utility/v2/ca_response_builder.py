@@ -100,7 +100,7 @@ class ComponentAnalysisResponseBuilder:
         logger.info("Generating Recommendation")
         result_data = graph_response.get('result', {}).get('data')
         latest_non_cve_versions = result_data[0].get('package', {}).get(
-                                            'latest_non_cve_version', [])
+            'latest_non_cve_version', [])
         for data in result_data:
             this_version = data.get('version', {}).get('version', [None])[0]
             if this_version == self.version:
@@ -279,31 +279,37 @@ class ComponentAnalysisResponseBuilder:
         logger.info("Get total Vulnerabilities.")
         return len(self._cves)
 
-    def get_severity(self):
+    def get_severity(self) -> list:
         """Severity Calculator.
 
-        severity_levels = { "severity": power_number }
-        expected_inputs = {"high", "critical", "severe"}
-        :return: list - Highest severity among all vulnerabilities.
+        We have predefined expected severity values and their ranks.(severity_levels)
+        Steps followed:
+        1. filter/clean input_severities.
+        2. Calculate highest rank present in Input severities.
+        3. find max_severity corresponding to highest rank.
+        4. filter input_severities matching max_severity.
+
+        :return: Highest ranking severities among all input_severities.
         """
         logger.info("Get maximum severity.")
         severity_levels = {"low": 1, "medium": 2, "high": 3, "critical": 4}
         try:
-            input_severities = {cve['severity'][0] for cve in self._cves
-                                if 'severity' in cve.keys()}
+            # Fetch all severities levels from Input
+            input_severities = [cve['severity'][0] for cve in self._cves
+                                if 'severity' in cve.keys()]
         except IndexError:
             logger.error(f"Severity not found for EPV: "
                          f"{self.ecosystem}, {self.package}, {self.version}")
             return []
 
-        if not input_severities.issubset(severity_levels.keys()):
-            # Input values contains non recognised values
-            return []
+        # Maximum Severity Rank from Input
+        max_severe_rank_in_input = max(map(lambda x: severity_levels[x], input_severities))
 
-        max_severe_value = max(map(lambda x: severity_levels[x], input_severities))
-        severity = [severity for severity, power_number in severity_levels.items()
-                    if power_number == max_severe_value]
-        return severity
+        # Find Severity value corresponding to rank
+        max_severity = [severity for severity, power_number in severity_levels.items()
+                        if power_number == max_severe_rank_in_input]
+        # filtering input_severities equal to max_severity found.
+        return list(filter(lambda x: x == max_severity[0], input_severities))
 
     def get_cve_maps(self):
         """Get all Vulnerabilities Meta Data.

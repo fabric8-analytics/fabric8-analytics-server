@@ -264,13 +264,6 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
         count = response_obj.get_total_vulnerabilities()
         self.assertEqual(count, 0)
 
-    def test_get_severity_unknown_values(self):
-        """Test Severity with unknown value."""
-        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
-        response_obj._cves = [{'severity': ["unknown"]}]
-        severity = response_obj.get_severity()
-        self.assertEqual(severity, [])
-
     def test_get_severity_exception(self):
         """Test Severity with unknown value, raises exception."""
         response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
