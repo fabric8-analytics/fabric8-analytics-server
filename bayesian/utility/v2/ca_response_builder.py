@@ -130,7 +130,7 @@ class ComponentAnalysisResponseBuilder:
                        f"having {self.severity[0]} severity. "
 
             if not self.nocve_version:
-                message += 'Currently we don\'t have any recommended version.'
+                message += 'No recommended version.'
                 return message
 
             message += f'Recommendation: use version {self.nocve_version}.'
@@ -142,7 +142,7 @@ class ComponentAnalysisResponseBuilder:
                        f"{len(self.severity)} having {self.severity[0]} severity. "
 
             if not self.nocve_version:
-                message += 'Currently we don\'t have any recommended version.'
+                message += 'No recommended version.'
                 return message
 
             message += f'Recommendation: use version {self.nocve_version}.'
