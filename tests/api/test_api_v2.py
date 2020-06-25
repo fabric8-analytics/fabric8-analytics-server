@@ -210,7 +210,7 @@ class TestStackAnalysesGetApi(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
 
     def test_get_request_invalid_url(self):
-        """Test get SA request data with return as 405 error."""
+        """Test get SA request data with return as 404 error."""
         response = self.client.get(api_route_for('/stack-analyses/request_id/sdf/dsfds'))
         self.assertEqual(response.status_code, 404)
 
@@ -220,7 +220,7 @@ class TestStackAnalysesGetApi(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_get_request_with_slash(self):
-        """Test get SA request data with return as 400 error for missing request id."""
+        """Test get SA request data with return as 404 error for invalid url."""
         response = self.client.get(api_route_for('/stack-analyses/'))
         self.assertEqual(response.status_code, 404)
 
