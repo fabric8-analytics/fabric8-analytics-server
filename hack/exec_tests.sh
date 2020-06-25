@@ -32,4 +32,3 @@ py.test -p no:cacheprovider --cov=/bayesian/bayesian/ --cov-report term-missing 
 # this is necessary - codecov expect proper git repo
 cp -r /bayesian/.git ./
 
-codecov --token=e77dc055-bc31-402b-aeac-dc6f66a3668f
