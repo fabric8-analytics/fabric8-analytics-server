@@ -216,8 +216,13 @@ class TestStackAnalysesGetApi(unittest.TestCase):
 
     def test_get_request_missing_id(self):
         """Test get SA request data with return as 400 error for missing request id."""
-        response = self.client.get(api_route_for('/stack-analyses/'))
+        response = self.client.get(api_route_for('/stack-analyses'))
         self.assertEqual(response.status_code, 400)
+
+    def test_get_request_with_slash(self):
+        """Test get SA request data with return as 400 error for missing request id."""
+        response = self.client.get(api_route_for('/stack-analyses/'))
+        self.assertEqual(response.status_code, 404)
 
 
 @pytest.mark.usefixtures('client_class')
