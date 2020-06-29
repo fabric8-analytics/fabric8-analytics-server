@@ -30,7 +30,7 @@ from flask.json import jsonify
 from flask_restful import Api, Resource
 
 from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
-from fabric8a_auth.auth import login_required
+from fabric8a_auth.auth import login_required, AuthError
 from bayesian.exceptions import HTTPError
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
@@ -201,66 +201,67 @@ class ComponentAnalysesApi(Resource):
         raise HTTPError(404, msg)
 
 
-class StackAnalysesApi(Resource):
-    """Implements stack analysis REST APIs.
+@api_v2.route('/stack-analyses/<external_request_id>', methods=['GET'])
+@login_required
+def stack_analyses_with_request_id(external_request_id):
+    """Handle stack analyses report fetch api."""
+    logger.debug("GET request_id: {}".format(external_request_id))
 
-    Implements /api/v2/stack-analyses REST APIs for POST and GET calls.
+    # 1. Build response builder with id and RDB object.
+    sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
+                                                       RdbAnalyses(external_request_id))
+
+    # 2. If there was no exception raise, means request is ready to be served.
+    try:
+        return jsonify(sa_response_builder.get_response())
+    except SARBRequestInvalidException as e:
+        raise HTTPError(400, e.args[0]) from e
+    except RDBInvalidRequestException as e:
+        raise HTTPError(404, e.args[0]) from e
+    except RDBServerException as e:
+        raise HTTPError(500, e.args[0]) from e
+    except SARBRequestInprogressException as e:
+        # Avoid HTTPError to ignore sentry reporting for Inprogress request.
+        return jsonify({'error': e.args[0]}), 202
+    except SARBRequestTimeoutException as e:
+        raise HTTPError(408, e.args[0]) from e
+
+
+@api_v2.route('/stack-analyses', methods=['GET', 'POST'])
+@login_required
+def stack_analyses():
+    """Handle request to trigger a new stack analyses report.
+
+    GET method would raise error to provide missing request id to the user.
     """
+    if request.method == 'GET':
+        raise HTTPError(400, error="Request id missing")
 
-    method_decorators = [login_required]
+    sa_post_request = None
+    try:
+        # 1. Validate and build request object.
+        sa_post_request = StackAnalysesPostRequest(**request.form, **request.files)
 
-    @staticmethod
-    def get(external_request_id):
-        """Handle /api/v2/stack-analyses GET REST API."""
-        logger.debug("GET request_id: {}".format(external_request_id))
+    except ValidationError as e:
+        # 2. Check of invalid params and raise exception.
+        error_message = 'Validation error(s) in the request.'
+        for error in e.errors():
+            error_message += ' {} => {}.'.format(error['loc'][0], error['msg'])
+        logger.exception(error_message)
+        raise HTTPError(400, error=error_message) from e
 
-        # 1. Build response builder with id and RDB object.
-        sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
-                                                           RdbAnalyses(external_request_id))
+    # 3. Initiate stack analyses object
+    sa = StackAnalyses(sa_post_request)
 
-        # 2. If there was no exception raise, means request is ready to be served.
-        try:
-            return sa_response_builder.get_response()
-        except SARBRequestInvalidException as e:
-            raise HTTPError(400, e.args[0]) from e
-        except RDBInvalidRequestException as e:
-            raise HTTPError(404, e.args[0]) from e
-        except RDBServerException as e:
-            raise HTTPError(500, e.args[0]) from e
-        except SARBRequestInprogressException as e:
-            # Request is in progress is not error, so lets not raise exception.
-            return {'error': e.args[0]}, 202
-        except SARBRequestTimeoutException as e:
-            raise HTTPError(408, e.args[0]) from e
-
-    @staticmethod
-    def post():
-        """Handle /api/v2/stack-analyses POST REST API."""
-        sa_post_request = None
-        try:
-            # 1. Validate and build request object.
-            sa_post_request = StackAnalysesPostRequest(**request.form, **request.files)
-
-        except ValidationError as e:
-            # 2. Check of invalid params and raise exception.
-            error_message = 'Validation error(s) in the request.'
-            for error in e.errors():
-                error_message += ' {} => {}.'.format(error['loc'][0], error['msg'])
-            logger.exception(error_message)
-            raise HTTPError(400, error=error_message) from e
-
-        # 3. Initiate stack analyses object
-        sa = StackAnalyses(sa_post_request)
-
-        # 4. Post request
-        try:
-            return sa.post_request()
-        except SAInvalidInputException as e:
-            raise HTTPError(400, e.args[0]) from e
-        except BackboneServerException as e:
-            raise HTTPError(500, e.args[0])
-        except RDBSaveException as e:
-            raise HTTPError(500, e.args[0])
+    # 4. Post request
+    try:
+        return jsonify(sa.post_request())
+    except SAInvalidInputException as e:
+        raise HTTPError(400, e.args[0]) from e
+    except BackboneServerException as e:
+        raise HTTPError(500, e.args[0])
+    except RDBSaveException as e:
+        raise HTTPError(500, e.args[0])
 
 
 @api_v2.route('/_error')
@@ -311,17 +312,10 @@ add_resource_no_matter_slashes(ComponentAnalysesApi,
                                '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
 
-# Stack analyses routes
-add_resource_no_matter_slashes(StackAnalysesApi,
-                               '/stack-analyses',
-                               endpoint='post_stack_analyses')
-add_resource_no_matter_slashes(StackAnalysesApi,
-                               '/stack-analyses/<external_request_id>',
-                               endpoint='get_stack_analyses')
-
 
 # ERROR HANDLING
 @api_v2.errorhandler(HTTPError)
+@api_v2.errorhandler(AuthError)
 def handle_http_error(err):
     """Handle HTTPError exceptions."""
     try:

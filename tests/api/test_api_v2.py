@@ -205,9 +205,24 @@ class TestStackAnalysesGetApi(unittest.TestCase):
 
     @patch('bayesian.utility.db_gateway.fetch_sa_request', side_effect=Exception('mock exception'))
     def test_get_request_data_exception(self, _fetch_sa_request):
-        """Test get SA request data with return as 404 error."""
+        """Test get SA request data with return as 500 error."""
         response = self.client.get(api_route_for('/stack-analyses/request_id'))
         self.assertEqual(response.status_code, 500)
+
+    def test_get_request_invalid_url(self):
+        """Test get SA request data with return as 404 error."""
+        response = self.client.get(api_route_for('/stack-analyses/request_id/sdf/dsfds'))
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request_missing_id(self):
+        """Test get SA request data with return as 400 error for missing request id."""
+        response = self.client.get(api_route_for('/stack-analyses'))
+        self.assertEqual(response.status_code, 400)
+
+    def test_get_request_with_slash(self):
+        """Test get SA request data with return as 404 error for invalid url."""
+        response = self.client.get(api_route_for('/stack-analyses/'))
+        self.assertEqual(response.status_code, 404)
 
 
 @pytest.mark.usefixtures('client_class')
@@ -223,6 +238,11 @@ class TestStackAnalysesPostApi(unittest.TestCase):
             'file_path': '/tmp/bin',
             'ecosystem': 'npm'
         }
+
+    def test_get_request_post(self):
+        """Test get SA request data with return as 405 error."""
+        response = self.client.post(api_route_for('/stack-analyses/request_id'))
+        self.assertEqual(response.status_code, 405)
 
     def test_sa_post_missing_manifest_params(self):
         """Post request without manifest param. Expecting http error 400."""
