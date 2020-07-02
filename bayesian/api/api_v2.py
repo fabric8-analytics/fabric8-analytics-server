@@ -35,7 +35,8 @@ from bayesian.exceptions import HTTPError
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
-                            check_for_accepted_ecosystem)
+                            check_for_accepted_ecosystem,
+                            get_ecosystem_from_manifest)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
                                                      SARBRequestInvalidException,
@@ -243,12 +244,19 @@ def stack_analyses():
         sa_post_request = StackAnalysesPostRequest(**request.form, **request.files)
 
     except ValidationError as e:
-        # 2. Check of invalid params and raise exception.
+        # Check of invalid params and raise exception.
         error_message = 'Validation error(s) in the request.'
         for error in e.errors():
             error_message += ' {} => {}.'.format(error['loc'][0], error['msg'])
         logger.exception(error_message)
         raise HTTPError(400, error=error_message) from e
+
+    # 2. Check if ecosystem and manifest file name match
+    ecosystem_from_manifest = get_ecosystem_from_manifest(sa_post_request.manifest.filename)
+    if sa_post_request.ecosystem != ecosystem_from_manifest:
+        raise HTTPError(400, 'Error processing request. Manifest {} and ecosystem {} does '
+                             'not match'.format(sa_post_request.manifest.filename,
+                                                sa_post_request.ecosystem))
 
     # 3. Initiate stack analyses object
     sa = StackAnalyses(sa_post_request)
