@@ -43,9 +43,13 @@ class StackAnalysesPostRequest(BaseModel):
     )
 
     class Config:
-        """Override config to allow arbitoary type i.e., FileStorage."""
+        """Validation configuration for model."""
 
+        # Override config to allow arbitoary type i.e., FileStorage.
         arbitrary_types_allowed = True
+
+        # Min length of string should be 1 as '/' is a valid path
+        min_anystr_length = 1
 
     @validator('manifest')
     def manifest_file_name_must_be_valid(v):
