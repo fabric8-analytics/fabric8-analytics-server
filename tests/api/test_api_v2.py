@@ -253,6 +253,15 @@ class TestStackAnalysesPostApi(unittest.TestCase):
                                     content_type='multipart/form-data')
         self.assertEqual(response.status_code, 400)
 
+    def test_sa_post_empty_file_path(self):
+        """Post request with empty file path. Expecting http error 400."""
+        data = self.post_data
+        data['file_path'] = ''
+        response = self.client.post(api_route_for('/stack-analyses'),
+                                    data=data,
+                                    content_type='multipart/form-data')
+        self.assertEqual(response.status_code, 400)
+
     def test_sa_post_invalid_manifest_file_name(self):
         """Post request with invalid manifest file name. Expecting http error 400."""
         data = {
