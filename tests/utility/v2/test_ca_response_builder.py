@@ -132,30 +132,58 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
             self.eco, self.pkg, self.ver).generate_recommendation(mocked_response)
         self.assertDictEqual(response, {})
 
-    def test_get_message_with_pvt_vul(self):
-        """Test Message with Private Vulnerability."""
-        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
+    def test_get_message_with_pvt_vul_equal_len(self):
+        """Test Message with Private Vulnerability equal len of severities and vul count."""
+        response_obj = ComponentAnalysisResponseBuilder("pypi", "django", "1.1")
         response_obj.pvt_vul = 1
         response_obj.severity = ['high']
         message = response_obj.get_message()
-        self.assertIsInstance(message, str)
+        ideal_msg = "django - 1.1 has 1 security advisory having high severity. "
+        self.assertEqual(message, ideal_msg)
 
-    def test_get_message_with_public_vul(self):
-        """Test Message with Public Vulnerability."""
-        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
-        response_obj.public_vul = 1
+    def test_get_message_with_pvt_vul_unequal_len(self):
+        """Test Message with Private Vulnerability unequal len of severities and vul count."""
+        response_obj = ComponentAnalysisResponseBuilder("pypi", "django", "1.1")
+        response_obj.pvt_vul = 2
         response_obj.severity = ['high']
         message = response_obj.get_message()
-        self.assertIsInstance(message, str)
+        ideal_msg = "django - 1.1 has 2 security advisory with 1 having high severity. "
+        self.assertEqual(message, ideal_msg)
+
+    def test_get_message_with_public_vul_equal(self):
+        """Test Message with Public Vulnerability equal len of severities and vul count."""
+        response_obj = ComponentAnalysisResponseBuilder("pypi", "django", "1.1")
+        response_obj.public_vul = 1
+        response_obj.nocve_version = "3.1"
+        response_obj.severity = ['high']
+        message = response_obj.get_message()
+        ideal_msg = "django - 1.1 has 1 known security vulnerability " \
+                    "having high severity. Recommendation: use version 3.1."
+        self.assertEqual(message, ideal_msg)
+
+    def test_get_message_with_public_vul_unequal(self):
+        """Test Message with Public Vulnerability unequal len of severities and vul count."""
+        response_obj = ComponentAnalysisResponseBuilder("pypi", "django", "1.1")
+        response_obj.public_vul = 3
+        response_obj.nocve_version = "3.1"
+        response_obj.severity = ['high']
+        message = response_obj.get_message()
+        print("Mesa", message)
+        ideal_msg = "django - 1.1 has 3 known security vulnerability with 1 " \
+                    "having high severity. Recommendation: use version 3.1."
+        self.assertEqual(message, ideal_msg)
 
     def test_get_message_with_both_vul(self):
         """Test Message with Both Vulnerability."""
-        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
+        response_obj = ComponentAnalysisResponseBuilder("pypi", "django", "1.1")
         response_obj.public_vul = 1
         response_obj.pvt_vul = 1
         response_obj.severity = ['high']
         message = response_obj.get_message()
-        self.assertIsInstance(message, str)
+        ideal_msg = "django - 1.1 has 1 known security vulnerability and 1 " \
+                    "security advisory with 1 having high severity. " \
+                    "No recommended version."
+        self.assertEqual(message, ideal_msg)
 
     def test_get_version_without_cves(self):
         """Test Get version without cves."""
