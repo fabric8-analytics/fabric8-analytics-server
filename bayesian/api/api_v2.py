@@ -246,7 +246,7 @@ def stack_analyses():
         # 2. Check of invalid params and raise exception.
         error_message = 'Validation error(s) in the request.'
         for error in e.errors():
-            error_message += ' {} => {}.'.format(error['loc'][0], error['msg'])
+            error_message += ' {}.'.format(error['msg'])
         logger.exception(error_message)
         raise HTTPError(400, error=error_message) from e
 

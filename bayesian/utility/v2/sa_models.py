@@ -18,9 +18,9 @@
 
 from enum import Enum
 from typing import Optional
-from pydantic import Field, BaseModel, validator
+from pydantic import Field, BaseModel, root_validator
 from werkzeug.datastructures import FileStorage
-from bayesian.utils import resolved_files_exist
+from bayesian.utils import resolved_files_exist, get_ecosystem_from_manifest
 
 
 class Ecosystem(str, Enum):
@@ -51,10 +51,21 @@ class StackAnalysesPostRequest(BaseModel):
         # Min length of string should be 1 as '/' is a valid path
         min_anystr_length = 1
 
-    @validator('manifest')
-    def manifest_file_name_must_be_valid(v):
-        """Check if manifest file name is in supported list."""
-        if not resolved_files_exist(v.filename):
+    @root_validator()
+    def check_input_data(cls, values):  # noqa: V106 - Ignore 'cls' not used check
+        """Validate input data for ecosystem and manifest file."""
+        ecosystem, manifest = values.get('ecosystem'), values.get('manifest')
+
+        if manifest is None:
+            raise ValueError('Error processing request. Manifest is missing')
+
+        if not resolved_files_exist(manifest.filename):
             raise ValueError('Error processing request. Manifest is missing its value {} is '
-                             'invalid / not supported'.format(v.filename))
-        return v
+                             'invalid / not supported'.format(manifest.filename))
+
+        ecosystem_from_manifest = get_ecosystem_from_manifest(manifest.filename)
+        if ecosystem != ecosystem_from_manifest:
+            raise ValueError('Error processing request. Manifest {} and ecosystem {} does '
+                             'not match'.format(manifest.filename, ecosystem))
+
+        return values
