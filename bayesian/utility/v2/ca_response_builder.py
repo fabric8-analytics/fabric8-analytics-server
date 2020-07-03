@@ -114,13 +114,12 @@ class ComponentAnalysisResponseBuilder:
         self.severity = self.get_severity()
         return self.generate_response()
 
-    def get_message(self):
+    def get_message(self) -> str:
         """Build Message.
 
         Message to be shown in Component Analyses Tooltip.
         :return: Message string.
         """
-        logger.info("Generating Message String.")
         message = f"{self.package} - {self.version} has "
 
         if self.public_vul and self.pvt_vul:
@@ -129,29 +128,43 @@ class ComponentAnalysisResponseBuilder:
             message += f"and {self.pvt_vul} security advisory with {len(self.severity)} " \
                        f"having {self.severity[0]} severity. "
 
-            if not self.nocve_version:
-                message += 'No recommended version.'
-                return message
-
-            message += f'Recommendation: use version {self.nocve_version}.'
+            message += self.get_recommendation()
             return message
 
         elif self.public_vul:
             # Add Public Vulnerability Info only
-            message += f"{self.public_vul} known security vulnerability with " \
-                       f"{len(self.severity)} having {self.severity[0]} severity. "
+            message += f"{self.public_vul} known security vulnerability"
 
-            if not self.nocve_version:
-                message += 'No recommended version.'
-                return message
+            message += self.append_with_severity_count(self.public_vul)
 
-            message += f'Recommendation: use version {self.nocve_version}.'
+            message += f" having {self.severity[0]} severity. "
+
+            message += self.get_recommendation()
             return message
 
         elif self.pvt_vul:
             # Add Private Vulnerability Info only
             message += f"{self.pvt_vul} security advisory"
-            message += f" with {len(self.severity)} having {self.severity[0]} severity. "
+
+            message += self.append_with_severity_count(self.pvt_vul)
+
+            message += f" having {self.severity[0]} severity. "
+        return message
+
+    def append_with_severity_count(self, vul_count) -> str:
+        """Append 'with {number} to message."""
+        if vul_count != len(self.severity):
+            message = f" with {len(self.severity)}"
+            return message
+        return ""
+
+    def get_recommendation(self) -> str:
+        """Generate Recommendation message."""
+        if not self.nocve_version:
+            message = 'No recommended version.'
+            return message
+
+        message = f'Recommendation: use version {self.nocve_version}.'
         return message
 
     def get_version_without_cves(self, latest_non_cve_versions):
@@ -165,6 +178,7 @@ class ComponentAnalysisResponseBuilder:
         )
         highest_version = ''
         for version in latest_non_cve_versions:
+
             graph_version_tuple = version_info_tuple(
                 convert_version_to_proper_semantic(version)
             )
