@@ -51,7 +51,6 @@ class StackAnalysesPostRequest(BaseModel):
         # Min length of string should be 1 as '/' is a valid path
         min_anystr_length = 1
 
-
     @root_validator()
     def check_input_data(cls, values):  # noqa: V106 - Ignore 'cls' not used check
         """Validate input data for ecosystem and manifest file."""
