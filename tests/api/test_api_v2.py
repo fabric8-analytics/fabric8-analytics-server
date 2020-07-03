@@ -335,14 +335,8 @@ class TestStackAnalysesPostApi(unittest.TestCase):
                                     content_type='multipart/form-data')
         self.assertEqual(response.status_code, 400)
 
-    @patch('bayesian.api.api_v2.StackAnalyses.post_request')
-    def test_sa_post_manifest_ecosystem_mismatch(self, _post_request):
+    def test_sa_post_manifest_ecosystem_mismatch(self):
         """Success post request with all valid data."""
-        _post_request.return_value = {
-            'status': 'success',
-            'submitted_at': 'submitted_date_time',
-            'id': 'dummy_id'
-        }
         data = self.post_data
         data['ecosystem'] = 'pypi'
         response = self.client.post(api_route_for('/stack-analyses'),
