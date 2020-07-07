@@ -113,12 +113,10 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
     @patch('bayesian.utility.v2.ca_response_builder'
            '.ComponentAnalysisResponseBuilder.get_vulnerabilities_count')
     @patch('bayesian.utility.v2.ca_response_builder'
-           '.ComponentAnalysisResponseBuilder.get_version_without_cves')
-    @patch('bayesian.utility.v2.ca_response_builder'
            '.ComponentAnalysisResponseBuilder.get_cve_maps', return_value=[])
     @patch('bayesian.utility.v2.ca_response_builder'
            '.ComponentAnalysisResponseBuilder.has_cves', return_value=True)
-    def test_generate_recommendation_same_version(self, _hascve, _cvemaps, _nocve,
+    def test_generate_recommendation_same_version(self, _hascve, _cvemaps,
                                                   _vulcount, _severity, _response):
         """Test Function for Generate recommendation_same_version."""
         _vulcount.return_value = (0, 0)
@@ -184,18 +182,6 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
                     "security advisory with 1 having high severity. " \
                     "No recommended version."
         self.assertEqual(message, ideal_msg)
-
-    def test_get_version_without_cves(self):
-        """Test Get version without cves."""
-        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
-        version = response_obj.get_version_without_cves(['1.1'])
-        self.assertEqual(version, '1.1')
-
-    def test_get_version_without_cves_highest(self):
-        """Test Get highest version without cves."""
-        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
-        version = response_obj.get_version_without_cves(['2', '3'])
-        self.assertEqual(version, '3')
 
     @patch('bayesian.utility.v2.ca_response_builder.'
            'ComponentAnalysisResponseBuilder.get_cve_maps')

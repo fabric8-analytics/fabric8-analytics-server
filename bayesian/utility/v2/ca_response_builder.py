@@ -18,7 +18,6 @@
 from urllib.parse import quote
 import logging
 from bayesian.utility.db_gateway import GraphAnalyses
-from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic
 
 logger = logging.getLogger(__file__)
 
@@ -109,7 +108,7 @@ class ComponentAnalysisResponseBuilder:
         if (not self.has_cves()) or not bool(latest_non_cve_versions):
             # If Package has No cves or No Latest Non CVE Versions.
             return dict(recommendation={})
-        self.nocve_version = self.get_version_without_cves(latest_non_cve_versions)
+        self.nocve_version = latest_non_cve_versions
         self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
         self.severity = self.get_severity()
         return self.generate_response()
@@ -166,33 +165,6 @@ class ComponentAnalysisResponseBuilder:
 
         message = f'Recommendation: use version {self.nocve_version}.'
         return message
-
-    def get_version_without_cves(self, latest_non_cve_versions):
-        """Return higher version which doesn't have any CVEs. None if there is no such version.
-
-        :return: Highest Version out of all latest_non_cve_versions.
-        """
-        logger.info("All Versions with Vulnerabilities.")
-        input_version_tuple = version_info_tuple(
-            convert_version_to_proper_semantic(self.version)
-        )
-        highest_version = ''
-        for version in latest_non_cve_versions:
-
-            graph_version_tuple = version_info_tuple(
-                convert_version_to_proper_semantic(version)
-            )
-            if graph_version_tuple > input_version_tuple:
-                if not highest_version:
-                    highest_version = version
-                highest_version_tuple = version_info_tuple(
-                    convert_version_to_proper_semantic(highest_version)
-                )
-                # If version to recommend is closer to what a user is using then, use less than
-                # If recommendation is to show highest version then, use greater than
-                if graph_version_tuple > highest_version_tuple:
-                    highest_version = version
-        return highest_version
 
     def has_cves(self):
         """Check if package has Vulnerability.
