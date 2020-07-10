@@ -58,6 +58,7 @@ raven[flask]==6.10.0      # via -r requirements.in
 requests-futures==0.9.9   # via -r requirements.in
 requests==2.21.0          # via codecov, pygithub, requests-futures
 semantic-version==2.6.0   # via -r requirements.in
+selinon==1.0.0
 six==1.12.0               # via cryptography, flask-appconfig, flask-cors, flask-restful, mando, tenacity
 smmap2==2.0.5             # via gitdb2
 speaklater==1.3           # via flask-babelex
@@ -67,3 +68,7 @@ urllib3==1.24.1           # via requests
 werkzeug==0.15.2          # via flask
 wrapt==1.11.1             # via deprecated
 wtforms==2.2.1            # via flask-wtf
+git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@fdc0435
+git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@ad3dab5
+git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@1f45e6f
+git+https://git@github.com/fabric8-analytics/fabric8-analytics-version-comparator.git#egg=f8a_version_comparator
