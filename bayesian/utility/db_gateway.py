@@ -18,6 +18,7 @@
 
 import os
 import json
+import time
 import logging
 from datetime import datetime
 from requests import post
@@ -29,7 +30,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from f8a_worker.models import StackAnalysisRequest
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 gremlin_url = "http://{host}:{port}".format(
     host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
     port=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_PORT", "8182"))
@@ -90,7 +91,10 @@ class RdbAnalyses:
         """Read request data for given request id from RDS."""
         db_result = None
         try:
+            start = time.time()
             db_result = fetch_sa_request(rdb, self.request_id)
+            logger.info('{r} took {t:.2f} seconds to fetch data'.format(
+                r=self.request_id, t=time.time() - start))
         except Exception as e:
             error_message = 'Internal database server error for {}.'.format(self.request_id)
             logger.exception(error_message)
@@ -114,6 +118,7 @@ class RdbAnalyses:
     def save_post_request(self):
         """Save the post request data into RDS."""
         try:
+            start = time.time()
             insert_stmt = insert(StackAnalysisRequest).values(
                 id=self.request_id,
                 submitTime=self.submit_time,
@@ -126,6 +131,8 @@ class RdbAnalyses:
             )
             rdb.session.execute(do_update_stmt)
             rdb.session.commit()
+            logger.info('{r} took {t:.2f} seconds to save data'.format(
+                r=self.request_id, t=time.time() - start))
         except SQLAlchemyError as e:
             logger.exception("Error updating log for request {}, exception {}".format(
                 self.request_id, e))

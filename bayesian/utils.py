@@ -40,7 +40,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from github import Github, BadCredentialsException, GithubException, RateLimitExceededException
 from git import Repo, Actor
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
@@ -68,7 +68,7 @@ def server_run_flow(flow_name, flow_args):
     :param flow_args: arguments for the flow
     :return: dispatcher ID handling flow
     """
-    current_app.logger.debug('Running flow {}'.format(flow_name))
+    logger.debug('Running flow {}'.format(flow_name))
     start = datetime.datetime.now()
 
     init_celery(result_backend=False)
@@ -76,7 +76,7 @@ def server_run_flow(flow_name, flow_args):
 
     # compute the elapsed time
     elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    current_app.logger.debug("It took {t} seconds to start {f} flow.".format(
+    logger.debug("It took {t:.2f} seconds to start {f} flow.".format(
         t=elapsed_seconds, f=flow_name))
     return dispacher_id
 
@@ -400,8 +400,8 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
         epv = "{e}/{p}/{v}".format(e=ecosystem, p=package, v=version)
-        logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
-                                                                    t=elapsed_seconds))
+        logger.debug("Gremlin request {p} took {t:.2f} seconds.".format(p=epv,
+                                                                        t=elapsed_seconds))
 
     resp = generate_recommendation(clubbed_data, package, version)
     return resp
@@ -579,13 +579,12 @@ def get_next_component_from_graph(ecosystem, user_id, company):
     try:
         graph_req = post(gremlin_url, data=json.dumps(payload))
     except Exception as e:
-        current_app.logger.debug(' '.join([type(e), ':', str(e)]))
+        logger.debug(' '.join([type(e), ':', str(e)]))
         return None
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        current_app.logger.debug("Gremlin request for next component for"
-                                 " ecosystem {e} took {t} seconds."
-                                 .format(e=ecosystem, t=elapsed_seconds))
+        logger.debug("Gremlin request for next component for ecosystem {e} took {t:.2f} "
+                     "seconds.".format(e=ecosystem, t=elapsed_seconds))
 
     resp = graph_req.json()
 
@@ -624,9 +623,8 @@ def set_tags_to_component(ecosystem, package, tags, user_id, company):
         return False, ' '.join([type(e), ':', str(e)])
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        current_app.logger.debug(("Gremlin request for setting tags to component for ecosystem"
-                                  " {e} took {t} seconds."
-                                  .format(e=ecosystem, t=elapsed_seconds)))
+        logger.debug(("Gremlin request for setting tags to component for ecosystem"
+                      " {e} took {t:.2f} seconds.".format(e=ecosystem, t=elapsed_seconds)))
     return True, None
 
 
@@ -666,9 +664,9 @@ def retrieve_worker_results(rdb, external_request_id):
 
     # compute elapsed time
     elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    msg = "It took {t} seconds to retrieve " \
-          "all worker results for {r}.".format(t=elapsed_seconds, r=external_request_id)
-    current_app.logger.debug(msg)
+    msg = "{r} took {t:.2f} seconds to retrieve all worker results.".format(
+        r=external_request_id, t=elapsed_seconds)
+    logger.debug(msg)
 
     return results
 
@@ -690,9 +688,9 @@ def retrieve_worker_result(rdb, external_request_id, worker):
 
     # compute elapsed time
     elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    msg = "It took {t} seconds to retrieve {w} " \
-          "worker results for {r}.".format(t=elapsed_seconds, w=worker, r=external_request_id)
-    current_app.logger.debug(msg)
+    msg = "{r} took {t:.2f} seconds to retrieve {w} worker results.".format(
+        r=external_request_id, t=elapsed_seconds, w=worker)
+    logger.debug(msg)
 
     return result_dict
 
@@ -866,7 +864,7 @@ class RecommendationReason:
                 This should track any future occurence of this[1] error:
                 Error:https://github.com/openshiftio/openshift.io/issues/2167
                 """
-                current_app.logger.error(
+                logger.error(
                     "Stack Count for {} when confidence=None is {}".format(name, stack_count))
 
             # 0% confidence is as good as not showing it on the UI.
@@ -920,7 +918,7 @@ def convert_version_to_proper_semantic(version, package_name=None):
         version = version.replace('-', '+', 3)
         conv_version = sv.Version.coerce(version)
     except ValueError:
-        current_app.logger.info(
+        logger.info(
             "Unexpected ValueError for the package {} due to version {}"
             .format(package_name, version))
         pass
@@ -960,7 +958,7 @@ def select_latest_version(latest='', libio='', package_name=None):
         """In case of failure let's not show any latest version at all.
         Also, no generation of stack trace,
         as we are only intersted in the package that is causing the error."""
-        current_app.logger.info(
+        logger.info(
             "Unexpected ValueError while selecting latest version for package {}. Debug:{}"
             .format(package_name,
                     {'latest': latest, 'libio': libio}))
@@ -990,9 +988,9 @@ def fetch_file_from_github(url, filename, branch='master'):
             'content': response.content.decode('utf-8')
         }]
     except ValueError:
-        current_app.logger.error('Error fetching file from given url')
+        logger.error('Error fetching file from given url')
     except Exception as e:
-        current_app.logger.error('ERROR: {}'.format(str(e)))
+        logger.error('ERROR: {}'.format(str(e)))
 
 
 def fetch_file_from_github_release(url, filename, token, ref=None):
@@ -1023,10 +1021,10 @@ def fetch_file_from_github_release(url, filename, token, ref=None):
         except GithubException as e:
             HTTPError(404, 'Github repository does not exist {}'.format(str(e)))
         except Exception as e:
-            current_app.logger.error('An Exception occured while fetching file github release {}'
-                                     .format(str(e)))
+            logger.error('An Exception occured while fetching file github release {}'
+                         .format(str(e)))
     else:
-        current_app.logger.error("Github access token is not provided")
+        logger.error("Github access token is not provided")
 
 
 def is_valid(param):

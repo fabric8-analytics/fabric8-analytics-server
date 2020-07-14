@@ -48,6 +48,8 @@ from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
                                          RDBInvalidRequestException, RDBServerException)
 
 
+logger = logging.getLogger(__name__)
+
 errors = {
     'AuthError': {
         'status': 401,
@@ -72,18 +74,20 @@ METRICS_SERVICE_URL = "http://{}:{}".format(
 worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
 _session = FuturesSession(max_workers=worker_count)
 _resource_paths = []
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 @api_v2.route('/readiness')
 def readiness():
     """Handle the /readiness REST API call."""
+    logger.debug('/readiness endpoint accessed')
     return jsonify({}), 200
 
 
 @api_v2.route('/liveness')
 def liveness():
     """Handle the /liveness REST API call."""
+    logger.debug('/liveness endpoint accessed')
     return jsonify({}), 200
 
 
@@ -205,7 +209,8 @@ class ComponentAnalysesApi(Resource):
 @login_required
 def stack_analyses_with_request_id(external_request_id):
     """Handle stack analyses report fetch api."""
-    logger.debug("GET request_id: {}".format(external_request_id))
+    start = time.time()
+    logger.debug("[GET] /stack-analyses/{}".format(external_request_id))
 
     # 1. Build response builder with id and RDB object.
     sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
@@ -213,7 +218,10 @@ def stack_analyses_with_request_id(external_request_id):
 
     # 2. If there was no exception raise, means request is ready to be served.
     try:
-        return jsonify(sa_response_builder.get_response())
+        data = sa_response_builder.get_response()
+        logger.info('{r} took {t:.2f} seconds for [GET] stack-analyses'.format(
+            r=external_request_id, t=time.time() - start))
+        return jsonify(data)
     except SARBRequestInvalidException as e:
         raise HTTPError(400, e.args[0]) from e
     except RDBInvalidRequestException as e:
@@ -234,6 +242,8 @@ def stack_analyses():
 
     GET method would raise error to provide missing request id to the user.
     """
+    logger.debug("[{}] /stack-analyses accessed".format(request.method))
+    start = time.time()
     if request.method == 'GET':
         raise HTTPError(400, error="Request id missing")
 
@@ -255,7 +265,10 @@ def stack_analyses():
 
     # 4. Post request
     try:
-        return jsonify(sa.post_request())
+        data = sa.post_request()
+        logger.info('{r} took {t:.2f} seconds for [POST] stack-analyses'.format(
+            r=data['id'], t=time.time() - start))
+        return jsonify(data)
     except SAInvalidInputException as e:
         raise HTTPError(400, e.args[0]) from e
     except BackboneServerException as e:

@@ -1,8 +1,12 @@
 """Authorization token handling."""
-from flask import current_app, request
+import logging
+from flask import request
 from requests import get
 
 from .default_config import AUTH_URL
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_access_token(service_name):
@@ -21,4 +25,4 @@ def get_access_token(service_name):
             return {"access_token": None}
 
     except Exception:
-        current_app.logger.error("Unable to connect to Auth service")
+        logger.error("Unable to connect to Auth service")

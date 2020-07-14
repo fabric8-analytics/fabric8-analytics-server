@@ -11,7 +11,7 @@ from sqlalchemy import insert, update
 from f8a_worker.models import (UserDetails)
 from bayesian import rdb
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 @retry(reraise=True, stop=tenacity.stop_after_attempt(3), wait=tenacity.wait_fixed(1))

@@ -17,10 +17,11 @@
 """Backbone server interface to be used by stack analyses API v2 flow."""
 
 import os
+import time
 import logging
 from requests_futures.sessions import FuturesSession
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class BackboneServer:
@@ -44,10 +45,13 @@ class BackboneServer:
                 cls.backbone_host, body, params))
 
             # Post Backbone stack_aggregator call.
+            start = time.time()
             BackboneServer.session.post(
                 '{}/api/v2/stack_aggregator'.format(BackboneServer.backbone_host),
                 json=body,
                 params=params)
+            logger.debug('{r} took {t:.2f} seconds for /api/v2/stack_aggregator'.format(
+                r=body['external_request_id'], t=time.time() - start))
         except Exception as e:
             logger.exception('Aggregator api throws exception {}'.format(e))
             raise BackboneServerException('Error while reaching aggregator service') from e
@@ -60,10 +64,13 @@ class BackboneServer:
                 cls.backbone_host, body, params))
 
             # Post Backbone recommender call.
+            start = time.time()
             BackboneServer.session.post(
                 '{}/api/v2/recommender'.format(BackboneServer.backbone_host),
                 json=body,
                 params=params)
+            logger.debug('{r} took {t:.2f} seconds for /api/v2/recommender'.format(
+                r=body['external_request_id'], t=time.time() - start))
         except Exception as e:
             logger.exception('Recommender api throws exception {}'.format(e))
             raise BackboneServerException('Error while reaching recommender service') from e

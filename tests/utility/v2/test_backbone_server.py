@@ -38,7 +38,8 @@ class TestBackboneServer(unittest.TestCase):
            return_value={})
     def test_agg_request_success(self, _post):
         """Test aggregate post request with correct data."""
-        self.assertEqual(BackboneServer.post_aggregate_request({}, {}), None)
+        self.assertEqual(BackboneServer.post_aggregate_request(
+            {'external_request_id': 'test_request_id'}, {}), None)
 
     @patch('bayesian.utility.v2.backbone_server.BackboneServer.session.post',
            side_effect=Exception('Mock exception'))
@@ -53,4 +54,5 @@ class TestBackboneServer(unittest.TestCase):
            return_value={})
     def test_recm_request_success(self, _post):
         """Test recommendation post request with correct data."""
-        self.assertEqual(BackboneServer.post_recommendations_request({}, {}), None)
+        self.assertEqual(BackboneServer.post_recommendations_request(
+            {'external_request_id': 'test_request_id'}, {}), None)

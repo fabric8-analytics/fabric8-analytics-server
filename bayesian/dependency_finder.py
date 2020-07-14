@@ -2,9 +2,9 @@
 
 import os
 import json
+import logging
 from selinon import FatalTaskError
 
-from flask import current_app
 from f8a_worker.manifests import get_manifest_descriptor_by_filename
 from f8a_worker.models import Ecosystem
 from f8a_worker.solver import get_ecosystem_solver
@@ -17,6 +17,9 @@ from botocore.exceptions import ClientError
 
 from .utils import generate_content_hash
 from .exceptions import HTTPError
+
+
+logger = logging.getLogger(__name__)
 
 
 class DependencyFinder():
@@ -93,7 +96,7 @@ class DependencyFinder():
         try:
             versions = solver.solve(deps)
         except Exception:
-            current_app.logger.error("Dependencies could not be resolved: '{}'" .format(deps))
+            logger.error("Dependencies could not be resolved: '{}'" .format(deps))
             raise
         return [{"package": k, "version": v} for k, v in versions.items()]
 
@@ -106,15 +109,14 @@ class DependencyFinder():
             content_hash = None
             if source == 'osio':
                 content_hash = generate_content_hash(manifest['content'])
-                current_app.logger.info("{} file digest is {}".format(manifest['filename'],
-                                                                      content_hash))
+                logger.info("{} file digest is {}".format(manifest['filename'], content_hash))
 
                 s3 = AmazonS3(bucket_name='boosters-manifest')
                 try:
                     s3.connect()
                     manifest['content'] = s3.retrieve_blob(content_hash).decode('utf-8')
                 except ClientError as e:
-                    current_app.logger.error("Unexpected error while retrieving S3 data: %s" % e)
+                    logger.error("Unexpected error while retrieving S3 data: %s" % e)
                     raise
 
             with TemporaryDirectory() as temp_path:
@@ -208,18 +210,18 @@ class DependencyFinder():
         content = json.loads(manifest['content'])
         if ecosystem == 'pypi' or ecosystem == 'golang':
             if not content:
-                current_app.logger.warning(
+                logger.warning(
                     "No content provided for manifest file {}".format(manifest['filename']))
             if type(content) != list:
                 raise HTTPError(400, "manifest file must be in the format of "
                                 "[{package: name, version: ver, deps: []}, ]")
             for item in content:
                 if not all([item.get('package'), item.get('version') is not None]):
-                    current_app.logger.error(item)
+                    logger.error(item)
                     raise HTTPError(
                         400, "Supported format is {package:name, version:ver, deps:[]}")
                 for transitive in item.get('deps', []):
                     if not all([item.get('package'), item.get('version') is not None]):
-                        current_app.logger.error(item)
+                        logger.error(item)
                         raise HTTPError(
                             400, "Supported format is {package:name, version:ver}")

@@ -20,7 +20,7 @@ import logging
 from bayesian.utility.db_gateway import GraphAnalyses
 from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class ComponentAnalyses:

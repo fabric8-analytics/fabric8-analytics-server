@@ -18,10 +18,17 @@ def setup_logging(app):
     """Set up logger, the log level is read from the environment variable."""
     if not app.debug:
         handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter(
+            '[%(asctime)s] %(levelname)s in %(pathname)s:%(lineno)d: %(message)s'))
         log_level = os.environ.get('FLASK_LOGGING_LEVEL', logging.getLevelName(logging.WARNING))
         handler.setLevel(log_level)
         app.logger.addHandler(handler)
 
+
+# Set root logger format for uniform log format.
+log_level = os.environ.get('FLASK_LOGGING_LEVEL', logging.getLevelName(logging.WARNING))
+logging.basicConfig(level=log_level,
+                    format='[%(asctime)s] %(levelname)s in %(pathname)s:%(lineno)d: %(message)s')
 
 # we must initialize DB here to not create import loop with .auth...
 #  flask really sucks at this
