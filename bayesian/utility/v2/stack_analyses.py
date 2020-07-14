@@ -106,7 +106,7 @@ class StackAnalyses():
         """Perform backbone request for stack_aggregator and recommender."""
         # Read deps and packages from manifest
         data = self._read_deps_and_packages()
-        logger.info('{} deps and packages data: {}'.format(self._new_request_id, data))
+        logger.info('{r} deps and packages data: {d}'.format(r=self._new_request_id, d=data))
 
         # Set backbone API request body and params.
         request_body = {
@@ -122,8 +122,8 @@ class StackAnalyses():
             'persist': 'true',
             'check_license': 'false'
         }
-        logger.info('{} request_body: {} request_params: {}'.format(
-            self._new_request_id, request_body, request_params))
+        logger.info('{r} request_body: {b} request_params: {p}'.format(
+            r=self._new_request_id, b=request_body, p=request_params))
 
         # Post Backbone stack_aggregator call.
         BackboneServer.post_aggregate_request(request_body, request_params)
