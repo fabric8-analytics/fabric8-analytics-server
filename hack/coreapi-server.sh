@@ -16,7 +16,7 @@ exec mod_wsgi-express start-server \
                       --threads 1 \
                       ${!F8A_DEBUG:---reload-on-changes} \
                       --access-log \
-                      --access-log-format "%h %l %u %t \"%r\" %>s %b %{Referer}i \"%{User-agent}i\"" \
+                      --access-log-format "[%{%Y-%m-%d %H:%M:%S,}t%{msec_frac}t] INFO Access from %h %r %>s %b %{Referer}i \"%{User-agent}i\"" \
                       --error-log-format "%M" \
                       --log-to-terminal \
                       --python-eggs /home/coreapi \
