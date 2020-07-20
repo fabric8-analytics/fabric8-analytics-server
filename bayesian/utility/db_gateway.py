@@ -131,8 +131,7 @@ class RdbAnalyses:
             rdb.session.commit()
             logger.info('%s took %f seconds to save data', self.request_id, time.time() - start)
         except SQLAlchemyError as e:
-            logger.exception('%s Error updating log, exception %s',
-                             self.request_id, str(e))
+            logger.exception('%s Error updating log, exception %s', self.request_id, str(e))
             raise RDBSaveException('Error while saving request {}'.format(self.request_id)) from e
 
 

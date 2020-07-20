@@ -25,4 +25,4 @@ def get_access_token(service_name):
             return {"access_token": None}
 
     except Exception:
-        logger.error("Unable to connect to Auth service")
+        logger.error('Unable to connect to Auth service')

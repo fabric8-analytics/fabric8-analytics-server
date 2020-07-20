@@ -96,7 +96,7 @@ class DependencyFinder():
         try:
             versions = solver.solve(deps)
         except Exception:
-            logger.error("Dependencies could not be resolved: '%s'", deps)
+            logger.error('Dependencies could not be resolved: "%s"', deps)
             raise
         return [{"package": k, "version": v} for k, v in versions.items()]
 
@@ -109,14 +109,14 @@ class DependencyFinder():
             content_hash = None
             if source == 'osio':
                 content_hash = generate_content_hash(manifest['content'])
-                logger.info("{} file digest is {}".format(manifest['filename'], content_hash))
+                logger.info('%s file digest is %s', manifest['filename'], content_hash)
 
                 s3 = AmazonS3(bucket_name='boosters-manifest')
                 try:
                     s3.connect()
                     manifest['content'] = s3.retrieve_blob(content_hash).decode('utf-8')
                 except ClientError as e:
-                    logger.error("Unexpected error while retrieving S3 data: %s" % e)
+                    logger.error('Unexpected error while retrieving S3 data: %s', e)
                     raise
 
             with TemporaryDirectory() as temp_path:
@@ -210,8 +210,7 @@ class DependencyFinder():
         content = json.loads(manifest['content'])
         if ecosystem == 'pypi' or ecosystem == 'golang':
             if not content:
-                logger.warning(
-                    "No content provided for manifest file %s", manifest['filename'])
+                logger.warning('No content provided for manifest file %s', manifest['filename'])
             if type(content) != list:
                 raise HTTPError(400, "manifest file must be in the format of "
                                 "[{package: name, version: ver, deps: []}, ]")

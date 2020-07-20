@@ -114,7 +114,7 @@ def readiness():
 def liveness():
     """Handle the /liveness REST API call."""
     # Check database connection
-    logger.debug("Liveness probe - trying to connect to database and execute a query")
+    logger.debug('Liveness probe - trying to connect to database and execute a query')
     rdb.session.query(Ecosystem).count()
     return jsonify({}), 200
 
@@ -990,8 +990,7 @@ class SubmitFeedback(Resource):
             return {'status': 'success'}
         except SQLAlchemyError as e:
             # TODO: please log the actual error too here
-            logger.exception(
-                'Failed to create new analysis request')
+            logger.exception('Failed to create new analysis request')
             raise HTTPError(
                 500, "Error inserting log for request {t}".format(t=stack_id)) from e
 

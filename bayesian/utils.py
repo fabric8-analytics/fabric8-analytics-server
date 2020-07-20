@@ -397,9 +397,9 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as
         logger.debug(' '.join([type(e), ':', str(e)]))
         return None
     finally:
-        elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
         epv = "{e}/{p}/{v}".format(e=ecosystem, p=package, v=version)
-        logger.debug('Gremlin request %s took %f seconds.', epv, elapsed_seconds)
+        logger.debug('Gremlin request %s took %f seconds.',
+                     epv, (datetime.datetime.now() - start).total_seconds())
 
     resp = generate_recommendation(clubbed_data, package, version)
     return resp
@@ -580,9 +580,8 @@ def get_next_component_from_graph(ecosystem, user_id, company):
         logger.debug(' '.join([type(e), ':', str(e)]))
         return None
     finally:
-        elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        logger.debug('Gremlin request for next component for ecosystem %s took %f '
-                     'seconds.', ecosystem, elapsed_seconds)
+        logger.debug('Gremlin request for next component for ecosystem %s took %f seconds.',
+                     ecosystem, (datetime.datetime.now() - start).total_seconds())
 
     resp = graph_req.json()
 
@@ -620,9 +619,8 @@ def set_tags_to_component(ecosystem, package, tags, user_id, company):
     except Exception as e:
         return False, ' '.join([type(e), ':', str(e)])
     finally:
-        elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        logger.debug('Gremlin request for setting tags to component for ecosystem '
-                     '%s took %f seconds.', ecosystem, elapsed_seconds)
+        logger.debug('Gremlin request for setting tags to component for ecosystem %s took %f '
+                     'seconds.', ecosystem, (datetime.datetime.now() - start).total_seconds())
     return True, None
 
 
@@ -1015,7 +1013,7 @@ def fetch_file_from_github_release(url, filename, token, ref=None):
             logger.error('An Exception occured while fetching file github release %s',
                          str(e))
     else:
-        logger.error("Github access token is not provided")
+        logger.error('Github access token is not provided')
 
 
 def is_valid(param):
