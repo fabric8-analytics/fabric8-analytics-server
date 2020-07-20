@@ -74,9 +74,8 @@ def server_run_flow(flow_name, flow_args):
     init_celery(result_backend=False)
     dispacher_id = run_flow(flow_name, flow_args)
 
-    # compute the elapsed time
-    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    logger.debug('It took %f seconds to start %s flow.', elapsed_seconds, flow_name)
+    logger.debug('It took %f seconds to start %s flow.',
+                 (datetime.datetime.now() - start).total_seconds(), flow_name)
     return dispacher_id
 
 
