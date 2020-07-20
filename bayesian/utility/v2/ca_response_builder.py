@@ -72,7 +72,7 @@ class ComponentAnalyses:
                 self.ecosystem, self.package, self.version).generate_recommendation(graph_response)
 
         except Exception as e:
-            logger.error(str(e))
+            logger.error('ERROR: %s', str(e))
             return None
 
 

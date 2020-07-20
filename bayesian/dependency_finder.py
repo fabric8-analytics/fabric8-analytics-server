@@ -96,7 +96,7 @@ class DependencyFinder():
         try:
             versions = solver.solve(deps)
         except Exception:
-            logger.error("Dependencies could not be resolved: '{}'" .format(deps))
+            logger.error("Dependencies could not be resolved: '%s'", deps)
             raise
         return [{"package": k, "version": v} for k, v in versions.items()]
 
@@ -211,7 +211,7 @@ class DependencyFinder():
         if ecosystem == 'pypi' or ecosystem == 'golang':
             if not content:
                 logger.warning(
-                    "No content provided for manifest file {}".format(manifest['filename']))
+                    "No content provided for manifest file %s", manifest['filename'])
             if type(content) != list:
                 raise HTTPError(400, "manifest file must be in the format of "
                                 "[{package: name, version: ver, deps: []}, ]")

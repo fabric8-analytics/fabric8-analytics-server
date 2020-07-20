@@ -67,10 +67,9 @@ class GraphAnalyses:
                 'version': version
             }
         }
-        logger.debug("Executing Gremlin calls with payload {}".format(payload))
+        logger.debug('Executing Gremlin calls with payload %s', payload)
         query_result = post(gremlin_url, data=json.dumps(payload))
-        elapsed_seconds = (datetime.now() - start).total_seconds()
-        logger.info("Gremlin request took {} seconds.".format(elapsed_seconds))
+        logger.info('Gremlin request took %f seconds', (datetime.now() - start).total_seconds())
         return query_result.json()
 
 
@@ -93,8 +92,7 @@ class RdbAnalyses:
         try:
             start = time.time()
             db_result = fetch_sa_request(rdb, self.request_id)
-            logger.info('{r} took {t:.2f} seconds to fetch data'.format(
-                r=self.request_id, t=time.time() - start))
+            logger.info('%s took %f seconds to fetch data', self.request_id, time.time() - start)
         except Exception as e:
             error_message = 'Internal database server error for {}.'.format(self.request_id)
             logger.exception(error_message)
@@ -131,11 +129,10 @@ class RdbAnalyses:
             )
             rdb.session.execute(do_update_stmt)
             rdb.session.commit()
-            logger.info('{r} took {t:.2f} seconds to save data'.format(
-                r=self.request_id, t=time.time() - start))
+            logger.info('%s took %f seconds to save data', self.request_id, time.time() - start)
         except SQLAlchemyError as e:
-            logger.exception("Error updating log for request {}, exception {}".format(
-                self.request_id, e))
+            logger.exception('%s Error updating log, exception %s',
+                             self.request_id, str(e))
             raise RDBSaveException('Error while saving request {}'.format(self.request_id)) from e
 
 

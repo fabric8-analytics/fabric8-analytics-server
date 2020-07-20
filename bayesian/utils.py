@@ -68,7 +68,7 @@ def server_run_flow(flow_name, flow_args):
     :param flow_args: arguments for the flow
     :return: dispatcher ID handling flow
     """
-    logger.debug('Running flow {}'.format(flow_name))
+    logger.debug('Running flow %s', flow_name)
     start = datetime.datetime.now()
 
     init_celery(result_backend=False)
@@ -76,8 +76,7 @@ def server_run_flow(flow_name, flow_args):
 
     # compute the elapsed time
     elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    logger.debug("It took {t:.2f} seconds to start {f} flow.".format(
-        t=elapsed_seconds, f=flow_name))
+    logger.debug('It took %f seconds to start %s flow.', elapsed_seconds, flow_name)
     return dispacher_id
 
 
@@ -400,8 +399,7 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
         epv = "{e}/{p}/{v}".format(e=ecosystem, p=package, v=version)
-        logger.debug("Gremlin request {p} took {t:.2f} seconds.".format(p=epv,
-                                                                        t=elapsed_seconds))
+        logger.debug('Gremlin request %s took %f seconds.', epv, elapsed_seconds)
 
     resp = generate_recommendation(clubbed_data, package, version)
     return resp
@@ -583,8 +581,8 @@ def get_next_component_from_graph(ecosystem, user_id, company):
         return None
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        logger.debug("Gremlin request for next component for ecosystem {e} took {t:.2f} "
-                     "seconds.".format(e=ecosystem, t=elapsed_seconds))
+        logger.debug('Gremlin request for next component for ecosystem %s took %f '
+                     'seconds.', ecosystem, elapsed_seconds)
 
     resp = graph_req.json()
 
@@ -623,8 +621,8 @@ def set_tags_to_component(ecosystem, package, tags, user_id, company):
         return False, ' '.join([type(e), ':', str(e)])
     finally:
         elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        logger.debug(("Gremlin request for setting tags to component for ecosystem"
-                      " {e} took {t:.2f} seconds.".format(e=ecosystem, t=elapsed_seconds)))
+        logger.debug('Gremlin request for setting tags to component for ecosystem '
+                     '%s took %f seconds.', ecosystem, elapsed_seconds)
     return True, None
 
 
@@ -663,10 +661,8 @@ def retrieve_worker_results(rdb, external_request_id):
         raise
 
     # compute elapsed time
-    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    msg = "{r} took {t:.2f} seconds to retrieve all worker results.".format(
-        r=external_request_id, t=elapsed_seconds)
-    logger.debug(msg)
+    logger.debug('%s took %f seconds to retrieve all worker results.',
+                 external_request_id, (datetime.datetime.now() - start).total_seconds())
 
     return results
 
@@ -687,10 +683,9 @@ def retrieve_worker_result(rdb, external_request_id, worker):
     result_dict = result.to_dict()
 
     # compute elapsed time
-    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    msg = "{r} took {t:.2f} seconds to retrieve {w} worker results.".format(
-        r=external_request_id, t=elapsed_seconds, w=worker)
-    logger.debug(msg)
+    logger.debug('%s took %f seconds to retrieve %s worker results.',
+                 external_request_id, (datetime.datetime.now() - start).total_seconds(),
+                 worker)
 
     return result_dict
 
@@ -864,8 +859,7 @@ class RecommendationReason:
                 This should track any future occurence of this[1] error:
                 Error:https://github.com/openshiftio/openshift.io/issues/2167
                 """
-                logger.error(
-                    "Stack Count for {} when confidence=None is {}".format(name, stack_count))
+                logger.error('Stack Count for %s when confidence=None is %d', name, stack_count)
 
             # 0% confidence is as good as not showing it on the UI.
             if stack_confidence == 0:
@@ -918,9 +912,8 @@ def convert_version_to_proper_semantic(version, package_name=None):
         version = version.replace('-', '+', 3)
         conv_version = sv.Version.coerce(version)
     except ValueError:
-        logger.info(
-            "Unexpected ValueError for the package {} due to version {}"
-            .format(package_name, version))
+        logger.error('Unexpected ValueError for the package %s due to version %s',
+                     package_name, version)
         pass
     finally:
         return conv_version
@@ -958,10 +951,8 @@ def select_latest_version(latest='', libio='', package_name=None):
         """In case of failure let's not show any latest version at all.
         Also, no generation of stack trace,
         as we are only intersted in the package that is causing the error."""
-        logger.info(
-            "Unexpected ValueError while selecting latest version for package {}. Debug:{}"
-            .format(package_name,
-                    {'latest': latest, 'libio': libio}))
+        logger.error('Unexpected ValueError while selecting latest version for package %s. '
+                     'Debug:%s', package_name, {'latest': latest, 'libio': libio})
         return_version = ''
     finally:
         return return_version
@@ -990,7 +981,7 @@ def fetch_file_from_github(url, filename, branch='master'):
     except ValueError:
         logger.error('Error fetching file from given url')
     except Exception as e:
-        logger.error('ERROR: {}'.format(str(e)))
+        logger.error('ERROR: %s', str(e))
 
 
 def fetch_file_from_github_release(url, filename, token, ref=None):
@@ -1021,8 +1012,8 @@ def fetch_file_from_github_release(url, filename, token, ref=None):
         except GithubException as e:
             HTTPError(404, 'Github repository does not exist {}'.format(str(e)))
         except Exception as e:
-            logger.error('An Exception occured while fetching file github release {}'
-                         .format(str(e)))
+            logger.error('An Exception occured while fetching file github release %s',
+                         str(e))
     else:
         logger.error("Github access token is not provided")
 

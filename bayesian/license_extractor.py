@@ -8,7 +8,6 @@ from .default_config import LIC_SYNONYMS_URL
 from requests import get
 from collections import defaultdict
 from lru import lru_cache_function
-from datetime import datetime as dt
 
 
 logger = logging.getLogger(__name__)
@@ -20,12 +19,10 @@ def get_license_synonyms():
     """Fetch all the license sysnonyms from license anlysis github repo."""
     resp = get(LIC_SYNONYMS_URL)
     if resp.status_code == 200:
-        logger.info(
-            "{} Succefully fetched license synonyms".format(dt.now()))
+        logger.info('Succefully fetched license synonyms')
         return resp.json()
     else:
-        logger.error("{tm} Unable to fetch license synonyms, STATUS_CODE:{cd}".format(
-            tm=dt.now(), cd=resp.status_code))
+        logger.error('Unable to fetch license synonyms, STATUS_CODE: %d', resp.status_code)
         return {}
 
 
@@ -63,7 +60,7 @@ def extract_licenses(license_files):
                         license_key = max(_temp, key=len)
                 response[f_no] = lic_syn.get(license_key, 'unknown')
             except Exception as e:
-                logger.error('{time} {msg}'.format(time=dt.now(), msg=str(e)))
+                logger.error('ERROR: %s', str(e))
     else:
         get_license_synonyms.cache.clear()
     return response

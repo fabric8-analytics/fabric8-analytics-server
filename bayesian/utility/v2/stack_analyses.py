@@ -39,16 +39,16 @@ class StackAnalyses():
 
     def post_request(self):
         """Make stack analyses POST request."""
-        logger.info('SA Post request with ecosys: {} fl name: {} path: {} '
-                    'st: {}'.format(self.params.ecosystem, self.params.manifest.filename,
-                                    self.params.file_path, self.params.show_transitive))
+        logger.info('SA Post request with ecosystem: %s manifest: %s path: %s '
+                    'show_transitive: %s', self.params.ecosystem, self.params.manifest.filename,
+                    self.params.file_path, self.params.show_transitive)
         # Build manifest file info.
         self._manifest_file_info = {
             'filename': self.params.manifest.filename,
             'filepath': self.params.file_path,
             'content': self.params.manifest.read().decode('utf-8')
         }
-        logger.debug('manifest_file_info: {}'.format(self._manifest_file_info))
+        logger.debug('manifest_file_info: %s', self._manifest_file_info)
 
         # Generate unique request id using UUID, also record timestamp in readable form
         self._new_request_id = str(uuid.uuid4().hex)
@@ -66,7 +66,7 @@ class StackAnalyses():
             'submitted_at': date_str,
             'id': self._new_request_id
         }
-        logger.info('{} response: {}'.format(self._new_request_id, data))
+        logger.info('%s response: %s', self._new_request_id, data)
         return data
 
     def _read_deps_and_packages(self):
@@ -93,12 +93,12 @@ class StackAnalyses():
 
             return {'deps': deps, 'packages': packages}
         except (ValueError, json.JSONDecodeError) as e:
-            logger.exception('{} Invalid dependencies encountered. {}'.format(
-                self._new_request_id, e))
+            logger.exception('%s Invalid dependencies encountered. %s',
+                             self._new_request_id, str(e))
             raise SAInvalidInputException('Error while parsing dependencies information') from e
         except Exception as e:
-            logger.exception('{} Unknown exception encountered while parsing deps. {}'.format(
-                self._new_request_id, e))
+            logger.exception('%s Unknown exception encountered while parsing deps. %s',
+                             self._new_request_id, str(e))
             raise SAInvalidInputException('Unknown error while parsing dependencies '
                                           'information') from e
 
@@ -106,7 +106,7 @@ class StackAnalyses():
         """Perform backbone request for stack_aggregator and recommender."""
         # Read deps and packages from manifest
         data = self._read_deps_and_packages()
-        logger.info('{r} deps and packages data: {d}'.format(r=self._new_request_id, d=data))
+        logger.info('%s deps and packages data: %s', self._new_request_id, data)
 
         # Set backbone API request body and params.
         request_body = {
@@ -122,8 +122,8 @@ class StackAnalyses():
             'persist': 'true',
             'check_license': 'false'
         }
-        logger.info('{r} request_body: {b} request_params: {p}'.format(
-            r=self._new_request_id, b=request_body, p=request_params))
+        logger.info('%s request_body: %s request_params: %s',
+                    self._new_request_id, request_body, request_params)
 
         # Post Backbone stack_aggregator call.
         BackboneServer.post_aggregate_request(request_body, request_params)

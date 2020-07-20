@@ -1066,7 +1066,7 @@ class CoreDependencies(Resource):
             }
             return response, 200
         except Exception as e:
-            logger.error('ERROR: {}'.format(str(e)))
+            logger.error('ERROR: %s', str(e))
 
 
 class EmptyBooster(Resource):
@@ -1186,7 +1186,7 @@ class CveByDateEcosystem(Resource):
                                              modified_date, ecosystem, date_range)
             result = getcve.get_cves_by_date_ecosystem()
         except Exception as e:
-            logger.error('ERROR: {}'.format(str(e)))
+            logger.error('ERROR: %s', str(e))
             msg = "No cve data found for {ecosystem} ".format(ecosystem=ecosystem)
             raise HTTPError(404, msg)
 
@@ -1205,7 +1205,7 @@ class EpvsByCveidService(Resource):
             getcve = CveByDateEcosystemUtils(cve_id)
             result = getcve.get_cves_epv_by_date()
         except Exception as e:
-            logger.error('ERROR: {}'.format(str(e)))
+            logger.error('ERROR: %s', str(e))
             msg = "No epv data found for {cve_id} ".format(cve_id=cve_id)
             raise HTTPError(404, msg)
 

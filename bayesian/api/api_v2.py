@@ -80,14 +80,12 @@ logger = logging.getLogger(__name__)
 @api_v2.route('/readiness')
 def readiness():
     """Handle the /readiness REST API call."""
-    logger.debug('/readiness endpoint accessed')
     return jsonify({}), 200
 
 
 @api_v2.route('/liveness')
 def liveness():
     """Handle the /liveness REST API call."""
-    logger.debug('/liveness endpoint accessed')
     return jsonify({}), 200
 
 
@@ -210,7 +208,7 @@ class ComponentAnalysesApi(Resource):
 def stack_analyses_with_request_id(external_request_id):
     """Handle stack analyses report fetch api."""
     start = time.time()
-    logger.debug("[GET] /stack-analyses/{}".format(external_request_id))
+    logger.debug("[GET] /stack-analyses/%s", external_request_id)
 
     # 1. Build response builder with id and RDB object.
     sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
@@ -219,8 +217,8 @@ def stack_analyses_with_request_id(external_request_id):
     # 2. If there was no exception raise, means request is ready to be served.
     try:
         data = sa_response_builder.get_response()
-        logger.info('{r} took {t:.2f} seconds for [GET] stack-analyses'.format(
-            r=external_request_id, t=time.time() - start))
+        logger.info('%s took %f seconds for [GET] stack-analyses',
+                    external_request_id, time.time() - start)
         return jsonify(data)
     except SARBRequestInvalidException as e:
         raise HTTPError(400, e.args[0]) from e
@@ -242,7 +240,7 @@ def stack_analyses():
 
     GET method would raise error to provide missing request id to the user.
     """
-    logger.debug("[{}] /stack-analyses accessed".format(request.method))
+    logger.debug('[%s] /stack-analyses accessed', request.method)
     start = time.time()
     if request.method == 'GET':
         raise HTTPError(400, error="Request id missing")
@@ -266,8 +264,8 @@ def stack_analyses():
     # 4. Post request
     try:
         data = sa.post_request()
-        logger.info('{r} took {t:.2f} seconds for [POST] stack-analyses'.format(
-            r=data['id'], t=time.time() - start))
+        logger.info('%s took %f seconds for [POST] stack-analyses',
+                    data['id'], time.time() - start)
         return jsonify(data)
     except SAInvalidInputException as e:
         raise HTTPError(400, e.args[0]) from e

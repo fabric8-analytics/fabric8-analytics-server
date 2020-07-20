@@ -36,7 +36,7 @@ class StackAnalysesResponseBuilder:
 
     def get_response(self):
         """Aggregate, build and return json response for the given request id."""
-        logger.info('{} SA Get request'.format(self.external_request_id))
+        logger.info('%s SA Get request', self.external_request_id)
 
         # Get db result, stack result and recm data from rdb.
         self._db_result = self.rdb_analyses.get_request_data()
