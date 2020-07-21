@@ -276,12 +276,26 @@ class TestStackAnalysesPostApi(unittest.TestCase):
                                     content_type='multipart/form-data')
         self.assertEqual(response.status_code, 400)
 
-    def test_sa_post_invalid_manifest_file_content(self):
+    def test_sa_post_invalid_ecosystem_and_manifest(self):
         """Post request with invalid manifest file content. Expecting http error 400."""
         data = {
             'manifest': (io.StringIO(str(Path(__file__).parent /
                                          '../data/manifests/400/npmlist.json')).read(),
                          'npmlist.json'),
+            'file_path': '/tmp/bin',
+            'ecosystem': 'pypi'
+        }
+        response = self.client.post(api_route_for('/stack-analyses'),
+                                    data=data,
+                                    content_type='multipart/form-data')
+        self.assertEqual(response.status_code, 400)
+
+    def test_sa_post_invalid_manifest_file_content(self):
+        """Post request with invalid manifest file content. Expecting http error 400."""
+        data = {
+            'manifest': (io.StringIO(str(Path(__file__).parent /
+                                         '../data/manifests/400/npmlist.json')).read(),
+                         'pylist.json'),
             'file_path': '/tmp/bin',
             'ecosystem': 'pypi'
         }

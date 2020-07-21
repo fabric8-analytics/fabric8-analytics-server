@@ -22,8 +22,7 @@ def current_app_logger(_str):
     pass
 
 
-@patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
-def test_get_license_synonyms(_mocked_object):
+def test_get_license_synonyms():
     """Test the function get_license_synonyms()."""
     # make sure the LRU cache is clear
     get_license_synonyms.cache.clear()
@@ -53,9 +52,8 @@ def mocked_requests_get(url):
     return _response(404, "Not Found!")
 
 
-@patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
 @patch("bayesian.license_extractor.get", side_effect=mocked_requests_get)
-def test_get_license_synonyms_wrong_response(mocked_get, _mocked_function):
+def test_get_license_synonyms_wrong_response(mocked_get):
     """Test the function get_license_synonyms()."""
     # make sure the LRU cache is clear
     get_license_synonyms.cache.clear()
@@ -71,8 +69,7 @@ def _check_extracted_license(result, expected_license):
     assert result[1] == expected_license
 
 
-@patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
-def test_extract_licenses(_mocked_object):
+def test_extract_licenses():
     """Test the function extract_licenses()."""
     # TODO: reduce cyclomatic complexity
     # make sure the LRU cache is clear
@@ -110,8 +107,7 @@ def test_extract_licenses_no_synonyms(mocked_function):
     assert mocked_function.called
 
 
-@patch('bayesian.license_extractor.current_app', side_effect=current_app_logger)
-def test_extract_licenses_wrong_file(_mocked_function):
+def test_extract_licenses_wrong_file():
     """Test the function extract_licenses()."""
     # make sure the LRU cache is clear
     get_license_synonyms.cache.clear()

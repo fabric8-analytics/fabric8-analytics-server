@@ -24,7 +24,7 @@ from bayesian.dependency_finder import DependencyFinder
 from bayesian.utility.db_gateway import RdbAnalyses
 from bayesian.utility.v2.backbone_server import BackboneServer
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class StackAnalyses():
@@ -39,16 +39,16 @@ class StackAnalyses():
 
     def post_request(self):
         """Make stack analyses POST request."""
-        logger.debug('SA Post request with ecosys: {} fl name: {} path: {} '
-                     'st: {}'.format(self.params.ecosystem, self.params.manifest.filename,
-                                     self.params.file_path, self.params.show_transitive))
+        logger.info('SA Post request with ecosystem: %s manifest: %s path: %s '
+                    'show_transitive: %s', self.params.ecosystem, self.params.manifest.filename,
+                    self.params.file_path, self.params.show_transitive)
         # Build manifest file info.
         self._manifest_file_info = {
             'filename': self.params.manifest.filename,
             'filepath': self.params.file_path,
             'content': self.params.manifest.read().decode('utf-8')
         }
-        logger.info('manifest_file_info: {}'.format(self._manifest_file_info))
+        logger.debug('manifest_file_info: %s', self._manifest_file_info)
 
         # Generate unique request id using UUID, also record timestamp in readable form
         self._new_request_id = str(uuid.uuid4().hex)
@@ -61,11 +61,13 @@ class StackAnalyses():
         rdbAnalyses = RdbAnalyses(self._new_request_id, date_str,
                                   self._manifest_file_info, deps)
         rdbAnalyses.save_post_request()
-        return {
+        data = {
             'status': 'success',
             'submitted_at': date_str,
             'id': self._new_request_id
         }
+        logger.info('%s response: %s', self._new_request_id, data)
+        return data
 
     def _read_deps_and_packages(self):
         """Read dependencies and packages information from manifest file content."""
@@ -77,7 +79,6 @@ class StackAnalyses():
             d = DependencyFinder()
             deps = d.scan_and_find_dependencies(self.params.ecosystem, [self._manifest_file_info],
                                                 json.dumps(self.params.show_transitive))
-            logger.info('deps: {}'.format(deps))
 
             # Build package details.
             resolved = deps.get('result', [{}])[0].get('details', [{}])[0].get('_resolved', None)
@@ -90,13 +91,14 @@ class StackAnalyses():
                                          for pkg in p.get('deps', [])]
                     })
 
-            logger.debug('result: {}'.format({'deps': deps, 'packages': packages}))
             return {'deps': deps, 'packages': packages}
         except (ValueError, json.JSONDecodeError) as e:
-            logger.exception('Invalid dependencies encountered. {}'.format(e))
+            logger.exception('%s Invalid dependencies encountered. %s',
+                             self._new_request_id, str(e))
             raise SAInvalidInputException('Error while parsing dependencies information') from e
         except Exception as e:
-            logger.exception('Unknown exception encountered while parsing deps. {}'.format(e))
+            logger.exception('%s Unknown exception encountered while parsing deps. %s',
+                             self._new_request_id, str(e))
             raise SAInvalidInputException('Unknown error while parsing dependencies '
                                           'information') from e
 
@@ -104,7 +106,7 @@ class StackAnalyses():
         """Perform backbone request for stack_aggregator and recommender."""
         # Read deps and packages from manifest
         data = self._read_deps_and_packages()
-        logger.info('deps data: {}'.format(data))
+        logger.info('%s deps and packages data: %s', self._new_request_id, data)
 
         # Set backbone API request body and params.
         request_body = {
@@ -120,7 +122,8 @@ class StackAnalyses():
             'persist': 'true',
             'check_license': 'false'
         }
-        logger.info('request_body: {} request_params: {}'.format(request_body, request_params))
+        logger.info('%s request_body: %s request_params: %s',
+                    self._new_request_id, request_body, request_params)
 
         # Post Backbone stack_aggregator call.
         BackboneServer.post_aggregate_request(request_body, request_params)

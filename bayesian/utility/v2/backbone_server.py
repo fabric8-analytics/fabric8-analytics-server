@@ -17,10 +17,11 @@
 """Backbone server interface to be used by stack analyses API v2 flow."""
 
 import os
+import time
 import logging
 from requests_futures.sessions import FuturesSession
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class BackboneServer:
@@ -40,32 +41,38 @@ class BackboneServer:
     def post_aggregate_request(cls, body, params):
         """Make a post call to backbone aggregator api."""
         try:
-            logger.debug('Aggregator request for backbone host: {} body: {} params: {}'.format(
-                cls.backbone_host, body, params))
+            logger.debug('Aggregator request for backbone host: %s body: %s params: %s',
+                         cls.backbone_host, body, params)
 
             # Post Backbone stack_aggregator call.
+            start = time.time()
             BackboneServer.session.post(
                 '{}/api/v2/stack_aggregator'.format(BackboneServer.backbone_host),
                 json=body,
                 params=params)
+            logger.debug('%s took %f seconds for /api/v2/stack_aggregator',
+                         body['external_request_id'], time.time() - start)
         except Exception as e:
-            logger.exception('Aggregator api throws exception {}'.format(e))
+            logger.exception('Aggregator api throws exception %s', str(e))
             raise BackboneServerException('Error while reaching aggregator service') from e
 
     @classmethod
     def post_recommendations_request(cls, body, params):
         """Make a post call to backbone recommender api."""
         try:
-            logger.debug('Recmmendation request for backbone host: {} body: {} params: {}'.format(
-                cls.backbone_host, body, params))
+            logger.debug('Recommendation request for backbone host: %s body: %s params: %s',
+                         cls.backbone_host, body, params)
 
             # Post Backbone recommender call.
+            start = time.time()
             BackboneServer.session.post(
                 '{}/api/v2/recommender'.format(BackboneServer.backbone_host),
                 json=body,
                 params=params)
+            logger.debug('%s took %f seconds for /api/v2/recommender',
+                         body['external_request_id'], time.time() - start)
         except Exception as e:
-            logger.exception('Recommender api throws exception {}'.format(e))
+            logger.exception('Recommender api throws exception %s', str(e))
             raise BackboneServerException('Error while reaching recommender service') from e
 
 

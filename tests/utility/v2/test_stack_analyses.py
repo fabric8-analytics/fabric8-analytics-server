@@ -43,6 +43,20 @@ class TestStackAnalyses(unittest.TestCase):
                 sa.post_request()
             self.assertIs(exception.type, SAInvalidInputException)
 
+    @patch('bayesian.utility.v2.stack_analyses.DependencyFinder.scan_and_find_dependencies',
+           side_effect=Exception('Mock error'))
+    def test_sa_invalid_manifest_file_unknown_error(self, _mock_depfinder):
+        """Check if 400 is raise upon invalid manifest file."""
+        with open(str(Path(__file__).parent.parent.parent) +
+                  '/data/manifests/400/npmlist.json', 'rb') as fp:
+            fs = FileStorage(stream=fp, filename='npmlist.json')
+            sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
+                                                       ecosystem='npm', show_transitive=True)
+            sa = StackAnalyses(sa_post_request)
+            with pytest.raises(Exception) as exception:
+                sa.post_request()
+            self.assertIs(exception.type, SAInvalidInputException)
+
     def test_sa_mismatch_manifest_file_and_ecosystem(self):
         """Check if 400 is raise upon mismatch between manifest file content and ecosystem type."""
         with open(str(Path(__file__).parent.parent.parent) +

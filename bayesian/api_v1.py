@@ -12,6 +12,7 @@ import time
 from collections import defaultdict
 
 import botocore
+import logging
 from requests_futures.sessions import FuturesSession
 from flask import Blueprint, current_app, request, url_for, Response, g
 from flask.json import jsonify
@@ -50,6 +51,8 @@ from .generate_manifest import PomXMLTemplate
 from .default_config import COMPONENT_ANALYSES_LIMIT
 from fabric8a_auth.errors import AuthError
 
+
+logger = logging.getLogger(__name__)
 
 # TODO: improve maintainability index
 # TODO: https://github.com/fabric8-analytics/fabric8-analytics-server/issues/373
@@ -111,8 +114,7 @@ def readiness():
 def liveness():
     """Handle the /liveness REST API call."""
     # Check database connection
-    current_app.logger.debug("Liveness probe - trying to connect to database "
-                             "and execute a query")
+    logger.debug('Liveness probe - trying to connect to database and execute a query')
     rdb.session.query(Ecosystem).count()
     return jsonify({}), 200
 
@@ -296,7 +298,7 @@ class ComponentAnalyses(Resource):
             # Querying GraphDB for CVE Info.
             result = get_analyses_from_graph(ecosystem, package, version)
         except Exception as e:
-            current_app.logger.info(e)
+            logger.error('ERROR: %s', str(e))
 
         if result is not None:
             # Known component for Bayesian
@@ -634,7 +636,7 @@ class UserIntentGET(Resource):
         except botocore.exceptions.ClientError:
             err_msg = "Failed to fetch data for the user {u}, ecosystem {e}".format(u=user,
                                                                                     e=ecosystem)
-            current_app.logger.exception(err_msg)
+            logger.exception(err_msg)
             raise HTTPError(404, error=err_msg)
 
         return result
@@ -663,7 +665,7 @@ class MasterTagsGET(Resource):
             result = s3.fetch_master_tags(ecosystem)
         except botocore.exceptions.ClientError:
             err_msg = "Failed to fetch master tags for the ecosystem {e}".format(e=ecosystem)
-            current_app.logger.exception(err_msg)
+            logger.exception(err_msg)
             raise HTTPError(404, error=err_msg)
 
         return result
@@ -810,8 +812,7 @@ class StackAnalyses(Resource):
                 filepaths = request.values.getlist('filePath[]')
                 license_files = request.files.getlist('license[]')
 
-                current_app.logger.info('%r' % files)
-                current_app.logger.info('%r' % filepaths)
+                logger.info('files: %s filepaths: %s', files, filepaths)
 
                 # At least one manifest file path should be present to analyse a stack
                 if not filepaths:
@@ -988,8 +989,7 @@ class SubmitFeedback(Resource):
             return {'status': 'success'}
         except SQLAlchemyError as e:
             # TODO: please log the actual error too here
-            current_app.logger.exception(
-                'Failed to create new analysis request')
+            logger.exception('Failed to create new analysis request')
             raise HTTPError(
                 500, "Error inserting log for request {t}".format(t=stack_id)) from e
 
@@ -1064,7 +1064,7 @@ class CoreDependencies(Resource):
             }
             return response, 200
         except Exception as e:
-            current_app.logger.error('ERROR: {}'.format(str(e)))
+            logger.error('ERROR: %s', str(e))
 
 
 class EmptyBooster(Resource):
@@ -1184,7 +1184,7 @@ class CveByDateEcosystem(Resource):
                                              modified_date, ecosystem, date_range)
             result = getcve.get_cves_by_date_ecosystem()
         except Exception as e:
-            current_app.logger.error('ERROR: {}'.format(str(e)))
+            logger.error('ERROR: %s', str(e))
             msg = "No cve data found for {ecosystem} ".format(ecosystem=ecosystem)
             raise HTTPError(404, msg)
 
@@ -1203,7 +1203,7 @@ class EpvsByCveidService(Resource):
             getcve = CveByDateEcosystemUtils(cve_id)
             result = getcve.get_cves_epv_by_date()
         except Exception as e:
-            current_app.logger.error('ERROR: {}'.format(str(e)))
+            logger.error('ERROR: %s', str(e))
             msg = "No epv data found for {cve_id} ".format(cve_id=cve_id)
             raise HTTPError(404, msg)
 
