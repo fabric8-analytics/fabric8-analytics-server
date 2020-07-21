@@ -298,7 +298,7 @@ class ComponentAnalyses(Resource):
             # Querying GraphDB for CVE Info.
             result = get_analyses_from_graph(ecosystem, package, version)
         except Exception as e:
-            logger.info(e)
+            logger.error('ERROR: %s', str(e))
 
         if result is not None:
             # Known component for Bayesian
@@ -812,8 +812,7 @@ class StackAnalyses(Resource):
                 filepaths = request.values.getlist('filePath[]')
                 license_files = request.files.getlist('license[]')
 
-                logger.info('%r' % files)
-                logger.info('%r' % filepaths)
+                logger.info('files: %s filepaths: %s', files, filepaths)
 
                 # At least one manifest file path should be present to analyse a stack
                 if not filepaths:
