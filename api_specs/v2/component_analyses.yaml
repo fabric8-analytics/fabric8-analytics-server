@@ -60,7 +60,11 @@ paths:
                     - $ref: '#/components/schemas/FreeUser'
                     - $ref: '#/components/schemas/RegisteredUser'
                     - $ref: '#/components/schemas/NoVulnerabilities'
-
+              examples:
+                FreeUserBatch:
+                  $ref: '#/components/examples/free-user-batch'
+                RegisteredUserBatch:
+                  $ref: '#/components/examples/registered-user-batch'
 
   /component-analyses/{eco}/{name}/{ver}:
     get:
@@ -112,6 +116,11 @@ paths:
                     - $ref: '#/components/schemas/RegisteredUser'
                     - $ref: '#/components/schemas/FreeUser'
                     - $ref: '#/components/schemas/NoVulnerabilities'
+              examples:
+                FreeUser:
+                  $ref: '#/components/examples/free-user'
+                RegisteredUser:
+                  $ref: '#/components/examples/registered-user'
 
         202:
           description: Package is currently Unavailable. Please try again later
@@ -124,6 +133,113 @@ paths:
           content: {}
 
 components:
+  examples:
+    free-user-batch:
+      value:
+        - recommendation:
+            component_analyses:
+              vulnerability:
+                - vendor_cve_ids: "CVE-2010-3082"
+                  cvss: "1.2"
+                  is_private: false
+                - vendor_cve_ids: "CVE-2018-1002"
+                  cvss: "1.3"
+                  is_private: false
+            recommended_version : "2"
+            message: "2 vulnerabilities within this dependency"
+            severity: "high"
+            public_vulnerabilities_count: 2
+            private_vulnerabilities_count: 1
+            registeration_link: "https://app.snyk.io/login"
+
+        - recommendation:
+            component_analyses:
+              vulnerability:
+                - vendor_cve_ids: "CVE-2018-1002"
+                  cvss: "1.2"
+                  is_private: true
+                - vendor_cve_ids: "CVE-2010-3082"
+                  cvss: "1.3"
+                  is_private: false
+            recommended_version : "2"
+            message: "2 vulnerabilities within this dependency"
+            severity: "high"
+            public_vulnerabilities_count: 2
+            private_vulnerabilities_count: 1
+            registeration_link: "https://app.snyk.io/login"
+
+    registered-user-batch:
+      value:
+        - recommendation:
+            component_analyses:
+              vulnerability:
+                - vendor_cve_ids: "CVE-2018-1002"
+                  cvss: "1.2"
+                  is_private: true
+                - vendor_cve_ids: "CVE-2010-3082"
+                  cvss: "1.3"
+                  is_private: false
+            recommended_version : "2"
+            message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
+            severity: "high"
+            public_vulnerabilities_count: 2
+            private_vulnerabilities_count: 1
+            exploitable_vulnerabilities_count: 0
+            vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+        - recommendation:
+            component_analyses:
+              vulnerability:
+                - vendor_cve_ids: "CVE-2018-1002"
+                  cvss: "1.2"
+                  is_private: true
+                - vendor_cve_ids: "CVE-2010-3082"
+                  cvss: "1.3"
+                  is_private: false
+            recommended_version : "2"
+            message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
+            severity: "high"
+            public_vulnerabilities_count: 2
+            private_vulnerabilities_count: 1
+            exploitable_vulnerabilities_count: 0
+            vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+
+    registered-user:
+      value:
+        recommendation:
+          component_analyses:
+            vulnerability:
+              - vendor_cve_ids: "CVE-2018-1002"
+                cvss: "1.2"
+                is_private: true
+              - vendor_cve_ids: "CVE-2010-3082"
+                cvss: "1.3"
+                is_private: false
+          recommended_version : "2"
+          message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
+          severity: "high"
+          public_vulnerabilities_count: 2
+          private_vulnerabilities_count: 1
+          exploitable_vulnerabilities_count: 0
+          vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+
+    free-user:
+      value:
+        recommendation:
+              component_analyses:
+                vulnerability:
+                  - vendor_cve_ids: "CVE-2018-1002"
+                    cvss: "1.2"
+                    is_private: true
+                  - vendor_cve_ids: "CVE-2010-3082"
+                    cvss: "1.3"
+                    is_private: false
+              recommended_version : "2"
+              message: "2 vulnerabilities within this dependency"
+              severity: "high"
+              public_vulnerabilities_count: 2
+              private_vulnerabilities_count: 1
+              registeration_link: "https://app.snyk.io/login"
+
   schemas:
     VulnerabilityDetails:
       title: Vulnerability Details
