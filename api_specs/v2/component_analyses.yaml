@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
-  title: Analytics Core API Specs for Version 2
-  version: "2"
+  title: Analytics Core API Specs
+  version: "2.1"
 servers:
 - url: https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2
   description: "Dependency Analytics Server"
@@ -31,7 +31,7 @@ paths:
                 ecosystem:
                   type: string
                   example: pypi
-                payload:
+                packageversions:
                   type: array
                   items:
                     type: object
@@ -44,7 +44,7 @@ paths:
                         example: 1.1
               example:
                 ecosystem: "pypi"
-                payload:
+                packageversions:
                   - package: "django"
                     version : "1.1"
                   - package: "requests"
@@ -136,7 +136,6 @@ paths:
           content:
             application/json:
               schema:
-                type: array
                 items:
                   oneOf:
                     - $ref: '#/components/schemas/RegisteredUser'
