@@ -75,6 +75,22 @@ paths:
                 No Vulnerability Batch:
                   $ref: '#/components/examples/no-vul-batch'
 
+        202:
+          description: All Packages are unknown. Triggers Ingestion.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnknownPkgResponse'
+
+        401:
+          description: Request unauthorized
+          content: {}
+        404:
+          description: Endpoint not found
+          content: {}
+
 
   /component-analyses/{eco}/{name}/{ver}:
     get:
@@ -260,6 +276,15 @@ components:
         recommendation: {}
 
   schemas:
+    UnknownPkgResponse:
+      title: All Unknown Packages Response
+      description: Information of the vulnerability found
+      type: object
+      properties:
+        error:
+          type: string
+          example: "All Packages are currently unavailable. Packages will be available shortly, please retry after some time."
+
     VulnerabilityDetails:
       title: Vulnerability Details
       description: Information of the vulnerability found
