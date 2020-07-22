@@ -13,6 +13,13 @@ paths:
       tags:
         - CA batch call
       summary: Get security and other details about a software component and recommendations to change to a more secured version in a batched manner.
+      parameters:
+        - name: uuid
+          in: header
+          description: User Identification uuid
+          required: false
+          schema:
+            type: string
       requestBody:
         description: CA Batch Request
         required: true
@@ -61,10 +68,13 @@ paths:
                     - $ref: '#/components/schemas/RegisteredUser'
                     - $ref: '#/components/schemas/NoVulnerabilities'
               examples:
-                FreeUserBatch:
+                FreeUser Batch:
                   $ref: '#/components/examples/free-user-batch'
-                RegisteredUserBatch:
+                RegisteredUser Batch:
                   $ref: '#/components/examples/registered-user-batch'
+                No Vulnerability Batch:
+                  $ref: '#/components/examples/no-vul-batch'
+
 
   /component-analyses/{eco}/{name}/{ver}:
     get:
@@ -95,7 +105,7 @@ paths:
       - name: uuid
         in: header
         description: User Identification uuid
-        required: true
+        required: false
         schema:
           type: string
 
@@ -121,6 +131,8 @@ paths:
                   $ref: '#/components/examples/free-user'
                 RegisteredUser:
                   $ref: '#/components/examples/registered-user'
+                No Vulnerability:
+                  $ref: '#/components/examples/no-vul'
 
         202:
           description: Package is currently Unavailable. Please try again later
@@ -202,6 +214,9 @@ components:
             private_vulnerabilities_count: 1
             exploitable_vulnerabilities_count: 0
             vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+    no-vul-batch:
+      value:
+        - recommendation: {}
 
     registered-user:
       value:
@@ -239,6 +254,10 @@ components:
               public_vulnerabilities_count: 2
               private_vulnerabilities_count: 1
               registeration_link: "https://app.snyk.io/login"
+
+    no-vul:
+      value:
+        recommendation: {}
 
   schemas:
     VulnerabilityDetails:
