@@ -58,7 +58,10 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/UnknownPkgResponse'
+                  anyOf:
+                    - $ref: '#/components/schemas/UnknownPkgResponse'
+                    - $ref: '#/components/schemas/RegisteredUserBatch'
+                    - $ref: '#/components/schemas/FreeUserBatch'
               examples:
                 All Packages Unknown:
                   $ref: '#/components/examples/all-packages-unknown'
@@ -147,14 +150,13 @@ components:
         - package: "django"
           version: "1.1"
           recommendation:
-            component_analyses:
-              vulnerability:
-                - id: "SNYK-2010-3082"
-                  cvss: "1.2"
-                  is_private: false
-                - id: "SYNK-2018-1002"
-                  cvss: "1.3"
-                  is_private: false
+            vulnerability:
+              - id: "SNYK-2010-3082"
+                cvss: "1.2"
+                is_private: false
+              - id: "SYNK-2018-1002"
+                cvss: "1.3"
+                is_private: false
             recommended_version : "2"
             message: "2 vulnerabilities within this dependency"
             highest_severity: "high"
@@ -165,14 +167,13 @@ components:
         - package: "mango"
           version: "2.1"
           recommendation:
-            component_analyses:
-              vulnerability:
-                - id: "SNYK-2018-1002"
-                  cvss: "1.2"
-                  is_private: true
-                - id: "SNYK-2010-3082"
-                  cvss: "1.3"
-                  is_private: false
+            vulnerability:
+              - id: "SNYK-2018-1002"
+                cvss: "1.2"
+                is_private: true
+              - id: "SNYK-2010-3082"
+                cvss: "1.3"
+                is_private: false
             recommended_version : "2"
             message: "2 vulnerabilities within this dependency"
             highest_severity: "high"
@@ -185,14 +186,13 @@ components:
         - package: "django"
           version: "1.1"
           recommendation:
-            component_analyses:
-              vulnerability:
-                - id: "SNYK-2018-1002"
-                  cvss: "1.2"
-                  is_private: true
-                - id: "SNYK-2010-3082"
-                  cvss: "1.3"
-                  is_private: false
+            vulnerability:
+              - id: "SNYK-2018-1002"
+                cvss: "1.2"
+                is_private: true
+              - id: "SNYK-2010-3082"
+                cvss: "1.3"
+                is_private: false
             recommended_version : "2"
             message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
             highest_severity: "high"
@@ -203,14 +203,13 @@ components:
         - package: "mango"
           version: "2.1"
           recommendation:
-            component_analyses:
-              vulnerability:
-                - id: "SYNK-2018-1002"
-                  cvss: "1.2"
-                  is_private: true
-                - id: "SNYK-2010-3082"
-                  cvss: "1.3"
-                  is_private: false
+            vulnerability:
+              - id: "SYNK-2018-1002"
+                cvss: "1.2"
+                is_private: true
+              - id: "SNYK-2010-3082"
+                cvss: "1.3"
+                is_private: false
             recommended_version : "2"
             message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
             highest_severity: "high"
@@ -336,8 +335,10 @@ components:
             recommended_version:
               type: string
               example: 2
-            component_analyses:
-              $ref: '#/components/schemas/VulnerabilityDetailsBatch'
+            vulnerabilities:
+              type: array
+              items:
+                $ref: '#/components/schemas/VulnerabilityDetailsBatch'
             message:
               type: string
               example: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
@@ -373,8 +374,10 @@ components:
             recommended_version:
               type: string
               example: "3.1"
-            component_analyses:
-              $ref: '#/components/schemas/VulnerabilityDetailsBatch'
+            vulnerabilities:
+              type: array
+              items:
+                $ref: '#/components/schemas/VulnerabilityDetailsBatch'
             message:
               type: string
               example: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
@@ -396,20 +399,15 @@ components:
       description: Information of the vulnerability found
       type: object
       properties:
-        vulnerability:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                example: "SNYK-1234"
-              cvss:
-                type: string
-                example: 9.2
-              is_private:
-                type: boolean
-                example: true
+        id:
+          type: string
+          example: "SNYK-1234"
+        cvss:
+          type: string
+          example: 9.2
+        is_private:
+          type: boolean
+          example: true
 
     UnknownPkgResponse:
       title: All Unknown Packages Response
