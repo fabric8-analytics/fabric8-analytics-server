@@ -430,9 +430,9 @@ components:
           items:
             type: object
             properties:
-              cve_id:
+              vendor_cve_id:
                 type: string
-                example: "CVE-1234"
+                example: "SNYK-1234"
               cvss:
                 type: string
                 example: 9.2
