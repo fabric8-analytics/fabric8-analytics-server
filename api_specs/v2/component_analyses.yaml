@@ -150,7 +150,7 @@ components:
         - package: "django"
           version: "1.1"
           recommendation:
-            vulnerability:
+            vulnerabilities:
               - id: "SNYK-2010-3082"
                 cvss: "1.2"
                 is_private: false
@@ -167,7 +167,7 @@ components:
         - package: "mango"
           version: "2.1"
           recommendation:
-            vulnerability:
+            vulnerabilities:
               - id: "SNYK-2018-1002"
                 cvss: "1.2"
                 is_private: true
@@ -186,7 +186,7 @@ components:
         - package: "django"
           version: "1.1"
           recommendation:
-            vulnerability:
+            vulnerabilities:
               - id: "SNYK-2018-1002"
                 cvss: "1.2"
                 is_private: true
@@ -203,7 +203,7 @@ components:
         - package: "mango"
           version: "2.1"
           recommendation:
-            vulnerability:
+            vulnerabilities:
               - id: "SYNK-2018-1002"
                 cvss: "1.2"
                 is_private: true
