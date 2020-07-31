@@ -52,7 +52,7 @@ class StackAnalysesPostRequest(BaseModel):
         min_anystr_length = 1
 
     @root_validator()
-    def check_input_data(cls, values):  # noqa: V106 - Ignore 'cls' not used check
+    def check_input_data(cls, values):  # noqa: F841 - Ignore 'cls' not used check
         """Validate input data for ecosystem and manifest file."""
         ecosystem, manifest = values.get('ecosystem'), values.get('manifest')
 

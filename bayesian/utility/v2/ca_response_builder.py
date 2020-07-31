@@ -341,6 +341,12 @@ class ComponentAnalysisResponseBuilder:
             cve_list.append(dict(
                 vendor_cve_ids=cve.get('snyk_vuln_id', [None])[0],
                 cvss=str(cve.get('cvss_scores', [None])[0]),
-                is_private=cve.get('snyk_pvt_vulnerability', [None])[0]
+                is_private=cve.get('snyk_pvt_vulnerability', [None])[0],
+                cwes=cve.get('snyk_cwes', []),
+                cvss_v3=cve.get('snyk_cvss_v3', [None])[0],
+                severity=cve.get('severity', [None])[0],
+                title=cve.get('title', [None])[0],
+                url=cve.get('snyk_url', [None])[0],
+                cve_ids=cve.get('snyk_cve_ids', [])
             ))
         return cve_list
