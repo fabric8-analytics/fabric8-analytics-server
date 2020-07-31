@@ -347,6 +347,7 @@ class ComponentAnalysisResponseBuilder:
                 severity=cve.get('severity', [None])[0],
                 title=cve.get('title', [None])[0],
                 url=cve.get('snyk_url', [None])[0],
-                cve_ids=cve.get('snyk_cve_ids', [])
+                cve_ids=cve.get('snyk_cve_ids', []),
+                fixed_in=cve.get('fixed_in', [])
             ))
         return cve_list

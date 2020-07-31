@@ -393,7 +393,8 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
             severity=["medium"],
             title=["Test title for CVE"],
             snyk_url=["https://test.com/cve-01"],
-            snyk_cve_ids=["CVE-01", "CVE-02", "CVE-03"])
+            snyk_cve_ids=["CVE-01", "CVE-02", "CVE-03"],
+            fixed_in=[">=0.19.0-beta.1"])
         mocked_response = [dict(
             vendor_cve_ids=vul_data['snyk_vuln_id'][0],
             cvss=vul_data['cvss_scores'][0],
@@ -403,7 +404,8 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
             severity="medium",
             title="Test title for CVE",
             url="https://test.com/cve-01",
-            cve_ids=["CVE-01", "CVE-02", "CVE-03"])
+            cve_ids=["CVE-01", "CVE-02", "CVE-03"],
+            fixed_in=[">=0.19.0-beta.1"])
         ]
         response_obj._cves = [vul_data]
         cve_maps = response_obj.get_cve_maps()
@@ -422,7 +424,8 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
             severity=None,
             title=None,
             url=None,
-            cve_ids=[])
+            cve_ids=[],
+            fixed_in=[])
         ]
         response_obj._cves = [vul_data]
         cve_maps = response_obj.get_cve_maps()
