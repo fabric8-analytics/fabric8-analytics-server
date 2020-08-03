@@ -21,6 +21,7 @@ from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, \
 from urllib.parse import quote
 from unittest.mock import patch
 import unittest
+import pytest
 from urllib.parse import urlparse
 
 
@@ -306,6 +307,7 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
             {'severity': ['medium']},
             {'severity': ['high']},
             {'severity': ['critical']},
+            {'severity': ['low']},
             {'severity': ['critical']},
         ]
         severity = response_obj.get_severity()
@@ -316,6 +318,7 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
         response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
         response_obj._cves = [
             {'severity': ['medium']},
+            {'severity': ['low']},
             {'severity': ['high']},
             {'severity': ['medium']},
             {'severity': ['medium']},
@@ -323,36 +326,107 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
         severity = response_obj.get_severity()
         self.assertListEqual(severity, ['high'])
 
+    def test_get_severity_return_medium(self):
+        """Test Severity Procedure. Severity "Medium" has higher precedence."""
+        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
+        response_obj._cves = [
+            {'severity': ['low']},
+            {'severity': ['medium']},
+            {'severity': ['low']},
+            {'severity': ['low']},
+        ]
+        severity = response_obj.get_severity()
+        self.assertListEqual(severity, ['medium'])
+
+    def test_get_severity_return_low(self):
+        """Test Severity Procedure. Severity "low" has higher precedence."""
+        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
+        response_obj._cves = [
+            {'severity': ['low']},
+            {'severity': ['low']},
+        ]
+        severity = response_obj.get_severity()
+        self.assertListEqual(severity, ['low', 'low'])
+
+    def test_get_severity_return_exception(self):
+        """Test Severity Procedure. Severity is invalid."""
+        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
+        response_obj._cves = [
+            {'severity': ['invalid1']},
+            {'severity': ['invalid2']},
+        ]
+
+        with pytest.raises(Exception) as exception:
+            response_obj.get_severity()
+        self.assertIs(exception.type, Exception)
+
     def test_get_severity_known_values(self):
-        """Test Severity with unknown value, raises exception."""
+        """Test Severity with known values, expect to get medium severity."""
         response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
         response_obj._cves = [{'severity': ["medium", "low"]}]
         severity = response_obj.get_severity()
         self.assertListEqual(severity, ["medium"])
 
     def test_get_severity_known_values_critical(self):
-        """Test Severity with unknown value, raises exception."""
+        """Test Severity with known critical value, expect to get critical severity."""
         response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
         response_obj._cves = [{'severity': ["critical", "medium", "low", "high"]}]
         severity = response_obj.get_severity()
         self.assertListEqual(severity, ["critical"])
 
     def test_get_cve_maps_empty(self):
-        """Test Severity with unknown value, raises exception."""
+        """Test cve maps with empty cve map, expect empty list []."""
         response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
         response_obj._cves = []
         cve_maps = response_obj.get_cve_maps()
         self.assertListEqual(cve_maps, [])
 
     def test_get_cve_maps_non_empty(self):
-        """Test Severity with unknown value, raises exception."""
+        """Test cve maps with vulnerability data, expect to get mock data as response."""
         response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
         vul_data = dict(
-            snyk_vuln_id=["SNYK:0101"], cvss_scores=["9.0"], snyk_pvt_vulnerability=[True])
+            snyk_vuln_id=["SNYK:0101"],
+            cvss_scores=["9.0"],
+            snyk_pvt_vulnerability=[True],
+            snyk_cwes=["CWES-01", "CWES-02"],
+            snyk_cvss_v3=["4.5"],
+            severity=["medium"],
+            title=["Test title for CVE"],
+            snyk_url=["https://test.com/cve-01"],
+            snyk_cve_ids=["CVE-01", "CVE-02", "CVE-03"],
+            fixed_in=[">=0.19.0-beta.1"])
         mocked_response = [dict(
             vendor_cve_ids=vul_data['snyk_vuln_id'][0],
             cvss=vul_data['cvss_scores'][0],
-            is_private=vul_data['snyk_pvt_vulnerability'][0])]
+            is_private=vul_data['snyk_pvt_vulnerability'][0],
+            cwes=["CWES-01", "CWES-02"],
+            cvss_v3="4.5",
+            severity="medium",
+            title="Test title for CVE",
+            url="https://test.com/cve-01",
+            cve_ids=["CVE-01", "CVE-02", "CVE-03"],
+            fixed_in=[">=0.19.0-beta.1"])
+        ]
+        response_obj._cves = [vul_data]
+        cve_maps = response_obj.get_cve_maps()
+        self.assertListEqual(cve_maps, mocked_response)
+
+    def test_get_cve_maps_default(self):
+        """Test cve maps with empty value, expect to get respose with default values."""
+        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
+        vul_data = dict()
+        mocked_response = [dict(
+            vendor_cve_ids=None,
+            cvss='None',
+            is_private=None,
+            cwes=[],
+            cvss_v3=None,
+            severity=None,
+            title=None,
+            url=None,
+            cve_ids=[],
+            fixed_in=[])
+        ]
         response_obj._cves = [vul_data]
         cve_maps = response_obj.get_cve_maps()
         self.assertListEqual(cve_maps, mocked_response)

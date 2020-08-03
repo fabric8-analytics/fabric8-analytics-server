@@ -395,7 +395,7 @@ components:
               example : "https://app.snyk.io/login"
 
     VulnerabilityDetailsBatch:
-      title: Vulnerability Details
+      title: Vulnerability Details Batch
       description: Information of the vulnerability found
       type: object
       properties:
@@ -437,6 +437,42 @@ components:
               is_private:
                 type: boolean
                 example: true
+              cve_ids:
+                type: array
+                items:
+                  type: string
+                example:
+                  - CVE-2014-0474
+                  - CVE-2014-0475
+              cwes:
+                type: array
+                items:
+                  type: string
+                example:
+                  - CWE-185
+                  - CWE-730
+              cvss_v3:
+                type: string
+                example: "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+              severity:
+                type: string
+                enum:
+                  - low
+                  - medium
+                  - high
+                  - critical
+              title:
+                type: string
+                example: SQL Injection
+              url:
+                type: string
+                example: https://snyk.io/vuln/SNYK-PYTHON-DJANGO-4002
+              fixed_in:
+                type: array
+                items:
+                  type: string
+                example:
+                  - ">=0.19.0-beta.1"
 
     RegisteredUser:
       title: Vendor Private Recommendation
