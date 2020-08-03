@@ -98,11 +98,11 @@ class GraphAnalyses:
         return result
 
 
-
-class DBUtility():
+class DBUtility:
     """Utility call for DB calls."""
 
-    def post_gremlin(self, query: str, bindings:dict) -> dict:
+    @staticmethod
+    def post_gremlin(query: str, bindings: dict) -> dict:
         """Post the given query and bindings to gremlin endpoint."""
         query = inspect.cleandoc(query)
         payload = {

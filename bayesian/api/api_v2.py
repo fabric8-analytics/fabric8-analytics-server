@@ -36,8 +36,8 @@ from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
                             check_for_accepted_ecosystem)
-from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, validate_version, CABatchCall, \
-    unknown_package_flow
+from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, \
+    validate_version, CABatchCall, unknown_package_flow
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
                                                      SARBRequestInvalidException,
                                                      SARBRequestInprogressException,
@@ -240,7 +240,7 @@ class ComponentAnalysesApi(Resource):
 
         # Perform Component Analyses on Vendor specific Graph Edge.
         analyses_result, unknown_pkgs = CABatchCall(ecosystem).get_ca_batch_response(packages_list)
-        disable_ingestion = os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1"
+        disable_ingestion: bool = os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1"
 
         if (analyses_result is None) and disable_ingestion:
             # No Package is known and Ingestion is disabled.
@@ -264,7 +264,8 @@ class ComponentAnalysesApi(Resource):
 
         for pkg in analyses_result:
             # Trigger componentApiFlow for each Known Package
-            server_create_component_bookkeeping(ecosystem, pkg['package'], pkg['version'], g.decoded_token)
+            server_create_component_bookkeeping(
+                ecosystem, pkg['package'], pkg['version'], g.decoded_token)
         return analyses_result, 200
 
 

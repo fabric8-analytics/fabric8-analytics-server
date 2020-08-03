@@ -18,10 +18,11 @@
 from urllib.parse import quote
 import logging
 from bayesian.utility.db_gateway import GraphAnalyses
-from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic, server_create_analysis
+from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic, \
+    server_create_analysis
 from typing import Dict, List, Tuple, Union, Set
 import re
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 from abc import ABC
 from flask import g
 
@@ -31,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 def validate_version(version):
     """Version should not contain special Characters."""
-
     if re.findall('[!@#$%^&*()]', version):
         return False
     return True
@@ -62,7 +62,6 @@ class NormalizedPackages:
     def all_packages(self) -> List:
         """All Packages."""
         return self._pkg_list
-
 
 
 class ComponentAnalyses:
@@ -118,9 +117,8 @@ class ComponentAnalyses:
             return None
 
 
-
 class CABatchCall:
-    """Namespace for Component Analyses Batch call"""
+    """Namespace for Component Analyses Batch call."""
 
     def __init__(self, ecosystem: str):
         """For Flows related to Security Vendor Integrations."""
@@ -150,7 +148,8 @@ class CABatchCall:
             result = []
             for package in analyzed_dependencies:
                 result.append(CABatchResponseBuilder(
-                    self.ecosystem, package.name, package.version).generate_recommendation(graph_response))
+                    self.ecosystem, package.name, package.version).generate_recommendation(
+                    graph_response))
 
             return result, unknown_pkgs
 
@@ -161,7 +160,7 @@ class CABatchCall:
 
     @staticmethod
     def _analysed_package_details(graph_response: Dict) -> Set:
-        """Analyses Package Details from GraphDB
+        """Analyses Package Details from GraphDB.
 
         Converts GraphDb output packages into list of Normalised Packages
         :param graph_response: Graph DB Response
@@ -204,7 +203,7 @@ class AbstractBaseClass(ABC):
         self.pvt_vul = 0
 
     def generate_recommendation(self, graph_response):
-        """Abstract generate_recommendation func"""
+        """Abstract generate_recommendation func."""
         pass
 
     def get_message(self) -> str:
@@ -436,7 +435,7 @@ class ComponentAnalysisResponseBuilder(AbstractBaseClass):
 
         self.nocve_version: list = self.get_version_without_cves(latest_non_cve_versions)
         self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
-        self.severity:list = self.get_severity()
+        self.severity: list = self.get_severity()
         return self.generate_response()
 
     def generate_response(self) -> Dict:
@@ -482,7 +481,6 @@ class ComponentAnalysisResponseBuilder(AbstractBaseClass):
                 fixed_in=cve.get('fixed_in', [])
             ))
         return cve_list
-
 
 
 class CABatchResponseBuilder(AbstractBaseClass):
