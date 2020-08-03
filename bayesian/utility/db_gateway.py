@@ -29,6 +29,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
 
 from f8a_worker.models import StackAnalysisRequest
+import inspect
+import time
 
 logger = logging.getLogger(__name__)
 gremlin_url = "http://{host}:{port}".format(
@@ -45,6 +47,13 @@ class GraphAnalyses:
             .as('version').in('has_version').dedup().as('package').select('version')
             .coalesce(out('has_snyk_cve').as('cve').select('package','version','cve')
             .by(valueMap()),select('package','version').by(valueMap()));
+            """,
+        "ca_batch": """
+            epv = [];packages.each {g.V().has('pecosystem', ecosystem).has('pname', it.name)
+            .has('version', it.version).as('version', 'cve').select('version').in('has_version')
+            .dedup().as('package').select('package', 'version', 'cve')
+            .by(valueMap()).by(valueMap()).by(out('has_snyk_cve')
+            .valueMap().fold()).fill(epv);};epv;
             """
     }
 
@@ -71,6 +80,45 @@ class GraphAnalyses:
         query_result = post(gremlin_url, data=json.dumps(payload))
         logger.info('Gremlin request took %f seconds', (datetime.now() - start).total_seconds())
         return query_result.json()
+
+    @classmethod
+    def get_batch_ca_data(cls, ecosystem: str, packages: list, query_key: str) -> dict:
+        """Component Analyses Batch Query."""
+        logger.info('Executing get_batch_ca_data')
+        bindings = {
+            'ecosystem': ecosystem,
+            'packages': []
+        }
+        ca_batch_query = cls.component_analyses_query.get(query_key)
+        bindings['packages'] = packages
+        started_at = time.time()
+        result = DBUtility().post_gremlin(ca_batch_query, bindings)
+        elapsed_time = time.time() - started_at
+        logger.info(f"It took {elapsed_time} to fetch results from Gremlin.")
+        return result
+
+
+
+class DBUtility():
+    """Utility call for DB calls."""
+
+    def post_gremlin(self, query: str, bindings:dict) -> dict:
+        """Post the given query and bindings to gremlin endpoint."""
+        query = inspect.cleandoc(query)
+        payload = {
+            'gremlin': query,
+        }
+        if bindings:
+            payload['bindings'] = bindings
+        try:
+            response = post(url=gremlin_url, data=json.dumps(payload))
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logger.error(
+                "HTTP error {code}. Error retrieving data for {query}.".format(
+                    code=response.status_code, query=payload))
+            raise Exception from e
 
 
 class RdbAnalyses:

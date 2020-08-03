@@ -36,7 +36,8 @@ from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
                             check_for_accepted_ecosystem)
-from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
+from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, validate_version, CABatchCall, \
+    unknown_package_flow
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
                                                      SARBRequestInvalidException,
                                                      SARBRequestInprogressException,
@@ -202,6 +203,70 @@ class ComponentAnalysesApi(Resource):
 
         raise HTTPError(404, msg)
 
+    @staticmethod
+    def post():
+        """Handle the POST REST API call."""
+        input_json = request.get_json()
+        if not input_json:
+            raise HTTPError(400, error="Expected JSON request")
+        if not isinstance(input_json, dict):
+            raise HTTPError(400, error="Expected list of dependencies in JSON request")
+
+        ecosystem = input_json.get('ecosystem')
+        if not check_for_accepted_ecosystem(ecosystem):
+            msg = f"Ecosystem {ecosystem} is not supported for this request"
+            raise HTTPError(400, msg)
+
+        packages_list = []
+        response_template = namedtuple("response_template", ["message", "status"])
+
+        for pkg_obj in input_json.get('packageversions'):
+            package = pkg_obj.get('package')
+            version = pkg_obj.get('version')
+
+            if not all([ecosystem, package, version]):
+                raise HTTPError(422, "provide the valid input.")
+
+            if not validate_version(version):
+                return response_template(
+                    {'message': "Package version should not have special characters."}, 400)
+
+            if ecosystem == 'maven':
+                package = MavenCoordinates.normalize_str(package)
+
+            package = case_sensitivity_transform(ecosystem, package)
+
+            packages_list.append({"name": package, "version": version})
+
+        # Perform Component Analyses on Vendor specific Graph Edge.
+        analyses_result, unknown_pkgs = CABatchCall(ecosystem).get_ca_batch_response(packages_list)
+        disable_ingestion = os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1"
+
+        if (analyses_result is None) and disable_ingestion:
+            # No Package is known and Ingestion is disabled.
+            msg = f"No data found for any package in manifest file." \
+                  "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
+
+            return response_template({'message': msg}, 400)
+
+        if unknown_pkgs:
+            api_flow = os.environ.get("INVOKE_API_WORKERS", "") == "1"
+
+            if disable_ingestion:
+                # Unknown Packages is Present and INGESTION is DISABLED
+                msg = f"No data found for any package in manifest file." \
+                      "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
+
+                return response_template({'message': msg}, 400)
+
+            unknown_package_flow(ecosystem, unknown_pkgs, api_flow)
+            return analyses_result, 202
+
+        for pkg in analyses_result:
+            # Trigger componentApiFlow for each Known Package
+            server_create_component_bookkeeping(ecosystem, pkg['package'], pkg['version'], g.decoded_token)
+        return analyses_result, 200
+
 
 @api_v2.route('/stack-analyses/<external_request_id>', methods=['GET'])
 @login_required
@@ -322,6 +387,10 @@ add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(ComponentAnalysesApi,
                                '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
+
+add_resource_no_matter_slashes(ComponentAnalysesApi,
+                               '/component-analyses/',
+                               endpoint='post_component_analysis')
 
 
 # ERROR HANDLING

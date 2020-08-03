@@ -18,9 +18,55 @@
 from urllib.parse import quote
 import logging
 from bayesian.utility.db_gateway import GraphAnalyses
-from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic
+from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic, server_create_analysis
+from typing import Dict, List, Tuple, Union, Set
+import re
+from collections import namedtuple, defaultdict
+from abc import ABC
+from flask import g
+
 
 logger = logging.getLogger(__name__)
+
+
+def validate_version(version):
+    """Version should not contain special Characters."""
+
+    if re.findall('[!@#$%^&*()]', version):
+        return False
+    return True
+
+
+def unknown_package_flow(unknown_pkgs: Dict, ecosystem: str, api_flow: bool) -> bool:
+    """Unknown Package flow."""
+    print("PKGG2")
+    print(unknown_pkgs)
+    for pkg in unknown_pkgs:
+        print("PKGG")
+        print(pkg)
+        # Enter the unknown path: Trigger bayesianApiFlow
+        server_create_analysis(ecosystem, pkg.package, pkg.version, user_profile=g.decoded_token,
+                               api_flow=api_flow, force=False, force_graph_sync=True)
+    return True
+
+
+class NormalizedPackages:
+    """Duplicate free Package List."""
+
+    def __init__(self, packages: List):
+        """Create NormalizedPackages by removing all duplicates from packages."""
+        self._packages = packages
+        self._pkg_list = []
+        Package = namedtuple("Package", ["name", "version"])
+        for pkg in packages:
+            package_obj = Package(name=pkg['name'], version=pkg['version'])
+            self._pkg_list.append(package_obj)
+
+    @property
+    def all_packages(self) -> List:
+        """All Packages."""
+        return self._pkg_list
+
 
 
 class ComponentAnalyses:
@@ -35,7 +81,7 @@ class ComponentAnalyses:
         self.response_data = dict()
 
     @staticmethod
-    def is_package_known(query_result):
+    def is_package_known(query_result) -> bool:
         """Check if Package is Known or Unknown.
 
         :return:
@@ -50,7 +96,7 @@ class ComponentAnalyses:
             return False
         return True
 
-    def get_component_analyses_response(self):
+    def get_component_analyses_response(self) -> Union[dict, None]:
         """Fetch analysis for given package+version from the graph database.
 
         Fetch analysis for given package+version from the graph database.
@@ -76,8 +122,81 @@ class ComponentAnalyses:
             return None
 
 
-class ComponentAnalysisResponseBuilder:
-    """Vendor specific response builder for Component Analyses v2."""
+
+class CABatchCall:
+    """Namespace for Component Analyses Batch call"""
+
+    def __init__(self, ecosystem: str):
+        """For Flows related to Security Vendor Integrations."""
+        self.ecosystem = ecosystem
+        self.packages = []
+        self.recommendation = dict()
+        self.response_data = dict()
+
+    def get_ca_batch_response(self, packages: List[Dict]) -> Union[Tuple, None]:
+        """Fetch analysis for given package+version from the graph database.
+
+        Build CA Batch Response.
+        Result is fed to ResponseBuilder.
+        :param packages: List of dict of package, version info.
+
+        :returns:
+            - Json Response
+            - None: Exception/Package not Known.
+        """
+        logger.info('Executing CA Batch Vendor Specific Analyses')
+        self.packages = packages
+        try:
+            graph_response = GraphAnalyses().get_batch_ca_data(self.ecosystem, packages, 'ca_batch')
+
+            analyzed_dependencies = set(self._analysed_package_details(graph_response))
+            unknown_pkgs: Set = self.get_all_unknown_packages(analyzed_dependencies)
+            print("All unknown packages")
+            print(unknown_pkgs)
+            result = []
+            for package in analyzed_dependencies:
+                result.append(CABatchResponseBuilder(
+                    self.ecosystem, package.name, package.version).generate_recommendation(graph_response))
+
+            return result, unknown_pkgs
+
+        except Exception as e:
+            logger.info("Error")
+            logger.error(str(e))
+            return None, None
+
+    @staticmethod
+    def _analysed_package_details(graph_response: Dict) -> Set:
+        """Analyses Package Details from GraphDB
+
+        Converts GraphDb output packages into list of Normalised Packages
+        :param graph_response: Graph DB Response
+        :return: list of Normalised Packages
+        """
+        db_pkg_list = []
+        for pack_details in graph_response.get('result').get('data'):
+            pkg_name = pack_details.get('package').get('name', [''])[0]
+            pkg_vr = pack_details.get('version').get('version', [''])[0]
+            db_pkg_list.append({"name": pkg_name, "version": pkg_vr})
+        _normalized_packages = NormalizedPackages(db_pkg_list)
+        db_known_packages = _normalized_packages.all_packages
+        return set(db_known_packages)
+
+    def get_all_unknown_packages(self, analyzed_dependencies: Set) -> Set:
+        """Get all unknowns packages.
+
+        unknown_packages = input_packages - graphdb_output_packages
+        :param analyzed_dependencies: Analyses Packages in GraphDB Response
+        :return: Unknown Packages to Graph
+        """
+        _normalized_packages = NormalizedPackages(self.packages)
+        input_dependencies = set(_normalized_packages.all_packages)
+
+        return input_dependencies.difference(analyzed_dependencies)
+
+
+class AbstractBaseClass(ABC):
+    """Abstract Class for CA Response Builder."""
 
     def __init__(self, ecosystem, package, version):
         """Response Builder, Build Json Response for Component Analyses."""
@@ -91,28 +210,8 @@ class ComponentAnalysisResponseBuilder:
         self.pvt_vul = 0
 
     def generate_recommendation(self, graph_response):
-        """Generate recommendation for the package+version.
-
-        Main function to generate recommendation response.
-
-        :return: Json Response
-        """
-        logger.info("Generating Recommendation")
-        result_data = graph_response.get('result', {}).get('data')
-        latest_non_cve_versions = result_data[0].get('package', {}).get(
-            'latest_non_cve_version', [])
-        for data in result_data:
-            this_version = data.get('version', {}).get('version', [None])[0]
-            if this_version == self.version:
-                if 'cve' in data:
-                    self._cves.append(data.get('cve'))
-        if (not self.has_cves()) or not bool(latest_non_cve_versions):
-            # If Package has No cves or No Latest Non CVE Versions.
-            return dict(recommendation={})
-        self.nocve_version = self.get_version_without_cves(latest_non_cve_versions)
-        self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
-        self.severity = self.get_severity()
-        return self.generate_response()
+        """Abstract generate_recommendation func"""
+        pass
 
     def get_message(self) -> str:
         """Build Message.
@@ -204,24 +303,8 @@ class ComponentAnalysisResponseBuilder:
         return bool(self._cves)
 
     def generate_response(self):
-        """Build a JSON Response from all calculated values.
-
-        :return: json formatted response to requester.
-        """
-        logger.info("Generating Final Response.")
-        component_analyses_dict = dict(
-            vulnerability=self.get_cve_maps()
-        )
-        response = dict(
-            recommended_versions=self.nocve_version,
-            registration_link=self.get_registration_link(),
-            component_analyses=component_analyses_dict,
-            message=self.get_message(),
-            severity=self.severity[0],
-            known_security_vulnerability_count=self.public_vul,
-            security_advisory_count=self.pvt_vul,
-        )
-        return response
+        """Abstract function for Generate Response.."""
+        pass
 
     def get_vulnerabilities_count(self):
         """Vulnerability count, Calculates Public and Pvt Vulnerability count.
@@ -329,6 +412,60 @@ class ComponentAnalysisResponseBuilder:
         return list(filter(lambda x: x == highest_severity_name_in_input, input_severities))
 
     def get_cve_maps(self):
+        """Abstract get_cve_maps."""
+        pass
+
+
+class ComponentAnalysisResponseBuilder(AbstractBaseClass):
+    """Vendor specific response builder for Component Analyses v2."""
+
+    def generate_recommendation(self, graph_response: Dict) -> Dict:
+        """Generate recommendation for the package+version.
+
+        Main function to generate recommendation response.
+
+        :return: Json Response
+        """
+        logger.info("Generating Recommendation")
+        result_data = graph_response.get('result', {}).get('data')
+        latest_non_cve_versions = result_data[0].get('package', {}).get(
+            'latest_non_cve_version', [])
+        for data in result_data:
+            this_version = data.get('version', {}).get('version', [None])[0]
+            if this_version == self.version:
+                if 'cve' in data:
+                    self._cves.append(data.get('cve'))
+
+        if (not self.has_cves()) or not bool(latest_non_cve_versions):
+            # If Package has No cves or No Latest Non CVE Versions.
+            return dict(recommendation={})
+
+        self.nocve_version: list = self.get_version_without_cves(latest_non_cve_versions)
+        self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
+        self.severity:list = self.get_severity()
+        return self.generate_response()
+
+    def generate_response(self) -> Dict:
+        """Build a JSON Response from all calculated values.
+
+        :return: json formatted response to requester.
+        """
+        logger.info("Generating Final Response.")
+        component_analyses_dict = dict(
+            vulnerability=self.get_cve_maps()
+        )
+        response = dict(
+            recommended_versions=self.nocve_version,
+            registration_link=self.get_registration_link(),
+            component_analyses=component_analyses_dict,
+            message=self.get_message(),
+            severity=self.severity[0],
+            known_security_vulnerability_count=self.public_vul,
+            security_advisory_count=self.pvt_vul,
+        )
+        return response
+
+    def get_cve_maps(self) -> List[Dict]:
         """Get all Vulnerabilities Meta Data.
 
         :return: List
@@ -351,3 +488,85 @@ class ComponentAnalysisResponseBuilder:
                 fixed_in=cve.get('fixed_in', [])
             ))
         return cve_list
+
+
+
+class CABatchResponseBuilder(AbstractBaseClass):
+    """Response builder for Component Analyses v2 Batch."""
+
+    def generate_recommendation(self, graph_response: Dict) -> Dict:
+        """Generate recommendation for the package+version.
+
+        Main function to generate recommendation response.
+
+        :return: Json Response
+        """
+        logger.info("Generating Recommendation")
+        result_data: Dict = graph_response.get('result', {}).get('data')
+        latest_non_cve_versions: List[str] = result_data[0].get('package', {}).get(
+            'latest_non_cve_version', [])
+
+        for data in result_data:
+            this_version = data.get('version', {}).get('version', [None])[0]
+
+            if this_version != self.version:
+                logger.info("Pkg version doesn't match with Graph Results.")
+                continue
+
+            if 'cve' not in data:
+                logger.info("No Vulnerability Info found.")
+                continue
+
+            for cve_data in data.get('cve'):
+                self._cves.append(cve_data)
+
+        if (not self.has_cves()) or not bool(latest_non_cve_versions):
+            # If Package has No cves or No Latest Non CVE Versions.
+            logger.info("No Vulnerabilities found.")
+            return dict(recommendation={})
+
+        self.nocve_version: List[str] = self.get_version_without_cves(latest_non_cve_versions)
+        self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
+        self.severity: List[str] = self.get_severity()
+        return self.generate_response()
+
+    def get_cve_maps(self) -> List[Dict]:
+        """Get all Vulnerabilities Meta Data.
+
+        :return: List
+            - Empty: if no Vulnerability is there.
+            - Dict: if Vulnerability is present.
+        """
+        logger.info("Get Vulnerability Meta data.")
+        cve_list = [dict(
+                id=cve.get('snyk_vuln_id', [None])[0],
+                cvss=str(cve.get('cvss_scores', [None])[0]),
+                is_private=cve.get('snyk_pvt_vulnerability', [None])[0],
+                cwes=cve.get('snyk_cwes', []),
+                cvss_v3=cve.get('snyk_cvss_v3', [None])[0],
+                severity=cve.get('severity', [None])[0],
+                title=cve.get('title', [None])[0],
+                url=cve.get('snyk_url', [None])[0],
+                cve_ids=cve.get('snyk_cve_ids', []),
+                fixed_in=cve.get('fixed_in', [])
+            ) for cve in self._cves]
+        return cve_list
+
+    def generate_response(self) -> Dict:
+        """Build a JSON Response from all calculated values.
+
+        :return: json formatted response to requester.
+        """
+        logger.info("Generating Final Response.")
+        response = dict(
+            package=self.package,
+            version=self.version,
+            recommended_versions=self.nocve_version,
+            registration_link=self.get_registration_link(),
+            vulnerability=self.get_cve_maps(),
+            message=self.get_message(),
+            severity=self.severity[0],
+            known_security_vulnerability_count=self.public_vul,
+            security_advisory_count=self.pvt_vul,
+        )
+        return response
