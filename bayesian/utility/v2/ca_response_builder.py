@@ -37,15 +37,11 @@ def validate_version(version):
     return True
 
 
-def unknown_package_flow(unknown_pkgs: Dict, ecosystem: str, api_flow: bool) -> bool:
+def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple], api_flow: bool) -> bool:
     """Unknown Package flow."""
-    print("PKGG2")
-    print(unknown_pkgs)
     for pkg in unknown_pkgs:
-        print("PKGG")
-        print(pkg)
         # Enter the unknown path: Trigger bayesianApiFlow
-        server_create_analysis(ecosystem, pkg.package, pkg.version, user_profile=g.decoded_token,
+        server_create_analysis(ecosystem, pkg.name, pkg.version, user_profile=g.decoded_token,
                                api_flow=api_flow, force=False, force_graph_sync=True)
     return True
 
@@ -151,8 +147,6 @@ class CABatchCall:
 
             analyzed_dependencies = set(self._analysed_package_details(graph_response))
             unknown_pkgs: Set = self.get_all_unknown_packages(analyzed_dependencies)
-            print("All unknown packages")
-            print(unknown_pkgs)
             result = []
             for package in analyzed_dependencies:
                 result.append(CABatchResponseBuilder(
@@ -565,7 +559,7 @@ class CABatchResponseBuilder(AbstractBaseClass):
             registration_link=self.get_registration_link(),
             vulnerability=self.get_cve_maps(),
             message=self.get_message(),
-            severity=self.severity[0],
+            highest_severity=self.severity[0],
             known_security_vulnerability_count=self.public_vul,
             security_advisory_count=self.pvt_vul,
         )
