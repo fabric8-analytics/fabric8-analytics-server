@@ -82,36 +82,23 @@ class GraphAnalyses:
 
     @classmethod
     def get_batch_ca_data(cls, ecosystem: str, packages: list, query_key: str) -> dict:
-        """Component Analyses Batch Query."""
+        """Component Analyses Batch Call."""
         logger.info('Executing get_batch_ca_data')
-        bindings = {
-            'ecosystem': ecosystem,
-            'packages': []
-        }
         ca_batch_query = cls.component_analyses_query.get(query_key)
-        bindings['packages'] = packages
-        started_at = time.time()
-        result = DBUtility().post_gremlin(ca_batch_query, bindings)
-        elapsed_time = time.time() - started_at
-        logger.info(f"It took {elapsed_time} to fetch results from Gremlin.")
-        return result
-
-
-class DBUtility:
-    """Utility call for DB calls."""
-
-    @staticmethod
-    def post_gremlin(query: str, bindings: dict) -> dict:
-        """Post the given query and bindings to gremlin endpoint."""
-        query = inspect.cleandoc(query)
+        ca_batch_query = inspect.cleandoc(ca_batch_query)
         payload = {
-            'gremlin': query,
+            'gremlin': ca_batch_query,
+            'bindings': {
+                'ecosystem': ecosystem,
+                'packages': packages
+            }
         }
-        if bindings:
-            payload['bindings'] = bindings
         try:
+            started_at = time.time()
             response = post(url=gremlin_url, data=json.dumps(payload))
             response.raise_for_status()
+            elapsed_time = time.time() - started_at
+            logger.info(f"It took {elapsed_time} to fetch results from Gremlin.")
             return response.json()
         except Exception as e:
             logger.error(

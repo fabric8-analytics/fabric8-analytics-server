@@ -30,7 +30,7 @@ from flask import g
 logger = logging.getLogger(__name__)
 
 
-def validate_version(version):
+def validate_version(version: str) -> bool:
     """Version should not contain special Characters."""
     if re.findall('[!@#$%^&*()]', version):
         return False
