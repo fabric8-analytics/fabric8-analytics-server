@@ -244,7 +244,7 @@ class ComponentAnalysesApi(Resource):
 
         if (analyses_result is None) and disable_ingestion:
             # No Package is known and Ingestion is disabled.
-            msg = f"No data found for any package in manifest file." \
+            msg = "No data found for any package in manifest file." \
                   "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
 
             return response_template({'message': msg}, 400)
@@ -254,7 +254,7 @@ class ComponentAnalysesApi(Resource):
 
             if disable_ingestion:
                 # Unknown Packages is Present and INGESTION is DISABLED
-                msg = f"No data found for any package in manifest file." \
+                msg = "No data found for any package in manifest file." \
                       "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
 
                 return response_template({'message': msg}, 400)

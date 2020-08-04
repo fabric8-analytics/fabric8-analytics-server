@@ -30,7 +30,6 @@ from sqlalchemy.dialects.postgresql import insert
 
 from f8a_worker.models import StackAnalysisRequest
 import inspect
-import time
 
 logger = logging.getLogger(__name__)
 gremlin_url = "http://{host}:{port}".format(
