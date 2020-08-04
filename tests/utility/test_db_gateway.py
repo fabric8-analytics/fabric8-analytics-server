@@ -27,7 +27,7 @@ from bayesian.utility.db_gateway import (GraphAnalyses, RdbAnalyses, RDBSaveExce
 from sqlalchemy.exc import SQLAlchemyError
 
 
-class DbgatewayTest(unittest.TestCase):
+class GraphAnalysesTest(unittest.TestCase):
     """Test Communicator."""
 
     @classmethod
@@ -36,6 +36,15 @@ class DbgatewayTest(unittest.TestCase):
         cls.eco = 'eco'
         cls.ver = '1'
         cls.pkg = 'pkg'
+        # Read Vendor Data from JSON.
+        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
+        ca_batch_response = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
+
+        with open(ca_batch_response) as f:
+            cls.batch_response = json.load(f)
+
+        with open(gremlin_batch_data) as f:
+            cls.gremlin_batch = json.load(f)
 
         # Read Vendor Data from JSON.
         rest_json_path2 = os.path.join(
@@ -59,6 +68,27 @@ class DbgatewayTest(unittest.TestCase):
         self.assertIsInstance(ga.get('requestId'), str)
         self.assertIn('status', ga)
         self.assertIsInstance(ga.get('status'), dict)
+
+    @patch('bayesian.utility.db_gateway.post')
+    def test_get_batch_ca_data(self, _mockpost):
+        """Test get_batch_ca_data."""
+        _mockpost().json.return_value = self.gremlin_batch
+        ga = GraphAnalyses.get_batch_ca_data(
+            'eco', packages=[{'name': 'django', 'version': '1.1'}], query_key='ca_batch')
+        self.assertIsInstance(ga, dict)
+        self.assertIn('result', ga)
+        self.assertIsInstance(ga.get('result'), dict)
+        self.assertIn('requestId', ga)
+        self.assertIsInstance(ga.get('requestId'), str)
+        self.assertIn('status', ga)
+        self.assertIsInstance(ga.get('status'), dict)
+
+    @patch('bayesian.utility.db_gateway.post', return_value=Exception)
+    def test_get_batch_ca_data_exception(self, _mockpost):
+        """Test get_batch_ca_data_exception."""
+        self.assertRaises(Exception, GraphAnalyses.get_batch_ca_data,
+                          'eco', packages=[{'name': 'django', 'version': '1.1'}],
+                          query_key='ca_batch')
 
 
 class TestRdbAnalyses(unittest.TestCase):

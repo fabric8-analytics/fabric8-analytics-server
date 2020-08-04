@@ -17,16 +17,82 @@
 """Test Utility for All Utility Functions."""
 
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, \
-    ComponentAnalysisResponseBuilder
+    ComponentAnalysisResponseBuilder, validate_version, unknown_package_flow, \
+    NormalizedPackages, CABatchCall
 from urllib.parse import quote
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 import unittest
 import pytest
 from urllib.parse import urlparse
+from collections import namedtuple
+import os
+import json
 
 
-class VendorAnalysesTest(unittest.TestCase):
-    """Test Cases for Vendor Analyses Test class."""
+def test_validate_version():
+    """Check the function validate_version."""
+    assert validate_version("1.2.3")
+    assert not validate_version("1.2.*"), "Invalid Version"
+
+
+@patch('bayesian.utility.v2.ca_response_builder.g')
+@patch('bayesian.utility.v2.ca_response_builder.server_create_analysis')
+def test_get_component_analyses_with_result_not_none(_analyses, _g):
+    """CA Test Unknown Package flow."""
+    unknown_package = unknown_package_flow('eco', {Mock()}, api_flow=True)
+    assert unknown_package
+
+
+class NormalisedPackageTest(unittest.TestCase):
+    """Test cases for Normalised Package."""
+
+    def test_all_packages(self):
+        """Test all Packages."""
+        Package = namedtuple("Package", ["name", "version"])
+        ideal_pkg_list = [Package(name='django', version='1.1')]
+        np = NormalizedPackages([{'name': "django", 'version': '1.1'}]).all_packages
+        self.assertListEqual(np, ideal_pkg_list)
+
+
+class CABatchCallTest(unittest.TestCase):
+    """Test CA Batch Class."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Class variables initialised."""
+        # Read Vendor Data from JSON.
+        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
+        ca_batch_response = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
+
+        with open(ca_batch_response) as f:
+            batch_response = json.load(f)
+
+        with open(gremlin_batch_data) as f:
+            resp_json = json.load(f)
+
+        cls.batch_response = batch_response
+        cls.resp_json = resp_json
+
+    @patch('bayesian.utility.db_gateway.GraphAnalyses.get_batch_ca_data')
+    def test_get_ca_batch_response(self, _graph_response):
+        """Test Get CA Batch Response."""
+        _graph_response.return_value = self.resp_json
+
+        ca = CABatchCall('eco', packages=[{'name': "django", 'version': '1.1'}])
+        response, unknown_packages = ca.get_ca_batch_response()
+        self.assertEqual(response, self.batch_response)
+
+    @patch('bayesian.utility.db_gateway.GraphAnalyses.get_batch_ca_data', return_value=Exception)
+    def test_get_ca_batch_response_exception(self, _graph_response):
+        """Generates exception. Test Exception Block."""
+        ca = CABatchCall('eco', packages=[{'name': "django", 'version': '1.1'}])
+        response, unknown_packages = ca.get_ca_batch_response()
+        self.assertEqual(response, None)
+        self.assertEqual(unknown_packages, None)
+
+
+class ComponentAnalysesTest(unittest.TestCase):
+    """Test Cases for Component Analyses Test class."""
 
     @staticmethod
     def test_is_package_known_with_None():

@@ -51,17 +51,16 @@ class NormalizedPackages:
 
     def __init__(self, packages: List):
         """Create NormalizedPackages by removing all duplicates from packages."""
-        self._packages = packages
-        self._pkg_list = []
-        Package = namedtuple("Package", ["name", "version"])
-        for pkg in packages:
-            package_obj = Package(name=pkg['name'], version=pkg['version'])
-            self._pkg_list.append(package_obj)
+        self.packages = packages
 
     @property
-    def all_packages(self) -> List:
-        """All Packages."""
-        return self._pkg_list
+    def all_packages(self) -> List[namedtuple]:
+        """All Packages in Tuple format."""
+        Package = namedtuple("Package", ["name", "version"])
+        pkg_list = [Package(name=pkg['name'],
+                            version=pkg['version'])
+                    for pkg in self.packages]
+        return pkg_list
 
 
 class ComponentAnalyses:
@@ -120,14 +119,14 @@ class ComponentAnalyses:
 class CABatchCall:
     """Namespace for Component Analyses Batch call."""
 
-    def __init__(self, ecosystem: str):
+    def __init__(self, ecosystem: str, packages: List[Dict]):
         """For Flows related to Security Vendor Integrations."""
         self.ecosystem = ecosystem
-        self.packages = []
+        self.packages = packages
         self.recommendation = dict()
         self.response_data = dict()
 
-    def get_ca_batch_response(self, packages: List[Dict]) -> Union[Tuple, None]:
+    def get_ca_batch_response(self) -> Union[Tuple, None]:
         """Fetch analysis for given package+version from the graph database.
 
         Build CA Batch Response.
@@ -139,9 +138,9 @@ class CABatchCall:
             - None: Exception/Package not Known.
         """
         logger.info('Executing CA Batch Vendor Specific Analyses')
-        self.packages = packages
         try:
-            graph_response = GraphAnalyses().get_batch_ca_data(self.ecosystem, packages, 'ca_batch')
+            graph_response = GraphAnalyses().get_batch_ca_data(
+                self.ecosystem, self.packages, 'ca_batch')
 
             analyzed_dependencies = set(self._analysed_package_details(graph_response))
             unknown_pkgs: Set = self.get_all_unknown_packages(analyzed_dependencies)
@@ -150,7 +149,6 @@ class CABatchCall:
                 result.append(CABatchResponseBuilder(
                     self.ecosystem, package.name, package.version).generate_recommendation(
                     graph_response))
-
             return result, unknown_pkgs
 
         except Exception as e:

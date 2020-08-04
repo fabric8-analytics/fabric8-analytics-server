@@ -239,7 +239,8 @@ class ComponentAnalysesApi(Resource):
             packages_list.append({"name": package, "version": version})
 
         # Perform Component Analyses on Vendor specific Graph Edge.
-        analyses_result, unknown_pkgs = CABatchCall(ecosystem).get_ca_batch_response(packages_list)
+        analyses_result, unknown_pkgs = CABatchCall(
+            ecosystem, packages_list).get_ca_batch_response()
         disable_ingestion: bool = os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1"
 
         if (analyses_result is None) and disable_ingestion:
