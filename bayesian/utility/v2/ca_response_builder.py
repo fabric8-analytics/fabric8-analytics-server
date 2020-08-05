@@ -17,15 +17,17 @@
 
 from urllib.parse import quote
 import logging
+
+from bayesian.exceptions import HTTPError
 from bayesian.utility.db_gateway import GraphAnalyses
 from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic, \
-    server_create_analysis
+    server_create_analysis, check_for_accepted_ecosystem
 from typing import Dict, List, Tuple, Union, Set
 import re
 from collections import namedtuple
 from abc import ABC
 from flask import g
-
+from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,50 @@ def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple], api_flow
         server_create_analysis(ecosystem, pkg.name, pkg.version, user_profile=g.decoded_token,
                                api_flow=api_flow, force=False, force_graph_sync=True)
     return True
+
+
+def ca_validate_input(input_json):
+    """Validate CA Input."""
+    if not input_json:
+        raise HTTPError(400, error="Expected JSON request")
+
+    if not isinstance(input_json, dict):
+        raise HTTPError(400, error="Expected list of dependencies in JSON request")
+
+    ecosystem = input_json.get('ecosystem')
+    if not check_for_accepted_ecosystem(ecosystem):
+        error_msg: str = f"Ecosystem {ecosystem} is not supported for this request"
+        raise HTTPError(400, error=error_msg)
+
+    if not input_json.get('package_versions'):
+        error_msg: str = "package_versions is missing"
+        raise HTTPError(400, error=error_msg)
+
+    return True
+
+
+def get_package_version(pkg_obj: Dict, ecosystem: str) -> Tuple[str, str]:
+    """Fetch, Clean and Validate Package Version Info from Input.
+
+    :param pkg_obj: Package Info from User
+    :param ecosystem: Ecosystem Info Provided by User
+    :return: package, version
+    """
+    package: str = pkg_obj.get('package')
+    version: str = pkg_obj.get('version')
+
+    if not all([ecosystem, package, version]):
+        raise HTTPError(422, "Invalid Input: Package, Version and Ecosystem are required.")
+
+    if not validate_version(version):
+        msg: dict = {'message': "Package version should not have special characters."}
+        return HTTPError(400, msg)
+
+    if ecosystem == 'maven':
+        package = MavenCoordinates.normalize_str(package)
+
+    package = case_sensitivity_transform(ecosystem, package)
+    return package, version
 
 
 class NormalizedPackages:

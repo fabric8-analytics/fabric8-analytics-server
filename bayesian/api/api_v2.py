@@ -37,7 +37,7 @@ from bayesian.utils import (get_system_version,
                             server_create_analysis,
                             check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, \
-    validate_version, CABatchCall, unknown_package_flow
+    CABatchCall, unknown_package_flow, ca_validate_input, get_package_version
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
                                                      SARBRequestInvalidException,
                                                      SARBRequestInprogressException,
@@ -47,7 +47,6 @@ from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
 from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
                                          RDBInvalidRequestException, RDBServerException)
-
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +59,6 @@ errors = {
 
 api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 rest_api_v2 = Api(api_v2, errors=errors)
-
 
 ANALYSIS_ACCESS_COUNT_KEY = 'access_count'
 TOTAL_COUNT_KEY = 'total_count'
@@ -176,7 +174,7 @@ class ComponentAnalysesApi(Resource):
             return analyses_result
         elif os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1":
             msg = f"No data found for {ecosystem} package {package}/{version} " \
-                   "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
+                  "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
 
             return response_template({'error': msg}, 202)
 
@@ -206,68 +204,45 @@ class ComponentAnalysesApi(Resource):
     @staticmethod
     def post():
         """Handle the POST REST API call."""
-        input_json = request.get_json()
-        if not input_json:
-            raise HTTPError(400, error="Expected JSON request")
-        if not isinstance(input_json, dict):
-            raise HTTPError(400, error="Expected list of dependencies in JSON request")
+        input_json: dict = request.get_json()
 
-        ecosystem = input_json.get('ecosystem')
-        if not check_for_accepted_ecosystem(ecosystem):
-            msg = f"Ecosystem {ecosystem} is not supported for this request"
-            raise HTTPError(400, msg)
-
-        packages_list = []
+        ca_validate_input(input_json)
         response_template = namedtuple("response_template", ["message", "status"])
+        ecosystem: str = input_json.get('ecosystem')
+        disable_ingestion: bool = os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1"
+        ingestion_disabled_msg: str = "No data found for any package in manifest file. " \
+                                      "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW " \
+                                      "is enabled"
 
-        for pkg_obj in input_json.get('packageversions'):
-            package = pkg_obj.get('package')
-            version = pkg_obj.get('version')
-
-            if not all([ecosystem, package, version]):
-                raise HTTPError(422, "provide the valid input.")
-
-            if not validate_version(version):
-                return response_template(
-                    {'message': "Package version should not have special characters."}, 400)
-
-            if ecosystem == 'maven':
-                package = MavenCoordinates.normalize_str(package)
-
-            package = case_sensitivity_transform(ecosystem, package)
-
+        packages_list: list = []
+        for pkg_obj in input_json.get('package_versions'):
+            package, version = get_package_version(pkg_obj, ecosystem)
             packages_list.append({"name": package, "version": version})
 
         # Perform Component Analyses on Vendor specific Graph Edge.
         analyses_result, unknown_pkgs = CABatchCall(
             ecosystem, packages_list).get_ca_batch_response()
-        disable_ingestion: bool = os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1"
 
         if (analyses_result is None) and disable_ingestion:
             # No Package is known and Ingestion is disabled.
-            msg = "No data found for any package in manifest file." \
-                  "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
-
-            return response_template({'message': msg}, 400)
+            raise HTTPError(400, error=ingestion_disabled_msg)
 
         if unknown_pkgs:
-            api_flow = os.environ.get("INVOKE_API_WORKERS", "") == "1"
+            api_flow: bool = os.environ.get("INVOKE_API_WORKERS", "") == "1"
 
             if disable_ingestion:
                 # Unknown Packages is Present and INGESTION is DISABLED
-                msg = "No data found for any package in manifest file." \
-                      "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
-
-                return response_template({'message': msg}, 400)
+                raise HTTPError(400, error=ingestion_disabled_msg)
 
             unknown_package_flow(ecosystem, unknown_pkgs, api_flow)
-            return analyses_result, 202
+            return response_template(analyses_result, 202)
 
         for pkg in analyses_result:
             # Trigger componentApiFlow for each Known Package
             server_create_component_bookkeeping(
                 ecosystem, pkg['package'], pkg['version'], g.decoded_token)
-        return analyses_result, 200
+
+        return response_template(analyses_result, 200)
 
 
 @api_v2.route('/stack-analyses/<external_request_id>', methods=['GET'])
