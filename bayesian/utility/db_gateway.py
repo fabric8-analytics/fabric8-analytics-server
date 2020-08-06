@@ -50,7 +50,6 @@ class GraphAnalyses:
 
     def __init__(self):
         """Initialise GraphAnalyses."""
-
         self.ca_batch_query = """
             epv = [];packages.each {g.V().has('pecosystem', ecosystem).has('pname', it.name)
             .has('version', it.version).as('version', 'cve').select('version').in('has_version')

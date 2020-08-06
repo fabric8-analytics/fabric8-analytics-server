@@ -24,7 +24,6 @@ from unittest.mock import patch, Mock
 import unittest
 import pytest
 from urllib.parse import urlparse
-from collections import namedtuple
 import os
 import json
 
