@@ -213,6 +213,9 @@ class ComponentAnalysesApi(Resource):
         ingestion_disabled_msg: str = "No data found for any package in manifest file. " \
                                       "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW " \
                                       "is enabled"
+        no_package_available_msg: str = f"No Package for {ecosystem} is unavailable. " \
+                                        f"The package will be available shortly," \
+                                        f"Please retry after some time."
 
         packages_list: list = []
         for pkg_obj in input_json.get('package_versions'):
@@ -223,10 +226,6 @@ class ComponentAnalysesApi(Resource):
         analyses_result, unknown_pkgs = CABatchCall(
             ecosystem, packages_list).get_ca_batch_response()
 
-        if (analyses_result is None) and disable_ingestion:
-            # No Package is known and Ingestion is disabled.
-            raise HTTPError(400, error=ingestion_disabled_msg)
-
         if unknown_pkgs:
             api_flow: bool = os.environ.get("INVOKE_API_WORKERS", "") == "1"
 
@@ -235,7 +234,10 @@ class ComponentAnalysesApi(Resource):
                 raise HTTPError(400, error=ingestion_disabled_msg)
 
             unknown_package_flow(ecosystem, unknown_pkgs, api_flow)
-            return response_template(analyses_result, 202)
+
+            if not analyses_result:
+                # If None of Packages is Known
+                return response_template({'error': no_package_available_msg}, 202)
 
         for pkg in analyses_result:
             # Trigger componentApiFlow for each Known Package

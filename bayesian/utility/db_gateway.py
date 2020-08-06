@@ -29,7 +29,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
 
 from f8a_worker.models import StackAnalysisRequest
-import inspect
 
 logger = logging.getLogger(__name__)
 gremlin_url = "http://{host}:{port}".format(
@@ -47,14 +46,18 @@ class GraphAnalyses:
             .coalesce(out('has_snyk_cve').as('cve').select('package','version','cve')
             .by(valueMap()),select('package','version').by(valueMap()));
             """,
-        "ca_batch": """
+    }
+
+    def __init__(self):
+        """Initialise GraphAnalyses."""
+
+        self.ca_batch_query = """
             epv = [];packages.each {g.V().has('pecosystem', ecosystem).has('pname', it.name)
             .has('version', it.version).as('version', 'cve').select('version').in('has_version')
             .dedup().as('package').select('package', 'version', 'cve')
             .by(valueMap()).by(valueMap()).by(out('has_snyk_cve')
             .valueMap().fold()).fill(epv);};epv;
-            """
-    }
+        """
 
     @classmethod
     def get_ca_data_from_graph(cls, ecosystem, package, version, vendor):
@@ -80,14 +83,11 @@ class GraphAnalyses:
         logger.info('Gremlin request took %f seconds', (datetime.now() - start).total_seconds())
         return query_result.json()
 
-    @classmethod
-    def get_batch_ca_data(cls, ecosystem: str, packages: list, query_key: str) -> dict:
+    def get_batch_ca_data(self, ecosystem: str, packages: list) -> dict:
         """Component Analyses Batch Call."""
         logger.info('Executing get_batch_ca_data')
-        ca_batch_query = cls.component_analyses_query.get(query_key)
-        ca_batch_query = inspect.cleandoc(ca_batch_query)
         payload = {
-            'gremlin': ca_batch_query,
+            'gremlin': self.ca_batch_query,
             'bindings': {
                 'ecosystem': ecosystem,
                 'packages': packages
@@ -102,9 +102,8 @@ class GraphAnalyses:
             return response.json()
         except Exception as e:
             logger.error(
-                "HTTP error {code}. Error retrieving data for {query}.".format(
-                    code=response.status_code, query=payload))
-            raise Exception from e
+                "Error retrieving data for {query}.".format(query=payload))
+            logger.error(e)
 
 
 class RdbAnalyses:

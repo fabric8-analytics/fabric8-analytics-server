@@ -18,7 +18,7 @@
 
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, \
     ComponentAnalysisResponseBuilder, validate_version, unknown_package_flow, \
-    NormalizedPackages, CABatchCall
+    CABatchCall
 from urllib.parse import quote
 from unittest.mock import patch, Mock
 import unittest
@@ -41,17 +41,6 @@ def test_get_component_analyses_with_result_not_none(_analyses, _g):
     """CA Test Unknown Package flow."""
     unknown_package = unknown_package_flow('eco', {Mock()}, api_flow=True)
     assert unknown_package
-
-
-class NormalisedPackageTest(unittest.TestCase):
-    """Test cases for Normalised Package."""
-
-    def test_all_packages(self):
-        """Test all Packages."""
-        Package = namedtuple("Package", ["name", "version"])
-        ideal_pkg_list = [Package(name='django', version='1.1')]
-        np = NormalizedPackages([{'name': "django", 'version': '1.1'}]).all_packages
-        self.assertListEqual(np, ideal_pkg_list)
 
 
 class CABatchCallTest(unittest.TestCase):

@@ -73,8 +73,8 @@ class GraphAnalysesTest(unittest.TestCase):
     def test_get_batch_ca_data(self, _mockpost):
         """Test get_batch_ca_data."""
         _mockpost().json.return_value = self.gremlin_batch
-        ga = GraphAnalyses.get_batch_ca_data(
-            'eco', packages=[{'name': 'django', 'version': '1.1'}], query_key='ca_batch')
+        ga = GraphAnalyses().get_batch_ca_data(
+            ecosystem='eco', packages=[{'name': 'django', 'version': '1.1'}])
         self.assertIsInstance(ga, dict)
         self.assertIn('result', ga)
         self.assertIsInstance(ga.get('result'), dict)

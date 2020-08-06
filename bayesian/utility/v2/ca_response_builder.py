@@ -30,6 +30,7 @@ from flask import g
 from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 
 logger = logging.getLogger(__name__)
+Package = namedtuple("Package", ["name", "version"])
 
 
 def validate_version(version: str) -> bool:
@@ -92,21 +93,9 @@ def get_package_version(pkg_obj: Dict, ecosystem: str) -> Tuple[str, str]:
     return package, version
 
 
-class NormalizedPackages:
-    """Duplicate free Package List."""
-
-    def __init__(self, packages: List):
-        """Create NormalizedPackages by removing all duplicates from packages."""
-        self.packages = packages
-
-    @property
-    def all_packages(self) -> List[namedtuple]:
-        """All Packages in Tuple format."""
-        Package = namedtuple("Package", ["name", "version"])
-        pkg_list = [Package(name=pkg['name'],
-                            version=pkg['version'])
-                    for pkg in self.packages]
-        return pkg_list
+def normlize_packages(packages: List[Dict]) -> List[Package]:
+    """Normalise Packages into hashable."""
+    return [Package(p['name'], p['version']) for p in packages]
 
 
 class ComponentAnalyses:
@@ -183,10 +172,10 @@ class CABatchCall:
             - Json Response
             - None: Exception/Package not Known.
         """
-        logger.info('Executing CA Batch Vendor Specific Analyses')
+        logger.debug('Executing CA Batch Vendor Specific Analyses')
         try:
             graph_response = GraphAnalyses().get_batch_ca_data(
-                self.ecosystem, self.packages, 'ca_batch')
+                self.ecosystem, self.packages)
 
             analyzed_dependencies = set(self._analysed_package_details(graph_response))
             unknown_pkgs: Set = self.get_all_unknown_packages(analyzed_dependencies)
@@ -198,7 +187,6 @@ class CABatchCall:
             return result, unknown_pkgs
 
         except Exception as e:
-            logger.info("Error")
             logger.error(str(e))
             return None, None
 
@@ -215,8 +203,7 @@ class CABatchCall:
             pkg_name = pack_details.get('package').get('name', [''])[0]
             pkg_vr = pack_details.get('version').get('version', [''])[0]
             db_pkg_list.append({"name": pkg_name, "version": pkg_vr})
-        _normalized_packages = NormalizedPackages(db_pkg_list)
-        db_known_packages = _normalized_packages.all_packages
+        db_known_packages = normlize_packages(db_pkg_list)
         return set(db_known_packages)
 
     def get_all_unknown_packages(self, analyzed_dependencies: Set) -> Set:
@@ -226,13 +213,13 @@ class CABatchCall:
         :param analyzed_dependencies: Analyses Packages in GraphDB Response
         :return: Unknown Packages to Graph
         """
-        _normalized_packages = NormalizedPackages(self.packages)
-        input_dependencies = set(_normalized_packages.all_packages)
+        _normalized_packages = normlize_packages(self.packages)
+        input_dependencies = set(_normalized_packages)
 
         return input_dependencies.difference(analyzed_dependencies)
 
 
-class AbstractBaseClass(ABC):
+class ComponentResponseBase(ABC):
     """Abstract Class for CA Response Builder."""
 
     def __init__(self, ecosystem, package, version):
@@ -453,7 +440,7 @@ class AbstractBaseClass(ABC):
         pass
 
 
-class ComponentAnalysisResponseBuilder(AbstractBaseClass):
+class ComponentAnalysisResponseBuilder(ComponentResponseBase):
     """Vendor specific response builder for Component Analyses v2."""
 
     def generate_recommendation(self, graph_response: Dict) -> Dict:
@@ -527,7 +514,7 @@ class ComponentAnalysisResponseBuilder(AbstractBaseClass):
         return cve_list
 
 
-class CABatchResponseBuilder(AbstractBaseClass):
+class CABatchResponseBuilder(ComponentResponseBase):
     """Response builder for Component Analyses v2 Batch."""
 
     def generate_recommendation(self, graph_response: Dict) -> Dict:
