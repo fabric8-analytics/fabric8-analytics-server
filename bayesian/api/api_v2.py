@@ -32,12 +32,13 @@ from flask_restful import Api, Resource
 from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required, AuthError
 from bayesian.exceptions import HTTPError
+from bayesian.utility.v2.component_analyses import ca_validate_input, \
+    unknown_package_flow, get_package_version, get_ca_batch_response
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
                             check_for_accepted_ecosystem)
-from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, \
-    CABatchCall, unknown_package_flow, ca_validate_input, get_package_version
+from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
                                                      SARBRequestInvalidException,
                                                      SARBRequestInprogressException,
@@ -73,7 +74,6 @@ METRICS_SERVICE_URL = "http://{}:{}".format(
 worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
 _session = FuturesSession(max_workers=worker_count)
 _resource_paths = []
-logger = logging.getLogger(__name__)
 
 
 @api_v2.route('/readiness')
@@ -223,8 +223,7 @@ class ComponentAnalysesApi(Resource):
             packages_list.append({"name": package, "version": version})
 
         # Perform Component Analyses on Vendor specific Graph Edge.
-        analyses_result, unknown_pkgs = CABatchCall(
-            ecosystem, packages_list).get_ca_batch_response()
+        analyses_result, unknown_pkgs = get_ca_batch_response(ecosystem, packages_list)
 
         if unknown_pkgs:
             api_flow: bool = os.environ.get("INVOKE_API_WORKERS", "") == "1"

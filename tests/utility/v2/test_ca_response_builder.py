@@ -17,8 +17,7 @@
 """Test Utility for All Utility Functions."""
 
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, \
-    ComponentAnalysisResponseBuilder, validate_version, unknown_package_flow, \
-    CABatchCall
+    ComponentAnalysisResponseBuilder
 from urllib.parse import quote
 from unittest.mock import patch, Mock
 import unittest
@@ -26,6 +25,10 @@ import pytest
 from urllib.parse import urlparse
 import os
 import json
+from bayesian.exceptions import HTTPError
+
+from bayesian.utility.v2.component_analyses import unknown_package_flow, \
+    validate_version, get_ca_batch_response
 
 
 def test_validate_version():
@@ -34,8 +37,8 @@ def test_validate_version():
     assert not validate_version("1.2.*"), "Invalid Version"
 
 
-@patch('bayesian.utility.v2.ca_response_builder.g')
-@patch('bayesian.utility.v2.ca_response_builder.server_create_analysis')
+@patch('bayesian.utility.v2.component_analyses.g')
+@patch('bayesian.utility.v2.component_analyses.server_create_analysis')
 def test_get_component_analyses_with_result_not_none(_analyses, _g):
     """CA Test Unknown Package flow."""
     unknown_package = unknown_package_flow('eco', {Mock()}, api_flow=True)
@@ -65,18 +68,15 @@ class CABatchCallTest(unittest.TestCase):
     def test_get_ca_batch_response(self, _graph_response):
         """Test Get CA Batch Response."""
         _graph_response.return_value = self.resp_json
-
-        ca = CABatchCall('eco', packages=[{'name': "django", 'version': '1.1'}])
-        response, unknown_packages = ca.get_ca_batch_response()
+        packages = [{'name': "django", 'version': '1.1'}]
+        response, _ = get_ca_batch_response('pypi', packages)
         self.assertEqual(response, self.batch_response)
 
     @patch('bayesian.utility.db_gateway.GraphAnalyses.get_batch_ca_data', return_value=Exception)
     def test_get_ca_batch_response_exception(self, _graph_response):
         """Generates exception. Test Exception Block."""
-        ca = CABatchCall('eco', packages=[{'name': "django", 'version': '1.1'}])
-        response, unknown_packages = ca.get_ca_batch_response()
-        self.assertEqual(response, None)
-        self.assertEqual(unknown_packages, None)
+        packages = [{'name': "django", 'version': '1.1'}]
+        self.assertRaises(HTTPError, get_ca_batch_response, 'pypi', packages)
 
 
 class ComponentAnalysesTest(unittest.TestCase):

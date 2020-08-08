@@ -18,84 +18,14 @@
 from urllib.parse import quote
 import logging
 
-from bayesian.exceptions import HTTPError
 from bayesian.utility.db_gateway import GraphAnalyses
-from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic, \
-    server_create_analysis, check_for_accepted_ecosystem
-from typing import Dict, List, Tuple, Union, Set
-import re
+from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic
+from typing import Dict, List, Optional
 from collections import namedtuple
 from abc import ABC
-from flask import g
-from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 
 logger = logging.getLogger(__name__)
 Package = namedtuple("Package", ["name", "version"])
-
-
-def validate_version(version: str) -> bool:
-    """Version should not contain special Characters."""
-    if re.findall('[!@#$%^&*()]', version):
-        return False
-    return True
-
-
-def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple], api_flow: bool) -> bool:
-    """Unknown Package flow."""
-    for pkg in unknown_pkgs:
-        # Enter the unknown path: Trigger bayesianApiFlow
-        server_create_analysis(ecosystem, pkg.name, pkg.version, user_profile=g.decoded_token,
-                               api_flow=api_flow, force=False, force_graph_sync=True)
-    return True
-
-
-def ca_validate_input(input_json):
-    """Validate CA Input."""
-    if not input_json:
-        raise HTTPError(400, error="Expected JSON request")
-
-    if not isinstance(input_json, dict):
-        raise HTTPError(400, error="Expected list of dependencies in JSON request")
-
-    ecosystem = input_json.get('ecosystem')
-    if not check_for_accepted_ecosystem(ecosystem):
-        error_msg: str = f"Ecosystem {ecosystem} is not supported for this request"
-        raise HTTPError(400, error=error_msg)
-
-    if not input_json.get('package_versions'):
-        error_msg: str = "package_versions is missing"
-        raise HTTPError(400, error=error_msg)
-
-    return True
-
-
-def get_package_version(pkg_obj: Dict, ecosystem: str) -> Tuple[str, str]:
-    """Fetch, Clean and Validate Package Version Info from Input.
-
-    :param pkg_obj: Package Info from User
-    :param ecosystem: Ecosystem Info Provided by User
-    :return: package, version
-    """
-    package: str = pkg_obj.get('package')
-    version: str = pkg_obj.get('version')
-
-    if not all([ecosystem, package, version]):
-        raise HTTPError(422, "Invalid Input: Package, Version and Ecosystem are required.")
-
-    if not validate_version(version):
-        msg: dict = {'message': "Package version should not have special characters."}
-        return HTTPError(400, msg)
-
-    if ecosystem == 'maven':
-        package = MavenCoordinates.normalize_str(package)
-
-    package = case_sensitivity_transform(ecosystem, package)
-    return package, version
-
-
-def normlize_packages(packages: List[Dict]) -> List[Package]:
-    """Normalise Packages into hashable."""
-    return [Package(p['name'], p['version']) for p in packages]
 
 
 class ComponentAnalyses:
@@ -125,7 +55,7 @@ class ComponentAnalyses:
             return False
         return True
 
-    def get_component_analyses_response(self) -> Union[dict, None]:
+    def get_component_analyses_response(self) -> Optional[Dict]:
         """Fetch analysis for given package+version from the graph database.
 
         Fetch analysis for given package+version from the graph database.
@@ -149,74 +79,6 @@ class ComponentAnalyses:
         except Exception as e:
             logger.error('ERROR: %s', str(e))
             return None
-
-
-class CABatchCall:
-    """Namespace for Component Analyses Batch call."""
-
-    def __init__(self, ecosystem: str, packages: List[Dict]):
-        """For Flows related to Security Vendor Integrations."""
-        self.ecosystem = ecosystem
-        self.packages = packages
-        self.recommendation = dict()
-        self.response_data = dict()
-
-    def get_ca_batch_response(self) -> Union[Tuple, None]:
-        """Fetch analysis for given package+version from the graph database.
-
-        Build CA Batch Response.
-        Result is fed to ResponseBuilder.
-        :param packages: List of dict of package, version info.
-
-        :returns:
-            - Json Response
-            - None: Exception/Package not Known.
-        """
-        logger.debug('Executing CA Batch Vendor Specific Analyses')
-        try:
-            graph_response = GraphAnalyses().get_batch_ca_data(
-                self.ecosystem, self.packages)
-
-            analyzed_dependencies = set(self._analysed_package_details(graph_response))
-            unknown_pkgs: Set = self.get_all_unknown_packages(analyzed_dependencies)
-            result = []
-            for package in analyzed_dependencies:
-                result.append(CABatchResponseBuilder(
-                    self.ecosystem, package.name, package.version).generate_recommendation(
-                    graph_response))
-            return result, unknown_pkgs
-
-        except Exception as e:
-            logger.error(str(e))
-            return None, None
-
-    @staticmethod
-    def _analysed_package_details(graph_response: Dict) -> Set:
-        """Analyses Package Details from GraphDB.
-
-        Converts GraphDb output packages into list of Normalised Packages
-        :param graph_response: Graph DB Response
-        :return: list of Normalised Packages
-        """
-        db_pkg_list = []
-        for pack_details in graph_response.get('result').get('data'):
-            pkg_name = pack_details.get('package').get('name', [''])[0]
-            pkg_vr = pack_details.get('version').get('version', [''])[0]
-            db_pkg_list.append({"name": pkg_name, "version": pkg_vr})
-        db_known_packages = normlize_packages(db_pkg_list)
-        return set(db_known_packages)
-
-    def get_all_unknown_packages(self, analyzed_dependencies: Set) -> Set:
-        """Get all unknowns packages.
-
-        unknown_packages = input_packages - graphdb_output_packages
-        :param analyzed_dependencies: Analyses Packages in GraphDB Response
-        :return: Unknown Packages to Graph
-        """
-        _normalized_packages = normlize_packages(self.packages)
-        input_dependencies = set(_normalized_packages)
-
-        return input_dependencies.difference(analyzed_dependencies)
 
 
 class ComponentResponseBase(ABC):
@@ -517,7 +379,11 @@ class ComponentAnalysisResponseBuilder(ComponentResponseBase):
 class CABatchResponseBuilder(ComponentResponseBase):
     """Response builder for Component Analyses v2 Batch."""
 
-    def generate_recommendation(self, graph_response: Dict) -> Dict:
+    def __init__(self, ecosystem):
+        """Batch CA Response Builder."""
+        super().__init__(ecosystem, None, None)
+
+    def generate_recommendation(self, package_graph_response: Dict) -> Dict:
         """Generate recommendation for the package+version.
 
         Main function to generate recommendation response.
@@ -525,23 +391,11 @@ class CABatchResponseBuilder(ComponentResponseBase):
         :return: Json Response
         """
         logger.info("Generating Recommendation")
-        result_data: Dict = graph_response.get('result', {}).get('data')
-        latest_non_cve_versions: List[str] = result_data[0].get('package', {}).get(
+        self.version = self.get_version(package_graph_response)
+        self.package = self.get_package(package_graph_response)
+        latest_non_cve_versions: List[str] = package_graph_response.get('package', {}).get(
             'latest_non_cve_version', [])
-
-        for data in result_data:
-            this_version = data.get('version', {}).get('version', [None])[0]
-
-            if this_version != self.version:
-                logger.info("Pkg version doesn't match with Graph Results.")
-                continue
-
-            if 'cve' not in data:
-                logger.info("No Vulnerability Info found.")
-                continue
-
-            for cve_data in data.get('cve'):
-                self._cves.append(cve_data)
+        self._cves = list(map(lambda x: x, package_graph_response.get('cve')))
 
         if (not self.has_cves()) or not bool(latest_non_cve_versions):
             # If Package has No cves or No Latest Non CVE Versions.
@@ -551,6 +405,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
         self.nocve_version: List[str] = self.get_version_without_cves(latest_non_cve_versions)
         self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
         self.severity: List[str] = self.get_severity()
+
         return self.generate_response()
 
     def get_cve_maps(self) -> List[Dict]:
@@ -593,3 +448,13 @@ class CABatchResponseBuilder(ComponentResponseBase):
             security_advisory_count=self.pvt_vul,
         )
         return response
+
+    @staticmethod
+    def get_version(graph_response: Dict) -> str:
+        """Get version from Graph Response."""
+        return graph_response.get('version', {}).get('version', [])[0]
+
+    @staticmethod
+    def get_package(graph_response: Dict) -> str:
+        """Get package from Graph Response."""
+        return graph_response.get('version', {}).get('pname', [])[0]
