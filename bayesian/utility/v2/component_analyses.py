@@ -24,7 +24,8 @@ from flask import g
 from bayesian.exceptions import HTTPError
 from bayesian.utility.db_gateway import GraphAnalyses
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
-from bayesian.utils import check_for_accepted_ecosystem, server_create_analysis
+from bayesian.utils import check_for_accepted_ecosystem, \
+    server_create_analysis, server_create_component_bookkeeping
 from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 
 
@@ -40,7 +41,7 @@ def validate_version(version: str) -> bool:
 
 
 def get_package_version(pkg_obj: Dict, ecosystem: str) -> Tuple[str, str]:
-    """Fetch, Clean and Validate Package Version Info from Input.
+    """Fetch, Clean and Validate Package Version and Ecosystem from Input.
 
     :param pkg_obj: Package Info from User
     :param ecosystem: Ecosystem Info Provided by User
@@ -74,6 +75,15 @@ def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple], api_flow
         # Enter the unknown path: Trigger bayesianApiFlow
         server_create_analysis(ecosystem, pkg.name, pkg.version, user_profile=g.decoded_token,
                                api_flow=api_flow, force=False, force_graph_sync=True)
+    return True
+
+
+def known_package_flow(ecosystem: str, analyses_result: List[Dict]) -> bool:
+    """Known Package flow."""
+    for pkg in analyses_result:
+        # Enter the known path: Trigger componentApiFlow
+        server_create_component_bookkeeping(
+            ecosystem, pkg['package'], pkg['version'], g.decoded_token)
     return True
 
 

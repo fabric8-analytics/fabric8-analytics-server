@@ -162,6 +162,69 @@ class TestComponentAnalysesApi(unittest.TestCase):
 
 
 @pytest.mark.usefixtures('client_class')
+class TestCAPostApi(unittest.TestCase):
+    """Component Analyses Unit Tests."""
+
+    @patch('bayesian.api.api_v2.known_package_flow')
+    @patch('bayesian.api.api_v2.unknown_package_flow')
+    @patch('bayesian.api.api_v2.get_ca_batch_response')
+    def test_get_component_analyses_post(self, _mock1, _mock2, _mock3):
+        """CA POST: Valid API."""
+        _mock1.return_value = [], []
+        payload = {
+            "ecosystem": 'pypi',
+            "package_versions": [
+                {"package": "markdown2", "version": "2.3.2"}
+            ]
+        }
+        accept_json = [('Content-Type', 'application/json;')]
+        response = self.client.post(
+            api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
+        self.assertEqual(response.status_code, 200)
+        self.assertListEqual(response.json, [])
+
+    @patch('bayesian.api.api_v2.known_package_flow')
+    @patch('bayesian.api.api_v2.unknown_package_flow')
+    @patch('bayesian.api.api_v2.get_ca_batch_response')
+    def test_get_component_analyses_unknown_flow(self, _mock1, _mock2, _mock3):
+        """CA POST: Unknown Flow."""
+        _mock1.return_value = [], [("markdown", "2.3.2")]
+        payload = {
+            "ecosystem": 'pypi',
+            "package_versions": [
+                {"package": "markdown2", "version": "2.3.2"}
+            ]
+        }
+        accept_json = [('Content-Type', 'application/json;')]
+        response = self.client.post(
+            api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
+        self.assertEqual(response.status_code, 202)
+        self.assertDictEqual(response.json, {"error": "No Package in given manifest is available. "
+                                                      "Packages will be available shortly,"
+                                                      "Please retry after some time."})
+
+    @patch('bayesian.api.api_v2.get_ca_batch_response')
+    def test_get_component_analyses_unknown_flow_ingestion_disabled(self, _mock1):
+        """CA POST: Unknown flow, Ingestion Disabled."""
+        with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
+            _mock1.return_value = [], [("markdown", "2.3.2")]
+            payload = {
+                "ecosystem": 'pypi',
+                "package_versions": [
+                    {"package": "markdown2", "version": "2.3.2"}
+                ]
+            }
+            accept_json = [('Content-Type', 'application/json;')]
+            response = self.client.post(
+                api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
+            self.assertEqual(response.status_code, 400)
+            self.assertDictEqual(response.json,
+                                 {"error": "No data found for any package in manifest file. "
+                                           "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW "
+                                           "is enabled"})
+
+
+@pytest.mark.usefixtures('client_class')
 class TestStackAnalysesGetApi(unittest.TestCase):
     """Stack Analyses Unit Tests."""
 

@@ -33,7 +33,7 @@ from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required, AuthError
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    unknown_package_flow, get_package_version, get_ca_batch_response
+    unknown_package_flow, get_package_version, get_ca_batch_response, known_package_flow
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
@@ -213,9 +213,9 @@ class ComponentAnalysesApi(Resource):
         ingestion_disabled_msg: str = "No data found for any package in manifest file. " \
                                       "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW " \
                                       "is enabled"
-        no_package_available_msg: str = f"No Package for {ecosystem} is unavailable. " \
-                                        f"The package will be available shortly," \
-                                        f"Please retry after some time."
+        no_package_available_msg: str = "No Package in given manifest is available. " \
+                                        "Packages will be available shortly," \
+                                        "Please retry after some time."
 
         packages_list: list = []
         for pkg_obj in input_json.get('package_versions'):
@@ -238,10 +238,7 @@ class ComponentAnalysesApi(Resource):
                 # If None of Packages is Known
                 return response_template({'error': no_package_available_msg}, 202)
 
-        for pkg in analyses_result:
-            # Trigger componentApiFlow for each Known Package
-            server_create_component_bookkeeping(
-                ecosystem, pkg['package'], pkg['version'], g.decoded_token)
+        known_package_flow(ecosystem, analyses_result)
 
         return response_template(analyses_result, 200)
 
