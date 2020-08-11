@@ -100,9 +100,7 @@ class GraphAnalyses:
             logger.info(f"It took {elapsed_time} to fetch results from Gremlin.")
             return response.json()
         except Exception as e:
-            logger.error(
-                "Error retrieving data for {query}.".format(query=payload))
-            logger.error(e)
+            logger.exception(e)
 
 
 class RdbAnalyses:

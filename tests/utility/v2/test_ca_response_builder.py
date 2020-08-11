@@ -25,7 +25,6 @@ import pytest
 from urllib.parse import urlparse
 import os
 import json
-from bayesian.exceptions import HTTPError
 
 from bayesian.utility.v2.component_analyses import unknown_package_flow, \
     validate_version, get_ca_batch_response
@@ -41,7 +40,7 @@ def test_validate_version():
 @patch('bayesian.utility.v2.component_analyses.server_create_analysis')
 def test_get_component_analyses_with_result_not_none(_analyses, _g):
     """CA Test Unknown Package flow."""
-    unknown_package = unknown_package_flow('eco', {Mock()}, api_flow=True)
+    unknown_package = unknown_package_flow('eco', {Mock()})
     assert unknown_package
 
 
@@ -69,14 +68,10 @@ class CABatchCallTest(unittest.TestCase):
         """Test Get CA Batch Response."""
         _graph_response.return_value = self.resp_json
         packages = [{'name': "django", 'version': '1.1'}]
-        response, _ = get_ca_batch_response('pypi', packages)
-        self.assertEqual(response, self.batch_response)
-
-    @patch('bayesian.utility.db_gateway.GraphAnalyses.get_batch_ca_data', return_value=Exception)
-    def test_get_ca_batch_response_exception(self, _graph_response):
-        """Generates exception. Test Exception Block."""
-        packages = [{'name': "django", 'version': '1.1'}]
-        self.assertRaises(HTTPError, get_ca_batch_response, 'pypi', packages)
+        graph_response, unknown_package = get_ca_batch_response('pypi', packages)
+        self.assertEqual(graph_response, self.resp_json)
+        self.assertIsInstance(unknown_package, set)
+        self.assertIsInstance(graph_response, dict)
 
 
 class ComponentAnalysesTest(unittest.TestCase):

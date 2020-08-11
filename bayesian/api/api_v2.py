@@ -33,12 +33,12 @@ from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required, AuthError
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    unknown_package_flow, get_package_version, get_ca_batch_response, known_package_flow
+    unknown_package_flow, get_ca_batch_response, known_package_flow
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
                             check_for_accepted_ecosystem)
-from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
+from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, CABatchResponseBuilder
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
                                                      SARBRequestInvalidException,
                                                      SARBRequestInprogressException,
@@ -48,6 +48,8 @@ from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
 from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
                                          RDBInvalidRequestException, RDBServerException)
+from werkzeug.exceptions import BadRequest
+
 
 logger = logging.getLogger(__name__)
 
@@ -203,42 +205,58 @@ class ComponentAnalysesApi(Resource):
 
     @staticmethod
     def post():
-        """Handle the POST REST API call."""
-        input_json: dict = request.get_json()
+        """Handle the POST REST API call.
 
-        ca_validate_input(input_json)
+        Component Analyses Batch is a 4 Step Process:
+        1. Gather and clean Request.
+        2. Query GraphDB Vendor Specific Edge
+        3. Build Known Package Response and Trigger componentApiFlow
+        4. Handle Unknown Packages and Trigger bayesianApiFlow
+        """
         response_template = namedtuple("response_template", ["message", "status"])
-        ecosystem: str = input_json.get('ecosystem')
-        disable_ingestion: bool = os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1"
         ingestion_disabled_msg: str = "No data found for any package in manifest file. " \
                                       "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW " \
                                       "is enabled"
         no_package_available_msg: str = "No Package in given manifest is available. " \
-                                        "Packages will be available shortly," \
+                                        "Packages will be available shortly, " \
                                         "Please retry after some time."
 
-        packages_list: list = []
-        for pkg_obj in input_json.get('package_versions'):
-            package, version = get_package_version(pkg_obj, ecosystem)
-            packages_list.append({"name": package, "version": version})
+        # Step1: Gather and clean Request
+        input_json: dict = request.get_json()
+        ecosystem: str = input_json.get('ecosystem')
+        try:
+            packages_list = ca_validate_input(input_json, ecosystem)
+        except BadRequest as br:
+            logger.debug(br)
+            raise HTTPError(400, str(br))
 
-        # Perform Component Analyses on Vendor specific Graph Edge.
-        analyses_result, unknown_pkgs = get_ca_batch_response(ecosystem, packages_list)
+        # Step2: Query on Vendor specific Graph Edge and Build Unknown packages set.
+        try:
+            graph_response, unknown_pkgs = get_ca_batch_response(ecosystem, packages_list)
+        except Exception as e:
+            msg = "Internal Server Exception. Please contact us if problem persists."
+            logger.debug(e)
+            raise HTTPError(400, msg)
 
+        # Step 3: Build known packages Response.
+        analyses_result = []
+        for package in graph_response.get('result', {}).get('data'):
+            pkg_recomendation = CABatchResponseBuilder(ecosystem).generate_recommendation(package)
+            analyses_result.append(pkg_recomendation)
+            known_package_flow(
+                ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
+
+        # Step4: Handle Unknown Packages
         if unknown_pkgs:
-            api_flow: bool = os.environ.get("INVOKE_API_WORKERS", "") == "1"
-
-            if disable_ingestion:
+            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") == "1":
                 # Unknown Packages is Present and INGESTION is DISABLED
-                raise HTTPError(400, error=ingestion_disabled_msg)
-
-            unknown_package_flow(ecosystem, unknown_pkgs, api_flow)
-
+                logger.debug(ingestion_disabled_msg)
+                raise HTTPError(400, ingestion_disabled_msg)
+            unknown_package_flow(ecosystem, unknown_pkgs)
             if not analyses_result:
-                # If None of Packages is Known
+                # If No Package is Known, and all are unknown.
+                logger.debug(no_package_available_msg)
                 return response_template({'error': no_package_available_msg}, 202)
-
-        known_package_flow(ecosystem, analyses_result)
 
         return response_template(analyses_result, 200)
 

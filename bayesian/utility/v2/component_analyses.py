@@ -17,17 +17,16 @@
 """Component Analyses Utility Stand."""
 
 import logging
+import os
 import re
 from collections import namedtuple
-from typing import Dict, Set, List, Optional, Tuple
+from typing import Dict, Set, List, Tuple
 from flask import g
-from bayesian.exceptions import HTTPError
 from bayesian.utility.db_gateway import GraphAnalyses
-from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem, \
     server_create_analysis, server_create_component_bookkeeping
 from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
-
+from werkzeug.exceptions import BadRequest
 
 logger = logging.getLogger(__name__)
 Package = namedtuple("Package", ["name", "version"])
@@ -40,102 +39,87 @@ def validate_version(version: str) -> bool:
     return True
 
 
-def get_package_version(pkg_obj: Dict, ecosystem: str) -> Tuple[str, str]:
-    """Fetch, Clean and Validate Package Version and Ecosystem from Input.
-
-    :param pkg_obj: Package Info from User
-    :param ecosystem: Ecosystem Info Provided by User
-    :return: package, version
-    """
-    package: str = pkg_obj.get('package')
-    version: str = pkg_obj.get('version')
-
-    if not all([ecosystem, package, version]):
-        raise HTTPError(422, "Invalid Input: Package, Version and Ecosystem are required.")
-
-    if not validate_version(version):
-        msg: dict = {'message': "Package version should not have special characters."}
-        return HTTPError(400, msg)
-
-    if ecosystem == 'maven':
-        package = MavenCoordinates.normalize_str(package)
-
-    package = case_sensitivity_transform(ecosystem, package)
-    return package, version
-
-
 def normlize_packages(packages: List[Dict]) -> List[Package]:
     """Normalise Packages into hashable."""
     return [Package(p['name'], p['version']) for p in packages]
 
 
-def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple], api_flow: bool) -> bool:
-    """Unknown Package flow."""
+def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
+    """Unknown Package flow. Trigger bayesianApiFlow."""
+    api_flow: bool = os.environ.get("INVOKE_API_WORKERS", "") == "1"
     for pkg in unknown_pkgs:
-        # Enter the unknown path: Trigger bayesianApiFlow
         server_create_analysis(ecosystem, pkg.name, pkg.version, user_profile=g.decoded_token,
                                api_flow=api_flow, force=False, force_graph_sync=True)
     return True
 
 
-def known_package_flow(ecosystem: str, analyses_result: List[Dict]) -> bool:
-    """Known Package flow."""
-    for pkg in analyses_result:
-        # Enter the known path: Trigger componentApiFlow
-        server_create_component_bookkeeping(
-            ecosystem, pkg['package'], pkg['version'], g.decoded_token)
+def known_package_flow(ecosystem: str, package: str, version: str) -> bool:
+    """Known Package flow.Trigger componentApiFlow."""
+    server_create_component_bookkeeping(
+        ecosystem, package, version, g.decoded_token)
     return True
 
 
-def ca_validate_input(input_json):
-    """Validate CA Input. Move Out to Utiltity."""
+def ca_validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
+    """Validate CA Input."""
     if not input_json:
-        raise HTTPError(400, error="Expected JSON request")
+        error_msg = "Expected JSON request"
+        raise BadRequest(error_msg)
 
     if not isinstance(input_json, dict):
-        raise HTTPError(400, error="Expected list of dependencies in JSON request")
+        error_msg = "Expected list of dependencies in JSON request"
+        raise BadRequest(error_msg)
 
-    ecosystem = input_json.get('ecosystem')
     if not check_for_accepted_ecosystem(ecosystem):
         error_msg: str = f"Ecosystem {ecosystem} is not supported for this request"
-        raise HTTPError(400, error=error_msg)
+        raise BadRequest(error_msg)
 
     if not input_json.get('package_versions'):
         error_msg: str = "package_versions is missing"
-        raise HTTPError(400, error=error_msg)
+        raise BadRequest(error_msg)
 
-    return True
+    packages_list = []
+    for pkg in input_json.get('package_versions'):
+        package = pkg.get("package")
+        version = pkg.get("version")
+        if not all([package, version]):
+            error_msg = "Invalid Input: Package, Version are required."
+            raise BadRequest(error_msg)
+
+        if not (isinstance(version, str) and isinstance(package, str)):
+            error_msg = "Package version should be string format only."
+            raise BadRequest(error_msg)
+
+        if not validate_version(version):
+            error_msg = "Package version should not have special characters."
+            raise BadRequest(error_msg)
+
+        if ecosystem == 'maven':
+            package = MavenCoordinates.normalize_str(package)
+
+        package = case_sensitivity_transform(ecosystem, package)
+        packages_list.append({"name": package, "version": version})
+
+    return packages_list
 
 
-def get_ca_batch_response(ecosystem: str, packages: List[Dict]) -> Optional[Tuple]:
+def get_ca_batch_response(ecosystem: str, packages: List[Dict]) -> Tuple[Dict, Set]:
     """Fetch analysis for given package+version from the graph database.
 
-    This Function does 3 things:
+    This Function does 2 actions:
     1. Queries GraphDB to fetch Package info
     2. Calculates Unknown Packages
-    3. Buids Recommendation.
 
     :param ecosystem: Ecosystem.
     :param packages: List of dict of package, version info.
 
-    :returns: Json Response
+    :returns: Graph Response, Unknown Packages
     """
     logger.debug('Executing CA Batch Vendor Specific Analyses')
-    try:
-        graph_response: Dict = GraphAnalyses().get_batch_ca_data(ecosystem, packages)
-
-        analyzed_dependencies: Set = set(analysed_package_details(graph_response))
-        unknown_pkgs: Set = get_all_unknown_packages(analyzed_dependencies, packages)
-        result: List = [
-            CABatchResponseBuilder(ecosystem).generate_recommendation(package)
-            for package in graph_response.get('result', {}).get('data')
-        ]
-        return result, unknown_pkgs
-
-    except Exception as e:
-        logger.error(str(e))
-        raise HTTPError(400, "Internal Server Exception. "
-                             "Please contact us if problem persists.")
+    graph_response: Dict = GraphAnalyses().get_batch_ca_data(ecosystem, packages)
+    analyzed_dependencies: Set = set(analysed_package_details(graph_response))
+    unknown_pkgs: Set = get_all_unknown_packages(analyzed_dependencies, packages)
+    return graph_response, unknown_pkgs
 
 
 def analysed_package_details(graph_response: Dict) -> Set:
