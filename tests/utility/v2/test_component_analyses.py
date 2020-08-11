@@ -18,7 +18,11 @@
 
 import unittest
 from unittest.mock import patch
-from bayesian.utility.v2.component_analyses import validate_version, known_package_flow
+
+from werkzeug.exceptions import BadRequest
+
+from bayesian.utility.v2.component_analyses import validate_version, \
+    known_package_flow, ca_validate_input
 
 
 class TestComponentAnalyses(unittest.TestCase):
@@ -41,3 +45,68 @@ class TestComponentAnalyses(unittest.TestCase):
         _mock1.return_value = True
         result = known_package_flow('pypi', "django", "1.1")
         self.assertTrue(result)
+
+
+class TestCAInputValidator(unittest.TestCase):
+    """Test Input Validator."""
+
+    def test_ca_validate_input_exception(self):
+        """Test Ca Validate input: Missing Input."""
+        self.assertRaises(BadRequest, ca_validate_input, None, "pypi")
+
+    def test_ca_validate_input_invalid_type(self):
+        """Test Ca Validate input: Invalid Input type."""
+        self.assertRaises(BadRequest, ca_validate_input, [""], "pypi")
+
+    def test_ca_validate_input_invalid_ecosystem(self):
+        """Test Ca Validate input: Invalid Input type."""
+        self.assertRaises(BadRequest, ca_validate_input, {"test": "test"}, "madam")
+
+    def test_ca_validate_input_no_pkg_version(self):
+        """Test Ca Validate input: Invalid Input."""
+        self.assertRaises(BadRequest, ca_validate_input, {"test": "test"}, "pypi")
+
+    def test_ca_validate_input_pkg_missing_details(self):
+        """Test Ca Validate input: Package Version Missing Details."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"no_package": "markdown2", "no_version": "2"},
+            ]
+        }
+        self.assertRaises(BadRequest, ca_validate_input, input_json, "pypi")
+
+    def test_ca_validate_input_pkg_invalid_type(self):
+        """Test Ca Validate input: Package Type."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"package": {"Test": "Test"}, "version": "2.3.2"},
+            ]
+        }
+        self.assertRaises(BadRequest, ca_validate_input, input_json, "pypi")
+
+    def test_ca_validate_input_pkg_version_invalid_version(self):
+        """Test Ca Validate input: Version Invalid version."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"package": "markdown2", "version": "2.*"},
+            ]
+        }
+        ecosystem = "pypi"
+        self.assertRaises(BadRequest, ca_validate_input, input_json, ecosystem)
+
+    @patch("bayesian.utility.v2.component_analyses.case_sensitivity_transform")
+    def test_ca_validate_input_maven(self, _mock1):
+        """Test Ca Validate input: Ecosystem maven."""
+        _mock1.return_value = "com.thoughtworks.xstream:xstream"
+        input_json = {
+            "ecosystem": "maven",
+            "package_versions": [
+                {"package": "com.thoughtworks.xstream:xstream", "version": "1.3"},
+            ]
+        }
+        ideal_result = [{"name": "com.thoughtworks.xstream:xstream", "version": "1.3"}]
+        result = ca_validate_input(input_json, input_json["ecosystem"])
+        self.assertEqual(result, ideal_result)

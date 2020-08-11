@@ -86,7 +86,7 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
             error_msg = "Invalid Input: Package, Version are required."
             raise BadRequest(error_msg)
 
-        if not (isinstance(version, str) and isinstance(package, str)):
+        if (not isinstance(version, str)) or (not isinstance(package, str)):
             error_msg = "Package version should be string format only."
             raise BadRequest(error_msg)
 
