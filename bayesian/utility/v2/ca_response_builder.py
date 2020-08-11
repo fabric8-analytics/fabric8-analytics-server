@@ -395,7 +395,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
         self.package = self.get_package(package_graph_response)
         latest_non_cve_versions: List[str] = package_graph_response.get('package', {}).get(
             'latest_non_cve_version', [])
-        self._cves = list(map(lambda x: x, package_graph_response.get('cve')))
+        self._cves = package_graph_response.get('cve')
 
         if (not self.has_cves()) or not bool(latest_non_cve_versions):
             # If Package has No cves or No Latest Non CVE Versions.
