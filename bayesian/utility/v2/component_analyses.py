@@ -116,7 +116,7 @@ def get_ca_batch_response(ecosystem: str, packages: List[Dict]) -> Tuple[Dict, S
     :returns: Graph Response, Unknown Packages
     """
     logger.debug('Executing CA Batch Vendor Specific Analyses')
-    graph_response: Dict = GraphAnalyses().get_batch_ca_data(ecosystem, packages)
+    graph_response: Dict = GraphAnalyses.get_batch_ca_data(ecosystem, packages)
     analyzed_dependencies: Set = set(analysed_package_details(graph_response))
     unknown_pkgs: Set = get_all_unknown_packages(analyzed_dependencies, packages)
     return graph_response, unknown_pkgs

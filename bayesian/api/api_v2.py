@@ -228,7 +228,7 @@ class ComponentAnalysesApi(Resource):
             packages_list = ca_validate_input(input_json, ecosystem)
         except BadRequest as br:
             logger.debug(br)
-            raise HTTPError(400, str(br))
+            raise HTTPError(400, str(br)) from br
 
         # Step2: Query on Vendor specific Graph Edge and Build Unknown packages set.
         try:

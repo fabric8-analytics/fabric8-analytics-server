@@ -48,15 +48,13 @@ class GraphAnalyses:
             """,
     }
 
-    def __init__(self):
-        """Initialise GraphAnalyses."""
-        self.ca_batch_query = """
+    ca_batch_query = """
             epv = [];packages.each {g.V().has('pecosystem', ecosystem).has('pname', it.name)
             .has('version', it.version).as('version', 'cve').select('version').in('has_version')
             .dedup().as('package').select('package', 'version', 'cve')
             .by(valueMap()).by(valueMap()).by(out('has_snyk_cve')
             .valueMap().fold()).fill(epv);};epv;
-        """
+            """
 
     @classmethod
     def get_ca_data_from_graph(cls, ecosystem, package, version, vendor):
@@ -82,11 +80,12 @@ class GraphAnalyses:
         logger.info('Gremlin request took %f seconds', (datetime.now() - start).total_seconds())
         return query_result.json()
 
-    def get_batch_ca_data(self, ecosystem: str, packages: list) -> dict:
+    @classmethod
+    def get_batch_ca_data(cls, ecosystem: str, packages) -> dict:
         """Component Analyses Batch Call."""
         logger.info('Executing get_batch_ca_data')
         payload = {
-            'gremlin': self.ca_batch_query,
+            'gremlin': cls.ca_batch_query,
             'bindings': {
                 'ecosystem': ecosystem,
                 'packages': packages
