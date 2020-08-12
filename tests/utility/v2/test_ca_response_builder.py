@@ -64,14 +64,14 @@ class CABatchCallTest(unittest.TestCase):
         cls.resp_json = resp_json
 
     @patch('bayesian.utility.db_gateway.GraphAnalyses.get_batch_ca_data')
-    def test_get_ca_batch_response(self, _graph_response):
+    @patch('bayesian.utility.v2.component_analyses.g')
+    def test_get_ca_batch_response(self, _graph_response, _mock2):
         """Test Get CA Batch Response."""
         _graph_response.return_value = self.resp_json
         packages = [{'name': "django", 'version': '1.1'}]
-        graph_response, unknown_package = get_ca_batch_response('pypi', packages)
-        self.assertEqual(graph_response, self.resp_json)
+        recommendation, unknown_package = get_ca_batch_response('pypi', packages)
+        self.assertEqual(recommendation, [])
         self.assertIsInstance(unknown_package, set)
-        self.assertIsInstance(graph_response, dict)
 
 
 class ComponentAnalysesTest(unittest.TestCase):

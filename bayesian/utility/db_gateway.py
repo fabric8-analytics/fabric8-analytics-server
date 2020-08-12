@@ -83,7 +83,7 @@ class GraphAnalyses:
     @classmethod
     def get_batch_ca_data(cls, ecosystem: str, packages) -> dict:
         """Component Analyses Batch Call."""
-        logger.info('Executing get_batch_ca_data')
+        logger.debug('Executing get_batch_ca_data')
         payload = {
             'gremlin': cls.ca_batch_query,
             'bindings': {
@@ -96,7 +96,7 @@ class GraphAnalyses:
             response = post(url=gremlin_url, data=json.dumps(payload))
             response.raise_for_status()
             elapsed_time = time.time() - started_at
-            logger.info(f"It took {elapsed_time} to fetch results from Gremlin.")
+            logger.info("It took %s to fetch results from Gremlin." % elapsed_time)
             return response.json()
         except Exception as e:
             logger.exception(e)

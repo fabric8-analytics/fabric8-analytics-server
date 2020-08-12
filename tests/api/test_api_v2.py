@@ -166,12 +166,46 @@ class TestComponentAnalysesApi(unittest.TestCase):
 class TestCAPostApi(unittest.TestCase):
     """Component Analyses Unit Tests."""
 
-    @patch('bayesian.api.api_v2.known_package_flow')
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Init Test class."""
+        cls.recommendation_data = [
+            {
+                "package": "markdown2",
+                "version": "2.3.2",
+                "recommended_versions": "2.3.8",
+                "registration_link": "https://app.snyk.io/login",
+                "vulnerability": [
+                    {
+                        "id": "SNYK-PYTHON-MARKDOWN2-40770",
+                        "cvss": "6.1",
+                        "is_private": False,
+                        "cwes": [
+                            "CWE-79"
+                        ],
+                        "cvss_v3": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+                        "severity": "medium",
+                        "title": "Cross-site Scripting (XSS)",
+                        "url": "https://snyk.io/vuln/SNYK-PYTHON-MARKDOWN2-40770",
+                        "cve_ids": [
+                            "CVE-2018-5773"
+                        ],
+                        "fixed_in": []
+                    }
+                ],
+                "message": "markdown2 - 2.3.2 has 1 known security vulnerability.",
+                "highest_severity": "medium",
+                "known_security_vulnerability_count": 1,
+                "security_advisory_count": 0
+            }
+        ]
+
+    @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.api.api_v2.get_ca_batch_response')
     def test_get_component_analyses_post(self, _mock1, _mock2, _mock3):
         """CA POST: Valid API."""
-        _mock1.return_value = {'result': {'data': []}}, []
+        _mock1.return_value = self.recommendation_data, []
         payload = {
             "ecosystem": 'pypi',
             "package_versions": [
@@ -182,14 +216,14 @@ class TestCAPostApi(unittest.TestCase):
         response = self.client.post(
             api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
         self.assertEqual(response.status_code, 200)
-        self.assertListEqual(response.json, [])
+        self.assertEqual(response.json, self.recommendation_data)
 
-    @patch('bayesian.api.api_v2.known_package_flow')
+    @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.api.api_v2.get_ca_batch_response')
     def test_get_component_analyses_unknown_flow(self, _mock1, _mock2, _mock3):
         """CA POST: Unknown Flow."""
-        _mock1.return_value = {'result': {'data': []}}, [("markdown", "2.3.2")]
+        _mock1.return_value = self.recommendation_data, [("markdown", "2.3.2")]
         payload = {
             "ecosystem": 'pypi',
             "package_versions": [
@@ -200,9 +234,7 @@ class TestCAPostApi(unittest.TestCase):
         response = self.client.post(
             api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
         self.assertEqual(response.status_code, 202)
-        self.assertDictEqual(response.json, {"error": "No Package in given manifest is available. "
-                                                      "Packages will be available shortly, "
-                                                      "Please retry after some time."})
+        self.assertEqual(response.json, self.recommendation_data)
 
     @patch('bayesian.api.api_v2.get_ca_batch_response')
     def test_get_component_analyses_unknown_flow_ingestion_disabled(self, _mock1):
