@@ -91,15 +91,12 @@ class GraphAnalyses:
                 'packages': packages
             }
         }
-        try:
-            started_at = time.time()
-            response = post(url=gremlin_url, data=json.dumps(payload))
-            response.raise_for_status()
-            elapsed_time = time.time() - started_at
-            logger.info("It took %s to fetch results from Gremlin." % elapsed_time)
-            return response.json()
-        except Exception as e:
-            logger.exception(e)
+        started_at = time.time()
+        response = post(url=gremlin_url, data=json.dumps(payload))
+        response.raise_for_status()
+        elapsed_time = time.time() - started_at
+        logger.info("It took %s to fetch results from Gremlin." % elapsed_time)
+        return response.json()
 
 
 class RdbAnalyses:

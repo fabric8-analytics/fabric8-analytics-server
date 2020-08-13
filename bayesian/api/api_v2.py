@@ -239,11 +239,16 @@ class ComponentAnalysesApi(Resource):
         except Exception as e:
             msg = "Internal Server Exception. Please contact us if problem persists."
             logger.error(e)
-            raise HTTPError(400, msg)
+            raise HTTPError(400, msg) from e
 
         # Step 3: Build Unknown packages and Generates Stack Recommendation.
-        stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
-            ecosystem, graph_response, normalised_input_pkgs)
+        try:
+            stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
+                ecosystem, graph_response, normalised_input_pkgs)
+        except Exception as e:
+            msg = "Exception is Generating Recommendation."
+            logger.error(e)
+            raise HTTPError(400, msg) from e
 
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
@@ -253,9 +258,9 @@ class ComponentAnalysesApi(Resource):
                 raise HTTPError(400, ingestion_disabled_msg)
             unknown_package_flow(ecosystem, unknown_pkgs)
             if not stack_recommendation:
-                # If No Package is Known, and all are unknown.
+                # If No Package is Known, all are unknown.
                 logger.debug(no_package_available_msg)
-                return response_template({'error': no_package_available_msg}, 202)
+                raise HTTPError(202, no_package_available_msg)
             return response_template(stack_recommendation, 202)
         return response_template(stack_recommendation, 200)
 
