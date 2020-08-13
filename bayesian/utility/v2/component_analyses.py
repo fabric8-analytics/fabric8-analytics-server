@@ -22,7 +22,6 @@ import re
 from collections import namedtuple
 from typing import Dict, Set, List, Tuple
 from flask import g
-from bayesian.utility.db_gateway import GraphAnalyses
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem, \
     server_create_analysis, server_create_component_bookkeeping
@@ -41,10 +40,10 @@ def validate_version(version: str) -> bool:
     return True
 
 
-def normlize_packages(packages: List[Dict]) -> List[Package]:
+def normlize_packages(package, version) -> Package:
     """Normalise Packages into hashable."""
     logger.debug('Normalizing Packages.')
-    return [Package(p['name'], p['version']) for p in packages]
+    return Package(name=package, version=version)
 
 
 def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
@@ -65,7 +64,7 @@ def known_package_flow(ecosystem: str, package: str, version: str) -> bool:
     return True
 
 
-def ca_validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
+def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], List[Package]]:
     """Validate CA Input."""
     logger.debug('Validating ca input data.')
     if not input_json:
@@ -85,6 +84,7 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
         raise BadRequest(error_msg)
 
     packages_list = []
+    normalised_input_pkgs = []
     for pkg in input_json.get('package_versions'):
         package = pkg.get("package")
         version = pkg.get("version")
@@ -105,50 +105,27 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
 
         package = case_sensitivity_transform(ecosystem, package)
         packages_list.append({"name": package, "version": version})
+        normalised_input_pkgs.append(normlize_packages(package, version))
+    return packages_list, normalised_input_pkgs
 
-    return packages_list
 
+def get_known_unknown_pkgs(
+        ecosystem: str, graph_response: Dict,
+        normalised_input_pkgs: List) -> Tuple[List[Dict], Set[Package]]:
+    """Analyse Known and Unknown Packages."""
+    stack_recommendation = []
+    db_known_packages = set()
+    for package in graph_response.get('result', {}).get('data'):
+        pkg_name = package.get('package').get('name', [''])[0]
+        pkg_vr = package.get('version').get('version', [''])[0]
+        pkg_recomendation = CABatchResponseBuilder(ecosystem).generate_recommendation(package)
+        stack_recommendation.append(pkg_recomendation)
+        known_package_flow(ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
+        db_known_packages.add(normlize_packages(pkg_name, pkg_vr))
 
-def get_ca_batch_response(ecosystem: str, packages: List[Dict]) -> Tuple[List, Set]:
-    """Fetch analysis for given package+version from the graph database.
-
-    This Function does 2 actions:
-    1. Queries GraphDB to fetch Packages info
-    2. Calculates Unknown Packages: (Input Pkgs - GraphDB Pkgs)
-
-    :param ecosystem: Ecosystem.
-    :param packages: List of dict of package, version info.
-
-    :returns: Graph Response, Unknown Packages
-    """
-    logger.debug('Executing CA Batch Vendor Specific Analyses')
-    graph_response: Dict = GraphAnalyses.get_batch_ca_data(ecosystem, packages)
-    analyzed_dependencies, stack_recommendation = analysed_package_details(
-                                                        graph_response, ecosystem)
-    unknown_pkgs: Set = get_all_unknown_packages(analyzed_dependencies, packages)
+    input_dependencies = set(normalised_input_pkgs)
+    unknown_pkgs: Set = input_dependencies.difference(db_known_packages)
     return stack_recommendation, unknown_pkgs
-
-
-def analysed_package_details(graph_response: Dict, ecosystem) -> Tuple[Set, List]:
-    """Analyses Package Details from GraphDB.
-
-    This Function does 2 actions:
-    1. Converts GraphDb output packages into set of Normalised hashable Packages
-    2. Generates stack Recommendation.
-
-    :param graph_response: Graph DB Response
-    :return: set of hashable Packages, stack recommendation
-    """
-    logger.debug('Triggered Analyses Package Details.')
-    db_pkg_list = []
-    stack_recommendations = []
-    for pack_details in graph_response.get('result').get('data'):
-        pkg_name = pack_details.get('package').get('name', [''])[0]
-        pkg_vr = pack_details.get('version').get('version', [''])[0]
-        db_pkg_list.append({"name": pkg_name, "version": pkg_vr})
-        stack_recommendations.append(build_pkg_recommendation(pack_details, ecosystem))
-    db_known_packages = set(normlize_packages(db_pkg_list))
-    return db_known_packages, stack_recommendations
 
 
 def build_pkg_recommendation(pack_details, ecosystem) -> Dict:
@@ -158,19 +135,3 @@ def build_pkg_recommendation(pack_details, ecosystem) -> Dict:
     known_package_flow(
         ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
     return pkg_recomendation
-
-
-def get_all_unknown_packages(analyzed_dependencies: Set, packages: List) -> Set:
-    """Get all unknowns packages.
-
-    unknown_packages = input_packages - graphdb_output_packages
-    :param analyzed_dependencies: Analyses Packages in GraphDB Response
-    :param packages: Packages List
-
-    :return: Set of Unknown Packages
-    """
-    logger.debug('Get all Unknown Packages.')
-    normalized_packages = normlize_packages(packages)
-    input_dependencies = set(normalized_packages)
-
-    return input_dependencies.difference(analyzed_dependencies)

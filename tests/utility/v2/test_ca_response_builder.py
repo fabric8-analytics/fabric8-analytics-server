@@ -23,11 +23,9 @@ from unittest.mock import patch, Mock
 import unittest
 import pytest
 from urllib.parse import urlparse
-import os
-import json
 
 from bayesian.utility.v2.component_analyses import unknown_package_flow, \
-    validate_version, get_ca_batch_response
+    validate_version
 
 
 def test_validate_version():
@@ -42,36 +40,6 @@ def test_get_component_analyses_with_result_not_none(_analyses, _g):
     """CA Test Unknown Package flow."""
     unknown_package = unknown_package_flow('eco', {Mock()})
     assert unknown_package
-
-
-class CABatchCallTest(unittest.TestCase):
-    """Test CA Batch Class."""
-
-    @classmethod
-    def setUpClass(cls):
-        """Class variables initialised."""
-        # Read Vendor Data from JSON.
-        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
-        ca_batch_response = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
-
-        with open(ca_batch_response) as f:
-            batch_response = json.load(f)
-
-        with open(gremlin_batch_data) as f:
-            resp_json = json.load(f)
-
-        cls.batch_response = batch_response
-        cls.resp_json = resp_json
-
-    @patch('bayesian.utility.db_gateway.GraphAnalyses.get_batch_ca_data')
-    @patch('bayesian.utility.v2.component_analyses.g')
-    def test_get_ca_batch_response(self, _graph_response, _mock2):
-        """Test Get CA Batch Response."""
-        _graph_response.return_value = self.resp_json
-        packages = [{'name': "django", 'version': '1.1'}]
-        recommendation, unknown_package = get_ca_batch_response('pypi', packages)
-        self.assertEqual(recommendation, [])
-        self.assertIsInstance(unknown_package, set)
 
 
 class ComponentAnalysesTest(unittest.TestCase):

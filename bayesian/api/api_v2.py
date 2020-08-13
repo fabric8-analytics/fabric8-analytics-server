@@ -21,7 +21,7 @@ import time
 import urllib
 import logging
 import re
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple
 
 from requests_futures.sessions import FuturesSession
 from collections import namedtuple
@@ -35,7 +35,7 @@ from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required, AuthError
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    unknown_package_flow, get_ca_batch_response
+    unknown_package_flow, get_known_unknown_pkgs
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
@@ -49,7 +49,8 @@ from bayesian.utility.v2.stack_analyses import StackAnalyses, SAInvalidInputExce
 from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
 from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
-                                         RDBInvalidRequestException, RDBServerException)
+                                         RDBInvalidRequestException,
+                                         RDBServerException, GraphAnalyses)
 from werkzeug.exceptions import BadRequest
 
 
@@ -209,11 +210,11 @@ class ComponentAnalysesApi(Resource):
     def post():
         """Handle the POST REST API call.
 
-        Component Analyses Batch is a 3 Step Process:
+        Component Analyses Batch is 4 Step Process:
         1. Gather and clean Request.
-        2. Query GraphDB, Builds Stacks Recommendation, Get Unknown Packages Set
-            and Trigger componentApiFlow.
-        3. Handle Unknown Packages and Trigger bayesianApiFlow.
+        2. Query GraphDB.
+        3. Build Stack Recommendation and Build Unknown Packages and Trigger componentApiFlow.
+        4. Handle Unknown Packages and Trigger bayesianApiFlow.
         """
         response_template: Tuple = namedtuple("response_template", ["message", "status"])
         ingestion_disabled_msg: str = "No data found for any package in manifest file. " \
@@ -227,20 +228,24 @@ class ComponentAnalysesApi(Resource):
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
         try:
-            packages_list: List = ca_validate_input(input_json, ecosystem)
+            packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
         except BadRequest as br:
             logger.error(br)
             raise HTTPError(400, str(br)) from br
 
-        # Step2: Query GraphDB, Build Unknown packages set and Generates Stack Recommendation.
+        # Step2: Query GraphDB,
         try:
-            stack_recommendation, unknown_pkgs = get_ca_batch_response(ecosystem, packages_list)
+            graph_response = GraphAnalyses.get_batch_ca_data(ecosystem, packages_list)
         except Exception as e:
             msg = "Internal Server Exception. Please contact us if problem persists."
             logger.error(e)
             raise HTTPError(400, msg)
 
-        # Step3: Handle Unknown Packages
+        # Step 3: Build Unknown packages and Generates Stack Recommendation.
+        stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
+            ecosystem, graph_response, normalised_input_pkgs)
+
+        # Step4: Handle Unknown Packages
         if unknown_pkgs:
             if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") == "1":
                 # Unknown Packages is Present and INGESTION is DISABLED

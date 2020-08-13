@@ -169,43 +169,21 @@ class TestCAPostApi(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         """Init Test class."""
-        cls.recommendation_data = [
-            {
-                "package": "markdown2",
-                "version": "2.3.2",
-                "recommended_versions": "2.3.8",
-                "registration_link": "https://app.snyk.io/login",
-                "vulnerability": [
-                    {
-                        "id": "SNYK-PYTHON-MARKDOWN2-40770",
-                        "cvss": "6.1",
-                        "is_private": False,
-                        "cwes": [
-                            "CWE-79"
-                        ],
-                        "cvss_v3": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
-                        "severity": "medium",
-                        "title": "Cross-site Scripting (XSS)",
-                        "url": "https://snyk.io/vuln/SNYK-PYTHON-MARKDOWN2-40770",
-                        "cve_ids": [
-                            "CVE-2018-5773"
-                        ],
-                        "fixed_in": []
-                    }
-                ],
-                "message": "markdown2 - 2.3.2 has 1 known security vulnerability.",
-                "highest_severity": "medium",
-                "known_security_vulnerability_count": 1,
-                "security_advisory_count": 0
-            }
-        ]
+        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
+        recommendation_data = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
+
+        with open(gremlin_batch_data) as f:
+            cls.gremlin_batch_data = json.load(f)
+
+        with open(recommendation_data) as f:
+            cls.recommendation_data = json.load(f)
 
     @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
-    @patch('bayesian.api.api_v2.get_ca_batch_response')
+    @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
     def test_get_component_analyses_post(self, _mock1, _mock2, _mock3):
         """CA POST: Valid API."""
-        _mock1.return_value = self.recommendation_data, []
+        _mock1.return_value = self.gremlin_batch_data
         payload = {
             "ecosystem": 'pypi',
             "package_versions": [
@@ -218,12 +196,14 @@ class TestCAPostApi(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, self.recommendation_data)
 
+    @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
     @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
-    @patch('bayesian.api.api_v2.get_ca_batch_response')
-    def test_get_component_analyses_unknown_flow(self, _mock1, _mock2, _mock3):
+    @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
+    def test_get_component_analyses_unknown_flow(self, _mock1, _mock2, _mock3, _mock4):
         """CA POST: Unknown Flow."""
-        _mock1.return_value = self.recommendation_data, [("markdown", "2.3.2")]
+        _mock1.return_value = self.gremlin_batch_data
+        _mock4.return_value = self.recommendation_data, {"unknown_pkg"}
         payload = {
             "ecosystem": 'pypi',
             "package_versions": [
@@ -236,11 +216,10 @@ class TestCAPostApi(unittest.TestCase):
         self.assertEqual(response.status_code, 202)
         self.assertEqual(response.json, self.recommendation_data)
 
-    @patch('bayesian.api.api_v2.get_ca_batch_response')
+    @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
     def test_get_component_analyses_unknown_flow_ingestion_disabled(self, _mock1):
         """CA POST: Unknown flow, Ingestion Disabled."""
         with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
-            _mock1.return_value = {'result': {'data': []}}, [("markdown", "2.3.2")]
             payload = {
                 "ecosystem": 'pypi',
                 "package_versions": [

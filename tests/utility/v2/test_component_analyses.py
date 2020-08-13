@@ -108,5 +108,5 @@ class TestCAInputValidator(unittest.TestCase):
             ]
         }
         ideal_result = [{"name": "com.thoughtworks.xstream:xstream", "version": "1.3"}]
-        result = ca_validate_input(input_json, input_json["ecosystem"])
+        result, _ = ca_validate_input(input_json, input_json["ecosystem"])
         self.assertEqual(result, ideal_result)
