@@ -224,29 +224,21 @@ class ComponentAnalysesApi(Resource):
                                         "Packages will be available shortly, " \
                                         "Please retry after some time."
 
-        # Step1: Gather and clean Request
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
         try:
+            # Step1: Gather and clean Request
             packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
+            # Step2: Query GraphDB,
+            graph_response = GraphAnalyses.get_batch_ca_data(ecosystem, packages_list)
+            # Step3: Build Unknown packages and Generates Stack Recommendation.
+            stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
+                ecosystem, graph_response, normalised_input_pkgs)
         except BadRequest as br:
             logger.error(br)
             raise HTTPError(400, str(br)) from br
-
-        # Step2: Query GraphDB,
-        try:
-            graph_response = GraphAnalyses.get_batch_ca_data(ecosystem, packages_list)
         except Exception as e:
             msg = "Internal Server Exception. Please contact us if problem persists."
-            logger.error(e)
-            raise HTTPError(400, msg) from e
-
-        # Step 3: Build Unknown packages and Generates Stack Recommendation.
-        try:
-            stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
-                ecosystem, graph_response, normalised_input_pkgs)
-        except Exception as e:
-            msg = "Exception is Generating Recommendation."
             logger.error(e)
             raise HTTPError(400, msg) from e
 
