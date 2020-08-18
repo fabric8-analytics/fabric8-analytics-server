@@ -56,7 +56,7 @@ def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
         server_create_analysis(ecosystem, pkg.name, pkg.version, user_profile=g.decoded_token,
                                api_flow=api_flow, force=False, force_graph_sync=True)
     elapsed_time = time.time() - started_at
-    logger.info('Unknown flow took %f seconds', elapsed_time)
+    logger.info('Unknown flow for %f packages took %f seconds', len(unknown_pkgs), elapsed_time)
     return True
 
 
