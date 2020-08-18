@@ -16,10 +16,43 @@ paths:
     post:
       tags:
         - user
-      summary: add an user
+      summary: generate a uuid
       responses:
         '200':
-          description: user created
+          description: uuid created
+          content:
+            application/json:
+              schema:
+                properties:
+                  user_id:
+                    type: string
+                    format: uuid
+                    example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        '401':
+          description: Request unauthorized
+        '400':
+          description: Bad Request
+    put:
+      tags:
+        - user
+      summary: create or update a user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - user_id
+                - snyk_api_token
+              properties:
+                user_id:
+                  type: string
+                  example: 12jos01
+                snyk_api_token:
+                  type: string
+                  example: f917sksq1
+      responses:
+        '200':
+          description: user details
           content:
             application/json:
               schema:
@@ -56,42 +89,7 @@ paths:
           description: Request unauthorized
         '400':
           description: Bad Request
-    put:
-      tags:
-        - user
-      summary: update a user
-      parameters:
-        - in: path
-          name: user_id
-          description: user id
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              required:
-                - snyk_api_token
-              properties:
-                snyk_api_token:
-                  type: string
-                  example: f917sksq1
-      responses:
-        '200':
-          description: user details
-          content:
-            application/json:
-              schema:
-                properties:
-                  user_id:
-                    type: string
-                    format: uuid
-                    example: d290f1ee-6c54-4b01-90e6-d701748f0851
-        '401':
-          description: Request unauthorized
-        '400':
-          description: Bad Request
+
 components:
   schemas:
     UserDetails:
