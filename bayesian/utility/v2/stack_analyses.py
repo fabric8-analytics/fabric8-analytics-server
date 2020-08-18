@@ -37,11 +37,13 @@ class StackAnalyses():
         """Initialize params to be used for ."""
         self.params = params
 
-    def post_request(self):
+    def post_request(self, registration_status):
         """Make stack analyses POST request."""
+        self.registration_status = registration_status
         logger.info('SA Post request with ecosystem: %s manifest: %s path: %s '
-                    'show_transitive: %s', self.params.ecosystem, self.params.manifest.filename,
-                    self.params.file_path, self.params.show_transitive)
+                    'show_transitive: %s registration_status: %s', self.params.ecosystem,
+                    self.params.manifest.filename, self.params.file_path,
+                    self.params.show_transitive, self.registration_status)
         # Build manifest file info.
         self._manifest_file_info = {
             'filename': self.params.manifest.filename,
@@ -110,7 +112,7 @@ class StackAnalyses():
 
         # Set backbone API request body and params.
         request_body = {
-            'registration_status': 'freetier',
+            'registration_status': self.registration_status,
             'external_request_id': self._new_request_id,
             'ecosystem': self.params.ecosystem,
             'packages': data['packages'],

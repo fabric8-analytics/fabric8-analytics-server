@@ -31,6 +31,13 @@ class Ecosystem(str, Enum):
     npm = 'npm'
 
 
+class RegistrationStatus(str, Enum):
+    """User registration status."""
+
+    freetier = 'freetier'
+    registered = 'registered'
+
+
 class StackAnalysesPostRequest(BaseModel):
     """Stack anaylses POST request param model."""
 
