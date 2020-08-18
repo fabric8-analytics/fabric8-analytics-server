@@ -19,6 +19,7 @@
 import logging
 import os
 import re
+import time
 from collections import namedtuple
 from typing import Dict, Set, List, Tuple
 from flask import g
@@ -50,9 +51,12 @@ def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
     """Unknown Package flow. Trigger bayesianApiFlow."""
     logger.debug('Triggered Unknown Package Flow.')
     api_flow: bool = os.environ.get("INVOKE_API_WORKERS", "") == "1"
+    started_at = time.time()
     for pkg in unknown_pkgs:
         server_create_analysis(ecosystem, pkg.name, pkg.version, user_profile=g.decoded_token,
                                api_flow=api_flow, force=False, force_graph_sync=True)
+    elapsed_time = time.time() - started_at
+    logger.info('Unknown flow took %f seconds', elapsed_time)
     return True
 
 
