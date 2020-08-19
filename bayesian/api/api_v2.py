@@ -35,7 +35,7 @@ from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required, AuthError
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    unknown_package_flow, get_known_unknown_pkgs
+    unknown_package_flow, get_known_unknown_pkgs, is_registered_user
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
@@ -210,13 +210,14 @@ class ComponentAnalysesApi(Resource):
     def post():
         """Handle the POST REST API call.
 
-        Component Analyses Batch is 4 Step Process:
+        Component Analyses Batch is 5 Step Process:
         1. Gather and clean Request.
         2. Query GraphDB.
+        3. Check Premium User.
         3. Build Stack Recommendation and Build Unknown Packages and Trigger componentApiFlow.
         4. Handle Unknown Packages and Trigger bayesianApiFlow.
         """
-        response_template: Tuple = namedtuple("response_template", ["message", "status"])
+        response_template: Tuple = namedtuple("response_template", ["message", "status", "headers"])
         ingestion_disabled_msg: str = "No data found for any package in manifest file. " \
                                       "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW " \
                                       "is enabled"
@@ -226,12 +227,23 @@ class ComponentAnalysesApi(Resource):
 
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
+        uuid = request.headers.get('uuid')
+        registered_user = False
+        headers = {}
         try:
             # Step1: Gather and clean Request
             packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
+
             # Step2: Query GraphDB,
             graph_response = GraphAnalyses.get_batch_ca_data(ecosystem, packages_list)
-            # Step3: Build Unknown packages and Generates Stack Recommendation.
+
+            # Step3: Check Registered User
+            if uuid:
+                registered_user = is_registered_user(uuid)
+                logger.info("Is Registered User %s", registered_user)
+                headers.update({'uuid': uuid})
+
+            # Step4: Build Unknown packages and Generates Stack Recommendation.
             stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
                 ecosystem, graph_response, normalised_input_pkgs)
         except BadRequest as br:
@@ -242,7 +254,7 @@ class ComponentAnalysesApi(Resource):
             logger.error(e)
             raise HTTPError(400, msg) from e
 
-        # Step4: Handle Unknown Packages
+        # Step5: Handle Unknown Packages
         if unknown_pkgs:
             if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") == "1":
                 # Unknown Packages is Present and INGESTION is DISABLED
@@ -253,8 +265,8 @@ class ComponentAnalysesApi(Resource):
                 # If No Package is Known, all are unknown.
                 logger.debug(no_package_available_msg)
                 raise HTTPError(202, no_package_available_msg)
-            return response_template(stack_recommendation, 202)
-        return response_template(stack_recommendation, 200)
+            return response_template(stack_recommendation, 202, headers)
+        return response_template(stack_recommendation, 200, headers)
 
 
 @api_v2.route('/stack-analyses/<external_request_id>', methods=['GET'])

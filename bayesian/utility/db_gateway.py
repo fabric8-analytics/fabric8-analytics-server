@@ -21,14 +21,18 @@ import json
 import time
 import logging
 from datetime import datetime
+from typing import Optional, Dict
+
 from requests import post
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+
 from bayesian import rdb
 from bayesian.utils import fetch_sa_request, retrieve_worker_result
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
 
-from f8a_worker.models import StackAnalysisRequest
+from f8a_worker.models import StackAnalysisRequest, UserDetails
 
 logger = logging.getLogger(__name__)
 gremlin_url = "http://{host}:{port}".format(
@@ -97,6 +101,30 @@ class GraphAnalyses:
         elapsed_time = time.time() - started_at
         logger.info("It took %s to fetch results from Gremlin.", elapsed_time)
         return response.json()
+
+
+def get_user_details(uuid: str) -> Optional[Dict]:
+    """Query RDS DB on user_details table.
+
+    :param uuid: UUID received in request.
+    :return: User Data
+    """
+    try:
+        start = time.time()
+        query = rdb.session.query(UserDetails) \
+            .filter(UserDetails.user_id == uuid)
+        user_details = query.one()
+        logger.info('%s took %f seconds to fetch data', uuid, time.time() - start)
+        return user_details.to_dict()
+
+    except (NoResultFound, MultipleResultsFound):
+        logger.info('No Result found.')
+        return None
+
+    except SQLAlchemyError as e:
+        rdb.session.rollback()
+        logger.exception('%s Error updating log, exception %s', uuid, str(e))
+        raise SQLAlchemyError('Error while checking uuid {}'.format(uuid)) from e
 
 
 class RdbAnalyses:

@@ -23,6 +23,8 @@ import time
 from collections import namedtuple
 from typing import Dict, Set, List, Tuple
 from flask import g
+
+from bayesian.utility.db_gateway import get_user_details
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem, \
     server_create_analysis, server_create_component_bookkeeping
@@ -65,6 +67,20 @@ def known_package_flow(ecosystem: str, package: str, version: str) -> bool:
     logger.debug('Triggered Known Package Flow.')
     server_create_component_bookkeeping(
         ecosystem, package, version, g.decoded_token)
+    return True
+
+
+def is_registered_user(uuid: str) -> bool:
+    """Check if user is Premium or Free User.
+
+    :param uuid: UUID Received in Request.
+    :return: Bool
+    """
+    user_details = get_user_details(uuid)
+    if user_details is None:
+        return False
+    if user_details['status'] != 'REGISTERED':
+        return False
     return True
 
 

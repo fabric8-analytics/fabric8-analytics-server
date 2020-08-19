@@ -171,9 +171,13 @@ class TestCAPostApi(unittest.TestCase):
         """Init Test class."""
         gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
         recommendation_data = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
+        rds_data = os.path.join('/bayesian/tests/data/response/ca_rds_user_details_registered.json')
 
         with open(gremlin_batch_data) as f:
             cls.gremlin_batch_data = json.load(f)
+
+        with open(rds_data) as f:
+            cls.rds_user_data = json.load(f)
 
         with open(recommendation_data) as f:
             cls.recommendation_data = json.load(f)
@@ -234,6 +238,90 @@ class TestCAPostApi(unittest.TestCase):
                                  {"error": "No data found for any package in manifest file. "
                                            "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW "
                                            "is enabled"})
+
+    @patch('bayesian.api.api_v2.unknown_package_flow')
+    @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
+    @patch('bayesian.utility.v2.component_analyses.get_user_details')
+    @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
+    def test_get_component_analyses_with_uuid(self, _mock1, _mock2, _mock3, _mock4):
+        """CA POST: with UUID."""
+        _mock2.return_value = self.rds_user_data
+        _mock3.return_value = self.recommendation_data, {}
+        payload = {
+            "ecosystem": 'pypi',
+            "package_versions": [
+                {"package": "markdown2", "version": "2.3.2"}
+            ]
+        }
+        headers = [('Content-Type', 'application/json;'), ("uuid", "test_uuid")]
+        response = self.client.post(
+            api_route_for('/component-analyses'), data=json.dumps(payload), headers=headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertListEqual(response.json, self.recommendation_data)
+
+    @patch('bayesian.api.api_v2.unknown_package_flow')
+    @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
+    @patch('bayesian.utility.v2.component_analyses.get_user_details')
+    @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
+    def test_get_component_analyses_bad_request(self, _mock1, _mock2, _mock3, _mock4):
+        """CA POST: Bad Request."""
+        _mock2.return_value = self.rds_user_data
+        _mock3.return_value = self.recommendation_data, {}
+        payload = {
+            "ecos": 'pypi',
+            "package_versions": [
+                {"package": "markdown2", "version": "2.3.2"}
+            ]
+        }
+        headers = [('Content-Type', 'application/json;'), ("uuid", "test_uuid")]
+        response = self.client.post(
+            api_route_for('/component-analyses'), data=json.dumps(payload), headers=headers)
+        self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.json, {'error': '400: Bad Request'})
+
+    @patch('bayesian.api.api_v2.unknown_package_flow')
+    @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
+    @patch('bayesian.utility.v2.component_analyses.get_user_details')
+    @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
+    def test_get_component_analyses_exception(self, _mock1, _mock2, _mock3, _mock4):
+        """CA POST: Exception."""
+        _mock2.return_value = Exception
+        _mock3.return_value = self.recommendation_data, {}
+        payload = {
+            "ecosystem": 'pypi',
+            "package_versions": [
+                {"package": "markdown2", "version": "2.3.2"}
+            ]
+        }
+        headers = [('Content-Type', 'application/json;'), ("uuid", "test_uuid")]
+        response = self.client.post(
+            api_route_for('/component-analyses'), data=json.dumps(payload), headers=headers)
+        self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.json,
+                             {'error': 'Internal Server Exception. '
+                                       'Please contact us if problem persists.'})
+
+    @patch('bayesian.api.api_v2.unknown_package_flow')
+    @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
+    @patch('bayesian.utility.v2.component_analyses.get_user_details')
+    @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
+    def test_get_component_analyses_all_unknown_pkg(self, _mock1, _mock2, _mock3, _mock4):
+        """CA POST: All Packages Unknown, No Known."""
+        _mock2.return_value = self.rds_user_data
+        _mock3.return_value = [], {"unknown"}
+        payload = {
+            "ecosystem": 'pypi',
+            "package_versions": [
+                {"package": "markdown2", "version": "2.3.2"}
+            ]
+        }
+        headers = [('Content-Type', 'application/json;'), ("uuid", "test_uuid")]
+        response = self.client.post(
+            api_route_for('/component-analyses'), data=json.dumps(payload), headers=headers)
+        self.assertEqual(response.status_code, 202)
+        self.assertDictEqual(response.json, {'error': "No Package in given manifest is available. "
+                                                      "Packages will be available shortly, "
+                                                      "Please retry after some time."})
 
 
 @pytest.mark.usefixtures('client_class')

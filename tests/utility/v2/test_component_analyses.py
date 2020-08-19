@@ -15,18 +15,31 @@
 # Author: Deepak Sharma <deepshar@redhat.com>
 #
 """Test Component Analyses Utility Stand."""
-
+import json
+import os
 import unittest
 from unittest.mock import patch
 
 from werkzeug.exceptions import BadRequest
 
 from bayesian.utility.v2.component_analyses import validate_version, \
-    known_package_flow, ca_validate_input
+    known_package_flow, ca_validate_input, is_registered_user
 
 
 class TestComponentAnalyses(unittest.TestCase):
     """Test Component Analyses Utility class."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Init Test class."""
+        rds_data = os.path.join('/bayesian/tests/data/response/ca_rds_user_details_registered.json')
+        free_tier = os.path.join('/bayesian/tests/data/response/ca_rds_user_details_free_tier.json')
+
+        with open(rds_data) as f:
+            cls.rds_user_data = json.load(f)
+
+        with open(free_tier) as f:
+            cls.free_tier_user_data = json.load(f)
 
     def test_validate_version(self):
         """Test Version should not contain special Characters."""
@@ -45,6 +58,20 @@ class TestComponentAnalyses(unittest.TestCase):
         _mock1.return_value = True
         result = known_package_flow('pypi', "django", "1.1")
         self.assertTrue(result)
+
+    @patch('bayesian.utility.v2.component_analyses.get_user_details')
+    def test_is_registered_user(self, _mock1):
+        """Test Registered User: Free Tier User."""
+        _mock1.return_value = self.free_tier_user_data
+        response = is_registered_user("uuid-ab-c")
+        self.assertFalse(response)
+
+    @patch('bayesian.utility.v2.component_analyses.get_user_details')
+    def test_is_registered_user_no_details(self, _mock1):
+        """Test Registered User: Free Tier User."""
+        _mock1.return_value = None
+        response = is_registered_user("uuid-ab-c")
+        self.assertFalse(response)
 
 
 class TestCAInputValidator(unittest.TestCase):
