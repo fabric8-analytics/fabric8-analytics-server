@@ -19,14 +19,31 @@
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, \
     ComponentAnalysisResponseBuilder
 from urllib.parse import quote
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 import unittest
 import pytest
 from urllib.parse import urlparse
 
+from bayesian.utility.v2.component_analyses import unknown_package_flow, \
+    validate_version
 
-class VendorAnalysesTest(unittest.TestCase):
-    """Test Cases for Vendor Analyses Test class."""
+
+def test_validate_version():
+    """Check the function validate_version."""
+    assert validate_version("1.2.3")
+    assert not validate_version("1.2.*"), "Invalid Version"
+
+
+@patch('bayesian.utility.v2.component_analyses.g')
+@patch('bayesian.utility.v2.component_analyses.server_create_analysis')
+def test_get_component_analyses_with_result_not_none(_analyses, _g):
+    """CA Test Unknown Package flow."""
+    unknown_package = unknown_package_flow('eco', {Mock()})
+    assert unknown_package
+
+
+class ComponentAnalysesTest(unittest.TestCase):
+    """Test Cases for Component Analyses Test class."""
 
     @staticmethod
     def test_is_package_known_with_None():

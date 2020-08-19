@@ -17,10 +17,15 @@
 
 from urllib.parse import quote
 import logging
+
 from bayesian.utility.db_gateway import GraphAnalyses
 from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic
+from typing import Dict, List, Optional
+from collections import namedtuple
+from abc import ABC
 
 logger = logging.getLogger(__name__)
+Package = namedtuple("Package", ["name", "version"])
 
 
 class ComponentAnalyses:
@@ -35,7 +40,7 @@ class ComponentAnalyses:
         self.response_data = dict()
 
     @staticmethod
-    def is_package_known(query_result):
+    def is_package_known(query_result) -> bool:
         """Check if Package is Known or Unknown.
 
         :return:
@@ -50,7 +55,7 @@ class ComponentAnalyses:
             return False
         return True
 
-    def get_component_analyses_response(self):
+    def get_component_analyses_response(self) -> Optional[Dict]:
         """Fetch analysis for given package+version from the graph database.
 
         Fetch analysis for given package+version from the graph database.
@@ -76,8 +81,8 @@ class ComponentAnalyses:
             return None
 
 
-class ComponentAnalysisResponseBuilder:
-    """Vendor specific response builder for Component Analyses v2."""
+class ComponentResponseBase(ABC):
+    """Abstract Class for CA Response Builder."""
 
     def __init__(self, ecosystem, package, version):
         """Response Builder, Build Json Response for Component Analyses."""
@@ -91,28 +96,8 @@ class ComponentAnalysisResponseBuilder:
         self.pvt_vul = 0
 
     def generate_recommendation(self, graph_response):
-        """Generate recommendation for the package+version.
-
-        Main function to generate recommendation response.
-
-        :return: Json Response
-        """
-        logger.info("Generating Recommendation")
-        result_data = graph_response.get('result', {}).get('data')
-        latest_non_cve_versions = result_data[0].get('package', {}).get(
-            'latest_non_cve_version', [])
-        for data in result_data:
-            this_version = data.get('version', {}).get('version', [None])[0]
-            if this_version == self.version:
-                if 'cve' in data:
-                    self._cves.append(data.get('cve'))
-        if (not self.has_cves()) or not bool(latest_non_cve_versions):
-            # If Package has No cves or No Latest Non CVE Versions.
-            return dict(recommendation={})
-        self.nocve_version = self.get_version_without_cves(latest_non_cve_versions)
-        self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
-        self.severity = self.get_severity()
-        return self.generate_response()
+        """Abstract generate_recommendation func."""
+        pass
 
     def get_message(self) -> str:
         """Build Message.
@@ -204,24 +189,8 @@ class ComponentAnalysisResponseBuilder:
         return bool(self._cves)
 
     def generate_response(self):
-        """Build a JSON Response from all calculated values.
-
-        :return: json formatted response to requester.
-        """
-        logger.info("Generating Final Response.")
-        component_analyses_dict = dict(
-            vulnerability=self.get_cve_maps()
-        )
-        response = dict(
-            recommended_versions=self.nocve_version,
-            registration_link=self.get_registration_link(),
-            component_analyses=component_analyses_dict,
-            message=self.get_message(),
-            severity=self.severity[0],
-            known_security_vulnerability_count=self.public_vul,
-            security_advisory_count=self.pvt_vul,
-        )
-        return response
+        """Abstract function for Generate Response.."""
+        pass
 
     def get_vulnerabilities_count(self):
         """Vulnerability count, Calculates Public and Pvt Vulnerability count.
@@ -329,13 +298,67 @@ class ComponentAnalysisResponseBuilder:
         return list(filter(lambda x: x == highest_severity_name_in_input, input_severities))
 
     def get_cve_maps(self):
+        """Abstract get_cve_maps."""
+        pass
+
+
+class ComponentAnalysisResponseBuilder(ComponentResponseBase):
+    """Vendor specific response builder for Component Analyses v2."""
+
+    def generate_recommendation(self, graph_response: Dict) -> Dict:
+        """Generate recommendation for the package+version.
+
+        Main function to generate recommendation response.
+
+        :return: Json Response
+        """
+        logger.debug("Generating Recommendation")
+        result_data = graph_response.get('result', {}).get('data')
+        latest_non_cve_versions = result_data[0].get('package', {}).get(
+            'latest_non_cve_version', [])
+        for data in result_data:
+            this_version = data.get('version', {}).get('version', [None])[0]
+            if this_version == self.version:
+                if 'cve' in data:
+                    self._cves.append(data.get('cve'))
+
+        if (not self.has_cves()) or not bool(latest_non_cve_versions):
+            # If Package has No cves or No Latest Non CVE Versions.
+            return dict(recommendation={})
+
+        self.nocve_version: list = self.get_version_without_cves(latest_non_cve_versions)
+        self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
+        self.severity: list = self.get_severity()
+        return self.generate_response()
+
+    def generate_response(self) -> Dict:
+        """Build a JSON Response from all calculated values.
+
+        :return: json formatted response to requester.
+        """
+        logger.debug("Generating Final Response.")
+        component_analyses_dict = dict(
+            vulnerability=self.get_cve_maps()
+        )
+        response = dict(
+            recommended_versions=self.nocve_version,
+            registration_link=self.get_registration_link(),
+            component_analyses=component_analyses_dict,
+            message=self.get_message(),
+            severity=self.severity[0],
+            known_security_vulnerability_count=self.public_vul,
+            security_advisory_count=self.pvt_vul,
+        )
+        return response
+
+    def get_cve_maps(self) -> List[Dict]:
         """Get all Vulnerabilities Meta Data.
 
         :return: List
             - Empty: if no Vulnerability is there.
             - Dict: if Vulnerability is present.
         """
-        logger.info("Get Vulnerability Meta data.")
+        logger.debug("Get Vulnerability Meta data.")
         cve_list = []
         for cve in self._cves:
             cve_list.append(dict(
@@ -351,3 +374,89 @@ class ComponentAnalysisResponseBuilder:
                 fixed_in=cve.get('fixed_in', [])
             ))
         return cve_list
+
+
+class CABatchResponseBuilder(ComponentResponseBase):
+    """Response builder for Component Analyses v2 Batch."""
+
+    def __init__(self, ecosystem):
+        """Batch CA Response Builder."""
+        super().__init__(ecosystem, None, None)
+
+    def generate_recommendation(self, package_graph_response: Dict) -> Dict:
+        """Generate recommendation for the package+version.
+
+        Main function to generate recommendation response.
+
+        :return: Json Response
+        """
+        logger.debug("Generating Recommendation")
+        self.version = self.get_version(package_graph_response)
+        self.package = self.get_package(package_graph_response)
+        latest_non_cve_versions: List[str] = package_graph_response.get('package', {}).get(
+            'latest_non_cve_version', [])
+        self._cves = package_graph_response.get('cve')
+
+        if (not self.has_cves()) or not bool(latest_non_cve_versions):
+            # If Package has No cves or No Latest Non CVE Versions.
+            logger.debug("No Vulnerabilities found.")
+            return dict(recommendation={})
+
+        self.nocve_version: List[str] = self.get_version_without_cves(latest_non_cve_versions)
+        self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
+        self.severity: List[str] = self.get_severity()
+
+        return self.generate_response()
+
+    def get_cve_maps(self) -> List[Dict]:
+        """Get all Vulnerabilities Meta Data.
+
+        :return: List
+            - Empty: if no Vulnerability is there.
+            - Dict: if Vulnerability is present.
+        """
+        logger.debug("Get Vulnerability Meta data.")
+        cve_list = [dict(
+                id=cve.get('snyk_vuln_id', [None])[0],
+                cvss=str(cve.get('cvss_scores', [None])[0]),
+                is_private=cve.get('snyk_pvt_vulnerability', [None])[0],
+                cwes=cve.get('snyk_cwes', []),
+                cvss_v3=cve.get('snyk_cvss_v3', [None])[0],
+                severity=cve.get('severity', [None])[0],
+                title=cve.get('title', [None])[0],
+                url=cve.get('snyk_url', [None])[0],
+                cve_ids=cve.get('snyk_cve_ids', []),
+                fixed_in=cve.get('fixed_in', [])
+            ) for cve in self._cves]
+        return cve_list
+
+    def generate_response(self) -> Dict:
+        """Build a JSON Response from all calculated values.
+
+        :return: json formatted response to requester.
+        """
+        logger.debug("Generating Final Response.")
+        response = dict(
+            package=self.package,
+            version=self.version,
+            recommended_versions=self.nocve_version,
+            registration_link=self.get_registration_link(),
+            vulnerability=self.get_cve_maps(),
+            message=self.get_message(),
+            highest_severity=self.severity[0],
+            known_security_vulnerability_count=self.public_vul,
+            security_advisory_count=self.pvt_vul,
+        )
+        return response
+
+    @staticmethod
+    def get_version(graph_response: Dict) -> str:
+        """Get version from Graph Response."""
+        logger.debug("Get version.")
+        return graph_response.get('version', {}).get('version', [])[0]
+
+    @staticmethod
+    def get_package(graph_response: Dict) -> str:
+        """Get package from Graph Response."""
+        logger.debug("Get package.")
+        return graph_response.get('version', {}).get('pname', [])[0]

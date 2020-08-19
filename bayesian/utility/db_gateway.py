@@ -45,8 +45,16 @@ class GraphAnalyses:
             .as('version').in('has_version').dedup().as('package').select('version')
             .coalesce(out('has_snyk_cve').as('cve').select('package','version','cve')
             .by(valueMap()),select('package','version').by(valueMap()));
-            """
+            """,
     }
+
+    ca_batch_query = """
+            epv = [];packages.each {g.V().has('pecosystem', ecosystem).has('pname', it.name)
+            .has('version', it.version).as('version', 'cve').select('version').in('has_version')
+            .dedup().as('package').select('package', 'version', 'cve')
+            .by(valueMap()).by(valueMap()).by(out('has_snyk_cve')
+            .valueMap().fold()).fill(epv);};epv;
+            """
 
     @classmethod
     def get_ca_data_from_graph(cls, ecosystem, package, version, vendor):
@@ -71,6 +79,24 @@ class GraphAnalyses:
         query_result = post(gremlin_url, data=json.dumps(payload))
         logger.info('Gremlin request took %f seconds', (datetime.now() - start).total_seconds())
         return query_result.json()
+
+    @classmethod
+    def get_batch_ca_data(cls, ecosystem: str, packages) -> dict:
+        """Component Analyses Batch Call."""
+        logger.debug('Executing get_batch_ca_data')
+        payload = {
+            'gremlin': cls.ca_batch_query,
+            'bindings': {
+                'ecosystem': ecosystem,
+                'packages': packages
+            }
+        }
+        started_at = time.time()
+        response = post(url=gremlin_url, data=json.dumps(payload))
+        response.raise_for_status()
+        elapsed_time = time.time() - started_at
+        logger.info("It took %s to fetch results from Gremlin.", elapsed_time)
+        return response.json()
 
 
 class RdbAnalyses:
