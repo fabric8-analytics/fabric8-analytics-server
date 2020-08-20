@@ -31,31 +31,6 @@ from werkzeug.datastructures import FileStorage
 class TestStackAnalyses(unittest.TestCase):
     """Stack Analyses Unit Tests."""
 
-    def setUp(self):
-        """Build data send for aggregate and recommendation request to backbone."""
-        self.expected_body = {
-            'registration_status': 'registered',
-            'external_request_id': 'INVALID',
-            'ecosystem': 'npm',
-            'packages': [
-                {
-                    'name': 'body-parser',
-                    'version': '1.18.2',
-                    'dependencies': [
-                        {'name': 'debug', 'version': '2.6.9'},
-                        {'name': 'ms', 'version': '2.0.0'}
-                    ]
-                }
-            ],
-            'manifest_name': 'npmlist.json',
-            'manifest_file_path': '/tmp/bin',
-            'show_transitive': True
-        }
-        self.expected_param = {
-            'persist': 'true',
-            'check_license': 'false'
-        }
-
     def test_sa_invalid_manifest_file(self):
         """Check if 400 is raise upon invalid manifest file."""
         with open(str(Path(__file__).parent.parent.parent) +
@@ -65,7 +40,7 @@ class TestStackAnalyses(unittest.TestCase):
                                                        ecosystem='npm', show_transitive=True)
             sa = StackAnalyses(sa_post_request)
             with pytest.raises(Exception) as exception:
-                sa.post_request('freetier')
+                sa.post_request()
             self.assertIs(exception.type, SAInvalidInputException)
 
     @patch('bayesian.utility.v2.stack_analyses.DependencyFinder.scan_and_find_dependencies',
@@ -79,7 +54,7 @@ class TestStackAnalyses(unittest.TestCase):
                                                        ecosystem='npm', show_transitive=True)
             sa = StackAnalyses(sa_post_request)
             with pytest.raises(Exception) as exception:
-                sa.post_request('freetier')
+                sa.post_request()
             self.assertIs(exception.type, SAInvalidInputException)
 
     def test_sa_mismatch_manifest_file_and_ecosystem(self):
@@ -91,7 +66,7 @@ class TestStackAnalyses(unittest.TestCase):
                 sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                            ecosystem='pypi', show_transitive=True)
                 sa = StackAnalyses(sa_post_request)
-                sa.post_request('freetier')
+                sa.post_request()
             self.assertIs(exception.type, ValidationError)
 
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
@@ -105,7 +80,7 @@ class TestStackAnalyses(unittest.TestCase):
                                                        ecosystem='npm', show_transitive=True)
             sa = StackAnalyses(sa_post_request)
             with pytest.raises(Exception) as exception:
-                sa.post_request('freetier')
+                sa.post_request()
             self.assertIs(exception.type, BackboneServerException)
 
     @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request',
@@ -119,7 +94,7 @@ class TestStackAnalyses(unittest.TestCase):
                                                        ecosystem='npm', show_transitive=True)
             sa = StackAnalyses(sa_post_request)
             with pytest.raises(Exception) as exception:
-                sa.post_request('freetier')
+                sa.post_request()
             self.assertIs(exception.type, RDBSaveException)
 
     @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request', side_effect=None)
@@ -131,52 +106,8 @@ class TestStackAnalyses(unittest.TestCase):
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
             sa = StackAnalyses(sa_post_request)
-            response = sa.post_request('freetier')
+            response = sa.post_request()
             self.assertIsInstance(response, dict)
             self.assertIn('status', response)
             self.assertEqual(response['status'], 'success')
             self.assertIn('id', response)
-
-    @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request', side_effect=None)
-    @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request')
-    def test_sa_success_registered_status(self, _agg_request, _post_request):
-        """Success stack analyses flow."""
-        with open(str(Path(__file__).parent.parent.parent) +
-                  '/data/manifests/202/npmlist.json', 'rb') as fp:
-            fs = FileStorage(stream=fp, filename='npmlist.json')
-            sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
-                                                       ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(sa_post_request)
-            response = sa.post_request('registered')
-            self.assertIsInstance(response, dict)
-            self.assertIn('status', response)
-            self.assertEqual(response['status'], 'success')
-            self.assertIn('id', response)
-
-            # Check for argument passed for backbone request
-            data = self.expected_body
-            data['external_request_id'] = response['id']
-            data['registration_status'] = 'registered'
-            _agg_request.assert_called_with(data, self.expected_param)
-
-    @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request', side_effect=None)
-    @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request')
-    def test_sa_success_registered_status_free(self, _agg_request, _post_request):
-        """Success stack analyses flow."""
-        with open(str(Path(__file__).parent.parent.parent) +
-                  '/data/manifests/202/npmlist.json', 'rb') as fp:
-            fs = FileStorage(stream=fp, filename='npmlist.json')
-            sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
-                                                       ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(sa_post_request)
-            response = sa.post_request('freetier')
-            self.assertIsInstance(response, dict)
-            self.assertIn('status', response)
-            self.assertEqual(response['status'], 'success')
-            self.assertIn('id', response)
-
-            # Check registration status send to backbone service.
-            data = self.expected_body
-            data['external_request_id'] = response['id']
-            data['registration_status'] = 'freetier'
-            _agg_request.assert_called_with(data, self.expected_param)

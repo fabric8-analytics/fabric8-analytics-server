@@ -72,4 +72,5 @@ class UserException(Exception):
 class UserStatus(Enum):
     """Enumeration for maintaining user status."""
 
-    REGISTERED = 1
+    FREETIER = 1
+    REGISTERED = 2

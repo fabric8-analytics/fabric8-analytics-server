@@ -6,8 +6,6 @@ import pytest
 import unittest
 from pathlib import Path
 from unittest.mock import patch, Mock
-from f8a_worker.models import UserDetails
-from bayesian.utility.v2.sa_models import RegistrationStatus
 from bayesian.exceptions import HTTPError
 from bayesian.api.api_v2 import _session, ApiEndpoints, ComponentAnalysesApi
 from bayesian.utility.db_gateway import RDBSaveException, RDBInvalidRequestException
@@ -379,7 +377,7 @@ class TestStackAnalysesPostApi(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
 
     @patch('bayesian.api.api_v2.StackAnalyses.post_request')
-    def test_sa_post_success_200_freetier(self, _post_request):
+    def test_sa_post_success_200(self, _post_request):
         """Success post request with all valid data."""
         _post_request.return_value = {
             'status': 'success',
@@ -391,58 +389,3 @@ class TestStackAnalysesPostApi(unittest.TestCase):
                                     content_type='multipart/form-data')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json.get('status'), 'success')
-        _post_request.assert_called_with(RegistrationStatus.freetier)
-
-    @patch('bayesian.auth.get_user')
-    @patch('bayesian.api.api_v2.StackAnalyses.post_request')
-    def test_sa_post_success_200_registered(self, _post_request, _get_user):
-        """Success post request with all valid data."""
-        _post_request.return_value = {
-            'status': 'success',
-            'submitted_at': 'submitted_date_time',
-            'id': 'dummy_id'
-        }
-        _get_user.return_value = UserDetails(status='REGISTERED')
-        response = self.client.post(api_route_for('/stack-analyses'),
-                                    data=self.post_data,
-                                    headers={'uuid': 'abcd-1234-dcba-4321'},
-                                    content_type='multipart/form-data')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json.get('status'), 'success')
-        _post_request.assert_called_with(RegistrationStatus.registered)
-
-    @patch('bayesian.auth.get_user')
-    @patch('bayesian.api.api_v2.StackAnalyses.post_request')
-    def test_sa_post_success_200_invalid_uuid(self, _post_request, _get_user):
-        """Success post request with all valid data."""
-        _post_request.return_value = {
-            'status': 'success',
-            'submitted_at': 'submitted_date_time',
-            'id': 'dummy_id'
-        }
-        _get_user.side_effect = Exception('Invalid UUID')
-        response = self.client.post(api_route_for('/stack-analyses'),
-                                    data=self.post_data,
-                                    headers={'uuid': 'abcd-1234-dcba-4321'},
-                                    content_type='multipart/form-data')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json.get('status'), 'success')
-        _post_request.assert_called_with(RegistrationStatus.freetier)
-
-    @patch('bayesian.auth.get_user')
-    @patch('bayesian.api.api_v2.StackAnalyses.post_request')
-    def test_sa_post_success_200_user_status(self, _post_request, _get_user):
-        """Success post request with all valid data."""
-        _post_request.return_value = {
-            'status': 'success',
-            'submitted_at': 'submitted_date_time',
-            'id': 'dummy_id'
-        }
-        _get_user.return_value = UserDetails(status='ANY_VALUE')
-        response = self.client.post(api_route_for('/stack-analyses'),
-                                    data=self.post_data,
-                                    headers={'uuid': 'abcd-1234-dcba-4321'},
-                                    content_type='multipart/form-data')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json.get('status'), 'success')
-        _post_request.assert_called_with(RegistrationStatus.freetier)

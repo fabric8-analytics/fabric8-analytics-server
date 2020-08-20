@@ -3,8 +3,7 @@ import logging
 from functools import wraps
 from flask import g, request
 from requests import get
-from bayesian.utility.user_utils import get_user
-from bayesian.utility.v2.sa_models import RegistrationStatus
+from bayesian.utility.user_utils import get_user, UserStatus, UserException
 
 from .default_config import AUTH_URL
 
@@ -31,7 +30,7 @@ def get_access_token(service_name):
         logger.error('Unable to connect to Auth service')
 
 
-def get_user_type(view):
+def validate_user(view):
     """Validate and get user type based on UUID from the request."""
     @wraps(view)
     def wrapper(*args, **kwargs):
@@ -47,7 +46,7 @@ def get_user_type(view):
         #  ==============================================================
 
         # By default set this to 'freetier'.
-        g.registration_status = RegistrationStatus.freetier
+        g.registration_status = UserStatus.FREETIER
 
         # Read uuid from request header.
         uuid = request.headers.get('uuid', None)
@@ -57,10 +56,11 @@ def get_user_type(view):
             try:
                 # Read user details from RDS based on uuid
                 user = get_user(uuid)
+            except UserException as e:
+                logger.warning("Unable to get status for uuid=%s, err=%s", uuid, e)
+            else:
                 if user.status == 'REGISTERED':
-                    g.registration_status = RegistrationStatus.registered
-            except Exception as e:
-                logger.warning('User get for UUID: %s failed with %s', uuid, e)
+                    g.user_status = UserStatus.REGISTERED
 
         logger.debug('For UUID: %s, got user type: %s', uuid, g.registration_status)
         return view(*args, **kwargs)
