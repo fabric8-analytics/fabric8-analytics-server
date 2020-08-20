@@ -46,23 +46,19 @@ def validate_user(view):
         #  ==============================================================
 
         # By default set this to 'freetier'.
-        g.registration_status = UserStatus.FREETIER
+        g.user_status = UserStatus.FREETIER
 
-        # Read uuid from request header.
+        # Read uuid from header and try to get user status from RDS.
         uuid = request.headers.get('uuid', None)
-
-        # Check user with uuid if it is present in RDS.
         if uuid is not None:
             try:
-                # Read user details from RDS based on uuid
                 user = get_user(uuid)
             except UserException as e:
                 logger.warning("Unable to get status for uuid=%s, err=%s", uuid, e)
             else:
-                if user.status == 'REGISTERED':
-                    g.user_status = UserStatus.REGISTERED
+                g.user_status = UserStatus[user.status]
 
-        logger.debug('For UUID: %s, got user type: %s', uuid, g.registration_status)
+        logger.debug('For UUID: %s, got user type: %s', uuid, g.user_status)
         return view(*args, **kwargs)
 
     return wrapper
