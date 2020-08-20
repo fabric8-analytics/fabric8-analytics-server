@@ -15,18 +15,27 @@
 # Author: Deepak Sharma <deepshar@redhat.com>
 #
 """Test Component Analyses Utility Stand."""
-
+import json
+import os
 import unittest
 from unittest.mock import patch
 
 from werkzeug.exceptions import BadRequest
 
 from bayesian.utility.v2.component_analyses import validate_version, \
-    known_package_flow, ca_validate_input
+    known_package_flow, ca_validate_input, get_known_unknown_pkgs
 
 
 class TestComponentAnalyses(unittest.TestCase):
     """Test Component Analyses Utility class."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Init Test class."""
+        batch_data_no_cve = os.path.join('/bayesian/tests/data/gremlin/batch_data_no_cve.json')
+
+        with open(batch_data_no_cve) as f:
+            cls.gremlin_batch_data_no_cve = json.load(f)
 
     def test_validate_version(self):
         """Test Version should not contain special Characters."""
@@ -45,6 +54,17 @@ class TestComponentAnalyses(unittest.TestCase):
         _mock1.return_value = True
         result = known_package_flow('pypi', "django", "1.1")
         self.assertTrue(result)
+
+    @patch('bayesian.utility.v2.component_analyses.g')
+    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
+    def test_get_known_unknown_pkgs_no_cve(self, _mock1, _mock2):
+        """Test Known Unknown Pkgs, No Cve."""
+        normalised_input_pkgs = [('markdown2', "2.3.2")]
+        stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
+            "pypi", self.gremlin_batch_data_no_cve, normalised_input_pkgs)
+        ideal_output = [{'package': 'markdown2', 'version': '2.3.2', 'recommendation': {}}]
+        self.assertListEqual(stack_recommendation, ideal_output)
+        self.assertSetEqual(unknown_pkgs, set())
 
 
 class TestCAInputValidator(unittest.TestCase):
