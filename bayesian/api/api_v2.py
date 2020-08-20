@@ -21,6 +21,8 @@ import time
 import urllib
 import logging
 import re
+from typing import Dict, Tuple
+
 from requests_futures.sessions import FuturesSession
 from collections import namedtuple
 from pydantic.error_wrappers import ValidationError
@@ -33,6 +35,8 @@ from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required, AuthError
 from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
+from bayesian.utility.v2.component_analyses import ca_validate_input, \
+    unknown_package_flow, get_known_unknown_pkgs
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
@@ -46,7 +50,9 @@ from bayesian.utility.v2.stack_analyses import StackAnalyses, SAInvalidInputExce
 from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
 from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
-                                         RDBInvalidRequestException, RDBServerException)
+                                         RDBInvalidRequestException,
+                                         RDBServerException, GraphAnalyses)
+from werkzeug.exceptions import BadRequest
 
 
 logger = logging.getLogger(__name__)
@@ -61,7 +67,6 @@ errors = {
 api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 rest_api_v2 = Api(api_v2, errors=errors)
 
-
 ANALYSIS_ACCESS_COUNT_KEY = 'access_count'
 TOTAL_COUNT_KEY = 'total_count'
 
@@ -75,7 +80,6 @@ METRICS_SERVICE_URL = "http://{}:{}".format(
 worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
 _session = FuturesSession(max_workers=worker_count)
 _resource_paths = []
-logger = logging.getLogger(__name__)
 
 
 @api_v2.route('/readiness')
@@ -176,7 +180,7 @@ class ComponentAnalysesApi(Resource):
             return analyses_result
         elif os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1":
             msg = f"No data found for {ecosystem} package {package}/{version} " \
-                   "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
+                  "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
 
             return response_template({'error': msg}, 202)
 
@@ -202,6 +206,56 @@ class ComponentAnalysesApi(Resource):
         _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
 
         raise HTTPError(404, msg)
+
+    @staticmethod
+    def post():
+        """Handle the POST REST API call.
+
+        Component Analyses Batch is 4 Step Process:
+        1. Gather and clean Request.
+        2. Query GraphDB.
+        3. Build Stack Recommendation and Build Unknown Packages and Trigger componentApiFlow.
+        4. Handle Unknown Packages and Trigger bayesianApiFlow.
+        """
+        response_template: Tuple = namedtuple("response_template", ["message", "status"])
+        ingestion_disabled_msg: str = "No data found for any package in manifest file. " \
+                                      "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW " \
+                                      "is enabled"
+        no_package_available_msg: str = "No Package in given manifest is available. " \
+                                        "Packages will be available shortly, " \
+                                        "Please retry after some time."
+
+        input_json: Dict = request.get_json()
+        ecosystem: str = input_json.get('ecosystem')
+        try:
+            # Step1: Gather and clean Request
+            packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
+            # Step2: Query GraphDB,
+            graph_response = GraphAnalyses.get_batch_ca_data(ecosystem, packages_list)
+            # Step3: Build Unknown packages and Generates Stack Recommendation.
+            stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
+                ecosystem, graph_response, normalised_input_pkgs)
+        except BadRequest as br:
+            logger.error(br)
+            raise HTTPError(400, str(br)) from br
+        except Exception as e:
+            msg = "Internal Server Exception. Please contact us if problem persists."
+            logger.error(e)
+            raise HTTPError(400, msg) from e
+
+        # Step4: Handle Unknown Packages
+        if unknown_pkgs:
+            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") == "1":
+                # Unknown Packages is Present and INGESTION is DISABLED
+                logger.error(ingestion_disabled_msg)
+                raise HTTPError(400, ingestion_disabled_msg)
+            unknown_package_flow(ecosystem, unknown_pkgs)
+            if not stack_recommendation:
+                # If No Package is Known, all are unknown.
+                logger.debug(no_package_available_msg)
+                raise HTTPError(202, no_package_available_msg)
+            return response_template(stack_recommendation, 202)
+        return response_template(stack_recommendation, 200)
 
 
 @api_v2.route('/stack-analyses/<external_request_id>', methods=['GET'])
@@ -325,6 +379,10 @@ add_resource_no_matter_slashes(SystemVersion, '/system/version')
 add_resource_no_matter_slashes(ComponentAnalysesApi,
                                '/component-analyses/<ecosystem>/<package>/<version>',
                                endpoint='get_component_analysis')
+
+add_resource_no_matter_slashes(ComponentAnalysesApi,
+                               '/component-analyses/',
+                               endpoint='post_component_analysis')
 
 
 # ERROR HANDLING
