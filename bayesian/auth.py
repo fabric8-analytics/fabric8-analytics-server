@@ -48,9 +48,8 @@ def validate_user(view):
         # By default set this to 'freetier'.
         g.user_status = UserStatus.FREETIER
 
-        # Read uuid from header and try to get user status from RDS.
         uuid = request.headers.get('uuid', None)
-        if uuid is not None:
+        if uuid:
             try:
                 user = get_user(uuid)
             except UserException as e:
