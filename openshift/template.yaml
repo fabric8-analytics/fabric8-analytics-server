@@ -101,7 +101,7 @@ objects:
             valueFrom:
               secretKeyRef:
                 name: snyk-secrets
-                key: encryption_key_for_snyk_token
+                key: encryption_key_for_snyk_token_qb64
           - name: THREESCALE_ACCOUNT_SECRET
             valueFrom:
               secretKeyRef:
