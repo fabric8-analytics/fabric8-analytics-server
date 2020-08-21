@@ -60,9 +60,35 @@ class TestComponentAnalyses(unittest.TestCase):
     def test_get_known_unknown_pkgs_no_cve(self, _mock1, _mock2):
         """Test Known Unknown Pkgs, No Cve."""
         normalised_input_pkgs = [('markdown2', "2.3.2")]
+        batch_data_no_cve = os.path.join('/bayesian/tests/data/gremlin/batch_data_no_cve.json')
+        with open(batch_data_no_cve) as f:
+            gremlin_batch_data_no_cve = json.load(f)
+
         stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
-            "pypi", self.gremlin_batch_data_no_cve, normalised_input_pkgs)
+            "pypi", gremlin_batch_data_no_cve, normalised_input_pkgs)
         ideal_output = [{'package': 'markdown2', 'version': '2.3.2', 'recommendation': {}}]
+        self.assertListEqual(stack_recommendation, ideal_output)
+        self.assertSetEqual(unknown_pkgs, set())
+
+    @patch('bayesian.utility.v2.component_analyses.g')
+    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
+    def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1, _mock2):
+        """Test Known Unknown Pkgs, with and Without CVE."""
+        normalised_input_pkgs = [('flask', "1.1.1"), ('django', "1.1.1")]
+        self.maxDiff = None
+        batch_data_no_cve = os.path.join(
+            '/bayesian/tests/data/gremlin/batch_data_with_n_without_cve.json')
+        with open(batch_data_no_cve) as f:
+            data_with_n_without_cve = json.load(f)
+
+        ideal_resp = os.path.join(
+            '/bayesian/tests/data/response/ca_batch_with_n_without_vul.json')
+        with open(ideal_resp) as f:
+            ideal_output = json.load(f)
+
+        stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
+            "pypi", data_with_n_without_cve, normalised_input_pkgs)
+
         self.assertListEqual(stack_recommendation, ideal_output)
         self.assertSetEqual(unknown_pkgs, set())
 
