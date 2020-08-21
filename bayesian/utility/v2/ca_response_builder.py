@@ -400,7 +400,10 @@ class CABatchResponseBuilder(ComponentResponseBase):
         if (not self.has_cves()) or not bool(latest_non_cve_versions):
             # If Package has No cves or No Latest Non CVE Versions.
             logger.debug("No Vulnerabilities found.")
-            return dict(recommendation={})
+            return dict(
+                package=self.package,
+                version=self.version,
+                recommendation={})
 
         self.nocve_version: List[str] = self.get_version_without_cves(latest_non_cve_versions)
         self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
