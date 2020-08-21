@@ -49,6 +49,11 @@ objects:
               configMapKeyRef:
                 name: bayesian-config
                 key: auth-url
+          - name: SNYK_API_TOKEN_VALIDATION_URL
+            valueFrom:
+              configMapKeyRef:
+                name: bayesian-config
+                key: snyk_api_token_validation_url
           - name: BAYESIAN_FETCH_PUBLIC_KEY
             valueFrom:
               configMapKeyRef:
@@ -92,6 +97,11 @@ objects:
               secretKeyRef:
                 name: aws-sqs
                 key: aws_secret_access_key
+          - name: ENCRYPTION_KEY_FOR_SNYK_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: snyk-secrets
+                key: encryption_key_for_snyk_token
           - name: THREESCALE_ACCOUNT_SECRET
             valueFrom:
               secretKeyRef:

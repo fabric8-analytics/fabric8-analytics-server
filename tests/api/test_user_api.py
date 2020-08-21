@@ -29,35 +29,37 @@ class TestUserEndpoints:
 
     def test_user_get(self):
         """Test case for GET user."""
-        response = self.client.get('/user/03ec8318-08ed-4aeb-8305-2d5827fd0f72')
-        assert response.status_code == 200
+        with patch('bayesian.api.user_api.user_utils') as user_utils_mock:
+            response = self.client.get('/user/03ec8318-08ed-4aeb-8305-2d5827fd0f72')
+            user_utils_mock.get_user.assert_called_once()
+            assert response.status_code == 200
+
+    def test_user_put_false(self):
+        """Test case for PUT user."""
+        with patch('bayesian.api.user_api.user_utils') as user_utils_mock_put:
+            with patch('bayesian.api.user_api.request') as request:
+                request.json.return_value = {'user_id': '123', 'snyk_api_token': 'abc'}
+                user_utils_mock_put.is_snyk_token_valid.return_value = False
+
+                with(pytest.raises(HTTPError)):
+                    user_api.create_or_update_user()
 
     def test_user_put(self):
         """Test case for PUT user."""
         with patch('bayesian.api.user_api.user_utils') as user_utils_mock_put:
             with patch('bayesian.api.user_api.request') as request:
-                user_utils_mock_put.update_user.side_effect = None
-                request.json.side_effect = None
-                response = self.client.put('/user/03ec8318-08ed-4aeb-8305-2d5827fd0f72')
+                request.json.return_value = {'user_id': '123', 'snyk_api_token': 'abc'}
+                user_utils_mock_put.is_snyk_token_valid.return_value = True
 
-                user_utils_mock_put.update_user.assert_called_once()
+                response = self.client.put('/user')
+
+                user_utils_mock_put.encrypt_api_token.assert_called_once()
+                user_utils_mock_put.create_or_update_user.assert_called_once()
                 assert response.status_code == 200
 
     def test_user_post(self):
         """Test case for POST user."""
-        with patch('bayesian.api.user_api.user_utils') as user_utils_mock:
-            user_utils_mock.create_user.side_effect = None
+        with patch('bayesian.api.user_api.uuid') as uuid_mock:
             response = self.client.post('/user')
-
-            user_utils_mock.create_user.assert_called_once()
+            uuid_mock.uuid4.assert_called_once()
             assert response.status_code == 200
-
-
-@pytest.mark.usefixtures('get_user_details')
-class TestUserApiFunctions:
-    """Test case for testing the API functions."""
-
-    def test_get_user_with_no_user_id(self):
-        """Test case for testing the API functions."""
-        with pytest.raises(HTTPError):
-            user_api.get_user(None)
