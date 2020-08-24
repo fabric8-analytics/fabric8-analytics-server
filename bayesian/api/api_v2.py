@@ -208,6 +208,7 @@ class ComponentAnalysesApi(Resource):
         raise HTTPError(404, msg)
 
     @staticmethod
+    @validate_user
     def post():
         """Handle the POST REST API call.
 

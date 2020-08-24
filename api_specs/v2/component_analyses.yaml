@@ -149,74 +149,163 @@ components:
       value:
         - package: "django"
           version: "1.1"
-          recommendation:
-            vulnerabilities:
-              - id: "SNYK-2010-3082"
-                cvss: "1.2"
-                is_private: false
-              - id: "SYNK-2018-1002"
-                cvss: "1.3"
-                is_private: false
-            recommended_version : "2"
-            message: "2 vulnerabilities within this dependency"
-            highest_severity: "high"
-            public_vulnerabilities_count: 2
-            private_vulnerabilities_count: 1
-            registeration_link: "https://app.snyk.io/login"
+          vulnerabilities:
+            - id: "SNYK-2010-3082"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids:
+                - "CVE-2010-4534"
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+            - id: "SYNK-2018-1002"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids:
+                - "CVE-2010-4534"
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+          recommended_version : "2"
+          message: "2 vulnerabilities within this dependency"
+          highest_severity: "high"
+          known_security_vulnerability_count: 2
+          security_advisory_count: 1
+          registeration_link: "https://app.snyk.io/login"
 
         - package: "mango"
           version: "2.1"
-          recommendation:
-            vulnerabilities:
-              - id: "SNYK-2018-1002"
-                cvss: "1.2"
-                is_private: true
-              - id: "SNYK-2010-3082"
-                cvss: "1.3"
-                is_private: false
-            recommended_version : "2"
-            message: "2 vulnerabilities within this dependency"
-            highest_severity: "high"
-            public_vulnerabilities_count: 2
-            private_vulnerabilities_count: 1
-            registeration_link: "https://app.snyk.io/login"
+          vulnerabilities:
+            - id: "SNYK-2010-3082"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids:
+                - "CVE-2010-4534"
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+            - id: "SNYK-2010-3082"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+          recommended_version : "2"
+          message: "2 vulnerabilities within this dependency"
+          highest_severity: "high"
+          known_security_vulnerability_count: 2
+          security_advisory_count: 1
+          registeration_link: "https://app.snyk.io/login"
 
     registered-user-batch:
       value:
         - package: "django"
           version: "1.1"
-          recommendation:
-            vulnerabilities:
-              - id: "SNYK-2018-1002"
-                cvss: "1.2"
-                is_private: true
-              - id: "SNYK-2010-3082"
-                cvss: "1.3"
-                is_private: false
-            recommended_version : "2"
-            message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
-            highest_severity: "high"
-            public_vulnerabilities_count: 2
-            private_vulnerabilities_count: 1
-            exploitable_vulnerabilities_count: 0
-            vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+          vulnerabilities:
+            - id: "SNYK-2010-3082"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+            - id: "SNYK-2010-30812"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+          recommended_version : "2"
+          message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
+          highest_severity: "high"
+          known_security_vulnerability_count: 2
+          security_advisory_count: 1
+          exploitable_vulnerabilities_count: 0
+          vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
         - package: "mango"
           version: "2.1"
-          recommendation:
-            vulnerabilities:
-              - id: "SYNK-2018-1002"
-                cvss: "1.2"
-                is_private: true
-              - id: "SNYK-2010-3082"
-                cvss: "1.3"
-                is_private: false
-            recommended_version : "2"
-            message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
-            highest_severity: "high"
-            public_vulnerabilities_count: 2
-            private_vulnerabilities_count: 1
-            exploitable_vulnerabilities_count: 0
-            vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+          vulnerabilities:
+            - id: "SNYK-2010-1111"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+            - id: "SNYK-2010-0000"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+          recommended_version : "2"
+          message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
+          highest_severity: "high"
+          known_security_vulnerability_count: 2
+          security_advisory_count: 1
+          exploitable_vulnerabilities_count: 0
+          vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
     no-vul-batch:
       value:
         - package: "django"
@@ -278,21 +367,28 @@ components:
       value:
         - package: "django"
           version: "1.1"
-          recommendation:
-            component_analyses:
-              vulnerability:
-                - cve_id: "CVE-2010-3082"
-                  cvss: "1.2"
-                  is_private: false
-                - cve_id: "CVE-2018-1002"
-                  cvss: "1.3"
-                  is_private: false
-            recommended_version : "2"
-            message: "2 vulnerabilities within this dependency"
-            highest_severity: "high"
-            public_vulnerabilities_count: 2
-            private_vulnerabilities_count: 1
-            registeration_link: "https://app.snyk.io/login"
+          vulnerability:
+            - id: "SNYK-2010-0000"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+          recommended_version : "2"
+          message: "2 vulnerabilities within this dependency"
+          highest_severity: "high"
+          known_security_vulnerability_count: 2
+          security_advisory_count: 1
+          registeration_link: "https://app.snyk.io/login"
   schemas:
     RequestPackageDetails:
       title: CA Batch Call Request Body
@@ -345,10 +441,10 @@ components:
             highest_severity:
               type: string
               example: "high"
-            public_vulnerabilities_count:
+            known_security_vulnerability_count:
               type: integer
               example: 0
-            private_vulnerabilities_count:
+            security_advisory_count:
               type: integer
               example: 0
             exploitable_vulnerabilities_count:
@@ -384,10 +480,10 @@ components:
             highest_severity:
               type: string
               example: "high"
-            public_vulnerabilities_count:
+            known_security_vulnerability_count:
               type: integer
               example: 1
-            private_vulnerabilities_count:
+            security_advisory_count:
               type: integer
               example: 1
             registeration_link:
@@ -408,6 +504,37 @@ components:
         is_private:
           type: boolean
           example: true
+        cwes:
+          type: array
+          items:
+            type: string
+          example:
+            - "CWE-264"
+        cvss_v3:
+          type: string
+          example: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+        severity:
+          type: string
+          example: "medium"
+        title:
+          type: string
+          example: "Information Exposure"
+        url:
+          type: string
+          example: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+        cve_ids:
+          type: array
+          items:
+            type: string
+          example:
+            - "CVE-2010-4534"
+        fixed_in:
+          type: array
+          items:
+            type: string
+          example:
+            - "1.1.3"
+            - "1.2.4"
 
     UnknownPkgResponse:
       title: All Unknown Packages Response
@@ -498,10 +625,10 @@ components:
             severity:
               type: string
               example: "high"
-            public_vulnerabilities_count:
+            known_security_vulnerability_count:
               type: integer
               example: 0
-            private_vulnerabilities_count:
+            security_advisory_count:
               type: integer
               example: 0
             exploitable_vulnerabilities_count:
@@ -532,13 +659,13 @@ components:
             message:
               type: string
               example: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
-            severity:
+            highest_severity:
               type: string
               example: "high"
-            public_vulnerabilities_count:
+            known_security_vulnerability_count:
               type: integer
               example: 1
-            private_vulnerabilities_count:
+            security_advisory_count:
               type: integer
               example: 1
             registeration_link:
