@@ -216,9 +216,15 @@ class TestCAPostApi(unittest.TestCase):
         self.assertEqual(response.status_code, 202)
         self.assertEqual(response.json, self.recommendation_data)
 
+    @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
     @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
-    def test_get_component_analyses_unknown_flow_ingestion_disabled(self, _mock1):
+    def test_get_component_analyses_unknown_flow_ingestion_disabled(self, _mock1, _mock2):
         """CA POST: Unknown flow, Ingestion Disabled."""
+        _mock1.return_value = self.gremlin_batch_data
+        _mock2.return_value = {}, {"unknown_pkg"}
+        no_package_available_msg: str = "No Package in given manifest is available. " \
+                                        "Packages will be available shortly, " \
+                                        "Please retry after some time."
         with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
             payload = {
                 "ecosystem": 'pypi',
@@ -229,11 +235,22 @@ class TestCAPostApi(unittest.TestCase):
             accept_json = [('Content-Type', 'application/json;')]
             response = self.client.post(
                 api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
-            self.assertEqual(response.status_code, 400)
-            self.assertDictEqual(response.json,
-                                 {"error": "No data found for any package in manifest file. "
-                                           "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW "
-                                           "is enabled"})
+            self.assertEqual(response.status_code, 202)
+            self.assertDictEqual(response.json, {"error": no_package_available_msg})
+
+    def test_get_component_analyses_bad_request(self):
+        """CA POST: Bad Request."""
+        payload = {
+            "ecosys": 'pypi',
+            "package_versions": [
+                {"package": "markdown2", "version": "2.3.2"}
+            ]
+        }
+        accept_json = [('Content-Type', 'application/json;')]
+        response = self.client.post(
+            api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
+        self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.json, {'error': '400: Bad Request'})
 
 
 @pytest.mark.usefixtures('client_class')
