@@ -40,8 +40,9 @@ class StackAnalyses():
     def post_request(self):
         """Make stack analyses POST request."""
         logger.info('SA Post request with ecosystem: %s manifest: %s path: %s '
-                    'show_transitive: %s', self.params.ecosystem, self.params.manifest.filename,
-                    self.params.file_path, self.params.show_transitive)
+                    'show_transitive: %s', self.params.ecosystem,
+                    self.params.manifest.filename, self.params.file_path,
+                    self.params.show_transitive)
         # Build manifest file info.
         self._manifest_file_info = {
             'filename': self.params.manifest.filename,

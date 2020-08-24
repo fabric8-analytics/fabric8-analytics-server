@@ -1,7 +1,9 @@
 """Authorization token handling."""
 import logging
-from flask import request
+from functools import wraps
+from flask import g, request
 from requests import get
+from bayesian.utility.user_utils import get_user, UserStatus, UserException
 
 from .default_config import AUTH_URL
 
@@ -26,3 +28,36 @@ def get_access_token(service_name):
 
     except Exception:
         logger.error('Unable to connect to Auth service')
+
+
+def validate_user(view):
+    """Validate and get user type based on UUID from the request."""
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        """Read uuid and decides user type based on its validity."""
+        # Rule of UUID validation and setting user status ::
+        #  ==============================================================
+        #   UUID in request | UUID in RDS | RDS User State | User Status
+        #  ==============================================================
+        #    MISSING        | -- NA --    | -- NA --       | FREE
+        #    PRESENT        | MISSING     | -- NA --       | FREE
+        #    PRESENT        | PRESENT     | REGISTERED     | REGISTERED
+        #    PRESENT        | PRESENT     | !REGISTERED    | FREE
+        #  ==============================================================
+
+        # By default set this to 'freetier'.
+        g.user_status = UserStatus.FREETIER
+
+        uuid = request.headers.get('uuid', None)
+        if uuid:
+            try:
+                user = get_user(uuid)
+            except UserException as e:
+                logger.warning("Unable to get status for uuid=%s, err=%s", uuid, e)
+            else:
+                g.user_status = UserStatus[user.status]
+
+        logger.debug('For UUID: %s, got user type: %s', uuid, g.user_status)
+        return view(*args, **kwargs)
+
+    return wrapper

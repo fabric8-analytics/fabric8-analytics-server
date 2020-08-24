@@ -33,6 +33,7 @@ from flask_restful import Api, Resource
 
 from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required, AuthError
+from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
     unknown_package_flow, get_known_unknown_pkgs
@@ -259,6 +260,7 @@ class ComponentAnalysesApi(Resource):
 
 @api_v2.route('/stack-analyses/<external_request_id>', methods=['GET'])
 @login_required
+@validate_user
 def stack_analyses_with_request_id(external_request_id):
     """Handle stack analyses report fetch api."""
     start = time.time()
@@ -289,6 +291,7 @@ def stack_analyses_with_request_id(external_request_id):
 
 @api_v2.route('/stack-analyses', methods=['GET', 'POST'])
 @login_required
+@validate_user
 def stack_analyses():
     """Handle request to trigger a new stack analyses report.
 
