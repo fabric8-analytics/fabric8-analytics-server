@@ -225,7 +225,7 @@ class ComponentAnalysesApi(Resource):
 
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
-        headers = {"uuid" : request.headers.get('uuid', None)}
+        headers = {"uuid": request.headers.get('uuid', None)}
         try:
             # Step1: Gather and clean Request
             packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
