@@ -218,9 +218,6 @@ class ComponentAnalysesApi(Resource):
         4. Handle Unknown Packages and Trigger bayesianApiFlow.
         """
         response_template: Tuple = namedtuple("response_template", ["message", "status"])
-        ingestion_disabled_msg: str = "No data found for any package in manifest file. " \
-                                      "Ingestion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW " \
-                                      "is enabled"
         no_package_available_msg: str = "No Package in given manifest is available. " \
                                         "Packages will be available shortly, " \
                                         "Please retry after some time."
@@ -245,15 +242,17 @@ class ComponentAnalysesApi(Resource):
 
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
-            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") == "1":
-                # Unknown Packages is Present and INGESTION is DISABLED
-                logger.error(ingestion_disabled_msg)
-                raise HTTPError(400, ingestion_disabled_msg)
-            unknown_package_flow(ecosystem, unknown_pkgs)
+
             if not stack_recommendation:
                 # If No Package is Known, all are unknown.
-                logger.debug(no_package_available_msg)
+                logger.debug(unknown_pkgs)
                 raise HTTPError(202, no_package_available_msg)
+
+            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1":
+                # Unknown Packages is Present and INGESTION is Enabled
+                logger.debug(unknown_pkgs)
+                unknown_package_flow(ecosystem, unknown_pkgs)
+
             return response_template(stack_recommendation, 202)
         return response_template(stack_recommendation, 200)
 
