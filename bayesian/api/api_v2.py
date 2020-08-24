@@ -245,7 +245,7 @@ class ComponentAnalysesApi(Resource):
 
             if not stack_recommendation:
                 # If No Package is Known, all are unknown.
-                logger.debug(stack_recommendation)
+                logger.debug(unknown_pkgs)
                 raise HTTPError(202, no_package_available_msg)
 
             if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1":
