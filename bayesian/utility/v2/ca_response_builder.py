@@ -19,10 +19,12 @@ from urllib.parse import quote
 import logging
 
 from bayesian.utility.db_gateway import GraphAnalyses
+from bayesian.utility.user_utils import UserStatus
 from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic
 from typing import Dict, List, Optional
 from collections import namedtuple
 from abc import ABC
+from flask import g
 
 logger = logging.getLogger(__name__)
 Package = namedtuple("Package", ["name", "version"])
@@ -409,6 +411,8 @@ class CABatchResponseBuilder(ComponentResponseBase):
         self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
         self.severity: List[str] = self.get_severity()
 
+        if g.user_status == UserStatus.REGISTERED:
+            return self.get_premium_response()
         return self.generate_response()
 
     def get_cve_maps(self) -> List[Dict]:
@@ -432,6 +436,56 @@ class CABatchResponseBuilder(ComponentResponseBase):
                 fixed_in=cve.get('fixed_in', [])
             ) for cve in self._cves]
         return cve_list
+
+    def get_premium_response(self) -> Dict:
+        """Get Premium Response.
+
+        :return: Dict of Registered User Response.
+        """
+        exploitable_vuls = self.get_exploitable_cves_counter()
+        logger.debug("Generating Premium Response.")
+        response = dict(
+            package=self.package,
+            version=self.version,
+            recommended_versions=self.nocve_version,
+            vendor_package_link=self.get_link(),
+            vulnerability=self.get_cve_maps(),
+            message=self.get_premium_message(exploitable_vuls),
+            highest_severity=self.severity[0],
+            known_security_vulnerability_count=self.public_vul,
+            security_advisory_count=self.pvt_vul,
+            exploitable_vulnerabilities_count=exploitable_vuls
+        )
+        return response
+
+    def get_premium_message(self, exploitable_vuls: int) -> str:
+        """Build Message for Registered User.
+
+        Message to be shown in Component Analyses Tooltip.
+        :return: Message string.
+        """
+        message = f"{self.package} - {self.version} has "
+
+        if self.public_vul and self.pvt_vul:
+            # Add Private Vulnerability and Public Vul Info only
+            message += f"{self.public_vul} known security vulnerability "
+            message += f"and {self.pvt_vul} security advisory "
+            message += f"with {exploitable_vuls} exploitable vulnerabilities. "
+            message += self.get_recommendation()
+            return message
+
+        if self.public_vul:
+            # Add Public Vulnerability Info only
+            message += f"{self.public_vul} known security vulnerability"
+            message += f" with {exploitable_vuls} exploitable vulnerabilities. "
+            message += self.get_recommendation()
+            return message
+
+        if self.pvt_vul:
+            # Add Private Vulnerability Info only
+            message += f"{self.pvt_vul} security advisory"
+            message += f" with {exploitable_vuls} exploitable vulnerabilities. "
+        return message
 
     def generate_response(self) -> Dict:
         """Build a JSON Response from all calculated values.
