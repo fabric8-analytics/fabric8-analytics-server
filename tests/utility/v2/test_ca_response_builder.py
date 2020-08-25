@@ -17,7 +17,7 @@
 """Test Utility for All Utility Functions."""
 
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, \
-    ComponentAnalysisResponseBuilder
+    ComponentAnalysisResponseBuilder, CABatchResponseBuilder
 from urllib.parse import quote
 from unittest.mock import patch, Mock
 import unittest
@@ -114,7 +114,7 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         """Class variables initialised."""
-        self.eco = 'eco'
+        self.eco = 'pypi'
         self.ver = '1'
         self.pkg = 'pkg'
 
@@ -149,6 +149,68 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
         response = ComponentAnalysisResponseBuilder(
             self.eco, self.pkg, self.ver).generate_recommendation(mocked_response)
         self.assertDictEqual(response, {})
+
+    @patch('bayesian.utility.v2.ca_response_builder'
+           '.CABatchResponseBuilder.get_link')
+    @patch('bayesian.utility.v2.ca_response_builder'
+           '.CABatchResponseBuilder.get_exploitable_cves_counter')
+    def test_get_premium_response(self, _mock1, _mock2):
+        """Test Get Premium Response."""
+        _mock1.return_value = 1
+        _mock2.return_value = "https://snyk.io/vuln/pypi:django"
+        obj = CABatchResponseBuilder(self.eco)
+        obj.severity = ["high", "high"]
+        obj.package = "django"
+        obj.version = "1.1"
+        response = obj.get_premium_response()
+        ideal_response = {'package': 'django',
+                          'version': '1.1',
+                          'recommended_versions': '',
+                          'vendor_package_link': 'https://snyk.io/vuln/pypi:django',
+                          'vulnerability': [],
+                          'message': 'django - 1.1 has ',
+                          'highest_severity': 'high',
+                          'known_security_vulnerability_count': 0,
+                          'security_advisory_count': 0,
+                          'exploitable_vulnerabilities_count': 1
+                          }
+        self.assertEqual(response, ideal_response)
+
+    def test_get_premium_message_with_pub_pvt_vul(self):
+        """Test Get Premium Message With Public and Private Vulnerabilities."""
+        obj = CABatchResponseBuilder(self.eco)
+        obj.public_vul = 1
+        obj.pvt_vul = 1
+        obj.package = "django"
+        obj.version = "1.1"
+        msg = obj.get_premium_message(1)
+        ideal_msg = "django - 1.1 has 1 known security vulnerability " \
+                    "and 1 security advisory with 1 exploitable " \
+                    "vulnerabilities. No recommended version."
+        self.assertEqual(msg, ideal_msg)
+
+    def test_get_premium_message_with_pvt_vul(self):
+        """Test Get Premium Message With Private Vulnerabilities."""
+        obj = CABatchResponseBuilder(self.eco)
+        obj.public_vul = 0
+        obj.pvt_vul = 1
+        obj.package = "django"
+        obj.version = "1.1"
+        msg = obj.get_premium_message(1)
+        ideal_msg = "django - 1.1 has 1 security advisory with 1 exploitable vulnerabilities. "
+        self.assertEqual(msg, ideal_msg)
+
+    def test_get_premium_message_with_public_vul(self):
+        """Test Get Premium Message With Public Vulnerabilities."""
+        obj = CABatchResponseBuilder(self.eco)
+        obj.public_vul = 1
+        obj.pvt_vul = 0
+        obj.package = "django"
+        obj.version = "1.1"
+        msg = obj.get_premium_message(1)
+        ideal_msg = "django - 1.1 has 1 known security vulnerability with " \
+                    "1 exploitable vulnerabilities. No recommended version."
+        self.assertEqual(msg, ideal_msg)
 
     def test_get_message_with_pvt_vul_equal_len(self):
         """Test Message with Private Vulnerability equal len of severities and vul count."""
