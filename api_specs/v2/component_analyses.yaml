@@ -425,34 +425,31 @@ components:
         version:
           type: string
           example: "1.1"
-        recommendation:
-          type: object
-          properties:
-            recommended_versions:
-              type: string
-              example: 2
-            vulnerabilities:
-              type: array
-              items:
-                $ref: '#/components/schemas/VulnerabilityDetailsBatch'
-            message:
-              type: string
-              example: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
-            highest_severity:
-              type: string
-              example: "high"
-            known_security_vulnerability_count:
-              type: integer
-              example: 0
-            security_advisory_count:
-              type: integer
-              example: 0
-            exploitable_vulnerabilities_count:
-              type: integer
-              example: 0
-            vendor_package_link:
-              type: string
-              example : "https://snyk.io/vuln/maven:org.webjars%3Ajquery-form"
+        recommended_versions:
+          type: string
+          example: 2
+        vulnerability:
+          type: array
+          items:
+            $ref: '#/components/schemas/VulnerabilityDetailsBatch'
+        message:
+          type: string
+          example: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
+        highest_severity:
+          type: string
+          example: "high"
+        known_security_vulnerability_count:
+          type: integer
+          example: 0
+        security_advisory_count:
+          type: integer
+          example: 0
+        exploitable_vulnerabilities_count:
+          type: integer
+          example: 0
+        vendor_package_link:
+          type: string
+          example : "https://snyk.io/vuln/maven:org.webjars%3Ajquery-form"
 
     FreeUserBatch:
       title: Vendor Public Recommendation
@@ -464,31 +461,28 @@ components:
         version:
           type: string
           example: "1.1"
-        recommendation:
-          type: object
-          properties:
-            recommended_versions:
-              type: string
-              example: "3.1"
-            vulnerabilities:
-              type: array
-              items:
-                $ref: '#/components/schemas/VulnerabilityDetailsBatch'
-            message:
-              type: string
-              example: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
-            highest_severity:
-              type: string
-              example: "high"
-            known_security_vulnerability_count:
-              type: integer
-              example: 1
-            security_advisory_count:
-              type: integer
-              example: 1
-            registration_link:
-              type: string
-              example : "https://app.snyk.io/login"
+        recommended_versions:
+          type: string
+          example: "3.1"
+        vulnerability:
+          type: array
+          items:
+            $ref: '#/components/schemas/VulnerabilityDetailsBatch'
+        message:
+          type: string
+          example: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
+        highest_severity:
+          type: string
+          example: "high"
+        known_security_vulnerability_count:
+          type: integer
+          example: 1
+        security_advisory_count:
+          type: integer
+          example: 1
+        registration_link:
+          type: string
+          example : "https://app.snyk.io/login"
 
     VulnerabilityDetailsBatch:
       title: Vulnerability Details Batch
