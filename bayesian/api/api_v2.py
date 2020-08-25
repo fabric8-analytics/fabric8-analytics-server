@@ -208,6 +208,7 @@ class ComponentAnalysesApi(Resource):
         raise HTTPError(404, msg)
 
     @staticmethod
+    @validate_user
     def post():
         """Handle the POST REST API call.
 
@@ -217,13 +218,14 @@ class ComponentAnalysesApi(Resource):
         3. Build Stack Recommendation and Build Unknown Packages and Trigger componentApiFlow.
         4. Handle Unknown Packages and Trigger bayesianApiFlow.
         """
-        response_template: Tuple = namedtuple("response_template", ["message", "status"])
+        response_template: Tuple = namedtuple("response_template", ["message", "status", "headers"])
         no_package_available_msg: str = "No Package in given manifest is available. " \
                                         "Packages will be available shortly, " \
                                         "Please retry after some time."
 
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
+        headers = {"uuid": request.headers.get('uuid', None)}
         try:
             # Step1: Gather and clean Request
             packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
@@ -253,8 +255,8 @@ class ComponentAnalysesApi(Resource):
                 logger.debug(unknown_pkgs)
                 unknown_package_flow(ecosystem, unknown_pkgs)
 
-            return response_template(stack_recommendation, 202)
-        return response_template(stack_recommendation, 200)
+            return response_template(stack_recommendation, 202, headers)
+        return response_template(stack_recommendation, 200, headers)
 
 
 @api_v2.route('/stack-analyses/<external_request_id>', methods=['GET'])
