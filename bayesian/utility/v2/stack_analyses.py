@@ -20,6 +20,7 @@ import datetime
 import uuid
 import json
 import logging
+from flask import g
 from bayesian.dependency_finder import DependencyFinder
 from bayesian.utility.db_gateway import RdbAnalyses
 from bayesian.utility.v2.backbone_server import BackboneServer
@@ -111,7 +112,7 @@ class StackAnalyses():
 
         # Set backbone API request body and params.
         request_body = {
-            'registration_status': 'freetier',
+            'registration_status': g.user_status.name,
             'external_request_id': self._new_request_id,
             'ecosystem': self.params.ecosystem,
             'packages': data['packages'],

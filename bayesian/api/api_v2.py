@@ -269,6 +269,7 @@ def stack_analyses_with_request_id(external_request_id):
 
     # 1. Build response builder with id and RDB object.
     sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
+                                                       request.headers.get('uuid', None),
                                                        RdbAnalyses(external_request_id))
 
     # 2. If there was no exception raise, means request is ready to be served.

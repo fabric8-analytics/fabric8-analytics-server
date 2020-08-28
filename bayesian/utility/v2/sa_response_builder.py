@@ -17,7 +17,9 @@
 """Stack analyses API v2 response builder class."""
 
 import logging
+from flask import g
 from bayesian.utils import request_timed_out
+from bayesian.utility.user_utils import UserStatus
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +31,10 @@ class StackAnalysesResponseBuilder:
     analyses response for V1.
     """
 
-    def __init__(self, external_request_id, rdb_analyses):
+    def __init__(self, external_request_id, uuid, rdb_analyses):
         """Response Builder, Build Json Response for Stack Analyses."""
         self.external_request_id = external_request_id
+        self.uuid = uuid
         self.rdb_analyses = rdb_analyses
 
     def get_response(self):
@@ -53,11 +56,12 @@ class StackAnalysesResponseBuilder:
         stack_task_result = self._stack_result.get('task_result')
         stack_audit = stack_task_result.get('_audit', {})
 
-        return {
+        report = {
             'version': stack_audit.get('version', None),
             'started_at': stack_audit.get('started_at', None),
             'ended_at': stack_audit.get('ended_at', None),
             'external_request_id': self.external_request_id,
+            'uuid': self.uuid,
             'registration_status': stack_task_result.get('registration_status', ''),
             'manifest_file_path': stack_task_result.get('manifest_file_path', ''),
             'manifest_name': stack_task_result.get('manifest_name', ''),
@@ -65,9 +69,14 @@ class StackAnalysesResponseBuilder:
             'unknown_dependencies': stack_task_result.get('unknown_dependencies', ''),
             'license_analysis': stack_task_result.get('license_analysis', ''),
             'recommendation': self._recm_data.get('task_result', {}),
-            'registration_link': stack_task_result.get('registration_link', ''),
-            'analyzed_dependencies': stack_task_result.get('analyzed_dependencies', [])
+            'analyzed_dependencies': self._get_analysed_dependencies(
+                stack_task_result.get('analyzed_dependencies', []))
         }
+
+        if g.user_status == UserStatus.FREETIER:
+            report['registration_link'] = stack_task_result.get('registration_link', ''),
+
+        return report
 
     def _raise_if_invalid(self):
         """If request is invalid than it shall raise an exception."""
@@ -91,6 +100,29 @@ class StackAnalysesResponseBuilder:
                     self.external_request_id)
                 logger.warning(error_message)
                 raise SARBRequestInprogressException(error_message)
+
+    def _get_analysed_dependencies(self, analysed_dependencies):
+        """Filter report fields based on user status."""
+        if g.user_status != UserStatus.REGISTERED:
+            freetier_user_fields = ['cve_ids', 'cvss', 'cwes',
+                                    'cvss_v3', 'severity', 'title', 'id', 'url']
+            for dependency in analysed_dependencies:
+                self._filter_fields(freetier_user_fields, dependency)
+
+        return analysed_dependencies
+
+    def _filter_fields(self, required_fields, dependency):
+        """Keep only freetier fields for given dependency."""
+        for index, public_vul in enumerate(dependency.get('public_vulnerabilities', [])):
+            for key in list(public_vul.keys()):
+                if key not in required_fields:
+                    del dependency['public_vulnerabilities'][index][key]
+        for index, private_vul in enumerate(dependency.get('private_vulnerabilities', [])):
+            for key in list(private_vul.keys()):
+                if key not in required_fields:
+                    del dependency['private_vulnerabilities'][index][key]
+        for vulnerable_dependency in dependency.get('vulnerable_dependencies', []):
+            self._filter_fields(required_fields, vulnerable_dependency)
 
 
 class SARBRequestInvalidException(Exception):
