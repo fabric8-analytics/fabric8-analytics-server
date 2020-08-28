@@ -62,7 +62,7 @@ class StackAnalysesResponseBuilder:
             'ended_at': stack_audit.get('ended_at', None),
             'external_request_id': self.external_request_id,
             'uuid': self.uuid,
-            'registration_status': stack_task_result.get('registration_status', ''),
+            'registration_status': g.user_status.name,
             'manifest_file_path': stack_task_result.get('manifest_file_path', ''),
             'manifest_name': stack_task_result.get('manifest_name', ''),
             'ecosystem': stack_task_result.get('ecosystem', ''),
@@ -121,8 +121,12 @@ class StackAnalysesResponseBuilder:
             for key in list(private_vul.keys()):
                 if key not in required_fields:
                     del dependency['private_vulnerabilities'][index][key]
-        for vulnerable_dependency in dependency.get('vulnerable_dependencies', []):
-            self._filter_fields(required_fields, vulnerable_dependency)
+
+        # Vulnerable dependencies value can be null for transitive deps, so check for none case.
+        vulnerable_dependencies = dependency.get('vulnerable_dependencies', [])
+        if vulnerable_dependencies:
+            for vulnerable_dependency in vulnerable_dependencies:
+                self._filter_fields(required_fields, vulnerable_dependency)
 
 
 class SARBRequestInvalidException(Exception):
