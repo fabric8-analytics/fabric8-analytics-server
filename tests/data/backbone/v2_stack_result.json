@@ -30,7 +30,7 @@
     "registration_link": "https://snyk.io/login",
     "manifest_file_path": "/tmp/bin",
     "external_request_id": "faafbfbfd886494fb46be04a7b33b9a5",
-    "registration_status": "freetier",
+    "registration_status": "FREETIER",
     "unknown_dependencies": [],
     "analyzed_dependencies": [
       {

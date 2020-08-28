@@ -100,6 +100,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/backbone/v2_stack_result.json') as f:
             stack_result = json.load(f)
+            stack_result['task_result']['registration_status'] = UserStatus.FREETIER.name
 
         recm_data = None
         with open(str(Path(__file__).parent.parent.parent) +
@@ -120,6 +121,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
             self.assertIn(k, response)
 
         self.assertEqual(response['uuid'], 'DUMMY-UUID-FOR-USER')
+        self.assertEqual(response['registration_status'], UserStatus.FREETIER.name)
         self.assertIn('registration_link', response)
 
         for dep in response['analyzed_dependencies']:
@@ -140,6 +142,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/backbone/v2_stack_result.json') as f:
             stack_result = json.load(f)
+            stack_result['task_result']['registration_status'] = UserStatus.REGISTERED.name
 
         recm_data = None
         with open(str(Path(__file__).parent.parent.parent) +
@@ -155,11 +158,12 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
                                                            _rdb_analyses)
         response = sa_response_builder.get_response()
 
-        # Check for required fields in response for freetier user
+        # Check for required fields in response for registered user
         for k in response_common_fields:
             self.assertIn(k, response)
 
         self.assertEqual(response['uuid'], None)
+        self.assertEqual(response['registration_status'], UserStatus.REGISTERED.name)
         self.assertNotIn('registration_link', response)
 
         for dep in response['analyzed_dependencies']:
@@ -170,3 +174,45 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
             self.assertIn('private_vulnerabilities', dep)
             for vuln in dep['private_vulnerabilities']:
                 self.assertEqual(registered_vuln_fields, list(vuln.keys()))
+
+    @patch('bayesian.utility.v2.sa_response_builder.g')
+    @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
+    @patch('bayesian.utility.db_gateway.RdbAnalyses')
+    def test_sa_response_builder_expired_success(self, _rdb_analyses, _timed_out, _g):
+        """Test SA response builder with all proper data."""
+        stack_result = None
+        with open(str(Path(__file__).parent.parent.parent) +
+                  '/data/backbone/v2_stack_result.json') as f:
+            stack_result = json.load(f)
+            stack_result['task_result']['registration_status'] = UserStatus.EXPIRED.name
+
+        recm_data = None
+        with open(str(Path(__file__).parent.parent.parent) +
+                  '/data/backbone/v2_recm_data.json') as f:
+            recm_data = json.load(f)
+
+        _rdb_analyses.get_request_data.return_value = None
+        _rdb_analyses.get_stack_result.return_value = stack_result
+        _rdb_analyses.get_recommendation_data.return_value = recm_data
+        _g.user_status = UserStatus.EXPIRED
+        sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
+                                                           None,
+                                                           _rdb_analyses)
+        response = sa_response_builder.get_response()
+
+        # Check for required fields in response for expired user
+        for k in response_common_fields:
+            self.assertIn(k, response)
+
+        self.assertEqual(response['uuid'], None)
+        self.assertEqual(response['registration_status'], UserStatus.EXPIRED.name)
+        self.assertNotIn('registration_link', response)
+
+        for dep in response['analyzed_dependencies']:
+            self.assertIn('public_vulnerabilities', dep)
+            for vuln in dep['public_vulnerabilities']:
+                self.assertEqual(freetier_vuln_fields, list(vuln.keys()))
+
+            self.assertIn('private_vulnerabilities', dep)
+            for vuln in dep['private_vulnerabilities']:
+                self.assertEqual(freetier_vuln_fields, list(vuln.keys()))
