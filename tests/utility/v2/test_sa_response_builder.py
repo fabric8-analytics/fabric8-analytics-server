@@ -120,6 +120,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
             self.assertIn(k, response)
 
         self.assertEqual(response['uuid'], 'DUMMY-UUID-FOR-USER')
+        self.assertIn('registration_link', response)
 
         for dep in response['analyzed_dependencies']:
             self.assertIn('public_vulnerabilities', dep)
@@ -159,6 +160,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
             self.assertIn(k, response)
 
         self.assertEqual(response['uuid'], None)
+        self.assertNotIn('registration_link', response)
 
         for dep in response['analyzed_dependencies']:
             self.assertIn('public_vulnerabilities', dep)
