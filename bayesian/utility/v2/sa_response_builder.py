@@ -113,14 +113,11 @@ class StackAnalysesResponseBuilder:
 
     def _filter_fields(self, required_fields, dependency):
         """Keep only freetier fields for given dependency."""
-        for index, public_vul in enumerate(dependency.get('public_vulnerabilities', [])):
-            for key in list(public_vul.keys()):
-                if key not in required_fields:
-                    del dependency['public_vulnerabilities'][index][key]
-        for index, private_vul in enumerate(dependency.get('private_vulnerabilities', [])):
-            for key in list(private_vul.keys()):
-                if key not in required_fields:
-                    del dependency['private_vulnerabilities'][index][key]
+        for vuln_type in ['public_vulnerabilities', 'private_vulnerabilities']:
+            for index, vuln in enumerate(dependency.get(vuln_type, [])):
+                for key in list(vuln.keys()):
+                    if key not in required_fields:
+                        del dependency[vuln_type][index][key]
 
         # Vulnerable dependencies value can be null for transitive deps, so check for none case.
         vulnerable_dependencies = dependency.get('vulnerable_dependencies', [])
