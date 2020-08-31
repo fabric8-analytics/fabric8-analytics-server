@@ -1191,7 +1191,8 @@ accepted_file_names = {
 accepted_ecosystems = [
     "npm",
     "maven",
-    "pypi"
+    "pypi",
+    "golang",
 ]
 
 

@@ -26,7 +26,7 @@ from flask import g
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem, \
     server_create_analysis, server_create_component_bookkeeping
-from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
+from f8a_worker.utils import MavenCoordinates
 from werkzeug.exceptions import BadRequest
 
 logger = logging.getLogger(__name__)
@@ -107,7 +107,8 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
         if ecosystem == 'maven':
             package = MavenCoordinates.normalize_str(package)
 
-        package = case_sensitivity_transform(ecosystem, package)
+        if ecosystem == 'pypi':
+            package = package.lower()
         packages_list.append({"name": package, "version": version})
         normalised_input_pkgs.append(normlize_packages(package, version))
     return packages_list, normalised_input_pkgs

@@ -143,10 +143,8 @@ class TestCAInputValidator(unittest.TestCase):
         ecosystem = "pypi"
         self.assertRaises(BadRequest, ca_validate_input, input_json, ecosystem)
 
-    @patch("bayesian.utility.v2.component_analyses.case_sensitivity_transform")
-    def test_ca_validate_input_maven(self, _mock1):
+    def test_ca_validate_input_maven(self):
         """Test Ca Validate input: Ecosystem maven."""
-        _mock1.return_value = "com.thoughtworks.xstream:xstream"
         input_json = {
             "ecosystem": "maven",
             "package_versions": [
