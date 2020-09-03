@@ -20,7 +20,8 @@ import logging
 from flask import g
 from bayesian.utils import request_timed_out
 from bayesian.utility.user_utils import UserStatus
-from bayesian.utility.v2.sa_models import (StackAggregatorResultForFreeTierUser,
+from bayesian.utility.v2.sa_models import (StackRecommendation,
+                                           StackAggregatorResultForFreeTierUser,
                                            StackAggregatorResultForRegisteredUser)
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class StackAnalysesResponseBuilder:
     def __init__(self, external_request_id, uuid, rdb_analyses):
         """Response Builder, Build Json Response for Stack Analyses."""
         self.external_request_id = external_request_id
-        self.uuid = uuid
+        self.uuid = str(uuid) if uuid else None
         self.rdb_analyses = rdb_analyses
 
     def get_response(self):
@@ -62,7 +63,8 @@ class StackAnalysesResponseBuilder:
             'version': stack_audit.get('version', None),
             'started_at': stack_audit.get('started_at', None),
             'ended_at': stack_audit.get('ended_at', None),
-            'recommendation': self._recm_data.get('task_result', {})
+            'recommendation': StackRecommendation(
+                **self._recm_data.get('task_result', {})).dict()
         }
 
         if g.user_status == UserStatus.REGISTERED:
@@ -71,7 +73,7 @@ class StackAnalysesResponseBuilder:
             report.update(StackAggregatorResultForFreeTierUser(**stack_task_result).dict())
 
         # Override registration status & UUID to the current based on UUID in request.
-        report['uuid'] = str(self.uuid)
+        report['uuid'] = self.uuid
         report['registration_status'] = g.user_status.name
 
         return report

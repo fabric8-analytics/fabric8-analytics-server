@@ -37,7 +37,7 @@ class StackAnalyses():
     def __init__(self, params, uuid):
         """Initialize params to be used for ."""
         self.params = params
-        self.uuid = uuid
+        self.uuid = str(uuid) if uuid else None
 
     def post_request(self):
         """Make stack analyses POST request."""
@@ -114,7 +114,7 @@ class StackAnalyses():
         # Set backbone API request body and params.
         request_body = {
             'registration_status': g.user_status.name,
-            'uuid': str(self.uuid),
+            'uuid': self.uuid,
             'external_request_id': self._new_request_id,
             'ecosystem': self.params.ecosystem,
             'packages': data['packages'],

@@ -255,6 +255,19 @@ class StackAggregatorResultForFreeTierUser(StackAggregatorResult):  # noqa: D101
     )
 
 
+class RecommendedPackageData(PackageDetails):  # noqa: D101
+    cooccurrence_probability: Optional[float] = 0
+    cooccurrence_count: int = 0
+    topic_list: Optional[List[str]] = None
+
+
+class StackRecommendation(BaseModel):  # noqa: D101
+    manifest_file_path: str = None
+    companion: List['RecommendedPackageData']
+    usage_outliers: List[Dict[str, Any]]
+
+
 Package.update_forward_refs()
 PackageDetailsForRegisteredUser.update_forward_refs()
 PackageDetailsForFreeTierUser.update_forward_refs()
+RecommendedPackageData.update_forward_refs()

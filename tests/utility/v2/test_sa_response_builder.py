@@ -164,7 +164,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         for k in response_common_fields:
             self.assertIn(k, response)
 
-        self.assertEqual(response['uuid'], str(None))
+        self.assertEqual(response['uuid'], None)
         self.assertEqual(response['registration_status'], UserStatus.REGISTERED.name)
         self.assertNotIn('registration_link', response)
 
@@ -207,7 +207,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         for k in response_common_fields:
             self.assertIn(k, response)
 
-        self.assertEqual(response['uuid'], str(None))
+        self.assertEqual(response['uuid'], None)
         self.assertEqual(response['registration_status'], UserStatus.EXPIRED.name)
         self.assertIn('registration_link', response)
 
