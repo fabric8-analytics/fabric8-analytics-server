@@ -14,6 +14,7 @@ import hashlib
 import zipfile
 import logging
 
+from uuid import UUID
 from io import BytesIO
 from functools import lru_cache
 from selinon import run_flow
@@ -1185,7 +1186,7 @@ accepted_file_names = {
         "golist.json": "golang",
         "pylist.json": "pypi",
         "dependencies.txt": "maven"
-    }
+}
 
 
 accepted_ecosystems = [
@@ -1222,3 +1223,14 @@ def get_ecosystem_from_manifest(manifests):
         if manifests in accepted_file_names:
             return accepted_file_names[manifests]
     return None
+
+
+def is_valid_uuid(uuid):
+    """Check if given uuid is None or a valid UUID V4 string."""
+    if uuid:
+        try:
+            UUID(uuid, version=4)
+        except ValueError:
+            return False
+
+    return True

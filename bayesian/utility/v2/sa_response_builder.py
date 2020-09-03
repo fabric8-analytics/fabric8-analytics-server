@@ -20,6 +20,8 @@ import logging
 from flask import g
 from bayesian.utils import request_timed_out
 from bayesian.utility.user_utils import UserStatus
+from bayesian.utility.v2.sa_models import (StackAggregatorResultForFreeTierUser,
+                                           StackAggregatorResultForRegisteredUser)
 
 logger = logging.getLogger(__name__)
 
@@ -60,21 +62,17 @@ class StackAnalysesResponseBuilder:
             'version': stack_audit.get('version', None),
             'started_at': stack_audit.get('started_at', None),
             'ended_at': stack_audit.get('ended_at', None),
-            'external_request_id': self.external_request_id,
-            'uuid': self.uuid,
-            'registration_status': g.user_status.name,
-            'manifest_file_path': stack_task_result.get('manifest_file_path', ''),
-            'manifest_name': stack_task_result.get('manifest_name', ''),
-            'ecosystem': stack_task_result.get('ecosystem', ''),
-            'unknown_dependencies': stack_task_result.get('unknown_dependencies', ''),
-            'license_analysis': stack_task_result.get('license_analysis', ''),
-            'recommendation': self._recm_data.get('task_result', {}),
-            'analyzed_dependencies': self._get_analysed_dependencies(
-                stack_task_result.get('analyzed_dependencies', []))
+            'recommendation': self._recm_data.get('task_result', {})
         }
 
-        if g.user_status == UserStatus.FREETIER:
-            report['registration_link'] = stack_task_result.get('registration_link', ''),
+        if g.user_status == UserStatus.REGISTERED:
+            report.update(StackAggregatorResultForRegisteredUser(**stack_task_result).dict())
+        else:
+            report.update(StackAggregatorResultForFreeTierUser(**stack_task_result).dict())
+
+        # Override registration status & UUID to the current based on UUID in request.
+        report['uuid'] = str(self.uuid)
+        report['registration_status'] = g.user_status.name
 
         return report
 
@@ -100,30 +98,6 @@ class StackAnalysesResponseBuilder:
                     self.external_request_id)
                 logger.warning(error_message)
                 raise SARBRequestInprogressException(error_message)
-
-    def _get_analysed_dependencies(self, analysed_dependencies):
-        """Filter report fields based on user status."""
-        if g.user_status != UserStatus.REGISTERED:
-            freetier_user_fields = ['cve_ids', 'cvss', 'cwes',
-                                    'cvss_v3', 'severity', 'title', 'id', 'url']
-            for dependency in analysed_dependencies:
-                self._filter_fields(freetier_user_fields, dependency)
-
-        return analysed_dependencies
-
-    def _filter_fields(self, required_fields, dependency):
-        """Keep only freetier fields for given dependency."""
-        for vuln_type in ['public_vulnerabilities', 'private_vulnerabilities']:
-            for index, vuln in enumerate(dependency.get(vuln_type, [])):
-                for key in list(vuln.keys()):
-                    if key not in required_fields:
-                        del dependency[vuln_type][index][key]
-
-        # Vulnerable dependencies value can be null for transitive deps, so check for none case.
-        vulnerable_dependencies = dependency.get('vulnerable_dependencies', [])
-        if vulnerable_dependencies:
-            for vulnerable_dependency in vulnerable_dependencies:
-                self._filter_fields(required_fields, vulnerable_dependency)
 
 
 class SARBRequestInvalidException(Exception):

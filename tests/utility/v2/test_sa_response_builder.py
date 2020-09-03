@@ -49,7 +49,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_stack_result.return_value = -1
         _rdb_analyses.get_recommendation_data.return_value = -1
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
-                                                           'DUMMY-UUID-FOR-USER',
+                                                           '97b3c23e-d3da-4336-8b82-2abdac2075e1',
                                                            _rdb_analyses)
         # Expect SARBRequestInvalidException error.
         with pytest.raises(Exception) as exception:
@@ -64,7 +64,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_stack_result.return_value = None
         _rdb_analyses.get_recommendation_data.return_value = None
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
-                                                           'DUMMY-UUID-FOR-USER',
+                                                           '97b3c23e-d3da-4336-8b82-2abdac2075e1',
                                                            _rdb_analyses)
         # Raises SARBRequestInprogressException error for request in progress
         with pytest.raises(Exception) as exception:
@@ -84,7 +84,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_stack_result.return_value = stack_result
         _rdb_analyses.get_recommendation_data.return_value = None
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
-                                                           'DUMMY-UUID-FOR-USER',
+                                                           '97b3c23e-d3da-4336-8b82-2abdac2075e1',
                                                            _rdb_analyses)
         # Raises SARBRequestTimeoutException error
         with pytest.raises(Exception) as exception:
@@ -101,6 +101,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
                   '/data/backbone/v2_stack_result.json') as f:
             stack_result = json.load(f)
             stack_result['task_result']['registration_status'] = UserStatus.FREETIER.name
+            stack_result['task_result']['uuid'] = '97b3c23e-d3da-4336-8b82-2abdac2075e1'
 
         recm_data = None
         with open(str(Path(__file__).parent.parent.parent) +
@@ -112,7 +113,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_recommendation_data.return_value = recm_data
         _g.user_status = UserStatus.FREETIER
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
-                                                           'DUMMY-UUID-FOR-USER',
+                                                           '97b3c23e-d3da-4336-8b82-2abdac2075e1',
                                                            _rdb_analyses)
         response = sa_response_builder.get_response()
 
@@ -120,7 +121,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         for k in response_common_fields:
             self.assertIn(k, response)
 
-        self.assertEqual(response['uuid'], 'DUMMY-UUID-FOR-USER')
+        self.assertEqual(response['uuid'], '97b3c23e-d3da-4336-8b82-2abdac2075e1')
         self.assertEqual(response['registration_status'], UserStatus.FREETIER.name)
         self.assertIn('registration_link', response)
 
@@ -143,6 +144,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
                   '/data/backbone/v2_stack_result.json') as f:
             stack_result = json.load(f)
             stack_result['task_result']['registration_status'] = UserStatus.REGISTERED.name
+            stack_result['task_result']['uuid'] = None
 
         recm_data = None
         with open(str(Path(__file__).parent.parent.parent) +
@@ -162,7 +164,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         for k in response_common_fields:
             self.assertIn(k, response)
 
-        self.assertEqual(response['uuid'], None)
+        self.assertEqual(response['uuid'], str(None))
         self.assertEqual(response['registration_status'], UserStatus.REGISTERED.name)
         self.assertNotIn('registration_link', response)
 
@@ -185,6 +187,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
                   '/data/backbone/v2_stack_result.json') as f:
             stack_result = json.load(f)
             stack_result['task_result']['registration_status'] = UserStatus.EXPIRED.name
+            stack_result['task_result']['uuid'] = None
 
         recm_data = None
         with open(str(Path(__file__).parent.parent.parent) +
@@ -204,9 +207,9 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         for k in response_common_fields:
             self.assertIn(k, response)
 
-        self.assertEqual(response['uuid'], None)
+        self.assertEqual(response['uuid'], str(None))
         self.assertEqual(response['registration_status'], UserStatus.EXPIRED.name)
-        self.assertNotIn('registration_link', response)
+        self.assertIn('registration_link', response)
 
         for dep in response['analyzed_dependencies']:
             self.assertIn('public_vulnerabilities', dep)

@@ -24,7 +24,7 @@
       },
       "conflict_packages": [],
       "distinct_licenses": ["MIT"],
-      "current_stack_license": "None",
+      "current_stack_license": {},
       "stack_license_conflict": "False"
     },
     "registration_link": "https://snyk.io/login",
@@ -191,6 +191,113 @@
         ],
         "vulnerable_dependencies": [
           {
+            "url": "http://snyk.io/pypi:bottle",
+            "name": "bottle",
+            "github": {
+              "size": "N/A",
+              "issues": {
+                "year": {
+                  "closed": -1,
+                  "opened": -1
+                },
+                "month": {
+                  "closed": -1,
+                  "opened": -1
+                }
+              },
+              "used_by": [
+                {
+                  "name": "barosl/homu",
+                  "stars": 508
+                },
+                {
+                  "name": "facebookarchive/python-instagram",
+                  "stars": 1754
+                },
+                {
+                  "name": "facebookarchive/python-instagram",
+                  "stars": 1755
+                },
+                {
+                  "name": "marshmallow-code/apispec",
+                  "stars": 164
+                },
+                {
+                  "name": "nicolargo/glances",
+                  "stars": 7551
+                },
+                {
+                  "name": "nicolargo/glances",
+                  "stars": 7733
+                },
+                {
+                  "name": "platformio/platformio-core",
+                  "stars": 1830
+                },
+                {
+                  "name": "platformio/platformio-core",
+                  "stars": 1832
+                },
+                {
+                  "name": "riptideio/pymodbus",
+                  "stars": 427
+                },
+                {
+                  "name": "riptideio/pymodbus",
+                  "stars": 428
+                },
+                {
+                  "name": "skoczen/will",
+                  "stars": 275
+                },
+                {
+                  "name": "sloria/webargs",
+                  "stars": 471
+                },
+                {
+                  "name": "timothycrosley/hug",
+                  "stars": 4395
+                },
+                {
+                  "name": "timothycrosley/hug",
+                  "stars": 4398
+                },
+                {
+                  "name": "whtsky/WeRoBot",
+                  "stars": 1866
+                },
+                {
+                  "name": "whtsky/WeRoBot",
+                  "stars": 1867
+                }
+              ],
+              "watchers": "None",
+              "forks_count": -1,
+              "contributors": -1,
+              "pull_requests": {
+                "year": {
+                  "closed": -1,
+                  "opened": -1
+                },
+                "month": {
+                  "closed": -1,
+                  "opened": -1
+                }
+              },
+              "total_releases": 73,
+              "dependent_repos": 4820,
+              "stargazers_count": -1,
+              "open_issues_count": -1,
+              "dependent_projects": 106,
+              "first_release_date": "Apr 16, 2010",
+              "latest_release_duration": "2019-12-01 15:42:27"
+            },
+            "version": "0.12.18",
+            "licenses": ["MIT"],
+            "ecosystem": "pypi",
+            "dependencies": [],
+            "latest_version": "0.12.18",
+            "recommended_version": "0.12.18",
             "public_vulnerabilities": [
               {
                 "cve_ids": ["CVE-2014-0444", "CVE-2014-0555"],
