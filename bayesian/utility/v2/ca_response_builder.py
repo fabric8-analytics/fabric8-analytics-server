@@ -225,7 +225,8 @@ class ComponentResponseBase(ABC):
         snyk_ecosystem = {
             'maven': 'maven',
             'pypi': 'pip',
-            'npm': 'npm'
+            'npm': 'npm',
+            'golang': 'golang',
         }
         return f"https://snyk.io/vuln/{snyk_ecosystem[self.ecosystem]}:{quote(self.package)}"
 
