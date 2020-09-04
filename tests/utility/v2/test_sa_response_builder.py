@@ -26,16 +26,8 @@ from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilde
                                                      SARBRequestInvalidException,
                                                      SARBRequestInprogressException,
                                                      SARBRequestTimeoutException)
-
-
-response_common_fields = ['version', 'started_at', 'ended_at', 'external_request_id',
-                          'registration_status', 'uuid', 'manifest_file_path', 'manifest_name',
-                          'ecosystem', 'unknown_dependencies', 'license_analysis',
-                          'recommendation', 'analyzed_dependencies']
-freetier_vuln_fields = ['cve_ids', 'cvss', 'cwes', 'cvss_v3', 'severity', 'title', 'id', 'url']
-registered_vuln_fields = freetier_vuln_fields.copy() + ['malicious', 'patch_exists', 'fixable',
-                                                        'exploit', 'description', 'fixed_in',
-                                                        'references']
+from bayesian.utility.v2.sa_models import (StackAggregatorResultForFreeTierUser,
+                                           StackAggregatorResultForRegisteredUser)
 
 
 class TestStackAnalysesResponseBuilder(unittest.TestCase):
@@ -49,7 +41,6 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_stack_result.return_value = -1
         _rdb_analyses.get_recommendation_data.return_value = -1
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
-                                                           '97b3c23e-d3da-4336-8b82-2abdac2075e1',
                                                            _rdb_analyses)
         # Expect SARBRequestInvalidException error.
         with pytest.raises(Exception) as exception:
@@ -64,7 +55,6 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_stack_result.return_value = None
         _rdb_analyses.get_recommendation_data.return_value = None
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
-                                                           '97b3c23e-d3da-4336-8b82-2abdac2075e1',
                                                            _rdb_analyses)
         # Raises SARBRequestInprogressException error for request in progress
         with pytest.raises(Exception) as exception:
@@ -84,7 +74,6 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_stack_result.return_value = stack_result
         _rdb_analyses.get_recommendation_data.return_value = None
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
-                                                           '97b3c23e-d3da-4336-8b82-2abdac2075e1',
                                                            _rdb_analyses)
         # Raises SARBRequestTimeoutException error
         with pytest.raises(Exception) as exception:
@@ -112,27 +101,15 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_stack_result.return_value = stack_result
         _rdb_analyses.get_recommendation_data.return_value = recm_data
         _g.user_status = UserStatus.FREETIER
+        _g.uuid = '97b3c23e-d3da-4336-8b82-2abdac2075e2'
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
-                                                           '97b3c23e-d3da-4336-8b82-2abdac2075e1',
                                                            _rdb_analyses)
         response = sa_response_builder.get_response()
-
-        # Check for required fields in response for freetier user
-        for k in response_common_fields:
-            self.assertIn(k, response)
-
-        self.assertEqual(response['uuid'], '97b3c23e-d3da-4336-8b82-2abdac2075e1')
+        self.assertEqual(response['uuid'], '97b3c23e-d3da-4336-8b82-2abdac2075e2')
         self.assertEqual(response['registration_status'], UserStatus.FREETIER.name)
-        self.assertIn('registration_link', response)
 
-        for dep in response['analyzed_dependencies']:
-            self.assertIn('public_vulnerabilities', dep)
-            for vuln in dep['public_vulnerabilities']:
-                self.assertEqual(freetier_vuln_fields, list(vuln.keys()))
-
-            self.assertIn('private_vulnerabilities', dep)
-            for vuln in dep['private_vulnerabilities']:
-                self.assertEqual(freetier_vuln_fields, list(vuln.keys()))
+        sa = StackAggregatorResultForFreeTierUser(**response)
+        self.assertNotEqual(sa, None)
 
     @patch('bayesian.utility.v2.sa_response_builder.g')
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
@@ -155,27 +132,15 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_stack_result.return_value = stack_result
         _rdb_analyses.get_recommendation_data.return_value = recm_data
         _g.user_status = UserStatus.REGISTERED
+        _g.uuid = '97b3c23e-d3da-4336-8b82-2abdac2075e1'
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
-                                                           None,
                                                            _rdb_analyses)
         response = sa_response_builder.get_response()
-
-        # Check for required fields in response for registered user
-        for k in response_common_fields:
-            self.assertIn(k, response)
-
-        self.assertEqual(response['uuid'], None)
+        self.assertEqual(response['uuid'], '97b3c23e-d3da-4336-8b82-2abdac2075e1')
         self.assertEqual(response['registration_status'], UserStatus.REGISTERED.name)
-        self.assertNotIn('registration_link', response)
 
-        for dep in response['analyzed_dependencies']:
-            self.assertIn('public_vulnerabilities', dep)
-            for vuln in dep['public_vulnerabilities']:
-                self.assertEqual(registered_vuln_fields, list(vuln.keys()))
-
-            self.assertIn('private_vulnerabilities', dep)
-            for vuln in dep['private_vulnerabilities']:
-                self.assertEqual(registered_vuln_fields, list(vuln.keys()))
+        sa = StackAggregatorResultForRegisteredUser(**response)
+        self.assertNotEqual(sa, None)
 
     @patch('bayesian.utility.v2.sa_response_builder.g')
     @patch('bayesian.utility.v2.sa_response_builder.request_timed_out', return_value=False)
@@ -198,24 +163,12 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         _rdb_analyses.get_stack_result.return_value = stack_result
         _rdb_analyses.get_recommendation_data.return_value = recm_data
         _g.user_status = UserStatus.EXPIRED
+        _g.uuid = None
         sa_response_builder = StackAnalysesResponseBuilder('DUMMY_REQUEST_ID',
-                                                           None,
                                                            _rdb_analyses)
         response = sa_response_builder.get_response()
-
-        # Check for required fields in response for expired user
-        for k in response_common_fields:
-            self.assertIn(k, response)
-
         self.assertEqual(response['uuid'], None)
         self.assertEqual(response['registration_status'], UserStatus.EXPIRED.name)
-        self.assertIn('registration_link', response)
 
-        for dep in response['analyzed_dependencies']:
-            self.assertIn('public_vulnerabilities', dep)
-            for vuln in dep['public_vulnerabilities']:
-                self.assertEqual(freetier_vuln_fields, list(vuln.keys()))
-
-            self.assertIn('private_vulnerabilities', dep)
-            for vuln in dep['private_vulnerabilities']:
-                self.assertEqual(freetier_vuln_fields, list(vuln.keys()))
+        sa = StackAggregatorResultForFreeTierUser(**response)
+        self.assertNotEqual(sa, None)

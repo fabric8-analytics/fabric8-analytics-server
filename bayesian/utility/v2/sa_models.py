@@ -18,9 +18,15 @@
 
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from pydantic import Field, BaseModel, root_validator
+from pydantic import Field, BaseModel, root_validator, UUID4
 from werkzeug.datastructures import FileStorage
 from bayesian.utils import resolved_files_exist, get_ecosystem_from_manifest
+
+
+class HeaderData(BaseModel):  # noqa: D101
+    """Header data for stack and component anaylses calls."""
+
+    uuid: Optional[UUID4] = None
 
 
 class Ecosystem(str, Enum):
@@ -229,6 +235,10 @@ class PackageDetailsForFreeTierUser(PackageDetails):  # noqa: D101
 
 
 class StackAggregatorResult(BaseModel):  # noqa: D101
+    version: str
+    started_at: str
+    ended_at: str
+    recommendation: 'StackRecommendation'
     uuid: Optional[str] = None
     external_request_id: Optional[str] = None
     registration_status: Optional[str] = None
@@ -269,4 +279,6 @@ class StackRecommendation(BaseModel):  # noqa: D101
 Package.update_forward_refs()
 PackageDetailsForRegisteredUser.update_forward_refs()
 PackageDetailsForFreeTierUser.update_forward_refs()
+StackAggregatorResultForRegisteredUser.update_forward_refs()
+StackAggregatorResultForFreeTierUser.update_forward_refs()
 RecommendedPackageData.update_forward_refs()

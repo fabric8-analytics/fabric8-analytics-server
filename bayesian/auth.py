@@ -4,6 +4,7 @@ from functools import wraps
 from flask import g, request
 from requests import get
 from bayesian.utility.user_utils import get_user, UserStatus, UserException
+from bayesian.utility.v2.sa_models import HeaderData
 
 from .default_config import AUTH_URL
 
@@ -45,19 +46,24 @@ def validate_user(view):
         #    PRESENT        | PRESENT     | !REGISTERED    | FREE
         #  ==============================================================
 
-        # By default set this to 'freetier'.
+        # By default set this to 'freetier' and uuid to None
         g.user_status = UserStatus.FREETIER
+        g.uuid = None
 
-        uuid = request.headers.get('uuid', None)
-        if uuid:
-            try:
-                user = get_user(uuid)
-            except UserException as e:
-                logger.warning("Unable to get status for uuid=%s, err=%s", uuid, e)
-            else:
+        try:
+            header_data = HeaderData(**request.headers)
+            if header_data.uuid:
+                user = get_user(header_data.uuid)
                 g.user_status = UserStatus[user.status]
+                g.uuid = str(header_data.uuid) if header.uuid else None
+        except ValidationError as e:
+            raise HTTPError(400, "Not a valid uuid '{}'".format(header_data.uuid)) from e
+        except UserException as e:
+            raise HTTPError(500, "Unable to get user status for uuid '{}'".format(
+                header_data.uuid)) from e
 
-        logger.debug('For UUID: %s, got user type: %s', uuid, g.user_status)
+        logger.debug('For UUID: %s, got user type: %s final uuid: %d',
+                     header_data.uuid, g.user_status, g.uuid)
         return view(*args, **kwargs)
 
     return wrapper

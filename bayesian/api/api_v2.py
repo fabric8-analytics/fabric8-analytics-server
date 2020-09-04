@@ -40,8 +40,7 @@ from bayesian.utility.v2.component_analyses import ca_validate_input, \
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
-                            check_for_accepted_ecosystem,
-                            is_valid_uuid)
+                            check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
                                                      SARBRequestInvalidException,
@@ -268,17 +267,11 @@ def stack_analyses_with_request_id(external_request_id):
     start = time.time()
     logger.debug("[GET] /stack-analyses/%s", external_request_id)
 
-    # 1. Read UUID and validate
-    uuid = request.headers.get('uuid', None)
-    if not is_valid_uuid(uuid):
-        raise HTTPError(400, "Not a valid uuid '{}'".format(uuid))
-
-    # 2. Build response builder with id and RDB object.
+    # 1. Build response builder with id and RDB object.
     sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
-                                                       uuid,
                                                        RdbAnalyses(external_request_id))
 
-    # 3. If there was no exception raise, means request is ready to be served.
+    # 2. If there was no exception raise, means request is ready to be served.
     try:
         data = sa_response_builder.get_response()
         logger.info('%s took %f seconds for [GET] stack-analyses',
@@ -323,13 +316,8 @@ def stack_analyses():
         logger.exception(error_message)
         raise HTTPError(400, error=error_message) from e
 
-    # 3. Read UUID and validate
-    uuid = request.headers.get('uuid', None)
-    if not is_valid_uuid(uuid):
-        raise HTTPError(400, "Not a valid uuid '{}'".format(uuid))
-
-    # 4. Initiate stack analyses object
-    sa = StackAnalyses(sa_post_request, uuid)
+    # 3. Initiate stack analyses object
+    sa = StackAnalyses(sa_post_request)
 
     # 5. Post request
     try:

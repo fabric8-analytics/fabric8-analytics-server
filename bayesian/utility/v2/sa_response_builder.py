@@ -34,10 +34,9 @@ class StackAnalysesResponseBuilder:
     analyses response for V1.
     """
 
-    def __init__(self, external_request_id, uuid, rdb_analyses):
+    def __init__(self, external_request_id, rdb_analyses):
         """Response Builder, Build Json Response for Stack Analyses."""
         self.external_request_id = external_request_id
-        self.uuid = str(uuid) if uuid else None
         self.rdb_analyses = rdb_analyses
 
     def get_response(self):
@@ -58,22 +57,18 @@ class StackAnalysesResponseBuilder:
         # Proceed with building actual response from data.
         stack_task_result = self._stack_result.get('task_result')
         stack_audit = stack_task_result.get('_audit', {})
+        recommendation = StackRecommendation(**self._recm_data.get('task_result', {}))
 
-        report = {
-            'version': stack_audit.get('version', None),
-            'started_at': stack_audit.get('started_at', None),
-            'ended_at': stack_audit.get('ended_at', None),
-            'recommendation': StackRecommendation(
-                **self._recm_data.get('task_result', {})).dict()
-        }
-
+        report = {}
         if g.user_status == UserStatus.REGISTERED:
-            report.update(StackAggregatorResultForRegisteredUser(**stack_task_result).dict())
+            report = StackAggregatorResultForRegisteredUser(**stack_audit, **stack_task_result,
+                                                            recommendation=recommendation).dict()
         else:
-            report.update(StackAggregatorResultForFreeTierUser(**stack_task_result).dict())
+            report = StackAggregatorResultForFreeTierUser(**stack_audit, **stack_task_result,
+                                                          recommendation=recommendation).dict()
 
-        # Override registration status & UUID to the current based on UUID in request.
-        report['uuid'] = self.uuid
+        # Override registration status & UUID based on UUID in current request.
+        report['uuid'] = g.uuid
         report['registration_status'] = g.user_status.name
 
         return report

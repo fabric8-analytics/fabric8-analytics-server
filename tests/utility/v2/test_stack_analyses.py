@@ -38,7 +38,7 @@ class TestStackAnalyses(unittest.TestCase):
             fs = FileStorage(stream=fp, filename='npmlist.json')
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(sa_post_request, None)
+            sa = StackAnalyses(sa_post_request)
             with pytest.raises(Exception) as exception:
                 sa.post_request()
             self.assertIs(exception.type, SAInvalidInputException)
@@ -52,7 +52,7 @@ class TestStackAnalyses(unittest.TestCase):
             fs = FileStorage(stream=fp, filename='npmlist.json')
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(sa_post_request, None)
+            sa = StackAnalyses(sa_post_request)
             with pytest.raises(Exception) as exception:
                 sa.post_request()
             self.assertIs(exception.type, SAInvalidInputException)
@@ -65,7 +65,7 @@ class TestStackAnalyses(unittest.TestCase):
             with pytest.raises(Exception) as exception:
                 sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                            ecosystem='pypi', show_transitive=True)
-                sa = StackAnalyses(sa_post_request, None)
+                sa = StackAnalyses(sa_post_request)
                 sa.post_request()
             self.assertIs(exception.type, ValidationError)
 
@@ -79,7 +79,7 @@ class TestStackAnalyses(unittest.TestCase):
             fs = FileStorage(stream=fp, filename='npmlist.json')
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(sa_post_request, None)
+            sa = StackAnalyses(sa_post_request)
             with pytest.raises(Exception) as exception:
                 sa.post_request()
             self.assertIs(exception.type, BackboneServerException)
@@ -94,7 +94,7 @@ class TestStackAnalyses(unittest.TestCase):
             fs = FileStorage(stream=fp, filename='npmlist.json')
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(sa_post_request, None)
+            sa = StackAnalyses(sa_post_request)
             with pytest.raises(Exception) as exception:
                 sa.post_request()
             self.assertIs(exception.type, RDBSaveException)
@@ -108,7 +108,7 @@ class TestStackAnalyses(unittest.TestCase):
             fs = FileStorage(stream=fp, filename='npmlist.json')
             sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
                                                        ecosystem='npm', show_transitive=True)
-            sa = StackAnalyses(sa_post_request, None)
+            sa = StackAnalyses(sa_post_request)
             response = sa.post_request()
             self.assertIsInstance(response, dict)
             self.assertIn('status', response)
