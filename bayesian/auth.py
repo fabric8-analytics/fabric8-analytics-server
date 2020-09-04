@@ -57,7 +57,7 @@ def validate_user(view):
             if header_data.uuid:
                 user = get_user(header_data.uuid)
                 g.user_status = UserStatus[user.status]
-                g.uuid = str(header_data.uuid) if header.uuid else None
+                g.uuid = str(header_data.uuid) if header_data.uuid else None
         except ValidationError as e:
             raise HTTPError(400, "Not a valid uuid '{}'".format(header_data.uuid)) from e
         except UserException as e:
