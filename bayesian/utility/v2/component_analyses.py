@@ -30,7 +30,7 @@ from f8a_worker.utils import MavenCoordinates
 from werkzeug.exceptions import BadRequest
 
 logger = logging.getLogger(__name__)
-Package = namedtuple("Package", ["name", "version"])
+Package = namedtuple("Package", ["name", "version", "package_unknown"])
 
 
 def validate_version(version: str) -> bool:
@@ -44,7 +44,7 @@ def validate_version(version: str) -> bool:
 def normlize_packages(package, version) -> Package:
     """Normalise Packages into hashable."""
     logger.debug('Normalizing Packages.')
-    return Package(name=package, version=version)
+    return Package(name=package, version=version, package_unknown=True)
 
 
 def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
@@ -140,3 +140,16 @@ def build_pkg_recommendation(pack_details, ecosystem) -> Dict:
     known_package_flow(
         ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
     return pkg_recomendation
+
+
+def add_unknown_pkg_info(stack_recommendation: List, unknown_pkgs: Set[Package]) -> List:
+    """Add Unknown Package Info in stack_recommendation.
+
+    :param stack_recommendation:
+    :param unknown_pkgs:
+    :return: Updated Stack Recommendation
+    """
+    for unknown_pkg in unknown_pkgs:
+        stack_recommendation.append(
+            unknown_pkg._asdict())
+    return stack_recommendation

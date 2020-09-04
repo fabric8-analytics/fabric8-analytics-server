@@ -406,6 +406,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
             return dict(
                 package=self.package,
                 version=self.version,
+                package_unknown=False,
                 recommendation={})
 
         self.nocve_version: List[str] = self.get_version_without_cves(latest_non_cve_versions)
@@ -446,6 +447,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
         exploitable_vuls = self.get_exploitable_cves_counter()
         logger.debug("Generating Premium Response.")
         response = dict(
+            package_unknown=False,
             package=self.package,
             version=self.version,
             recommended_versions=self.nocve_version,
@@ -495,6 +497,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
         """
         logger.debug("Generating Final Response.")
         response = dict(
+            package_unknown=False,
             package=self.package,
             version=self.version,
             recommended_versions=self.nocve_version,
