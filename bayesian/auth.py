@@ -64,7 +64,7 @@ def validate_user(view):
             raise HTTPError(500, "Unable to get user status for uuid '{}'".format(
                 header_data.uuid)) from e
 
-        logger.debug('For UUID: %s, got user type: %s final uuid: %d',
+        logger.debug('For UUID: %s, got user type: %s final uuid: %s',
                      header_data.uuid, g.user_status, g.uuid)
         return view(*args, **kwargs)
 
