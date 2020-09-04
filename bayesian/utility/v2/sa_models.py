@@ -17,7 +17,6 @@
 """Data model for Stack analyses API v2."""
 
 from enum import Enum
-from uuid import UUID
 from typing import Any, Dict, List, Optional
 from pydantic import Field, BaseModel, root_validator
 from werkzeug.datastructures import FileStorage
@@ -230,7 +229,7 @@ class PackageDetailsForFreeTierUser(PackageDetails):  # noqa: D101
 
 
 class StackAggregatorResult(BaseModel):  # noqa: D101
-    uuid: Optional[UUID] = None
+    uuid: Optional[str] = None
     external_request_id: Optional[str] = None
     registration_status: Optional[str] = None
     manifest_file_path: Optional[str] = None
