@@ -53,16 +53,15 @@ def validate_user(view):
         g.uuid = None
 
         try:
-            header_data = HeaderData(**request.headers)
+            header_data = HeaderData(uuid=request.headers.get('uuid', None))
             if header_data.uuid:
-                user = get_user(header_data.uuid)
+                g.uuid = str(header_data.uuid)
+                user = get_user(g.uuid)
                 g.user_status = UserStatus[user.status]
-                g.uuid = str(header_data.uuid) if header_data.uuid else None
         except ValidationError as e:
-            raise HTTPError(400, "Not a valid uuid '{}'".format(header_data.uuid)) from e
+            raise HTTPError(400, "Not a valid uuid") from e
         except UserException as e:
-            raise HTTPError(500, "Unable to get user status for uuid '{}'".format(
-                header_data.uuid)) from e
+            logger.warning("Unable to get user status for uuid '{}'".format(header_data.uuid))
 
         logger.debug('For UUID: %s, got user type: %s final uuid: %s',
                      header_data.uuid, g.user_status, g.uuid)
