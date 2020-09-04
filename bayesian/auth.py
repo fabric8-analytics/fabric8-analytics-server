@@ -3,8 +3,10 @@ import logging
 from functools import wraps
 from flask import g, request
 from requests import get
+from pydantic.error_wrappers import ValidationError
 from bayesian.utility.user_utils import get_user, UserStatus, UserException
 from bayesian.utility.v2.sa_models import HeaderData
+from bayesian.exceptions import HTTPError
 
 from .default_config import AUTH_URL
 
