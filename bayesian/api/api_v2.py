@@ -319,7 +319,7 @@ def stack_analyses():
     # 3. Initiate stack analyses object
     sa = StackAnalyses(sa_post_request)
 
-    # 5. Post request
+    # 4. Post request
     try:
         data = sa.post_request()
         logger.info('%s took %f seconds for [POST] stack-analyses',
