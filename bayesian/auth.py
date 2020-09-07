@@ -60,7 +60,7 @@ def validate_user(view):
                 g.user_status = UserStatus[user.status]
         except ValidationError as e:
             raise HTTPError(400, "Not a valid uuid") from e
-        except UserException as e:
+        except UserException:
             logger.warning("Unable to get user status for uuid '{}'".format(header_data.uuid))
 
         logger.debug('For UUID: %s, got user type: %s final uuid: %s',

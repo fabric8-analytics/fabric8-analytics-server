@@ -26,8 +26,8 @@ from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilde
                                                      SARBRequestInvalidException,
                                                      SARBRequestInprogressException,
                                                      SARBRequestTimeoutException)
-from bayesian.utility.v2.sa_models import (StackAggregatorResultForFreeTierUser,
-                                           StackAggregatorResultForRegisteredUser)
+from bayesian.utility.v2.sa_models import (StackAnalysesResultForFreeTier,
+                                           StackAnalysesResultForRegisteredUser)
 
 
 class TestStackAnalysesResponseBuilder(unittest.TestCase):
@@ -108,7 +108,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         self.assertEqual(response['uuid'], '97b3c23e-d3da-4336-8b82-2abdac2075e2')
         self.assertEqual(response['registration_status'], UserStatus.FREETIER.name)
 
-        sa = StackAggregatorResultForFreeTierUser(**response)
+        sa = StackAnalysesResultForFreeTier(**response)
         self.assertNotEqual(sa, None)
 
     @patch('bayesian.utility.v2.sa_response_builder.g')
@@ -139,7 +139,7 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         self.assertEqual(response['uuid'], '97b3c23e-d3da-4336-8b82-2abdac2075e1')
         self.assertEqual(response['registration_status'], UserStatus.REGISTERED.name)
 
-        sa = StackAggregatorResultForRegisteredUser(**response)
+        sa = StackAnalysesResultForRegisteredUser(**response)
         self.assertNotEqual(sa, None)
 
     @patch('bayesian.utility.v2.sa_response_builder.g')
@@ -170,5 +170,5 @@ class TestStackAnalysesResponseBuilder(unittest.TestCase):
         self.assertEqual(response['uuid'], None)
         self.assertEqual(response['registration_status'], UserStatus.EXPIRED.name)
 
-        sa = StackAggregatorResultForFreeTierUser(**response)
+        sa = StackAnalysesResultForFreeTier(**response)
         self.assertNotEqual(sa, None)

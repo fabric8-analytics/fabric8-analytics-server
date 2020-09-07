@@ -218,7 +218,7 @@ class PackageDetailsForRegisteredUser(PackageDetails):  # noqa: D101
     )
 
 
-class PackageDetailsForFreeTierUser(PackageDetails):  # noqa: D101
+class PackageDetailsForFreeTier(PackageDetails):  # noqa: D101
     public_vulnerabilities: Optional[List['BasicVulnerabilityFields']] = Field(
         None, description='Publicly known vulnerability details'
     )
@@ -229,12 +229,12 @@ class PackageDetailsForFreeTierUser(PackageDetails):  # noqa: D101
         None,
         description='Recommended package version which includes fix for public vulnerabilities.\n',
     )
-    vulnerable_dependencies: Optional[List['PackageDetailsForFreeTierUser']] = Field(
+    vulnerable_dependencies: Optional[List['PackageDetailsForFreeTier']] = Field(
         None, description='List of dependencies which are vulnerable.\n'
     )
 
 
-class StackAggregatorResult(BaseModel):  # noqa: D101
+class StackAnalysesResult(BaseModel):  # noqa: D101
     version: str
     started_at: str
     ended_at: str
@@ -249,16 +249,16 @@ class StackAggregatorResult(BaseModel):  # noqa: D101
     license_analysis: Optional['LicenseAnalysis'] = None
 
 
-class StackAggregatorResultForRegisteredUser(StackAggregatorResult):  # noqa: D101
+class StackAnalysesResultForRegisteredUser(StackAnalysesResult):  # noqa: D101
     analyzed_dependencies: Optional[List['PackageDetailsForRegisteredUser']] = Field(
         None,
         description="All direct dependencies details regardless of it's vulnerability status\n",
     )
 
 
-class StackAggregatorResultForFreeTierUser(StackAggregatorResult):  # noqa: D101
+class StackAnalysesResultForFreeTier(StackAnalysesResult):  # noqa: D101
     registration_link: str
-    analyzed_dependencies: Optional[List['PackageDetailsForFreeTierUser']] = Field(
+    analyzed_dependencies: Optional[List['PackageDetailsForFreeTier']] = Field(
         None,
         description="All direct dependencies details regardless of it's vulnerability status\n",
     )
@@ -278,7 +278,7 @@ class StackRecommendation(BaseModel):  # noqa: D101
 
 Package.update_forward_refs()
 PackageDetailsForRegisteredUser.update_forward_refs()
-PackageDetailsForFreeTierUser.update_forward_refs()
-StackAggregatorResultForRegisteredUser.update_forward_refs()
-StackAggregatorResultForFreeTierUser.update_forward_refs()
+PackageDetailsForFreeTier.update_forward_refs()
+StackAnalysesResultForRegisteredUser.update_forward_refs()
+StackAnalysesResultForFreeTier.update_forward_refs()
 RecommendedPackageData.update_forward_refs()

@@ -21,8 +21,8 @@ from flask import g
 from bayesian.utils import request_timed_out
 from bayesian.utility.user_utils import UserStatus
 from bayesian.utility.v2.sa_models import (StackRecommendation,
-                                           StackAggregatorResultForFreeTierUser,
-                                           StackAggregatorResultForRegisteredUser)
+                                           StackAnalysesResultForFreeTier,
+                                           StackAnalysesResultForRegisteredUser)
 
 logger = logging.getLogger(__name__)
 
@@ -61,11 +61,11 @@ class StackAnalysesResponseBuilder:
 
         report = {}
         if g.user_status == UserStatus.REGISTERED:
-            report = StackAggregatorResultForRegisteredUser(**stack_audit, **stack_task_result,
-                                                            recommendation=recommendation).dict()
-        else:
-            report = StackAggregatorResultForFreeTierUser(**stack_audit, **stack_task_result,
+            report = StackAnalysesResultForRegisteredUser(**stack_audit, **stack_task_result,
                                                           recommendation=recommendation).dict()
+        else:
+            report = StackAnalysesResultForFreeTier(**stack_audit, **stack_task_result,
+                                                    recommendation=recommendation).dict()
 
         # Override registration status & UUID based on UUID in current request.
         report['uuid'] = g.uuid
