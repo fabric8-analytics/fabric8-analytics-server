@@ -1185,7 +1185,7 @@ accepted_file_names = {
         "golist.json": "golang",
         "pylist.json": "pypi",
         "dependencies.txt": "maven"
-    }
+}
 
 
 accepted_ecosystems = [

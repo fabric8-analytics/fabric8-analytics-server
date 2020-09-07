@@ -69,9 +69,10 @@ class TestStackAnalyses(unittest.TestCase):
                 sa.post_request()
             self.assertIs(exception.type, ValidationError)
 
+    @patch('bayesian.utility.v2.stack_analyses.g')
     @patch('bayesian.utility.v2.stack_analyses.BackboneServer.post_aggregate_request',
            side_effect=BackboneServerException('Mock error'))
-    def test_sa_backbone_error(self, _aggregate_request):
+    def test_sa_backbone_error(self, _aggregate_request, _g):
         """Check if 500 is raise upon invalid response from backbone server."""
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/manifests/202/npmlist.json', 'rb') as fp:
@@ -83,9 +84,10 @@ class TestStackAnalyses(unittest.TestCase):
                 sa.post_request()
             self.assertIs(exception.type, BackboneServerException)
 
+    @patch('bayesian.utility.v2.stack_analyses.g')
     @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request',
            side_effect=RDBSaveException('Mock exception'))
-    def test_sa_rdb_error(self, _post_request):
+    def test_sa_rdb_error(self, _post_request, _g):
         """Check if 500 is raise upon request save failure."""
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/manifests/202/npmlist.json', 'rb') as fp:
@@ -97,8 +99,9 @@ class TestStackAnalyses(unittest.TestCase):
                 sa.post_request()
             self.assertIs(exception.type, RDBSaveException)
 
+    @patch('bayesian.utility.v2.stack_analyses.g')
     @patch('bayesian.utility.v2.stack_analyses.RdbAnalyses.save_post_request', side_effect=None)
-    def test_sa_success(self, _post_request):
+    def test_sa_success(self, _post_request, _g):
         """Success stack analyses flow."""
         with open(str(Path(__file__).parent.parent.parent) +
                   '/data/manifests/202/npmlist.json', 'rb') as fp:

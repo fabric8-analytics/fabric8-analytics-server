@@ -17,7 +17,12 @@
 """Stack analyses API v2 response builder class."""
 
 import logging
+from flask import g
 from bayesian.utils import request_timed_out
+from bayesian.utility.user_utils import UserStatus
+from bayesian.utility.v2.sa_models import (StackRecommendation,
+                                           StackAnalysesResultForFreeTier,
+                                           StackAnalysesResultForRegisteredUser)
 
 logger = logging.getLogger(__name__)
 
@@ -52,22 +57,21 @@ class StackAnalysesResponseBuilder:
         # Proceed with building actual response from data.
         stack_task_result = self._stack_result.get('task_result')
         stack_audit = stack_task_result.get('_audit', {})
+        recommendation = StackRecommendation(**self._recm_data.get('task_result', {}))
 
-        return {
-            'version': stack_audit.get('version', None),
-            'started_at': stack_audit.get('started_at', None),
-            'ended_at': stack_audit.get('ended_at', None),
-            'external_request_id': self.external_request_id,
-            'registration_status': stack_task_result.get('registration_status', ''),
-            'manifest_file_path': stack_task_result.get('manifest_file_path', ''),
-            'manifest_name': stack_task_result.get('manifest_name', ''),
-            'ecosystem': stack_task_result.get('ecosystem', ''),
-            'unknown_dependencies': stack_task_result.get('unknown_dependencies', ''),
-            'license_analysis': stack_task_result.get('license_analysis', ''),
-            'recommendation': self._recm_data.get('task_result', {}),
-            'registration_link': stack_task_result.get('registration_link', ''),
-            'analyzed_dependencies': stack_task_result.get('analyzed_dependencies', [])
-        }
+        report = {}
+        if g.user_status == UserStatus.REGISTERED:
+            report = StackAnalysesResultForRegisteredUser(**stack_audit, **stack_task_result,
+                                                          recommendation=recommendation).dict()
+        else:
+            report = StackAnalysesResultForFreeTier(**stack_audit, **stack_task_result,
+                                                    recommendation=recommendation).dict()
+
+        # Override registration status & UUID based on UUID in current request.
+        report['uuid'] = g.uuid
+        report['registration_status'] = g.user_status.name
+
+        return report
 
     def _raise_if_invalid(self):
         """If request is invalid than it shall raise an exception."""
