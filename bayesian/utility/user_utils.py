@@ -8,6 +8,7 @@ import requests
 from cryptography.fernet import Fernet
 
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.dialects.postgresql import insert
 
 from f8a_worker.models import (UserDetails)
@@ -24,6 +25,9 @@ def get_user(uuid_val):
         result = rdb.session.query(UserDetails).filter(UserDetails.user_id == uuid_val)
         user = result.one()
         return user
+    except NoResultFound as e:
+        logger.exception("User not found with id %s", uuid_val)
+        raise UserNotFoundException("User not found") from e
     except SQLAlchemyError as e:
         logger.exception("Error fetching user with id %s", uuid_val)
         raise UserException("Error fetching user") from e
@@ -77,6 +81,15 @@ def decrypt_api_token(snyk_api_token):
 
 class UserException(Exception):
     """Exception for all User Management."""
+
+    def __init__(self, message):
+        """Initialize the exception."""
+        self.message = message
+        super().__init__(message)
+
+
+class UserNotFoundException(Exception):
+    """Exception for User not found."""
 
     def __init__(self, message):
         """Initialize the exception."""

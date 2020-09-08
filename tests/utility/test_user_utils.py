@@ -1,6 +1,6 @@
 """Test Case for User Management Utilities."""
 import pytest
-from bayesian.utility.user_utils import UserException
+from bayesian.utility.user_utils import UserNotFoundException
 from bayesian.utility import user_utils
 
 
@@ -24,7 +24,7 @@ class TestUserUtils:
     @pytest.mark.usefixtures('create_user')
     def test_get_user_not_found(self):
         """Test case for get user not found."""
-        with pytest.raises(UserException):
+        with pytest.raises(UserNotFoundException):
             user_utils.get_user('uuid')
 
     def test_create_user(self):
