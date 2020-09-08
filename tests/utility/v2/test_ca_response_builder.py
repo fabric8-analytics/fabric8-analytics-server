@@ -166,6 +166,7 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
         ideal_response = {'package': 'django',
                           'version': '1.1',
                           'recommended_versions': '',
+                          'package_unknown': False,
                           'vendor_package_link': 'https://snyk.io/vuln/pypi:django',
                           'vulnerability': [],
                           'message': 'django - 1.1 has ',

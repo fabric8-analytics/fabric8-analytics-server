@@ -4,6 +4,7 @@
         "version": "2.3.2",
         "recommended_versions": "2.3.8",
         "registration_link": "https://app.snyk.io/login",
+        "package_unknown": false,
         "vulnerability": [
             {
                 "id": "SNYK-PYTHON-MARKDOWN2-40770",

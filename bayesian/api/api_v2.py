@@ -36,7 +36,7 @@ from fabric8a_auth.auth import login_required, AuthError
 from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    unknown_package_flow, get_known_unknown_pkgs
+    unknown_package_flow, get_known_unknown_pkgs, add_unknown_pkg_info
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
@@ -219,10 +219,6 @@ class ComponentAnalysesApi(Resource):
         4. Handle Unknown Packages and Trigger bayesianApiFlow.
         """
         response_template: Tuple = namedtuple("response_template", ["message", "status", "headers"])
-        no_package_available_msg: str = "No Package in given manifest is available. " \
-                                        "Packages will be available shortly, " \
-                                        "Please retry after some time."
-
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
         headers = {"uuid": request.headers.get('uuid', None)}
@@ -244,13 +240,8 @@ class ComponentAnalysesApi(Resource):
 
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
-
-            if not stack_recommendation:
-                # If No Package is Known, all are unknown.
-                logger.debug(unknown_pkgs)
-                raise HTTPError(202, no_package_available_msg)
-
-            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1":
+            stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
+            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1" or ecosystem != "golang":
                 # Unknown Packages is Present and INGESTION is Enabled
                 logger.debug(unknown_pkgs)
                 unknown_package_flow(ecosystem, unknown_pkgs)

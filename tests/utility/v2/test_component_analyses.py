@@ -66,9 +66,12 @@ class TestComponentAnalyses(unittest.TestCase):
 
         stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
             "pypi", gremlin_batch_data_no_cve, normalised_input_pkgs)
-        ideal_output = [{'package': 'markdown2', 'version': '2.3.2', 'recommendation': {}}]
+        ideal_output = [{'package': 'markdown2',
+                         'version': '2.3.2',
+                         'package_unknown': False,
+                         'recommendation': {}}]
         self.assertListEqual(stack_recommendation, ideal_output)
-        self.assertSetEqual(unknown_pkgs, set())
+        self.assertSetEqual(unknown_pkgs, set(normalised_input_pkgs))
 
     @patch('bayesian.utility.v2.ca_response_builder.g')
     @patch('bayesian.utility.v2.component_analyses.g')
@@ -90,7 +93,7 @@ class TestComponentAnalyses(unittest.TestCase):
             "pypi", data_with_n_without_cve, normalised_input_pkgs)
 
         self.assertListEqual(stack_recommendation, ideal_output)
-        self.assertSetEqual(unknown_pkgs, set())
+        self.assertSetEqual(unknown_pkgs, set(normalised_input_pkgs))
 
 
 class TestCAInputValidator(unittest.TestCase):
