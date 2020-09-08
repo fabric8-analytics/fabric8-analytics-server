@@ -9,7 +9,7 @@ from fabric8a_auth.errors import AuthError
 
 from bayesian.exceptions import HTTPError
 from bayesian.utility import user_utils
-from bayesian.utility.user_utils import UserException, UserStatus
+from bayesian.utility.user_utils import UserException, UserStatus, UserNotFoundException
 
 user_api = Blueprint('user_api', __name__, url_prefix='/user')
 
@@ -66,3 +66,9 @@ def handle_authorization_error(e):
 def handle_user_exception(e):
     """Exception handler for handling user management errors."""
     return jsonify(message=e.message, status='500'), 500
+
+
+@user_api.errorhandler(UserNotFoundException)
+def handle_user_not_found_exception(e):
+    """Exception handler for handling user not found errors."""
+    return jsonify(message=e.message, status='404'), 404

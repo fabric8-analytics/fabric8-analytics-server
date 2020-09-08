@@ -66,6 +66,7 @@ def create_app(configfile=None):
     # Configure CORS.
     from flask_cors import CORS
     CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/user/*": {"origins": "*"}})
 
     @app.route('/')
     def base_url():
