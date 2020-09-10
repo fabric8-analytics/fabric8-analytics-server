@@ -4,7 +4,7 @@ from functools import wraps
 from flask import g, request
 from requests import get
 from pydantic.error_wrappers import ValidationError
-from bayesian.utility.user_utils import get_user, UserStatus, UserException
+from bayesian.utility.user_utils import get_user, UserStatus, UserException, UserNotFoundException
 from bayesian.utility.v2.sa_models import HeaderData
 from bayesian.exceptions import HTTPError
 
@@ -51,15 +51,16 @@ def validate_user(view):
         # By default set this to 'freetier' and uuid to None
         g.user_status = UserStatus.FREETIER
         g.uuid = None
-
+        header_data = HeaderData(uuid=request.headers.get('uuid', None))
         try:
-            header_data = HeaderData(uuid=request.headers.get('uuid', None))
             if header_data.uuid:
                 g.uuid = str(header_data.uuid)
                 user = get_user(g.uuid)
                 g.user_status = UserStatus[user.status]
         except ValidationError as e:
             raise HTTPError(400, "Not a valid uuid") from e
+        except UserNotFoundException:
+            logger.warning("Invalid UUID {}".format(header_data.uuid))
         except UserException:
             logger.warning("Unable to get user status for uuid '{}'".format(header_data.uuid))
 
