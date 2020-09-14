@@ -19,7 +19,7 @@ from urllib.parse import quote
 import logging
 
 from bayesian.utility.db_gateway import GraphAnalyses
-from bayesian.utility.user_utils import UserStatus
+from f8a_utils.user_token_utils import UserStatus
 from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic
 from typing import Dict, List, Optional
 from collections import namedtuple

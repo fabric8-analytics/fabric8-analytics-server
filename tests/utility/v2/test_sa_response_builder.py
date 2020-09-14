@@ -21,7 +21,7 @@ import pytest
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from bayesian.utility.user_utils import UserStatus
+from f8a_utils.user_token_utils import UserStatus
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
                                                      SARBRequestInvalidException,
                                                      SARBRequestInprogressException,

@@ -19,7 +19,7 @@
 import logging
 from flask import g
 from bayesian.utils import request_timed_out
-from bayesian.utility.user_utils import UserStatus
+from f8a_utils.user_token_utils import UserStatus
 from bayesian.utility.v2.sa_models import (StackRecommendation,
                                            StackAnalysesResultForFreeTier,
                                            StackAnalysesResultForRegisteredUser)
