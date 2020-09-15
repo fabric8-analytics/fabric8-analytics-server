@@ -36,26 +36,28 @@ class TestUserEndpoints:
 
     def test_user_put_false(self):
         """Test case for PUT user."""
-        with patch('bayesian.api.user_api.user_utils') as user_utils_mock_put:
+        with patch('bayesian.api.user_api.is_snyk_token_valid') as is_snyk_token_valid:
             with patch('bayesian.api.user_api.request') as request:
                 request.json.return_value = {'user_id': '123', 'snyk_api_token': 'abc'}
-                user_utils_mock_put.is_snyk_token_valid.return_value = False
+                is_snyk_token_valid.return_value = False
 
                 with(pytest.raises(HTTPError)):
                     user_api.create_or_update_user()
 
     def test_user_put(self):
         """Test case for PUT user."""
-        with patch('bayesian.api.user_api.user_utils') as user_utils_mock_put:
-            with patch('bayesian.api.user_api.request') as request:
-                request.json.return_value = {'user_id': '123', 'snyk_api_token': 'abc'}
-                user_utils_mock_put.is_snyk_token_valid.return_value = True
+        with patch('bayesian.api.user_api.is_snyk_token_valid') as is_snyk_token_valid:
+            with patch('bayesian.api.user_api.encrypt_api_token') as encrypt_api_token:
+                with patch('bayesian.api.user_api.request') as request:
+                    with patch('bayesian.api.user_api.user_utils') as user_utils_mock_put:
+                        request.json.return_value = {'user_id': '123', 'snyk_api_token': 'abc'}
+                        is_snyk_token_valid.return_value = True
 
-                response = self.client.put('/user')
+                        response = self.client.put('/user')
 
-                user_utils_mock_put.encrypt_api_token.assert_called_once()
-                user_utils_mock_put.create_or_update_user.assert_called_once()
-                assert response.status_code == 200
+                        encrypt_api_token.assert_called_once()
+                        user_utils_mock_put.create_or_update_user.assert_called_once()
+                        assert response.status_code == 200
 
     def test_user_post(self):
         """Test case for POST user."""

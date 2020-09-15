@@ -4,9 +4,10 @@ from functools import wraps
 from flask import g, request
 from requests import get
 from pydantic.error_wrappers import ValidationError
-from bayesian.utility.user_utils import get_user, UserStatus, UserException, UserNotFoundException
+from bayesian.utility.user_utils import get_user, UserException, UserNotFoundException
 from bayesian.utility.v2.sa_models import HeaderData
 from bayesian.exceptions import HTTPError
+from f8a_utils.user_token_utils import UserStatus
 
 from .default_config import AUTH_URL
 

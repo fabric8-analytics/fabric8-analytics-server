@@ -6,10 +6,11 @@ from flask.json import jsonify
 
 from fabric8a_auth.auth import login_required
 from fabric8a_auth.errors import AuthError
+from f8a_utils.user_token_utils import is_snyk_token_valid, encrypt_api_token, UserStatus
 
 from bayesian.exceptions import HTTPError
 from bayesian.utility import user_utils
-from bayesian.utility.user_utils import UserException, UserStatus, UserNotFoundException
+from bayesian.utility.user_utils import UserException, UserNotFoundException
 
 user_api = Blueprint('user_api', __name__, url_prefix='/user')
 
@@ -48,10 +49,10 @@ def create_or_update_user():
     if not snyk_api_token:
         raise HTTPError(400, 'snyk api token should be present')
 
-    if not user_utils.is_snyk_token_valid(snyk_api_token):
+    if not is_snyk_token_valid(snyk_api_token):
         raise HTTPError(400, "Invalid API Token")
 
-    encrypted_api_token = user_utils.encrypt_api_token(snyk_api_token)
+    encrypted_api_token = encrypt_api_token(snyk_api_token)
     user_utils.create_or_update_user(user_id, encrypted_api_token.decode(), "SNYK")
     return jsonify(user_id=user_id)
 
