@@ -28,7 +28,7 @@ class DependencyFinder():
     @staticmethod
     def scan_and_find_dependencies(ecosystem, manifests, show_transitive):
         """Scan the dependencies files to fetch transitive deps."""
-        return Df.get_golang_dependencies(ecosystem, manifests, show_transitive)
+        return Df.scan_and_find_dependencies(ecosystem, manifests, show_transitive)
 
     @staticmethod
     def get_npm_dependencies(ecosystem, manifests):

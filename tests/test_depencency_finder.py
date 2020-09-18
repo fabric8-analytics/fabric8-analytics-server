@@ -35,12 +35,12 @@ def test_scan_and_find_dependencies_golang():
     manifests = [{
         "filename": "golist.json",
         "filepath": "/bin/local",
-        "content": open(str(Path(__file__).parent / "data/manifests/golist.json")).read()
+        "content": open(str(Path(__file__).parent / "data/manifests/gograph.txt")).read()
     }]
     res = DependencyFinder().scan_and_find_dependencies("golang", manifests, "true")
     assert "result" in res
     assert res['result'][0]['details'][0]['_resolved'][0]['package'] == \
-        "github.com/asaskevich/govalidator"
+        "github.com/go-logr/logr"
 
 
 if __name__ == '__main__':
