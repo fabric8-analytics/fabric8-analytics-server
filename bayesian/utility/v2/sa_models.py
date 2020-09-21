@@ -35,6 +35,7 @@ class Ecosystem(str, Enum):
     maven = 'maven'
     pypi = 'pypi'
     npm = 'npm'
+    golang = 'golang'
 
 
 class StackAnalysesPostRequest(BaseModel):

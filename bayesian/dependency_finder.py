@@ -28,9 +28,6 @@ class DependencyFinder():
     @staticmethod
     def scan_and_find_dependencies(ecosystem, manifests, show_transitive):
         """Scan the dependencies files to fetch transitive deps."""
-        if ecosystem == "golang":
-            # TODO remove the logic for golang. Add the golang logic in utils
-            return DependencyFinder.get_dependencies_from_ecosystem_list(ecosystem, manifests)
         return Df.scan_and_find_dependencies(ecosystem, manifests, show_transitive)
 
     @staticmethod

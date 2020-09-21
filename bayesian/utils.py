@@ -1182,7 +1182,7 @@ def get_recommendation_feedback_by_ecosystem(ecosystem):
 # TODO: this is module constant -> use capital letters with underscores separating words.
 accepted_file_names = {
         "npmlist.json": "npm",
-        "golist.json": "golang",
+        "gograph.txt": "golang",
         "pylist.json": "pypi",
         "dependencies.txt": "maven"
 }
