@@ -386,15 +386,17 @@ class CABatchResponseBuilder(ComponentResponseBase):
         """Batch CA Response Builder."""
         super().__init__(ecosystem, None, None)
 
-    def generate_recommendation(self, package_graph_response: Dict) -> Dict:
+    def generate_recommendation(self, package_graph_response: Dict, given_version:str = None) -> Dict:
         """Generate recommendation for the package+version.
 
         Main function to generate recommendation response.
 
+        :param package_graph_response: Individual Package Object from Gremlin
+        :param given_version: Version from User Input
         :return: Json Response
         """
         logger.debug("Generating Recommendation")
-        self.version = self.get_version(package_graph_response)
+        self.version = given_version
         self.package = self.get_package(package_graph_response)
         latest_non_cve_versions: List[str] = package_graph_response.get('package', {}).get(
             'latest_non_cve_version', [])
