@@ -185,6 +185,46 @@ components:
           known_security_vulnerability_count: 2
           security_advisory_count: 1
           registration_link: "https://app.snyk.io/login"
+          root_package_used: true
+          used_packages:
+            - package: "django/pck1"
+              version: "1.1"
+              package_unknown: false
+              vulnerabilities:
+                - id: "SNYK-2010-3082"
+                  cvss: "1.2"
+                  is_private: false
+                  cwes:
+                    - "CWE-264"
+                  cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+                  severity: "medium"
+                  title: "Information Exposure"
+                  url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+                  cve_ids:
+                    - "CVE-2010-4534"
+                  fixed_in:
+                    - "1.1.3"
+                    - "1.2.4"
+                - id: "SYNK-2018-1002"
+                  cvss: "1.2"
+                  is_private: false
+                  cwes:
+                    - "CWE-264"
+                  cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+                  severity: "medium"
+                  title: "Information Exposure"
+                  url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+                  cve_ids:
+                    - "CVE-2010-4534"
+                  fixed_in:
+                    - "1.1.3"
+                    - "1.2.4"
+              recommended_versions : "2"
+              message: "2 vulnerabilities within this dependency"
+              highest_severity: "high"
+              known_security_vulnerability_count: 2
+              security_advisory_count: 1
+              registration_link: "https://app.snyk.io/login"
 
         - package: "mango"
           version: "2.1"
@@ -225,6 +265,8 @@ components:
           known_security_vulnerability_count: 2
           security_advisory_count: 1
           registration_link: "https://app.snyk.io/login"
+          root_package_used: true
+          used_packages: []
 
     registered-user-batch:
       value:
@@ -269,6 +311,92 @@ components:
           security_advisory_count: 1
           exploitable_vulnerabilities_count: 0
           vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+          root_package_used: true
+          used_packages:
+            - package: "django/pck1"
+              version: "1.1"
+              package_unknown: false
+              vulnerabilities:
+                - id: "SNYK-2010-3082"
+                  cvss: "1.2"
+                  is_private: false
+                  cwes:
+                    - "CWE-264"
+                  cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+                  severity: "medium"
+                  title: "Information Exposure"
+                  url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+                  cve_ids: [
+                    "CVE-2010-4534"
+                  ]
+                  fixed_in:
+                    - "1.1.3"
+                    - "1.2.4"
+                - id: "SNYK-2010-30812"
+                  cvss: "1.2"
+                  is_private: false
+                  cwes:
+                    - "CWE-264"
+                  cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+                  severity: "medium"
+                  title: "Information Exposure"
+                  url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+                  cve_ids: [
+                    "CVE-2010-4534"
+                  ]
+                  fixed_in:
+                    - "1.1.3"
+                    - "1.2.4"
+              recommended_versions : "2"
+              message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
+              highest_severity: "high"
+              known_security_vulnerability_count: 2
+              security_advisory_count: 1
+              exploitable_vulnerabilities_count: 0
+              vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+
+            - package: "django/pck2"
+              version: "1.1"
+              package_unknown: false
+              vulnerabilities:
+                - id: "SNYK-2010-3082"
+                  cvss: "1.2"
+                  is_private: false
+                  cwes:
+                    - "CWE-264"
+                  cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+                  severity: "medium"
+                  title: "Information Exposure"
+                  url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+                  cve_ids: [
+                    "CVE-2010-4534"
+                  ]
+                  fixed_in:
+                    - "1.1.3"
+                    - "1.2.4"
+                - id: "SNYK-2010-30812"
+                  cvss: "1.2"
+                  is_private: false
+                  cwes:
+                    - "CWE-264"
+                  cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+                  severity: "medium"
+                  title: "Information Exposure"
+                  url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+                  cve_ids: [
+                    "CVE-2010-4534"
+                  ]
+                  fixed_in:
+                    - "1.1.3"
+                    - "1.2.4"
+              recommended_versions : "2"
+              message: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
+              highest_severity: "high"
+              known_security_vulnerability_count: 2
+              security_advisory_count: 1
+              exploitable_vulnerabilities_count: 0
+              vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+
         - package: "mango"
           version: "2.1"
           package_unknown: false
@@ -310,6 +438,9 @@ components:
           security_advisory_count: 1
           exploitable_vulnerabilities_count: 0
           vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+          root_package_used: true
+          used_packages: []
+
     no-vul-batch:
       value:
         - package: "django"
@@ -410,6 +541,7 @@ components:
             - maven
             - pypi
             - npm
+            - golang
         package_versions:
           type: array
           items:
@@ -419,14 +551,26 @@ components:
                   type: string
                 version:
                   type: string
+                used_packages:
+                  type: array
+                  items:
+                    type: string
           example:
             - package: django
               version: 1.1
-            - package: mango
+              used_packages: []
+            - package: github.com/google.com/go
               version: 2.1
+              used_packages: ["github.com/google.com/go", "github.com/google.com/go/compute"]
+            - package: github.com/protobuff/proto
+              version: 1.9
+              used_packages: ["github.com/protobuff/proto"]
+            - package: github.com/coreos/etcd
+              version: 1.2
+              used_packages: ["github.com/coreos/etcd/wal", "github.com/coreos/etcd/auth"]
 
-    RegisteredUserBatch:
-      title: Vendor Private Recommendation
+    BatchPackageData:
+      title: Data of a single package in batch response
       type: object
       properties:
         package_unknown:
@@ -445,60 +589,72 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VulnerabilityDetailsBatch'
-        message:
-          type: string
-          example: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
         highest_severity:
           type: string
           example: "high"
         known_security_vulnerability_count:
           type: integer
-          example: 0
+          example: 3
         security_advisory_count:
           type: integer
-          example: 0
-        exploitable_vulnerabilities_count:
-          type: integer
-          example: 0
-        vendor_package_link:
-          type: string
-          example : "https://snyk.io/vuln/maven:org.webjars%3Ajquery-form"
+          example: 2
+
+    BatchPackageDataForRegisteredUser:
+      title: Package data for registered user
+      allOf:
+        - $ref: '#/components/schemas/BatchPackageData'
+        - type: object
+          properties:
+            message:
+              type: string
+              example: "django - 1.2 has 3 known security vulnerability and 2 security advisory with 1 having high severity and 1 exploitable vulnerabilities. Recommendation: use version v1.2.9"
+            exploitable_vulnerabilities_count:
+              type: integer
+              example: 1
+            vendor_package_link:
+              type: string
+              example : "https://snyk.io/vuln/maven:org.webjars%3Ajquery-form"
+
+    BatchPackageDataForFreeUser:
+      title: Package data for free user
+      allOf:
+        - $ref: '#/components/schemas/BatchPackageData'
+        - type: object
+          properties:
+            message:
+              type: string
+              example: "django - 1.2 has 3 known security vulnerability and 2 security advisory with 1 having high severity. Recommendation: use version v1.2.9"
+            registration_link:
+              type: string
+              example : "https://app.snyk.io/login"
+
+    RegisteredUserBatch:
+      title: Registered user batch response
+      allOf:
+        - $ref: '#/components/schemas/BatchPackageDataForRegisteredUser'
+        - type: object
+          properties:
+            root_package_used:
+              type: boolean
+              example: True
+            used_packages:
+              type: array
+              items:
+                $ref: '#/components/schemas/BatchPackageDataForRegisteredUser'
 
     FreeUserBatch:
-      title: Vendor Public Recommendation
-      type: object
-      properties:
-        package:
-          type: string
-          example: "django"
-        package_unknown:
-          type: boolean
-          example: False
-        version:
-          type: string
-          example: "1.1"
-        recommended_versions:
-          type: string
-          example: "3.1"
-        vulnerability:
-          type: array
-          items:
-            $ref: '#/components/schemas/VulnerabilityDetailsBatch'
-        message:
-          type: string
-          example: "3 vulnerabilities within this dependency, 0 exploitable vulnerabilities"
-        highest_severity:
-          type: string
-          example: "high"
-        known_security_vulnerability_count:
-          type: integer
-          example: 1
-        security_advisory_count:
-          type: integer
-          example: 1
-        registration_link:
-          type: string
-          example : "https://app.snyk.io/login"
+      title: Free user batch response
+      allOf:
+        - $ref: '#/components/schemas/BatchPackageDataForFreeUser'
+        - type: object
+          properties:
+            root_package_used:
+              type: boolean
+              example: True
+            used_packages:
+              type: array
+              items:
+                $ref: '#/components/schemas/BatchPackageDataForFreeUser'
 
     VulnerabilityDetailsBatch:
       title: Vulnerability Details Batch
