@@ -23,7 +23,7 @@ from unittest.mock import patch
 from werkzeug.exceptions import BadRequest
 
 from bayesian.utility.v2.component_analyses import validate_version, \
-    known_package_flow, ca_validate_input, get_known_unknown_pkgs
+    known_package_flow, ca_validate_input, get_known_unknown_pkgs, normlize_packages
 
 
 class TestComponentAnalyses(unittest.TestCase):
@@ -59,7 +59,7 @@ class TestComponentAnalyses(unittest.TestCase):
     @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
     def test_get_known_unknown_pkgs_no_cve(self, _mock1, _mock2):
         """Test Known Unknown Pkgs, No Cve."""
-        normalised_input_pkgs = [('markdown2', "2.3.2")]
+        normalised_input_pkgs = [normlize_packages('markdown2', "2.3.2", "2.3.2")]
         batch_data_no_cve = os.path.join('/bayesian/tests/data/gremlin/batch_data_no_cve.json')
         with open(batch_data_no_cve) as f:
             gremlin_batch_data_no_cve = json.load(f)
@@ -71,14 +71,16 @@ class TestComponentAnalyses(unittest.TestCase):
                          'package_unknown': False,
                          'recommendation': {}}]
         self.assertListEqual(stack_recommendation, ideal_output)
-        self.assertSetEqual(unknown_pkgs, set(normalised_input_pkgs))
+        self.assertSetEqual(unknown_pkgs, set())
 
     @patch('bayesian.utility.v2.ca_response_builder.g')
     @patch('bayesian.utility.v2.component_analyses.g')
     @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
     def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1, _mock2, _mock3):
         """Test Known Unknown Pkgs, with and Without CVE."""
-        normalised_input_pkgs = [('flask', "1.1.1"), ('django', "1.1.1")]
+        input_pkgs = [('flask', "1.1.1", "1.1.1"), ('django', "1.1.1", "1.1.1")]
+        normalised_input_pkgs = [normlize_packages(pkg, vr, gvn_vr)
+                                 for pkg, vr, gvn_vr in input_pkgs]
         batch_data_no_cve = os.path.join(
             '/bayesian/tests/data/gremlin/batch_data_with_n_without_cve.json')
         with open(batch_data_no_cve) as f:
@@ -93,7 +95,7 @@ class TestComponentAnalyses(unittest.TestCase):
             "pypi", data_with_n_without_cve, normalised_input_pkgs)
 
         self.assertListEqual(stack_recommendation, ideal_output)
-        self.assertSetEqual(unknown_pkgs, set(normalised_input_pkgs))
+        self.assertSetEqual(unknown_pkgs, set())
 
 
 class TestCAInputValidator(unittest.TestCase):
@@ -154,6 +156,7 @@ class TestCAInputValidator(unittest.TestCase):
                 {"package": "com.thoughtworks.xstream:xstream", "version": "1.3"},
             ]
         }
-        ideal_result = [{"name": "com.thoughtworks.xstream:xstream", "version": "1.3"}]
+        ideal_result = [
+            {"name": "com.thoughtworks.xstream:xstream", "version": "1.3", "given_version": "1.3"}]
         result, _ = ca_validate_input(input_json, input_json["ecosystem"])
         self.assertEqual(result, ideal_result)

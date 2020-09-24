@@ -115,7 +115,8 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
         if ecosystem == 'golang':
             _, clean_version = DependencyFinder.clean_version(given_version)
 
-        packages_list.append({"name": package, "version": clean_version, 'given_version': given_version})
+        packages_list.append(
+            {"name": package, "version": clean_version, 'given_version': given_version})
         normalised_input_pkgs.append(normlize_packages(package, clean_version, given_version))
     return packages_list, normalised_input_pkgs
 
@@ -126,10 +127,12 @@ def get_known_unknown_pkgs(
     """Analyse Known and Unknown Packages."""
     stack_recommendation = []
     db_known_packages = set()
-    for package, input_pkg in zip(graph_response.get('result', {}).get('data'), normalised_input_pkgs):
+    for package, input_pkg in zip(
+            graph_response.get('result', {}).get('data'), normalised_input_pkgs):
         pkg_name = package.get('package').get('name', [''])[0]
         pkg_vr = package.get('version').get('version', [''])[0]
-        pkg_recomendation = CABatchResponseBuilder(ecosystem).generate_recommendation(package, input_pkg.given_version)
+        pkg_recomendation = CABatchResponseBuilder(ecosystem).\
+            generate_recommendation(package, input_pkg.given_version)
         stack_recommendation.append(pkg_recomendation)
         known_package_flow(ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
         db_known_packages.add(normlize_packages(pkg_name, pkg_vr,

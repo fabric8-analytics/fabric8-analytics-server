@@ -386,7 +386,8 @@ class CABatchResponseBuilder(ComponentResponseBase):
         """Batch CA Response Builder."""
         super().__init__(ecosystem, None, None)
 
-    def generate_recommendation(self, package_graph_response: Dict, given_version:str = None) -> Dict:
+    def generate_recommendation(
+            self, package_graph_response: Dict, given_version: str = None) -> Dict:
         """Generate recommendation for the package+version.
 
         Main function to generate recommendation response.
