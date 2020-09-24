@@ -184,10 +184,11 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
         obj.pvt_vul = 1
         obj.package = "django"
         obj.version = "1.1"
+        obj.severity = ['high']
         msg = obj.get_premium_message(1)
         ideal_msg = "django - 1.1 has 1 known security vulnerability " \
                     "and 1 security advisory with 1 exploitable " \
-                    "vulnerabilities. No recommended version."
+                    "vulnerability and high severity. No recommended version."
         self.assertEqual(msg, ideal_msg)
 
     def test_get_premium_message_with_pvt_vul(self):
@@ -197,8 +198,10 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
         obj.pvt_vul = 1
         obj.package = "django"
         obj.version = "1.1"
+        obj.severity = ['high']
         msg = obj.get_premium_message(1)
-        ideal_msg = "django - 1.1 has 1 security advisory with 1 exploitable vulnerabilities. "
+        ideal_msg = "django - 1.1 has 1 security advisory with 1 exploitable " \
+                    "vulnerability and high severity. No recommended version."
         self.assertEqual(msg, ideal_msg)
 
     def test_get_premium_message_with_public_vul(self):
@@ -208,9 +211,23 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
         obj.pvt_vul = 0
         obj.package = "django"
         obj.version = "1.1"
+        obj.severity = ['high']
         msg = obj.get_premium_message(1)
         ideal_msg = "django - 1.1 has 1 known security vulnerability with " \
-                    "1 exploitable vulnerabilities. No recommended version."
+                    "1 exploitable vulnerability and high severity. No recommended version."
+        self.assertEqual(msg, ideal_msg)
+
+    def test_get_premium_message_with_0_exploit_vul(self):
+        """Test Get Premium Message With Public Vulnerabilities."""
+        obj = CABatchResponseBuilder(self.eco)
+        obj.public_vul = 1
+        obj.pvt_vul = 1
+        obj.package = "django"
+        obj.version = "1.1"
+        obj.severity = ['high']
+        msg = obj.get_premium_message(0)
+        ideal_msg = "django - 1.1 has 1 known security vulnerability " \
+                    "and 1 security advisory with high severity. No recommended version."
         self.assertEqual(msg, ideal_msg)
 
     def test_get_message_with_pvt_vul_equal_len(self):
