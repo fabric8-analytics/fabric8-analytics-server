@@ -598,6 +598,9 @@ components:
         security_advisory_count:
           type: integer
           example: 2
+        message:
+          type: string
+          example: "django - 1.2 has 3 known security vulnerability and 2 security advisory with 1 having high severity and 1 exploitable vulnerabilities. Recommendation: use version v1.2.9"
 
     BatchPackageDataForRegisteredUser:
       title: Package data for registered user
@@ -605,9 +608,6 @@ components:
         - $ref: '#/components/schemas/BatchPackageData'
         - type: object
           properties:
-            message:
-              type: string
-              example: "django - 1.2 has 3 known security vulnerability and 2 security advisory with 1 having high severity and 1 exploitable vulnerabilities. Recommendation: use version v1.2.9"
             exploitable_vulnerabilities_count:
               type: integer
               example: 1
@@ -621,9 +621,6 @@ components:
         - $ref: '#/components/schemas/BatchPackageData'
         - type: object
           properties:
-            message:
-              type: string
-              example: "django - 1.2 has 3 known security vulnerability and 2 security advisory with 1 having high severity. Recommendation: use version v1.2.9"
             registration_link:
               type: string
               example : "https://app.snyk.io/login"
