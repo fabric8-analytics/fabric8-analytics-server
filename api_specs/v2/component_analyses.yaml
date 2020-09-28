@@ -186,7 +186,7 @@ components:
           security_advisory_count: 1
           registration_link: "https://app.snyk.io/login"
           root_package_used: true
-          used_packages:
+          included_packages:
             - package: "django/pck1"
               version: "1.1"
               package_unknown: false
@@ -266,7 +266,7 @@ components:
           security_advisory_count: 1
           registration_link: "https://app.snyk.io/login"
           root_package_used: true
-          used_packages: []
+          included_packages: []
 
     registered-user-batch:
       value:
@@ -312,7 +312,7 @@ components:
           exploitable_vulnerabilities_count: 1
           vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
           root_package_used: true
-          used_packages:
+          included_packages:
             - package: "django/pck1"
               version: "1.1"
               package_unknown: false
@@ -439,7 +439,7 @@ components:
           exploitable_vulnerabilities_count: 1
           vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
           root_package_used: true
-          used_packages: []
+          included_packages: []
 
     no-vul-batch:
       value:
@@ -551,23 +551,29 @@ components:
                   type: string
                 version:
                   type: string
-                used_packages:
+                root_package_used:
+                  type: boolean
+                included_packages:
                   type: array
                   items:
                     type: string
           example:
             - package: django
               version: 1.1
-              used_packages: []
+              root_package_used: true
+              included_packages: []
             - package: github.com/google.com/go
               version: 2.1
-              used_packages: ["github.com/google.com/go", "github.com/google.com/go/compute"]
+              root_package_used: true
+              included_packages: ["github.com/google.com/go/compute"]
             - package: github.com/protobuff/proto
               version: 1.9
-              used_packages: ["github.com/protobuff/proto"]
+              root_package_used: true
+              included_packages: []
             - package: github.com/coreos/etcd
               version: 1.2
-              used_packages: ["github.com/coreos/etcd/wal", "github.com/coreos/etcd/auth"]
+              root_package_used: false
+              included_packages: ["github.com/coreos/etcd/wal", "github.com/coreos/etcd/auth"]
 
     BatchPackageData:
       title: Data of a single package in batch response
@@ -634,7 +640,7 @@ components:
             root_package_used:
               type: boolean
               example: True
-            used_packages:
+            included_packages:
               type: array
               items:
                 $ref: '#/components/schemas/BatchPackageDataForRegisteredUser'
@@ -648,7 +654,7 @@ components:
             root_package_used:
               type: boolean
               example: True
-            used_packages:
+            included_packages:
               type: array
               items:
                 $ref: '#/components/schemas/BatchPackageDataForFreeUser'
