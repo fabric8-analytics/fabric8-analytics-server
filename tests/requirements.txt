@@ -5,11 +5,14 @@
 #    pip-compile --output-file=requirements.txt requirements.in
 #
 astroid==1.4.8            # via pylint
+certifi==2020.6.20        # via requests
+chardet==3.0.4            # via requests
 click==6.6                # via flask
 coverage==4.4.2           # via pytest-cov
 flask==0.11.1             # via pytest-flask
 flexmock==0.10.2          # via -r requirements.in
 freezegun==0.3.7          # via -r requirements.in
+idna==2.7                 # via requests
 isort==4.2.5              # via pylint
 itsdangerous==0.24        # via flask
 jinja2==2.8               # via flask
@@ -24,9 +27,10 @@ pytest-cov==2.5.1         # via -r requirements.in
 pytest-flask==0.10.0      # via -r requirements.in
 pytest==3.0.3             # via -r requirements.in, pytest-cov, pytest-flask
 python-dateutil==2.5.3    # via freezegun
-requests==2.11.1          # via -r requirements.in
+requests==2.20.0          # via -r requirements.in
 semantic-version==2.8.4   # via -r requirements.in
 six==1.10.0               # via astroid, freezegun, pylint, python-dateutil, tenacity
 tenacity==6.2.0           # via -r requirements.in
+urllib3==1.24.3           # via requests
 werkzeug==0.11.11         # via flask, pytest-flask
 wrapt==1.10.8             # via astroid
