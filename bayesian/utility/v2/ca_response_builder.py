@@ -472,23 +472,33 @@ class CABatchResponseBuilder(ComponentResponseBase):
         if self.public_vul and self.pvt_vul:
             # Add Private Vulnerability and Public Vul Info only
             message += f"{self.public_vul} known security vulnerability "
-            message += f"and {self.pvt_vul} security advisory "
-            message += f"with {exploitable_vuls} exploitable vulnerabilities. "
+            message += f"and {self.pvt_vul} security advisory with "
+            message += self.append_with_exploit_details(exploitable_vuls)
+            message += f"{self.severity[0]} severity. "
             message += self.get_recommendation()
             return message
 
         if self.public_vul:
             # Add Public Vulnerability Info only
-            message += f"{self.public_vul} known security vulnerability"
-            message += f" with {exploitable_vuls} exploitable vulnerabilities. "
+            message += f"{self.public_vul} known security vulnerability with "
+            message += self.append_with_exploit_details(exploitable_vuls)
+            message += f"{self.severity[0]} severity. "
             message += self.get_recommendation()
             return message
 
         if self.pvt_vul:
             # Add Private Vulnerability Info only
-            message += f"{self.pvt_vul} security advisory"
-            message += f" with {exploitable_vuls} exploitable vulnerabilities. "
+            message += f"{self.pvt_vul} security advisory with "
+            message += self.append_with_exploit_details(exploitable_vuls)
+            message += f"{self.severity[0]} severity. "
+            message += self.get_recommendation()
         return message
+
+    def append_with_exploit_details(self, exploitable_vuls) -> str:
+        """Append exploit details to message."""
+        if exploitable_vuls:
+            return f"{exploitable_vuls} exploitable vulnerability and "
+        return ""
 
     def generate_response(self) -> Dict:
         """Build a JSON Response from all calculated values.
