@@ -28,5 +28,5 @@ requests==2.11.1          # via -r requirements.in
 semantic-version==2.8.4   # via -r requirements.in
 six==1.10.0               # via astroid, freezegun, pylint, python-dateutil, tenacity
 tenacity==6.2.0           # via -r requirements.in
-werkzeug==0.11.11         # via flask, pytest-flask
+werkzeug==0.15.3          # via flask, pytest-flask
 wrapt==1.10.8             # via astroid
