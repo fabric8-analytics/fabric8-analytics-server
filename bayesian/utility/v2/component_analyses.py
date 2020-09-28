@@ -22,6 +22,7 @@ import re
 import time
 from collections import namedtuple
 from typing import Dict, Set, List, Tuple
+from f8a_utils.dependency_finder import DependencyFinder
 from flask import g
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem, \
@@ -30,7 +31,7 @@ from f8a_worker.utils import MavenCoordinates
 from werkzeug.exceptions import BadRequest
 
 logger = logging.getLogger(__name__)
-Package = namedtuple("Package", ["name", "version", "package_unknown"])
+Package = namedtuple("Package", ["name", "version", "package_unknown", "given_version"])
 
 
 def validate_version(version: str) -> bool:
@@ -41,10 +42,11 @@ def validate_version(version: str) -> bool:
     return True
 
 
-def normlize_packages(package, version) -> Package:
+def normlize_packages(package, version, given_version: str) -> Package:
     """Normalise Packages into hashable."""
     logger.debug('Normalizing Packages.')
-    return Package(name=package, version=version, package_unknown=True)
+    return Package(
+        name=package, version=version, given_version=given_version, package_unknown=True)
 
 
 def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
@@ -91,16 +93,16 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
     normalised_input_pkgs = []
     for pkg in input_json.get('package_versions'):
         package = pkg.get("package")
-        version = pkg.get("version")
-        if not all([package, version]):
+        clean_version = given_version = pkg.get("version")
+        if not all([package, given_version]):
             error_msg = "Invalid Input: Package, Version are required."
             raise BadRequest(error_msg)
 
-        if (not isinstance(version, str)) or (not isinstance(package, str)):
+        if (not isinstance(given_version, str)) or (not isinstance(package, str)):
             error_msg = "Package version should be string format only."
             raise BadRequest(error_msg)
 
-        if not validate_version(version):
+        if not validate_version(given_version):
             error_msg = "Package version should not have special characters."
             raise BadRequest(error_msg)
 
@@ -109,8 +111,13 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
 
         if ecosystem == 'pypi':
             package = package.lower()
-        packages_list.append({"name": package, "version": version})
-        normalised_input_pkgs.append(normlize_packages(package, version))
+
+        if ecosystem == 'golang':
+            _, clean_version = DependencyFinder.clean_version(given_version)
+
+        packages_list.append(
+            {"name": package, "version": clean_version, 'given_version': given_version})
+        normalised_input_pkgs.append(normlize_packages(package, clean_version, given_version))
     return packages_list, normalised_input_pkgs
 
 
@@ -120,13 +127,16 @@ def get_known_unknown_pkgs(
     """Analyse Known and Unknown Packages."""
     stack_recommendation = []
     db_known_packages = set()
-    for package in graph_response.get('result', {}).get('data'):
+    for package, input_pkg in zip(
+            graph_response.get('result', {}).get('data'), normalised_input_pkgs):
         pkg_name = package.get('package').get('name', [''])[0]
         pkg_vr = package.get('version').get('version', [''])[0]
-        pkg_recomendation = CABatchResponseBuilder(ecosystem).generate_recommendation(package)
+        pkg_recomendation = CABatchResponseBuilder(ecosystem).\
+            generate_recommendation(package, input_pkg.given_version)
         stack_recommendation.append(pkg_recomendation)
         known_package_flow(ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
-        db_known_packages.add(normlize_packages(pkg_name, pkg_vr))
+        db_known_packages.add(normlize_packages(pkg_name, pkg_vr,
+                                                given_version=input_pkg.given_version))
 
     input_dependencies = set(normalised_input_pkgs)
     unknown_pkgs: Set = input_dependencies.difference(db_known_packages)
@@ -150,6 +160,8 @@ def add_unknown_pkg_info(stack_recommendation: List, unknown_pkgs: Set[Package])
     :return: Updated Stack Recommendation
     """
     for unknown_pkg in unknown_pkgs:
-        stack_recommendation.append(
-            unknown_pkg._asdict())
+        unknowns = unknown_pkg._asdict()
+        unknowns['version'] = unknowns.get('given_version')
+        unknowns.pop('given_version', None)
+        stack_recommendation.append(unknowns)
     return stack_recommendation
