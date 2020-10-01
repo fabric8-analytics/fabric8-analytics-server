@@ -125,22 +125,64 @@ def get_known_unknown_pkgs(
         ecosystem: str, graph_response: Dict,
         normalised_input_pkgs: List) -> Tuple[List[Dict], Set[Package]]:
     """Analyse Known and Unknown Packages."""
-    stack_recommendation = []
-    db_known_packages = set()
-    for package, input_pkg in zip(
-            graph_response.get('result', {}).get('data'), normalised_input_pkgs):
-        pkg_name = package.get('package').get('name', [''])[0]
-        pkg_vr = package.get('version').get('version', [''])[0]
-        pkg_recomendation = CABatchResponseBuilder(ecosystem).\
-            generate_recommendation(package, input_pkg.given_version)
-        stack_recommendation.append(pkg_recomendation)
-        known_package_flow(ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
-        db_known_packages.add(normlize_packages(pkg_name, pkg_vr,
-                                                given_version=input_pkg.given_version))
+    if ecosystem == 'golang':
+        stack_recommendation, db_known_packages = get_stack_recommendation_for_golang(
+            ecosystem, graph_response, normalised_input_pkgs)
+    else:
+        stack_recommendation, db_known_packages = get_stack_recommendation(
+            ecosystem, graph_response, normalised_input_pkgs)
 
     input_dependencies = set(normalised_input_pkgs)
     unknown_pkgs: Set = input_dependencies.difference(db_known_packages)
     return stack_recommendation, unknown_pkgs
+
+
+def get_stack_recommendation(ecosystem, graph_response, normalised_input_pkgs):
+    """Get Stack Recommendation for All Ecosystems, Except Golang.
+
+    Unlike Golang, No Multiple loops are required as "given_vr == version."
+    :param graph_response: Graph Response
+    :param normalised_input_pkgs: Input Packages.
+    :return: Stack Recomm. and DB_Known_Packages.
+    """
+    stack_recommendation = []
+    db_known_packages = set()
+    for package in graph_response.get('result', {}).get('data'):
+        pkg_name = package.get('package').get('name', [''])[0]
+        pkg_vr = package.get('version').get('version', [''])[0]
+        pkg_recomendation = CABatchResponseBuilder(ecosystem). \
+            generate_recommendation(package, pkg_vr)
+        stack_recommendation.append(pkg_recomendation)
+        known_package_flow(ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
+        db_known_packages.add(normlize_packages(pkg_name, pkg_vr,
+                                                given_version=pkg_vr))
+    return stack_recommendation, db_known_packages
+
+
+def get_stack_recommendation_for_golang(ecosystem, graph_response, normalised_input_pkgs):
+    """Get Stack Recommendation for Golang.
+
+    In Golang, we have to loop over normalised_input_pkgs to fetch
+    "given_version" and feed that to response builder.
+    :param ecosystem: Ecosystem
+    :param graph_response: Graph Response
+    :param normalised_input_pkgs: Input Packages.
+    :return: Stack Recomm. and DB_Known_Packages.
+    """
+    stack_recommendation = []
+    db_known_packages = set()
+    for package in graph_response.get('result', {}).get('data'):
+        for input_pkg in normalised_input_pkgs:
+            pkg_name = package.get('package').get('name', [''])[0]
+            pkg_vr = package.get('version').get('version', [''])[0]
+            if pkg_name != input_pkg.name:
+                continue
+            pkg_recomendation = CABatchResponseBuilder(ecosystem). \
+                generate_recommendation(package, input_pkg.given_version)
+            stack_recommendation.append(pkg_recomendation)
+            db_known_packages.add(normlize_packages(pkg_name, pkg_vr,
+                                                    given_version=input_pkg.given_version))
+    return stack_recommendation, db_known_packages
 
 
 def build_pkg_recommendation(pack_details, ecosystem) -> Dict:
