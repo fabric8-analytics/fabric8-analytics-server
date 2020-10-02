@@ -171,17 +171,16 @@ def get_stack_recommendation_for_golang(ecosystem, graph_response, normalised_in
     """
     stack_recommendation = []
     db_known_packages = set()
+    normalised_input_pkg_map = {input_pkg.name: input_pkg.given_version
+                                for input_pkg in normalised_input_pkgs}
     for package in graph_response.get('result', {}).get('data'):
-        for input_pkg in normalised_input_pkgs:
-            pkg_name = package.get('package').get('name', [''])[0]
-            pkg_vr = package.get('version').get('version', [''])[0]
-            if pkg_name != input_pkg.name:
-                continue
-            pkg_recomendation = CABatchResponseBuilder(ecosystem). \
-                generate_recommendation(package, input_pkg.given_version)
-            stack_recommendation.append(pkg_recomendation)
-            db_known_packages.add(normlize_packages(pkg_name, pkg_vr,
-                                                    given_version=input_pkg.given_version))
+        pkg_name = package.get('package').get('name', [''])[0]
+        pkg_vr = package.get('version').get('version', [''])[0]
+        pkg_recomendation = CABatchResponseBuilder(ecosystem). \
+            generate_recommendation(package, normalised_input_pkg_map[pkg_name])
+        stack_recommendation.append(pkg_recomendation)
+        db_known_packages.add(normlize_packages(pkg_name, pkg_vr,
+                                                given_version=normalised_input_pkg_map[pkg_name]))
     return stack_recommendation, db_known_packages
 
 
