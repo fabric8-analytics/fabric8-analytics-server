@@ -124,23 +124,48 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
 def get_known_unknown_pkgs(
         ecosystem: str, graph_response: Dict,
         normalised_input_pkgs: List) -> Tuple[List[Dict], Set[Package]]:
-    """Analyse Known and Unknown Packages."""
+    """Analyse Known and Unknown Packages.
+
+    :param ecosystem: Ecosystem
+    :param graph_response: Graph Response
+    :param normalised_input_pkgs: Normalised Input Packages
+    :return: Stack Recommendations, Unknown Pkgs
+    """
+    normalised_input_pkg_map = None  # Mapping is required only for Golang.
+    if ecosystem == 'golang':
+        normalised_input_pkg_map = {input_pkg.name: input_pkg.given_version
+                                    for input_pkg in normalised_input_pkgs}
+
     stack_recommendation = []
     db_known_packages = set()
-    for package, input_pkg in zip(
-            graph_response.get('result', {}).get('data'), normalised_input_pkgs):
+    for package in graph_response.get('result', {}).get('data'):
         pkg_name = package.get('package').get('name', [''])[0]
-        pkg_vr = package.get('version').get('version', [''])[0]
-        pkg_recomendation = CABatchResponseBuilder(ecosystem).\
-            generate_recommendation(package, input_pkg.given_version)
+        clean_version = package.get('version').get('version', [''])[0]
+        given_pkg_version = get_version(pkg_name, clean_version, normalised_input_pkg_map)
+        pkg_recomendation = CABatchResponseBuilder(ecosystem). \
+            generate_recommendation(package, given_pkg_version)
         stack_recommendation.append(pkg_recomendation)
         known_package_flow(ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
-        db_known_packages.add(normlize_packages(pkg_name, pkg_vr,
-                                                given_version=input_pkg.given_version))
+        db_known_packages.add(normlize_packages(pkg_name, clean_version,
+                                                given_version=given_pkg_version))
 
     input_dependencies = set(normalised_input_pkgs)
     unknown_pkgs: Set = input_dependencies.difference(db_known_packages)
     return stack_recommendation, unknown_pkgs
+
+
+def get_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:
+    """Output Package version for each Package.
+
+    :param pkg_name: Package Name
+    :param normalised_input_pkg_map: Input Package Map
+    :param pkg_version: Clean Package Version
+    :return: Given Package version (By User)
+    """
+    logger.debug('Fetch Input Package version.')
+    if isinstance(normalised_input_pkg_map, dict):
+        return normalised_input_pkg_map[pkg_name]
+    return pkg_version
 
 
 def build_pkg_recommendation(pack_details, ecosystem) -> Dict:
