@@ -325,6 +325,52 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
         )
         self.assertDictEqual(response, mocked_response)
 
+    @patch('bayesian.utility.v2.ca_response_builder.'
+           'ComponentAnalysisResponseBuilder.get_cve_maps')
+    @patch('bayesian.utility.v2.ca_response_builder.'
+           'ComponentAnalysisResponseBuilder.get_registration_link')
+    @patch('bayesian.utility.v2.ca_response_builder.'
+           'ComponentAnalysisResponseBuilder.get_message')
+    def test_generate_response_rec_version(self, _mock_msg, _mock_link, _mock_maps):
+        """Test Response Generator Function."""
+        response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
+
+        _mock_msg.return_value = 'You are Superb.'
+        _mock_link.return_value = 'https://xyx.com'
+        _mock_maps.return_value = {}
+
+        response_obj.nocve_version = 1
+        response_obj.severity = ['high']
+        response_obj.public_vul = 2
+        response_obj.pvt_vul = 0
+        response = response_obj.generate_response()
+        mocked_response = dict(
+            recommended_versions=response_obj.nocve_version,
+            registration_link=_mock_link.return_value,
+            component_analyses=dict(vulnerability=_mock_maps.return_value),
+            message=_mock_msg.return_value,
+            severity=response_obj.severity[0],
+            known_security_vulnerability_count=response_obj.public_vul,
+            security_advisory_count=response_obj.pvt_vul,
+        )
+        self.assertDictEqual(response, mocked_response)
+
+        response_obj.public_vul = 1
+        response_obj.pvt_vul = 1
+        mocked_response['recommended_versions'] = response_obj.nocve_version
+        mocked_response['known_security_vulnerability_count'] = response_obj.public_vul
+        mocked_response['security_advisory_count'] = response_obj.pvt_vul
+        response = response_obj.generate_response()
+        self.assertDictEqual(response, mocked_response)
+
+        response_obj.public_vul = 0
+        response_obj.pvt_vul = 1
+        mocked_response['recommended_versions'] = ''
+        mocked_response['known_security_vulnerability_count'] = response_obj.public_vul
+        mocked_response['security_advisory_count'] = response_obj.pvt_vul
+        response = response_obj.generate_response()
+        self.assertDictEqual(response, mocked_response)
+
     def test_get_vulnerabilities_count_zero_exception(self):
         """Test Vulnerabilities count Exception."""
         response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)

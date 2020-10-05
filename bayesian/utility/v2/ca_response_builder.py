@@ -194,6 +194,20 @@ class ComponentResponseBase(ABC):
         """Abstract function for Generate Response.."""
         pass
 
+    def get_recommended_version(self):
+        """Return recommended version based on vulnerabilities and advisory count."""
+        '''
+        Show recommendation version for freetier user as per below flags:
+            1. known sec vuln > 0 & sec advisories > 0 --> recommendation = yes
+            2. known sec vuln > 0 & sec advisories = 0 --> recommendation = yes
+            3. known sec vuln = 0 & sec advisories > 0 --> recommendation = No
+            4. known sec vuln = 0 & sec advisories = 0 --> There will not be any vulnerability.
+        '''
+        if self.public_vul == 0:
+            return ''
+
+        return self.nocve_version
+
     def get_vulnerabilities_count(self):
         """Vulnerability count, Calculates Public and Pvt Vulnerability count.
 
@@ -344,7 +358,7 @@ class ComponentAnalysisResponseBuilder(ComponentResponseBase):
             vulnerability=self.get_cve_maps()
         )
         response = dict(
-            recommended_versions=self.nocve_version,
+            recommended_versions=self.get_recommended_version(),
             registration_link=self.get_registration_link(),
             component_analyses=component_analyses_dict,
             message=self.get_message(),
@@ -513,7 +527,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
             package_unknown=False,
             package=self.package,
             version=self.version,
-            recommended_versions=self.nocve_version,
+            recommended_versions=self.get_recommended_version(),
             registration_link=self.get_registration_link(),
             vulnerability=self.get_cve_maps(),
             message=self.get_message(),
