@@ -229,6 +229,7 @@ Code coverage is reported via the codecov.io. The results can be seen on the fol
 [code coverage report](https://codecov.io/gh/fabric8-analytics/fabric8-analytics-server)
 
 #### Commands to generate the dependency files for stack analysis call
+
 ##### Maven
 ```
 mvn org.apache.maven.plugins:maven-dependency-plugin:3.0.2:tree -DoutputFile=/someloc/dependencies.txt -DoutputType=dot -DappendOutput=true;
