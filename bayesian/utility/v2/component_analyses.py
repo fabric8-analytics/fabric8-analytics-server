@@ -23,6 +23,7 @@ import time
 from collections import namedtuple
 from typing import Dict, Set, List, Tuple
 from f8a_utils.dependency_finder import DependencyFinder
+from f8a_utils.tree_generator import GolangDependencyTreeGenerator
 from flask import g
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem, \
@@ -113,7 +114,7 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
             package = package.lower()
 
         if ecosystem == 'golang':
-            _, clean_version = DependencyFinder.clean_version(given_version)
+            _, clean_version = GolangDependencyTreeGenerator.clean_version(given_version)
 
         packages_list.append(
             {"name": package, "version": clean_version, 'given_version': given_version})
