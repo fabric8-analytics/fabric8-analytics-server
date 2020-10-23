@@ -42,8 +42,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.ACTOR }}
           password: ${{ secrets.CR_PAT }}
-      - name: Run Test
-        run: bash qa/runtest.sh 
       - name: Build Image
         run:   docker build --no-cache -t ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}} -f Dockerfile .
       - name: Push Image
