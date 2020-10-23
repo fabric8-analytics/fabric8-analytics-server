@@ -1,0 +1,79 @@
+name: CRDA Build and Push Image 
+on:
+  issue_comment:
+    types: [created]
+
+env:
+  REGISTRY:  ghcr.io
+  REPOSITORY: ${{ github.repository }}
+  DEFAULT_TAG: ${{ github.event.issue.number }}
+  FULL_NAME: bayesian-bayesian-api
+ 
+
+jobs:
+  Build-push-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch origin +refs/pull/${{ github.event.issue.number }}/merge
+          git checkout FETCH_HEAD
+      - name: Slash Command Dispatch
+        uses: peter-evans/slash-command-dispatch@v2
+        id: check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commands: |
+            build-image
+      - name: send comment 
+        env:
+          URL: ${{ github.event.issue.comments_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl \
+            -X POST \
+            $URL \
+            -H "Content-Type: application/json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            --data '{ "body": ":test_tube: [CI has Started Image Build]( https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"')" }'
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.ACTOR }}
+          password: ${{ secrets.CR_PAT }}
+      - name: Run Test
+        run: bash qa/runtest.sh 
+      - name: Build Image
+        run:   docker build --no-cache -t ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}} -f Dockerfile .
+      - name: Push Image
+        run: docker push ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}}
+      - name: Create success comment
+        if: success()
+        env:
+          URL: ${{ github.event.issue.comments_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTHOR: ${{ github.ACTOR }}
+          IMAGE_URL: ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}}
+        run: |
+          curl \
+            -X POST \
+            $URL \
+            -H "Content-Type: application/json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            --data '{ "body": ":v: [Image Build Successfull]( https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"') '"@$GITHUB_ACTOR"', Avaliable at: ```'"$IMAGE_URL"'``` " }'    
+      - name: Create fail comment
+        if: failure()
+
+        env:
+          URL: ${{ github.event.issue.comments_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl \
+            -X POST \
+            $URL \
+            -H "Content-Type: application/json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            --data '{ "body": ":facepalm: [Build and Push Image Failed]( https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"')" }'
+        
+     
