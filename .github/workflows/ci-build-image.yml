@@ -1,4 +1,4 @@
-name: CRDA Build and Push Image 
+name: CI Build / Push Image 
 on:
   issue_comment:
     types: [created]
