@@ -42,7 +42,9 @@ def create_or_update_user(user_id, snyk_api_token, user_source):
 
         do_update_stmt = insert_user_stmt.on_conflict_do_update(
             index_elements=['user_id'], set_=dict(snyk_api_token=snyk_api_token,
-                                                  updated_date=datetime.datetime.now()))
+                                                  status=UserStatus.REGISTERED.name,
+                                                  updated_date=datetime.datetime.now(),
+                                                  registered_date=datetime.datetime.now()))
         rdb.session.execute(do_update_stmt)
         rdb.session.commit()
         logger.info("User added with id %s", user_id)
