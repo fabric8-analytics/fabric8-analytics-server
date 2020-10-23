@@ -2,6 +2,7 @@
 import pytest
 from bayesian.utility.user_utils import UserNotFoundException
 from bayesian.utility import user_utils
+from f8a_utils.user_token_utils import UserStatus
 
 
 @pytest.fixture
@@ -31,6 +32,7 @@ class TestUserUtils:
         """Test case for create user."""
         user_utils.create_or_update_user('03ec8318-08ed-4aeb', 'abc', 'SNYK')
         assert user_utils.get_user('03ec8318-08ed-4aeb').snyk_api_token == 'abc'
+        assert user_utils.get_user('03ec8318-08ed-4aeb').status == UserStatus.REGISTERED.name
 
     @pytest.mark.usefixtures('create_user')
     def test_update_user(self):
@@ -38,3 +40,4 @@ class TestUserUtils:
         assert user_utils.get_user('03ec8318-08ed-4aeb').snyk_api_token == 'abc'
         user_utils.create_or_update_user('03ec8318-08ed-4aeb', 'def', 'SNYK')
         assert user_utils.get_user('03ec8318-08ed-4aeb').snyk_api_token == 'def'
+        assert user_utils.get_user('03ec8318-08ed-4aeb').status == UserStatus.REGISTERED.name
