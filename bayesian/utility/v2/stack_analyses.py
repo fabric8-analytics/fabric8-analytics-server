@@ -99,20 +99,33 @@ class StackAnalyses():
                                           'information') from e
 
     def _get_flat_dependency_tree(self):
-        """Get Flat dependency tree."""
+        """Get Flat dependency tree.
+
+        :returns:
+        save_in_rds: content to be saved in DB.
+        packages: Flat Package list to be pushed to Backbone.
+        """
         if self.params.ecosystem == 'golang':
             # List flattening is done at Golang frontend client.
-            deps = self._manifest_file_info
-            return deps, json.loads(
-                self._manifest_file_info.get('content', [])).get('packages', None)
+            deps = json.loads(self._manifest_file_info.get('content', []))
+            packages = deps.get('packages', None)
+            save_in_rds = {'result': [{'details': [{
+                'ecosystem': 'golang',
+                "manifest_file_path": self.params.file_path,
+                "manifest_file": self.params.manifest.filename,
+                "_resolved": packages
+            }]}]}
+            return save_in_rds, packages
 
         # Dependency finder
         d = DependencyFinder()
-        deps = d.scan_and_find_dependencies(
+        save_in_rds = d.scan_and_find_dependencies(
             self.params.ecosystem,
             [self._manifest_file_info],
             json.dumps(self.params.show_transitive))
-        return deps, deps.get('result', [{}])[0].get('details', [{}])[0].get('_resolved', None)
+        packages = save_in_rds.get(
+            'result', [{}])[0].get('details', [{}])[0].get('_resolved', None)
+        return save_in_rds, packages
 
     def _make_backbone_request(self):
         """Perform backbone request for stack_aggregator and recommender."""
