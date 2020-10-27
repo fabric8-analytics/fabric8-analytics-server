@@ -34,10 +34,3 @@ jobs:
         python-version: '3.6'
     - name: Run Unit Tests
       run: bash qa/runtest.sh
-    - name: Success comment
-      uses: unsplash/comment-on-pr@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        msg: "Unit Test(s) Successfull, To build a new image comment ```/build-image```"
-        check_for_duplicate_msg: true
