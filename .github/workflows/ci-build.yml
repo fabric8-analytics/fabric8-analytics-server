@@ -34,10 +34,3 @@ jobs:
         python-version: '3.6'
     - name: Run Unit Tests
       run: bash qa/runtest.sh
-    - uses: mshick/add-pr-comment@v1
-      with:
-        message: |
-          Unit Test(s) Successfull, To build a new image comment ```/build-image```
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        repo-token-user-login: 'github-actions[bot]'
-        allow-repeats: false
