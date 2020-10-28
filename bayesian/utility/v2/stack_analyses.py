@@ -73,17 +73,11 @@ class StackAnalyses():
 
     def _read_deps_and_packages(self):
         """Read dependencies and packages information from manifest file content."""
-        deps = {}
         packages = []
 
         try:
-            # Dependency finder
-            d = DependencyFinder()
-            deps = d.scan_and_find_dependencies(self.params.ecosystem, [self._manifest_file_info],
-                                                json.dumps(self.params.show_transitive))
-
+            deps, resolved = self._get_flat_dependency_tree()
             # Build package details.
-            resolved = deps.get('result', [{}])[0].get('details', [{}])[0].get('_resolved', None)
             if resolved is not None:
                 for p in resolved:
                     packages.append({
@@ -103,6 +97,35 @@ class StackAnalyses():
                              self._new_request_id, str(e))
             raise SAInvalidInputException('Unknown error while parsing dependencies '
                                           'information') from e
+
+    def _get_flat_dependency_tree(self):
+        """Get Flat dependency tree.
+
+        :returns:
+        save_in_rds: content to be saved in DB.
+        packages: Flat Package list to be pushed to Backbone.
+        """
+        if self.params.ecosystem == 'golang':
+            # List flattening is done at Golang frontend client.
+            deps = json.loads(self._manifest_file_info.get('content', []))
+            packages = deps.get('packages', None)
+            save_in_rds = {'result': [{'details': [{
+                'ecosystem': 'golang',
+                "manifest_file_path": self.params.file_path,
+                "manifest_file": self.params.manifest.filename,
+                "_resolved": packages
+            }]}]}
+            return save_in_rds, packages
+
+        # Dependency finder
+        d = DependencyFinder()
+        save_in_rds = d.scan_and_find_dependencies(
+            self.params.ecosystem,
+            [self._manifest_file_info],
+            json.dumps(self.params.show_transitive))
+        packages = save_in_rds.get(
+            'result', [{}])[0].get('details', [{}])[0].get('_resolved', None)
+        return save_in_rds, packages
 
     def _make_backbone_request(self):
         """Perform backbone request for stack_aggregator and recommender."""
