@@ -3,7 +3,7 @@ FROM registry.centos.org/centos/centos:7
 ENV LANG=en_US.UTF-8 \
     F8A_WORKER_VERSION=4e822f7 \
     F8A_AUTH_VERSION=5211e23 \
-    F8A_UTILS=e1a0e9f
+    F8A_UTILS=29dba86
 
 RUN useradd -d /coreapi coreapi
 

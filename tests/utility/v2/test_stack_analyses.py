@@ -114,3 +114,32 @@ class TestStackAnalyses(unittest.TestCase):
             self.assertIn('status', response)
             self.assertEqual(response['status'], 'success')
             self.assertIn('id', response)
+
+    def test_get_flat_dependency_tree(self):
+        """Test Get Flat Dependency tree."""
+        with open(str(Path(__file__).parent.parent.parent) +
+                  '/data/manifests/golist2.json', 'rb') as fp:
+            fs = FileStorage(stream=fp, filename='golist.json')
+            sa_post_request = StackAnalysesPostRequest(manifest=fs, file_path='/tmp/bin',
+                                                       ecosystem='golang', show_transitive=True)
+            sa = StackAnalyses(sa_post_request)
+            sa._manifest_file_info = {
+                'filename': sa.params.manifest.filename,
+                'filepath': sa.params.file_path,
+                'content': sa.params.manifest.read().decode('utf-8')
+            }
+            save_in_db, packages = sa._get_flat_dependency_tree()
+            assert isinstance(save_in_db, dict)
+            assert isinstance(save_in_db['result'], list)
+            assert isinstance(save_in_db['result'][0]['details'], list)
+            assert isinstance(save_in_db['result'][0]['details'][0], dict)
+            assert isinstance(save_in_db['result'][0]['details'][0]['_resolved'], list)
+            assert isinstance(save_in_db['result'][0]['details'][0]['_resolved'], list)
+            assert isinstance(save_in_db['result'][0]['details'][0]['_resolved'][0], dict)
+            assert save_in_db['result'][0]['details'][0]['_resolved'][0]['package'], \
+                'github.com/thoughtworks/talisman'
+            assert save_in_db['result'][0]['details'][0]['_resolved'][0]['version'], '0.3.3'
+            assert isinstance(save_in_db['result'][0]['details'][0]['_resolved'][0]['deps'], list)
+            assert save_in_db['result'][0]['details'][0]['_resolved'][0]['deps'][0]['package'], \
+                'github.com/hashicorp/vault/vault'
+            assert isinstance(packages, list)
