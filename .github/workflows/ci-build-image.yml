@@ -1,7 +1,7 @@
 name: CI Build / Push Image 
 on:
   repository_dispatch:
-    types: [Build-image-command]
+    types: [build-image-command]
 
 env:
   REGISTRY:  ghcr.io
