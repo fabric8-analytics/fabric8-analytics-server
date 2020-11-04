@@ -18,17 +18,12 @@ jobs:
       - run: |
           git fetch origin +refs/pull/${{ github.event.client_payload.github.payload.issue.number }}/merge
           git checkout FETCH_HEAD
-      - name: send comment 
-        env:
-          URL: ${{ github.event.client_payload.github.payload.issue.comments_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl \
-            -X POST \
-            $URL \
-            -H "Content-Type: application/json" \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            --data '{ "body": ":test_tube: [CI has Started Image Build]( https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"')" }'
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: |
+            :test_tube: [CI has Started Image Build]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})" }'
       - name: Login to Github Container Registry
         uses: docker/login-action@v1
         with:
@@ -41,30 +36,19 @@ jobs:
         run: docker push ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}}
       - name: Create success comment
         if: success()
+        uses: peter-evans/create-or-update-comment@v1
         env:
-          URL: ${{ github.event.client_payload.github.payload.issue.comments_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          AUTHOR: ${{ github.event.client_payload.github.actor }}
           IMAGE_URL: ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}}
-        run: |
-          curl \
-            -X POST \
-            $URL \
-            -H "Content-Type: application/json" \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            --data '{ "body": ":v: [Image Build Successfull]( https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"') '"@$GITHUB_ACTOR"', Avaliable at: ```'"$IMAGE_URL"'``` " }'    
+        with:
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: |
+           :v: [Image Build Successfull]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}) @${{github.actor}}, Avaliable at: ```${{ env.IMAGE_URL }}``` 
+  
       - name: Create fail comment
         if: failure()
-
-        env:
-          URL: ${{ github.event.client_payload.github.payload.issue.comments_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl \
-            -X POST \
-            $URL \
-            -H "Content-Type: application/json" \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            --data '{ "body": ":facepalm: [Build and Push Image Failed]( https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"')" }'
-        
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: |
+           :facepalm: [Build and Push Image Failed]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})
      
