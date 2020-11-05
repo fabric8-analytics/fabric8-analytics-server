@@ -59,7 +59,7 @@ class TestComponentAnalyses(unittest.TestCase):
     @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
     def test_get_known_unknown_pkgs_no_cve(self, _mock1, _mock2):
         """Test Known Unknown Pkgs, No Cve."""
-        normalised_input_pkgs = [normlize_packages('markdown2', "2.3.2", "2.3.2")]
+        normalised_input_pkgs = [normlize_packages('markdown2', "2.3.2", "2.3.2", False)]
         batch_data_no_cve = os.path.join('/bayesian/tests/data/gremlin/batch_data_no_cve.json')
         with open(batch_data_no_cve) as f:
             gremlin_batch_data_no_cve = json.load(f)
@@ -79,7 +79,7 @@ class TestComponentAnalyses(unittest.TestCase):
     def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1, _mock2, _mock3):
         """Test Known Unknown Pkgs, with and Without CVE."""
         input_pkgs = [('flask', "1.1.1", "1.1.1"), ('django', "1.1.1", "1.1.1")]
-        normalised_input_pkgs = [normlize_packages(pkg, vr, gvn_vr)
+        normalised_input_pkgs = [normlize_packages(pkg, vr, gvn_vr, False)
                                  for pkg, vr, gvn_vr in input_pkgs]
         batch_data_no_cve = os.path.join(
             '/bayesian/tests/data/gremlin/batch_data_with_n_without_cve.json')
@@ -157,6 +157,38 @@ class TestCAInputValidator(unittest.TestCase):
             ]
         }
         ideal_result = [
-            {"name": "com.thoughtworks.xstream:xstream", "version": "1.3", "given_version": "1.3"}]
+            {"name": "com.thoughtworks.xstream:xstream", "version": "1.3",
+             "given_version": "1.3", "is_pseudo_version": False}]
         result, _ = ca_validate_input(input_json, input_json["ecosystem"])
         self.assertEqual(result, ideal_result)
+
+    def test_ca_validate_input_golang(self):
+        """Test Ca Validate input: Ecosystem golang."""
+        input_json = {
+            "ecosystem": "golang",
+            "package_versions": [
+                {"package": "github.com/cmp/cmp-opt", "version": "v1.2.4"},
+                {"package": "github.com/cmp/version", "version": "v1.2.4+incompatible"},
+                {"package": "github.com/str/cmp", "version": "v0.0.0-20201010080808-abcd1234abcd"},
+                {"package": "github.com/str/extract", "version": "v1.0.5-alpha1.5"},
+                {"package": "github.com/str/merge", "version": "v3.4.5-alpha1.2+incompatible"},
+            ]
+        }
+        ideal_result = [
+            {"name": "github.com/cmp/cmp-opt", "version": "1.2.4",
+             "given_version": "v1.2.4", "is_pseudo_version": False},
+            {"name": "github.com/cmp/version", "version": "1.2.4",
+             "given_version": "v1.2.4+incompatible", "is_pseudo_version": False},
+            {"name": "github.com/str/cmp", "version": "0.0.0-20201010080808-abcd1234abcd",
+             "given_version": "v0.0.0-20201010080808-abcd1234abcd", "is_pseudo_version": True},
+            {"name": "github.com/str/extract", "version": "1.0.5-alpha1.5",
+             "given_version": "v1.0.5-alpha1.5", "is_pseudo_version": False},
+            {"name": "github.com/str/merge", "version": "3.4.5-alpha1.2",
+             "given_version": "v3.4.5-alpha1.2+incompatible", "is_pseudo_version": False}
+        ]
+        result, _ = ca_validate_input(input_json, input_json["ecosystem"])
+        self.assertEqual(result, ideal_result)
+
+
+class TestGetBatchCAData(unittest.TestCase):
+    """Test get CA batch data."""

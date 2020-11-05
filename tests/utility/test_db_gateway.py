@@ -83,6 +83,24 @@ class GraphAnalysesTest(unittest.TestCase):
         self.assertIn('status', ga)
         self.assertIsInstance(ga.get('status'), dict)
 
+    @patch('bayesian.utility.db_gateway.post')
+    def test_get_batch_ca_data_for_golang(self, _mockpost):
+        """Test get_batch_ca_data for golang."""
+        _mockpost().json.return_value = self.gremlin_batch
+        ga = GraphAnalyses.get_batch_ca_data(
+            ecosystem='golang', packages=[
+                {'name': 'github.com/cmp/cmp-opt', 'version': '1.2.4',
+                 'is_pseudo_version': False},
+                {'name': 'github.com/str/cmp', 'version': '0.0.0-20201010080808-abcd1234abcd',
+                 'is_pseudo_version': True}])
+        self.assertIsInstance(ga, dict)
+        self.assertIn('result', ga)
+        self.assertIsInstance(ga.get('result'), dict)
+        self.assertIn('requestId', ga)
+        self.assertIsInstance(ga.get('requestId'), str)
+        self.assertIn('status', ga)
+        self.assertIsInstance(ga.get('status'), dict)
+
     @patch('bayesian.utility.db_gateway.post', return_value=Exception)
     def test_get_batch_ca_data_exception(self, _mockpost):
         """Test get_batch_ca_data_exception."""

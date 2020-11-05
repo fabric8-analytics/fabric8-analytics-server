@@ -17,6 +17,7 @@
 """All communications with Graph DB and RDS from API v2 are done here."""
 
 import os
+import re
 import json
 import time
 import logging
@@ -24,6 +25,7 @@ from datetime import datetime
 from requests import post
 from bayesian import rdb
 from bayesian.utils import fetch_sa_request, retrieve_worker_result
+from f8a_utils.gh_utils import GithubUtils
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
@@ -54,6 +56,14 @@ class GraphAnalyses:
             .dedup().as('package').select('package', 'version', 'cve')
             .by(valueMap()).by(valueMap()).by(out('has_snyk_cve')
             .valueMap().fold()).fill(epv);};epv;
+            """
+
+    ca_batch_vuln_query = """
+            g.V().has('snyk_ecosystem', ecosystem).has('package_name', within(packages)).valueMap()
+            """
+
+    ca_batch_package_query = """
+            g.V().has('ecosystem', ecosystem).has('name', within(packages)).valueMap()
             """
 
     @classmethod
@@ -97,6 +107,80 @@ class GraphAnalyses:
         elapsed_time = time.time() - started_at
         logger.info("It took %s to fetch results from Gremlin.", elapsed_time)
         return response.json()
+
+    @classmethod
+    def get_batch_ca_data_for_pseudo_version(cls, ecosystem: str, packages) -> dict:
+        """Component analyses batch call only for pseudo version applicable for golang."""
+        logger.debug('Executing get_batch_ca_data_for_pseudo_version')
+
+        filter_packages = set()
+        package_version_map = {}
+        for pckg in packages:
+            package_name = pckg['name'].split('@')[0]
+            filter_packages.append(package_name)
+            package_version_map[package_name] = pckg["version"]
+
+        payload = {
+            'gremlin': cls.ca_batch_vuln_query,
+            'bindings': {
+                'ecosystem': ecosystem,
+                'packages': list(filter_packages)
+            }
+        }
+        started_at = time.time()
+        vuln_response = post(url=gremlin_url, data=json.dumps(payload))
+        vuln_response.raise_for_status()
+        elapsed_time = time.time() - started_at
+        logger.info("It took %s to fetch vuln results from Gremlin.", elapsed_time)
+
+        vulnerabilities = {}
+        gh = GithubUtils()
+        for vuln in vuln_response.get('result', {}).get('data', []):
+            package_name = vuln['package_name'][0]
+            if gh._is_commit_date_in_vuln_range(
+               GraphAnalyses.extract_timestamp(
+                   package_version_map[package_name]), vuln['vuln_commit_date_rules'][0]):
+                if package_name not in vulnerabilities:
+                    vulnerabilities[package_name] = []
+                vulnerabilities[package_name].append(vuln)
+
+        payload = {
+            'gremlin': cls.ca_batch_package_query,
+            'bindings': {
+                'ecosystem': ecosystem,
+                'packages': list(vulnerabilities.keys())
+            }
+        }
+        started_pckg_at = time.time()
+        pckg_response = post(url=gremlin_url, data=json.dumps(payload))
+        pckg_response.raise_for_status()
+        elapsed_time = time.time() - started_pckg_at
+        logger.info("It took %s to fetch pckg results from Gremlin.", elapsed_time)
+
+        data = []
+        for pckg in pckg_response.get('result', {}).get('data', []):
+            data.append({
+                'package': pckg,
+                'version': {},
+                'vuln': vulnerabilities.get(pckg['name'][0], [])
+            })
+
+        # Replace data with new data with vuln + package.
+        pckg_response['result']['data'] = data
+
+        elapsed_time = time.time() - started_at
+        logger.info("It took %s to fetch pseudo version results.", elapsed_time)
+
+        return pckg_response.json()
+
+    @classmethod
+    def extract_timestamp(cls, in_string: str) -> str:
+        """Extract timestamp value YYYYMMDDHHMMSS from given string."""
+        timestamp = re.findall(r'\d{14}', in_string)
+        if len(timestamp) > 0:
+            return timestamp[0]
+
+        return None
 
 
 class RdbAnalyses:
