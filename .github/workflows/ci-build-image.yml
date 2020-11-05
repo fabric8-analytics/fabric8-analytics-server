@@ -6,7 +6,7 @@ on:
 env:
   REGISTRY:  ghcr.io
   REPOSITORY: ${{ github.event.client_payload.github.payload.repository.full_name }}
-  DEFAULT_TAG: ${{ github.event.client_payload.github.payload.issue.number }}
+  DEFAULT_TAG: SNAPSHOT-PR-${{ github.event.client_payload.github.payload.issue.number }}
   FULL_NAME: bayesian-bayesian-api
  
 
