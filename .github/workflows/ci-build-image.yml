@@ -23,7 +23,7 @@ jobs:
         with:
           issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
           body: |
-            :test_tube: [CI has Started Image Build]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})" }'
+            :test_tube: [CI has Started Image Build]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})
       - name: Login to Github Container Registry
         uses: docker/login-action@v1
         with:
@@ -42,7 +42,7 @@ jobs:
         with:
           issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
           body: |
-           :v: [Image Build Successfull]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}) @${{github.actor}}, Avaliable at: ```${{ env.IMAGE_URL }}``` 
+           :v: [Image Build Successfull]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}) @${{github.event.client_payload.github.actor}}, Avaliable at: ```${{ env.IMAGE_URL }}``` 
   
       - name: Create fail comment
         if: failure()
