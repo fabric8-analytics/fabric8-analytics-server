@@ -119,7 +119,7 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
 
         if ecosystem == 'golang':
             _, clean_version = GolangDependencyTreeGenerator.clean_version(given_version)
-            pseudo_version = is_pseudo_version(ecosystem, clean_version)
+            pseudo_version = is_pseudo_version(clean_version)
 
         packages_list.append(
             {"name": package, "version": clean_version, "given_version": given_version,
@@ -183,7 +183,7 @@ def get_known_unknown_pkgs(
     for package in graph_response.get('result', {}).get('data'):
         pkg_name = package.get('package').get('name', [''])[0]
         clean_version = package.get('version').get('version', [''])[0]
-        pseudo_version = is_pseudo_version(ecosystem, clean_version)
+        pseudo_version = is_pseudo_version(clean_version) if ecosystem == 'golang' else False
         given_pkg_version = get_version(pkg_name, clean_version, normalised_input_pkg_map)
         pkg_recomendation = CABatchResponseBuilder(ecosystem). \
             generate_recommendation(package, given_pkg_version)
@@ -227,15 +227,11 @@ def add_unknown_pkg_info(stack_recommendation: List, unknown_pkgs: Set[Package])
     return stack_recommendation
 
 
-def is_pseudo_version(ecosystem: str, version: str) -> bool:
-    """Check if given version is a pseudo version for golang ecosystem.
+def is_pseudo_version(version: str) -> bool:
+    """Check if given version is a pseudo version.
 
-    :param ecosystem: str
     :param version: str - clean package version.
     :return: True is its pseudo version for golang otherwise False.
     """
-    if ecosystem == "golang":
-        # It is pseudo if contains 14 numeric timestamp and 12 digits commit hash.
-        return len(re.findall(r'(\d{14}|[0-9a-zA-Z]{12})', version)) == 2
-
-    return False
+    # It is pseudo if contains 14 numeric timestamp and 12 digits commit hash.
+    return len(re.findall(r'(\d{14}-[0-9a-zA-Z]{12})', version)) == 1

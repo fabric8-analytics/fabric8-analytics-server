@@ -58,11 +58,11 @@ class GraphAnalyses:
             .valueMap().fold()).fill(epv);};epv;
             """
 
-    ca_batch_vuln_query = """
+    get_vuln_query = """
             g.V().has('snyk_ecosystem', ecosystem).has('package_name', within(packages)).valueMap()
             """
 
-    ca_batch_package_query = """
+    get_package_query = """
             g.V().has('ecosystem', ecosystem).has('name', within(packages)).valueMap()
             """
 
@@ -109,54 +109,85 @@ class GraphAnalyses:
         return response.json()
 
     @classmethod
+    def get_vulnerabilities_for_packages(cls, ecosystem: str, packages) -> dict:
+        """Get vulnerabilities for given packages."""
+        logger.debug('Executing get_vulnerabilities_for_packages')
+
+        payload = {
+            'gremlin': cls.get_vuln_query,
+            'bindings': {
+                'ecosystem': ecosystem,
+                'packages': packages
+            }
+        }
+        started_at = time.time()
+        response = post(url=gremlin_url, data=json.dumps(payload))
+        response.raise_for_status()
+        elapsed_time = time.time() - started_at
+        logger.info("It took %s to fetch vuln results from Gremlin.", elapsed_time)
+
+        return response.json()
+
+    @classmethod
+    def get_package_details(cls, ecosystem: str, packages) -> dict:
+        """Get vulnerabilities for given packages."""
+        logger.debug('Executing get_package_details')
+
+        payload = {
+            'gremlin': cls.get_package_query,
+            'bindings': {
+                'ecosystem': ecosystem,
+                'packages': packages
+            }
+        }
+        started_at = time.time()
+        response = post(url=gremlin_url, data=json.dumps(payload))
+        response.raise_for_status()
+        elapsed_time = time.time() - started_at
+        logger.info("It took %s to fetch pckg results from Gremlin.", elapsed_time)
+
+        return response.json()
+
+    @classmethod
+    def filter_vulnerable_packages(vulnerabilities, package_version_map) -> dict:
+        """Filter vulnerable package based on timestamp in pseudo version."""
+        logger.debug('Executing filter_vulnerable_packages')
+
+        filter_vulnerabilities = {}
+        gh = GithubUtils()
+        for vuln in vulnerabilities:
+            package_name = vuln['package_name'][0]
+            if gh._is_commit_date_in_vuln_range(
+               GraphAnalyses.extract_timestamp(
+                   package_version_map[package_name]), vuln['vuln_commit_date_rules'][0]):
+                if package_name not in filter_vulnerabilities:
+                    filter_vulnerabilities[package_name] = []
+                filter_vulnerabilities[package_name].append(vuln)
+
+        return filter_vulnerabilities
+
+    @classmethod
     def get_batch_ca_data_for_pseudo_version(cls, ecosystem: str, packages) -> dict:
         """Component analyses batch call only for pseudo version applicable for golang."""
         logger.debug('Executing get_batch_ca_data_for_pseudo_version')
+        started_at = time.time()
 
+        # Build unique package list and package -> version map.
         filter_packages = set()
         package_version_map = {}
         for pckg in packages:
             package_name = pckg['name'].split('@')[0]
             filter_packages.append(package_name)
-            package_version_map[package_name] = pckg["version"]
+            package_version_map[package_name] = pckg['version']
 
-        payload = {
-            'gremlin': cls.ca_batch_vuln_query,
-            'bindings': {
-                'ecosystem': ecosystem,
-                'packages': list(filter_packages)
-            }
-        }
-        started_at = time.time()
-        vuln_response = post(url=gremlin_url, data=json.dumps(payload))
-        vuln_response.raise_for_status()
-        elapsed_time = time.time() - started_at
-        logger.info("It took %s to fetch vuln results from Gremlin.", elapsed_time)
+        vuln_response = GraphAnalyses.get_vulnerabilities_for_packages(
+            ecosystem, list(filter_packages))
+        vulnerabilities = GraphAnalyses.filter_vulnerable_packages(
+            vuln_response.get('result', {}).get('data', []), package_version_map)
+        pckg_response = GraphAnalyses.get_package_details(
+            ecosystem, list(vulnerabilities.keys()))
 
-        vulnerabilities = {}
-        gh = GithubUtils()
-        for vuln in vuln_response.get('result', {}).get('data', []):
-            package_name = vuln['package_name'][0]
-            if gh._is_commit_date_in_vuln_range(
-               GraphAnalyses.extract_timestamp(
-                   package_version_map[package_name]), vuln['vuln_commit_date_rules'][0]):
-                if package_name not in vulnerabilities:
-                    vulnerabilities[package_name] = []
-                vulnerabilities[package_name].append(vuln)
-
-        payload = {
-            'gremlin': cls.ca_batch_package_query,
-            'bindings': {
-                'ecosystem': ecosystem,
-                'packages': list(vulnerabilities.keys())
-            }
-        }
-        started_pckg_at = time.time()
-        pckg_response = post(url=gremlin_url, data=json.dumps(payload))
-        pckg_response.raise_for_status()
-        elapsed_time = time.time() - started_pckg_at
-        logger.info("It took %s to fetch pckg results from Gremlin.", elapsed_time)
-
+        # Merge the package and vunlerability data into response.
         data = []
         for pckg in pckg_response.get('result', {}).get('data', []):
             data.append({
@@ -164,8 +195,6 @@ class GraphAnalyses:
                 'version': {},
                 'vuln': vulnerabilities.get(pckg['name'][0], [])
             })
-
-        # Replace data with new data with vuln + package.
         pckg_response['result']['data'] = data
 
         elapsed_time = time.time() - started_at
