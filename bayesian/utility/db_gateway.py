@@ -149,7 +149,7 @@ class GraphAnalyses:
         return response.json()
 
     @classmethod
-    def filter_vulnerable_packages(vulnerabilities, package_version_map) -> dict:
+    def filter_vulnerable_packages(cls, vulnerabilities: list, package_version_map: dict) -> dict:
         """Filter vulnerable package based on timestamp in pseudo version."""
         logger.debug('Executing filter_vulnerable_packages')
 
@@ -177,7 +177,7 @@ class GraphAnalyses:
         package_version_map = {}
         for pckg in packages:
             package_name = pckg['name'].split('@')[0]
-            filter_packages.append(package_name)
+            filter_packages.add(package_name)
             package_version_map[package_name] = pckg['version']
 
         vuln_response = GraphAnalyses.get_vulnerabilities_for_packages(
@@ -200,7 +200,7 @@ class GraphAnalyses:
         elapsed_time = time.time() - started_at
         logger.info("It took %s to fetch pseudo version results.", elapsed_time)
 
-        return pckg_response.json()
+        return pckg_response
 
     @classmethod
     def extract_timestamp(cls, in_string: str) -> str:

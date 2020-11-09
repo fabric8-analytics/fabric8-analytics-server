@@ -132,8 +132,9 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
 def get_batch_ca_data(ecosystem: str, packages) -> dict:
     """Fetch package details for component analyses."""
     logger.debug('Executing get_batch_ca_data')
+    started_at = time.time()
 
-    aggregated_response = {}
+    response = None
     semver_packages = []
     pseudo_version_packages = []
 
@@ -147,20 +148,23 @@ def get_batch_ca_data(ecosystem: str, packages) -> dict:
     else:
         semver_packages = packages
 
-    started_at = time.time()
+    print("semver_packages",semver_packages,'pseudo_version_packages',pseudo_version_packages)
     if len(semver_packages) > 0:
-        aggregated_response = GraphAnalyses.get_batch_ca_data(ecosystem, semver_packages)
+        response = GraphAnalyses.get_batch_ca_data(ecosystem, semver_packages)
 
     if len(pseudo_version_packages) > 0:
         pseudo_response = GraphAnalyses.get_batch_ca_data_for_pseudo_version(
             ecosystem, pseudo_version_packages)
         # Merge both data into one.
-        aggregated_response['result']['data'] += pseudo_response['result']['data']
+        if response:
+            response['result']['data'] += pseudo_response['result']['data']
+        else:
+            response = pseudo_response
 
     elapsed_time = time.time() - started_at
     logger.info("It took %s to fetch results from Gremlin.", elapsed_time)
 
-    return aggregated_response
+    return response if response else {}
 
 
 def get_known_unknown_pkgs(

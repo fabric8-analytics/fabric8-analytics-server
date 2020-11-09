@@ -23,7 +23,8 @@ from unittest.mock import patch
 from werkzeug.exceptions import BadRequest
 
 from bayesian.utility.v2.component_analyses import validate_version, \
-    known_package_flow, ca_validate_input, get_known_unknown_pkgs, normlize_packages
+    known_package_flow, ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
+    get_batch_ca_data
 
 
 class TestComponentAnalyses(unittest.TestCase):
@@ -192,3 +193,84 @@ class TestCAInputValidator(unittest.TestCase):
 
 class TestGetBatchCAData(unittest.TestCase):
     """Test get CA batch data."""
+    
+    @classmethod
+    def setUpClass(cls):
+        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
+        ca_batch_response = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
+
+        with open(gremlin_batch_data) as f:
+            cls.gremlin_batch = json.load(f)
+
+        with open(ca_batch_response) as f:
+            cls.batch_response = json.load(f)
+
+    def test_get_batch_ca_data_empty(self):
+        """Test Ca batch data."""
+        result = get_batch_ca_data('golang', [])
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result, {})
+
+    @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.get_batch_ca_data')
+    def test_get_batch_ca_data_semver(self, _mockca):
+        """Test Ca batch data."""
+        _mockca.return_value = self.gremlin_batch
+        packages = [{
+            'name': 'django', 
+            'version': '1.1',
+            'given_version': '1.1',
+            'is_pseudo_version': False
+        }]
+        result = get_batch_ca_data('pypi', packages)
+        self.assertIsInstance(result, dict)
+        self.assertIn('result', result)
+        self.assertIsInstance(result.get('result'), dict)
+        self.assertIn('requestId', result)
+        self.assertIsInstance(result.get('requestId'), str)
+        self.assertIn('status', result)
+        self.assertIsInstance(result.get('status'), dict)
+
+    @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.get_batch_ca_data_for_pseudo_version')
+    def test_get_batch_ca_data_pseudo_version(self, _mockca):
+        """Test Ca batch data."""
+        _mockca.return_value = self.gremlin_batch
+        packages = [{
+            'name': 'github.com/crda/test/package1',
+            'version': '0.0.0-20180902000632-abcd4321dcba', 
+            'given_version': 'v0.0.0-20180902000632-abcd4321dcba',
+            'is_pseudo_version': True
+        }]
+        result = get_batch_ca_data('golang', packages)
+        self.assertIsInstance(result, dict)
+        self.assertIn('result', result)
+        self.assertIsInstance(result.get('result'), dict)
+        self.assertIn('requestId', result)
+        self.assertIsInstance(result.get('requestId'), str)
+        self.assertIn('status', result)
+        self.assertIsInstance(result.get('status'), dict)
+
+    @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.get_batch_ca_data')
+    @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.get_batch_ca_data_for_pseudo_version')
+    def test_get_batch_ca_data_both(self, _mocksemver, _mockpseudo):
+        """Test Ca batch data."""
+        _mocksemver.return_value = self.gremlin_batch
+        _mockpseudo.return_value = self.gremlin_batch
+        packages = [{
+            'name': 'django', 
+            'version': '1.1',
+            'given_version': '1.1',
+            'is_pseudo_version': False
+            }, {
+            'name': 'github.com/crda/test/package1',
+            'version': '0.0.0-20180902000632-abcd4321dcba', 
+            'given_version': 'v0.0.0-20180902000632-abcd4321dcba',
+            'is_pseudo_version': True
+        }]
+        result = get_batch_ca_data('golang', packages)
+        self.assertIsInstance(result, dict)
+        self.assertIn('result', result)
+        self.assertIsInstance(result.get('result'), dict)
+        self.assertIn('requestId', result)
+        self.assertIsInstance(result.get('requestId'), str)
+        self.assertIn('status', result)
+        self.assertIsInstance(result.get('status'), dict)

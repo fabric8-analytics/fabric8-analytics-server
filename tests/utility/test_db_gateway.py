@@ -38,6 +38,8 @@ class GraphAnalysesTest(unittest.TestCase):
         cls.pkg = 'pkg'
         # Read Vendor Data from JSON.
         gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
+        gremlin_vulnerabilities_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_vulnerabilities.json')
+        gremlin_package_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_packages.json')
         ca_batch_response = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
 
         with open(ca_batch_response) as f:
@@ -45,6 +47,12 @@ class GraphAnalysesTest(unittest.TestCase):
 
         with open(gremlin_batch_data) as f:
             cls.gremlin_batch = json.load(f)
+
+        with open(gremlin_vulnerabilities_data) as f:
+            cls.gremlin_vulnerabilities = json.load(f)
+
+        with open(gremlin_package_data) as f:
+            cls.gremlin_packages = json.load(f)
 
         # Read Vendor Data from JSON.
         rest_json_path2 = os.path.join(
@@ -83,16 +91,22 @@ class GraphAnalysesTest(unittest.TestCase):
         self.assertIn('status', ga)
         self.assertIsInstance(ga.get('status'), dict)
 
+    @patch('bayesian.utility.db_gateway.post', return_value=Exception)
+    def test_get_batch_ca_data_exception(self, _mockpost):
+        """Test get_batch_ca_data_exception."""
+        self.assertRaises(Exception, GraphAnalyses.get_batch_ca_data,
+                          'eco', packages=[{'name': 'django', 'version': '1.1'}],
+                          query_key='ca_batch')
+
     @patch('bayesian.utility.db_gateway.post')
-    def test_get_batch_ca_data_for_golang(self, _mockpost):
-        """Test get_batch_ca_data for golang."""
-        _mockpost().json.return_value = self.gremlin_batch
-        ga = GraphAnalyses.get_batch_ca_data(
-            ecosystem='golang', packages=[
-                {'name': 'github.com/cmp/cmp-opt', 'version': '1.2.4',
-                 'is_pseudo_version': False},
-                {'name': 'github.com/str/cmp', 'version': '0.0.0-20201010080808-abcd1234abcd',
-                 'is_pseudo_version': True}])
+    def test_get_vulnerabilities_for_packages(self, _mockpost):
+        """Test vulnerabilities query for packages from gremlin."""
+        _mockpost().json.return_value = self.gremlin_vulnerabilities
+        packages = [{
+                'name': 'github.com/crda/test/package1', 
+                'version': 'v0.0.0-20180902000632-abcd4321dcba'
+        }]
+        ga = GraphAnalyses.get_vulnerabilities_for_packages('eco', packages)
         self.assertIsInstance(ga, dict)
         self.assertIn('result', ga)
         self.assertIsInstance(ga.get('result'), dict)
@@ -101,12 +115,94 @@ class GraphAnalysesTest(unittest.TestCase):
         self.assertIn('status', ga)
         self.assertIsInstance(ga.get('status'), dict)
 
-    @patch('bayesian.utility.db_gateway.post', return_value=Exception)
-    def test_get_batch_ca_data_exception(self, _mockpost):
-        """Test get_batch_ca_data_exception."""
-        self.assertRaises(Exception, GraphAnalyses.get_batch_ca_data,
-                          'eco', packages=[{'name': 'django', 'version': '1.1'}],
-                          query_key='ca_batch')
+    @patch('bayesian.utility.db_gateway.post')
+    def test_get_vulnerabilities_for_module(self, _mockpost):
+        """Test vulnerabilities query for modules from gremlin."""
+        _mockpost().json.return_value = self.gremlin_vulnerabilities
+        packages = [{
+                'name': 'github.com/crda/test', 
+                'version': 'v0.0.0-20160902000632-abcd4321dcba'
+        }]
+        ga = GraphAnalyses.get_vulnerabilities_for_packages('eco', packages)
+        self.assertIsInstance(ga, dict)
+        self.assertIn('result', ga)
+        self.assertIsInstance(ga.get('result'), dict)
+        self.assertIn('requestId', ga)
+        self.assertIsInstance(ga.get('requestId'), str)
+        self.assertIn('status', ga)
+        self.assertIsInstance(ga.get('status'), dict)
+
+    @patch('bayesian.utility.db_gateway.post')
+    def test_get_package_details(self, _mockpost):
+        """Test package details query from gremlin."""
+        _mockpost().json.return_value = self.gremlin_packages
+        packages = [{
+                'name': 'github.com/crda/test/package1', 
+                'version': 'v0.0.0-20180902000632-abcd4321dcba'
+        }]
+        ga = GraphAnalyses.get_package_details('eco', packages)
+        self.assertIsInstance(ga, dict)
+        self.assertIn('result', ga)
+        self.assertIsInstance(ga.get('result'), dict)
+        self.assertIn('requestId', ga)
+        self.assertIsInstance(ga.get('requestId'), str)
+        self.assertIn('status', ga)
+        self.assertIsInstance(ga.get('status'), dict)
+
+    @patch('bayesian.utility.db_gateway.post')
+    def test_get_module_package_data(self, _mockpost):
+        """Test module details query from gremlin."""
+        _mockpost().json.return_value = self.gremlin_packages
+        packages = [{
+                'name': 'github.com/crda/test', 
+                'version': 'v0.0.0-20160902000632-abcd4321dcba'
+        }]
+        ga = GraphAnalyses.get_package_details('eco', packages)
+        self.assertIsInstance(ga, dict)
+        self.assertIn('result', ga)
+        self.assertIsInstance(ga.get('result'), dict)
+        self.assertIn('requestId', ga)
+        self.assertIsInstance(ga.get('requestId'), str)
+        self.assertIn('status', ga)
+        self.assertIsInstance(ga.get('status'), dict)
+
+    def test_filter_vulnerable_packages(self):
+        """Test vuln filtering for module/packages."""
+        vulnerabilities = self.gremlin_vulnerabilities.get('result', {}).get('data', [])
+        package_version_map = {
+            'github.com/crda/test': 'v0.0.0-20160902000632-abcd4321dcba',
+            'github.com/crda/test/package1': 'v0.0.0-20180902000632-abcd4321dcba',
+            'github.com/crda/test/package2': 'v0.0.0-20181002000632-abcd4321dcba',
+            'github.com/crda/test2': 'v0.0.0-20161002000632-abcd4321dcba'
+        }
+        vuln = GraphAnalyses.filter_vulnerable_packages(vulnerabilities, package_version_map)
+        self.assertIsInstance(vuln, dict)
+        self.assertEqual(len(vuln), 2)
+        self.assertIn('github.com/crda/test', vuln)
+        self.assertIn('github.com/crda/test/package1', vuln)
+        self.assertIsInstance(vuln.get('github.com/crda/test/package1'), list)
+        self.assertEqual(len(vuln.get('github.com/crda/test/package1')), 1)
+
+    @patch('bayesian.utility.db_gateway.GraphAnalyses.get_vulnerabilities_for_packages')
+    @patch('bayesian.utility.db_gateway.GraphAnalyses.get_package_details')
+    def test_get_batch_ca_data_for_pseudo_version(self, _mockpckg, _mockvuln):
+        """Test pseudo version gremlin query."""
+        _mockpckg.return_value = self.gremlin_packages
+        _mockvuln.return_value = self.gremlin_vulnerabilities
+
+        packages=[
+            {'name': 'github.com/crda/test', 'version': 'v0.0.0-20160902000632-abcd4321dcba',
+             'is_pseudo_version': True},
+            {'name': 'github.com/crda/test/package1', 'version': 'v0.0.0-20180902000632-abcd4321dcba',
+             'is_pseudo_version': True}]
+        ga = GraphAnalyses.get_batch_ca_data_for_pseudo_version('eco', packages)
+        self.assertIsInstance(ga, dict)
+        self.assertIn('result', ga)
+        self.assertIsInstance(ga.get('result'), dict)
+        self.assertIn('requestId', ga)
+        self.assertIsInstance(ga.get('requestId'), str)
+        self.assertIn('status', ga)
+        self.assertIsInstance(ga.get('status'), dict)
 
 
 class TestRdbAnalyses(unittest.TestCase):
