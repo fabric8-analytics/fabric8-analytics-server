@@ -38,7 +38,8 @@ class GraphAnalysesTest(unittest.TestCase):
         cls.pkg = 'pkg'
         # Read Vendor Data from JSON.
         gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
-        gremlin_vulnerabilities_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_vulnerabilities.json')
+        gremlin_vulnerabilities_data = os.path.join(
+            '/bayesian/tests/data/gremlin/gremlin_vulnerabilities.json')
         gremlin_package_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_packages.json')
         ca_batch_response = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
 
@@ -103,7 +104,7 @@ class GraphAnalysesTest(unittest.TestCase):
         """Test vulnerabilities query for packages from gremlin."""
         _mockpost().json.return_value = self.gremlin_vulnerabilities
         packages = [{
-                'name': 'github.com/crda/test/package1', 
+                'name': 'github.com/crda/test/package1',
                 'version': 'v0.0.0-20180902000632-abcd4321dcba'
         }]
         ga = GraphAnalyses.get_vulnerabilities_for_packages('eco', packages)
@@ -120,7 +121,7 @@ class GraphAnalysesTest(unittest.TestCase):
         """Test vulnerabilities query for modules from gremlin."""
         _mockpost().json.return_value = self.gremlin_vulnerabilities
         packages = [{
-                'name': 'github.com/crda/test', 
+                'name': 'github.com/crda/test',
                 'version': 'v0.0.0-20160902000632-abcd4321dcba'
         }]
         ga = GraphAnalyses.get_vulnerabilities_for_packages('eco', packages)
@@ -137,7 +138,7 @@ class GraphAnalysesTest(unittest.TestCase):
         """Test package details query from gremlin."""
         _mockpost().json.return_value = self.gremlin_packages
         packages = [{
-                'name': 'github.com/crda/test/package1', 
+                'name': 'github.com/crda/test/package1',
                 'version': 'v0.0.0-20180902000632-abcd4321dcba'
         }]
         ga = GraphAnalyses.get_package_details('eco', packages)
@@ -154,7 +155,7 @@ class GraphAnalysesTest(unittest.TestCase):
         """Test module details query from gremlin."""
         _mockpost().json.return_value = self.gremlin_packages
         packages = [{
-                'name': 'github.com/crda/test', 
+                'name': 'github.com/crda/test',
                 'version': 'v0.0.0-20160902000632-abcd4321dcba'
         }]
         ga = GraphAnalyses.get_package_details('eco', packages)
@@ -190,11 +191,12 @@ class GraphAnalysesTest(unittest.TestCase):
         _mockpckg.return_value = self.gremlin_packages
         _mockvuln.return_value = self.gremlin_vulnerabilities
 
-        packages=[
+        packages = [
             {'name': 'github.com/crda/test', 'version': 'v0.0.0-20160902000632-abcd4321dcba',
              'is_pseudo_version': True},
-            {'name': 'github.com/crda/test/package1', 'version': 'v0.0.0-20180902000632-abcd4321dcba',
-             'is_pseudo_version': True}]
+            {'name': 'github.com/crda/test/package1',
+             'version': 'v0.0.0-20180902000632-abcd4321dcba', 'is_pseudo_version': True}
+        ]
         ga = GraphAnalyses.get_batch_ca_data_for_pseudo_version('eco', packages)
         self.assertIsInstance(ga, dict)
         self.assertIn('result', ga)

@@ -148,7 +148,6 @@ def get_batch_ca_data(ecosystem: str, packages) -> dict:
     else:
         semver_packages = packages
 
-    print("semver_packages",semver_packages,'pseudo_version_packages',pseudo_version_packages)
     if len(semver_packages) > 0:
         response = GraphAnalyses.get_batch_ca_data(ecosystem, semver_packages)
 
