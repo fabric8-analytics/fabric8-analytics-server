@@ -19,12 +19,13 @@ import json
 import os
 import unittest
 from unittest.mock import patch
+from operator import itemgetter
 
 from werkzeug.exceptions import BadRequest
 
 from bayesian.utility.v2.component_analyses import validate_version, \
     known_package_flow, ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
-    get_batch_ca_data
+    get_batch_ca_data, add_unknown_pkg_info
 
 
 class TestComponentAnalyses(unittest.TestCase):
@@ -97,6 +98,66 @@ class TestComponentAnalyses(unittest.TestCase):
 
         self.assertListEqual(stack_recommendation, ideal_output)
         self.assertSetEqual(unknown_pkgs, set())
+
+    @patch('bayesian.utility.v2.ca_response_builder.g')
+    @patch('bayesian.utility.v2.component_analyses.g')
+    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
+    def test_get_known_unknown_pkgs_with_and_without_cve_golang(self, _mock1, _mock2, _mock3):
+        """Test Known Unknown Pkgs, with and Without CVE for golang."""
+        input_pkgs = [('github.com/hashicorp/nomad', '0.7.1', 'v0.7.1', False),
+                      ('code.cloudfoundry.org/gorouter/route', '0.0.0-20170410000936-a663fba25f7a',
+                       'v0.0.0-20170410000936-a663fba25f7a', True)]
+        normalised_input_pkgs = [normlize_packages(pkg, vr, gvn_vr, isp)
+                                 for pkg, vr, gvn_vr, isp in input_pkgs]
+        batch_data_no_cve = os.path.join(
+            '/bayesian/tests/data/gremlin/batch_data_with_n_without_cve_golang.json')
+        with open(batch_data_no_cve) as f:
+            data_with_n_without_cve = json.load(f)
+
+        ideal_resp = os.path.join(
+            '/bayesian/tests/data/response/ca_batch_with_n_without_vul_golang.json')
+        with open(ideal_resp) as f:
+            ideal_output = json.load(f)
+
+        stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
+            "golang", data_with_n_without_cve, normalised_input_pkgs)
+
+        self.assertListEqual(stack_recommendation, ideal_output)
+        self.assertSetEqual(unknown_pkgs, set())
+
+    def test_add_unknown_pkg_info(self):
+        """Test Known Unknown Pkgs, with and Without CVE for golang."""
+        input_pkgs = [('github.com/hashicorp/nomad', '0.7.1', 'v0.7.1', False),
+                      ('code.cloudfoundry.org/gorouter/route', '0.0.0-20170410000936-a663fba25f7a',
+                       'v0.0.0-20170410000936-a663fba25f7a', True)]
+        unknown_pkgs = set(normlize_packages(pkg, vr, gvn_vr, isp)
+                           for pkg, vr, gvn_vr, isp in input_pkgs)
+
+        stack_recommendation = [
+            {
+                "name": "github.com/existing/package",
+                "version": "v3.4.0",
+                "package_unknown": False
+            }
+        ]
+        ideal_output = [
+            {
+                "name": "github.com/existing/package",
+                "version": "v3.4.0",
+                "package_unknown": False
+            }, {
+                "name": "github.com/hashicorp/nomad",
+                "version": "v0.7.1",
+                "package_unknown": True
+            }, {
+                "name": "code.cloudfoundry.org/gorouter/route",
+                "version": "v0.0.0-20170410000936-a663fba25f7a",
+                "package_unknown": True
+            }
+        ]
+        stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
+        self.assertListEqual(sorted(stack_recommendation, key=itemgetter('name')),
+                             sorted(ideal_output, key=itemgetter('name')))
 
 
 class TestCAInputValidator(unittest.TestCase):

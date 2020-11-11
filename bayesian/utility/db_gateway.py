@@ -17,7 +17,6 @@
 """All communications with Graph DB and RDS from API v2 are done here."""
 
 import os
-import re
 import json
 import time
 import logging
@@ -158,7 +157,7 @@ class GraphAnalyses:
         for vuln in vulnerabilities:
             package_name = vuln['package_name'][0]
             if gh._is_commit_date_in_vuln_range(
-               GraphAnalyses.extract_timestamp(
+               gh.extract_timestamp(
                    package_version_map[package_name]), vuln['vuln_commit_date_rules'][0]):
                 if package_name not in filter_vulnerabilities:
                     filter_vulnerabilities[package_name] = []
@@ -193,7 +192,7 @@ class GraphAnalyses:
             data.append({
                 'package': pckg,
                 'version': {},
-                'vuln': vulnerabilities.get(pckg['name'][0], [])
+                'cve': vulnerabilities.get(pckg['name'][0], [])
             })
         pckg_response['result']['data'] = data
 
@@ -201,15 +200,6 @@ class GraphAnalyses:
         logger.info("It took %s to fetch pseudo version results.", elapsed_time)
 
         return pckg_response
-
-    @classmethod
-    def extract_timestamp(cls, in_string: str) -> str:
-        """Extract timestamp value YYYYMMDDHHMMSS from given string."""
-        timestamp = re.findall(r'\d{14}', in_string)
-        if len(timestamp) > 0:
-            return timestamp[0]
-
-        return None
 
 
 class RdbAnalyses:
