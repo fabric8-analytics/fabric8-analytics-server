@@ -90,15 +90,11 @@ class GraphAnalyses:
         return query_result.json()
 
     @classmethod
-    def get_batch_ca_data(cls, ecosystem: str, packages) -> dict:
-        """Component Analyses Batch Call."""
-        logger.debug('Executing get_batch_ca_data')
+    def post_gremlin(cls, query: str, bindings: dict = None) -> dict:
+        """Post the given query and bindings to gremlin endpoint."""
         payload = {
-            'gremlin': cls.ca_batch_query,
-            'bindings': {
-                'ecosystem': ecosystem,
-                'packages': packages
-            }
+            'gremlin': query,
+            'bindings': bindings
         }
         started_at = time.time()
         response = post(url=gremlin_url, data=json.dumps(payload))
@@ -108,44 +104,36 @@ class GraphAnalyses:
         return response.json()
 
     @classmethod
+    def get_batch_ca_data(cls, ecosystem: str, packages) -> dict:
+        """Component Analyses Batch Call."""
+        logger.debug('Executing get_batch_ca_data')
+        bindings = {
+            'ecosystem': ecosystem,
+            'packages': packages
+        }
+        return GraphAnalyses.post_gremlin(cls.ca_batch_query, bindings)
+
+    @classmethod
     def get_vulnerabilities_for_packages(cls, ecosystem: str, packages) -> dict:
         """Get vulnerabilities for given packages."""
         logger.debug('Executing get_vulnerabilities_for_packages')
 
-        payload = {
-            'gremlin': cls.get_vuln_query,
-            'bindings': {
-                'ecosystem': ecosystem,
-                'packages': packages
-            }
+        bindings = {
+            'ecosystem': ecosystem,
+            'packages': packages
         }
-        started_at = time.time()
-        response = post(url=gremlin_url, data=json.dumps(payload))
-        response.raise_for_status()
-        elapsed_time = time.time() - started_at
-        logger.info("It took %s to fetch vuln results from Gremlin.", elapsed_time)
-
-        return response.json()
+        return GraphAnalyses.post_gremlin(cls.get_vuln_query, bindings)
 
     @classmethod
     def get_package_details(cls, ecosystem: str, packages) -> dict:
         """Get vulnerabilities for given packages."""
         logger.debug('Executing get_package_details')
 
-        payload = {
-            'gremlin': cls.get_package_query,
-            'bindings': {
-                'ecosystem': ecosystem,
-                'packages': packages
-            }
+        bindings = {
+            'ecosystem': ecosystem,
+            'packages': packages
         }
-        started_at = time.time()
-        response = post(url=gremlin_url, data=json.dumps(payload))
-        response.raise_for_status()
-        elapsed_time = time.time() - started_at
-        logger.info("It took %s to fetch pckg results from Gremlin.", elapsed_time)
-
-        return response.json()
+        return GraphAnalyses.post_gremlin(cls.get_package_query, bindings)
 
     @classmethod
     def filter_vulnerable_packages(cls, vulnerabilities: list, package_version_map: dict) -> dict:
