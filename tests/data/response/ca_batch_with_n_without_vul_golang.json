@@ -1,0 +1,61 @@
+[
+    {
+        "package": "github.com/hashicorp/nomad",
+        "recommendation": {},
+        "version": "v0.7.1",
+        "package_unknown": false
+    },
+    {
+        "highest_severity": "medium",
+        "known_security_vulnerability_count": 2,
+        "message": "code.cloudfoundry.org/gorouter/route - v0.0.0-20170410000936-a663fba25f7a has 2 known security vulnerability having medium severity. Recommendation: use version v3.0.7.",
+        "package": "code.cloudfoundry.org/gorouter/route",
+        "recommended_versions": "v3.0.7",
+        "registration_link": "https://app.snyk.io/login",
+        "security_advisory_count": 0,
+        "version": "v0.0.0-20170410000936-a663fba25f7a",
+        "package_unknown": false,
+        "vulnerability": [
+            {
+                "cve_ids": [
+                    "CVE-2015-0221"
+                ],
+                "cvss": "5.3",
+                "cvss_v3": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "cwes": [
+                    "CWE-399"
+                ],
+                "fixed_in": [
+                    "1.4.18",
+                    "1.6.10",
+                    "1.7.3"
+                ],
+                "id": "SNYK-PYTHON-DJANGO-40304",
+                "is_private": false,
+                "severity": "medium",
+                "title": "Denial of Service (DoS)",
+                "url": "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40304"
+            },
+            {
+                "cve_ids": [
+                    "CVE-2015-2317"
+                ],
+                "cvss": "4.3",
+                "cvss_v3": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N",
+                "cwes": [
+                    "CWE-79"
+                ],
+                "fixed_in": [
+                    "1.4.20",
+                    "1.6.11",
+                    "1.7.7"
+                ],
+                "id": "SNYK-PYTHON-DJANGO-40318",
+                "is_private": false,
+                "severity": "medium",
+                "title": "Cross-site Scripting (XSS)",
+                "url": "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40318"
+            }
+        ]
+    }
+]

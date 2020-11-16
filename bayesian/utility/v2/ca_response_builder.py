@@ -387,18 +387,20 @@ class CABatchResponseBuilder(ComponentResponseBase):
         super().__init__(ecosystem, None, None)
 
     def generate_recommendation(
-            self, package_graph_response: Dict, given_version: str = None) -> Dict:
+            self, package_graph_response: Dict,
+            given_name: str = None, given_version: str = None) -> Dict:
         """Generate recommendation for the package+version.
 
         Main function to generate recommendation response.
 
         :param package_graph_response: Individual Package Object from Gremlin
+        :param given_name: Full package name as given in the request
         :param given_version: Version from User Input
         :return: Json Response
         """
         logger.debug("Generating Recommendation")
         self.version = given_version
-        self.package = self.get_package(package_graph_response)
+        self.package = given_name
         latest_non_cve_versions: List[str] = package_graph_response.get('package', {}).get(
             'latest_non_cve_version', [])
         self._cves = package_graph_response.get('cve')
@@ -412,7 +414,12 @@ class CABatchResponseBuilder(ComponentResponseBase):
                 package_unknown=False,
                 recommendation={})
 
-        self.nocve_version: List[str] = self.get_version_without_cves(latest_non_cve_versions)
+        if self.ecosystem == 'golang':
+            # Prefix recommendation version with 'v' for golang
+            recm_version = self.get_version_without_cves(latest_non_cve_versions)
+            self.nocve_version: List[str] = 'v' + recm_version if recm_version != '' else ''
+        else:
+            self.nocve_version: List[str] = self.get_version_without_cves(latest_non_cve_versions)
         self.public_vul, self.pvt_vul = self.get_vulnerabilities_count()
         self.severity: List[str] = self.get_severity()
 
@@ -522,15 +529,3 @@ class CABatchResponseBuilder(ComponentResponseBase):
             security_advisory_count=self.pvt_vul,
         )
         return response
-
-    @staticmethod
-    def get_version(graph_response: Dict) -> str:
-        """Get version from Graph Response."""
-        logger.debug("Get version.")
-        return graph_response.get('version', {}).get('version', [])[0]
-
-    @staticmethod
-    def get_package(graph_response: Dict) -> str:
-        """Get package from Graph Response."""
-        logger.debug("Get package.")
-        return graph_response.get('version', {}).get('pname', [])[0]
