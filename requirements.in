@@ -1,28 +1,17 @@
-flask
-flask-appconfig>=0.10
-flask-security
-flask-sqlalchemy
-flask-restful
-flask-cors
-jsl
-# there's a regression in mod_wsgi 4.5.4:
-# https://github.com/GrahamDumpleton/mod_wsgi/issues/147
-# install httpd-devel in order to have apxs command, otherwise build fails
-mod_wsgi!=4.5.4
-psycopg2-binary
-# in order for pyjwt to be able to use RS256 we need pycrypto
-cryptography
-pyjwt>=1.6.1
-requests-futures
-Flask-Cache
-semantic_version
-py_lru_cache
-radon==3.0.1
-pygithub
-codecov
-lxml
-gitpython
-raven[flask]
-pydantic
 tenacity
-semver
+Werkzeug
+Flask_Cors
+Flask_SQLAlchemy
+Flask
+flask_appconfig
+py_lru_cache
+lxml
+requests
+SQLAlchemy
+raven
+pydantic
+pytest
+Flask_Cache
+Flask_RESTful
+requests_futures
+semantic_version
