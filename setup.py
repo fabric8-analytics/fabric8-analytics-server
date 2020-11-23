@@ -6,8 +6,8 @@ from setuptools import setup, find_packages
 
 
 def get_requirements():
-    """Parse all packages mentioned in the 'requirements.txt' file."""
-    with open('requirements.txt') as fd:
+    """Parse all packages mentioned in the 'requirements.in' file."""
+    with open('requirements.in') as fd:
         lines = fd.read().splitlines()
         reqs, dep_links = [], []
         for line in lines:
