@@ -24,3 +24,8 @@ flask-appconfig>=0.10
 pydantic
 blinker
 pygithub
+psycopg2-binary
+git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git#egg=F8A_WORKER_VERSION
+git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git#egg=F8A_AUTH_VERSION
+git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git#egg=F8A_UTILS
+git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git#egg=f8a_version_comparator
