@@ -15,3 +15,12 @@ Flask_Cache
 Flask_RESTful
 requests_futures
 semantic_version
+# there's a regression in mod_wsgi 4.5.4:
+# https://github.com/GrahamDumpleton/mod_wsgi/issues/147
+# install httpd-devel in order to have apxs command, otherwise build fails
+mod_wsgi!=4.5.4
+flask
+flask-appconfig>=0.10
+pydantic
+blinker
+pygithub
