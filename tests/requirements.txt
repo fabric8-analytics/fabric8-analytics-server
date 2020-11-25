@@ -30,10 +30,10 @@ configobj==5.0.6          # via anymarkup
 coverage==5.3             # via pytest-cov
 cryptography==3.2.1       # via f8a-utils, fabric8a-auth
 deprecated==1.2.10        # via pygithub
-git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@066c2f6#egg=F8A_WORKER_VERSION  # via -r ../requirements.in
-git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@5a5ce60#egg=F8A_UTILS  # via -r ../requirements.in, f8a-worker
-git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git@8a57ac7#egg=f8a_version_comparator  # via -r ../requirements.in, f8a-utils
-git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=F8A_AUTH_VERSION  # via -r ../requirements.in
+git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@066c2f6#egg=f8a_worker  # via -r ../requirements.in
+git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@5a5ce60#egg=f8a_utils  # via -r ../requirements.in, f8a-worker
+git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git@8a57ac7#egg=f8a_version_comparator  # via f8a-utils
+git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=fabric8a_auth  # via -r ../requirements.in
 flask-appconfig==0.11.1   # via -r ../requirements.in
 flask-babelex==0.9.4      # via flask-security
 flask-cache==0.13.1       # via -r ../requirements.in
@@ -65,7 +65,7 @@ jsonschema==3.2.0         # via -r requirements.in, f8a-worker, selinon
 kombu==5.0.2              # via celery
 lazy-object-proxy==1.4.3  # via astroid
 logutils==0.3.5           # via rainbow-logging-handler
-lxml==4.6.1               # via -r ../requirements.in, f8a-utils, f8a-worker
+lxml==4.6.1               # via f8a-utils, f8a-worker
 markupsafe==1.1.1         # via jinja2, wtforms
 mccabe==0.6.1             # via pylint
 mod-wsgi==4.7.1           # via -r ../requirements.in
@@ -85,7 +85,7 @@ pyparsing==2.4.7          # via packaging
 pyrsistent==0.17.3        # via jsonschema
 pytest-cov==2.10.1        # via -r requirements.in
 pytest-flask==1.1.0       # via -r requirements.in
-pytest==6.1.2             # via -r ../requirements.in, -r requirements.in, pytest-cov, pytest-flask
+pytest==6.1.2             # via -r requirements.in, pytest-cov, pytest-flask
 python-dateutil==2.8.1    # via botocore, freezegun
 pytz==2020.4              # via babel, celery, flask-restful
 pyyaml==5.3.1             # via anymarkup, f8a-worker, selinon
@@ -101,14 +101,14 @@ six==1.15.0               # via anymarkup-core, astroid, click-repl, configobj, 
 smmap==3.0.4              # via gitdb
 soupsieve==2.0.1          # via beautifulsoup4
 speaklater==1.3           # via flask-babelex
-sqlalchemy==1.3.20        # via -r ../requirements.in, f8a-worker, flask-sqlalchemy
+sqlalchemy==1.3.20        # via f8a-worker, flask-sqlalchemy
 tenacity==6.2.0           # via -r ../requirements.in, -r requirements.in, f8a-utils, f8a-worker
 toml==0.9.4               # via anymarkup, f8a-worker, pylint, pytest
 typed-ast==1.4.1          # via astroid
 urllib3==1.26.2           # via botocore, requests
 vine==5.0.0               # via amqp, celery
 wcwidth==0.2.5            # via prompt-toolkit
-werkzeug==0.16.1          # via -r ../requirements.in, f8a-worker, flask, pytest-flask
+werkzeug==0.16.1          # via f8a-worker, flask, pytest-flask
 wrapt==1.12.1             # via astroid, deprecated
 wtforms==2.3.3            # via flask-wtf
 xmltodict==0.12.0         # via anymarkup
