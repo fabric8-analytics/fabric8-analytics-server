@@ -10,7 +10,6 @@ requests
 SQLAlchemy
 raven
 pydantic
-pytest
 Flask_Cache
 Flask_RESTful
 requests_futures
@@ -25,7 +24,7 @@ pydantic
 blinker
 pygithub
 psycopg2-binary
-git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git#egg=F8A_WORKER_VERSION
-git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git#egg=F8A_AUTH_VERSION
-git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git#egg=F8A_UTILS
-git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git#egg=f8a_version_comparator
+f8a_version_comparator @ git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git@8a57ac7#egg=f8a_version_comparator
+f8a_worker-version @ git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@066c2f6#egg=F8A_WORKER_VERSION
+f8a_auth_version @ git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=F8A_AUTH_VERSION
+f8a_utils @ git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@5a5ce60#egg=F8A_UTILS

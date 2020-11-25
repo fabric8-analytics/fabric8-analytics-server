@@ -13,8 +13,8 @@ babel==2.9.0              # via flask-babelex
 beautifulsoup4==4.9.3     # via bs4, f8a-worker
 billiard==3.6.3.0         # via celery
 blinker==1.4              # via -r requirements.in, flask-mail, flask-principal
-boto3==1.16.23            # via f8a-worker
-botocore==1.19.23         # via boto3, f8a-worker, s3transfer
+boto3==1.16.24            # via f8a-worker
+botocore==1.19.24         # via boto3, f8a-worker, s3transfer
 bs4==0.0.1                # via f8a-utils
 celery==5.0.2             # via selinon
 certifi==2020.11.8        # via requests
@@ -28,10 +28,10 @@ colorama==0.4.4           # via rainbow-logging-handler
 configobj==5.0.6          # via anymarkup
 cryptography==3.2.1       # via f8a-utils, fabric8a-auth
 deprecated==1.2.10        # via pygithub
-git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git#egg=F8A_WORKER_VERSION  # via -r requirements.in
-git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git#egg=F8A_UTILS  # via -r requirements.in, f8a-worker
-git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git#egg=f8a_version_comparator  # via -r requirements.in, f8a-utils
-git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git#egg=F8A_AUTH_VERSION  # via -r requirements.in
+git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@066c2f6#egg=F8A_WORKER_VERSION  # via -r requirements.in
+git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@5a5ce60#egg=F8A_UTILS  # via -r requirements.in, f8a-worker
+git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git@8a57ac7#egg=f8a_version_comparator  # via -r requirements.in, f8a-utils
+git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=F8A_AUTH_VERSION  # via -r requirements.in
 flask-appconfig==0.11.1   # via -r requirements.in
 flask-babelex==0.9.4      # via flask-security
 flask-cache==0.13.1       # via -r requirements.in
@@ -49,7 +49,7 @@ gitdb==4.0.5              # via gitpython
 gitpython==3.1.11         # via f8a-worker
 graphviz==0.15            # via selinon
 idna==2.10                # via requests
-importlib-metadata==2.0.0  # via jsonschema, kombu, pluggy, pytest
+importlib-metadata==3.1.0  # via jsonschema, kombu, pluggy, pytest
 iniconfig==1.1.1          # via pytest
 itsdangerous==1.1.0       # via flask, flask-security, flask-wtf
 jinja2==2.11.2            # via flask, flask-babelex

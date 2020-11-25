@@ -9,3 +9,4 @@ pylint
 semantic_version
 pydantic
 tenacity
+-r ../requirements.in
