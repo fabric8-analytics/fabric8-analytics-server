@@ -1,15 +1,11 @@
 tenacity
-Werkzeug
 Flask_Cors
 Flask_SQLAlchemy
 Flask
 flask_appconfig
 py_lru_cache
-lxml
 requests
-SQLAlchemy
 raven
-pydantic
 Flask_Cache
 Flask_RESTful
 requests_futures
@@ -20,11 +16,11 @@ semantic_version
 mod_wsgi!=4.5.4
 flask
 flask-appconfig>=0.10
-pydantic
 blinker
 pygithub
+pydantic
 psycopg2-binary
-f8a_version_comparator @ git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git@8a57ac7#egg=f8a_version_comparator
-f8a_worker-version @ git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@066c2f6#egg=F8A_WORKER_VERSION
-f8a_auth_version @ git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=F8A_AUTH_VERSION
-f8a_utils @ git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@5a5ce60#egg=F8A_UTILS
+f8a_worker-version @ git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@066c2f6#egg=f8a_worker
+f8a_auth_version @ git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=fabric8a_auth
+f8a_utils @ git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@5a5ce60#egg=f8a_utils
+
