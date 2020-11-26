@@ -44,7 +44,7 @@ flask-restful==0.3.8      # via -r ../requirements.in
 flask-security==3.0.0     # via fabric8a-auth
 flask-sqlalchemy==2.4.4   # via -r ../requirements.in
 flask-wtf==0.14.3         # via flask-security
-flask==0.12.5             # via -r ../requirements.in, fabric8a-auth, flask-appconfig, flask-babelex, flask-cache, flask-cors, flask-login, flask-mail, flask-principal, flask-restful, flask-security, flask-sqlalchemy, flask-wtf
+flask==0.12.5             # via -r ../requirements.in, fabric8a-auth, flask-appconfig, flask-babelex, flask-cache, flask-cors, flask-login, flask-mail, flask-principal, flask-restful, flask-security, flask-sqlalchemy, flask-wtf, pytest-flask
 future==0.18.2            # via radon
 git2json==0.2.3           # via f8a-worker
 gitdb==4.0.5              # via gitpython
@@ -69,6 +69,7 @@ packaging==20.4           # via pytest
 passlib==1.7.4            # via flask-security
 pluggy==0.13.1            # via pytest
 prompt-toolkit==3.0.8     # via click-repl
+psycopg2-binary==2.8.6    # via -r ../requirements.in
 py-lru-cache==0.1.4       # via -r ../requirements.in
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
@@ -78,7 +79,8 @@ pyjwt==1.7.1              # via fabric8a-auth, pygithub
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.17.3        # via jsonschema
 pytest-cov==2.10.1        # via -r requirements.in
-pytest==6.1.2             # via -r requirements.in, pytest-cov
+pytest-flask==1.1.0       # via -r requirements.in
+pytest==6.1.2             # via -r requirements.in, pytest-cov, pytest-flask
 python-dateutil==2.8.1    # via botocore
 pytz==2020.4              # via babel, celery, flask-restful
 pyyaml==5.3.1             # via anymarkup, f8a-worker, selinon
@@ -101,7 +103,7 @@ toml==0.9.4               # via anymarkup, f8a-worker, pytest
 urllib3==1.26.2           # via botocore, requests
 vine==5.0.0               # via amqp, celery
 wcwidth==0.2.5            # via prompt-toolkit
-werkzeug==0.16.1          # via -r ../requirements.in, f8a-worker, flask
+werkzeug==0.16.1          # via -r ../requirements.in, f8a-worker, flask, pytest-flask
 wrapt==1.12.1             # via deprecated
 wtforms==2.3.3            # via flask-wtf
 xmltodict==0.12.0         # via anymarkup
