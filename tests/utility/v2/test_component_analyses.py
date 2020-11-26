@@ -61,7 +61,8 @@ class TestComponentAnalyses(unittest.TestCase):
     @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
     def test_get_known_unknown_pkgs_no_cve(self, _mock1, _mock2):
         """Test Known Unknown Pkgs, No Cve."""
-        normalised_input_pkgs = [normlize_packages('markdown2', "2.3.2", "2.3.2", False)]
+        normalised_input_pkgs = [normlize_packages("markdown2", "markdown2",
+                                                   "2.3.2", "2.3.2", False)]
         batch_data_no_cve = os.path.join('/bayesian/tests/data/gremlin/batch_data_no_cve.json')
         with open(batch_data_no_cve) as f:
             gremlin_batch_data_no_cve = json.load(f)
@@ -80,9 +81,9 @@ class TestComponentAnalyses(unittest.TestCase):
     @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
     def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1, _mock2, _mock3):
         """Test Known Unknown Pkgs, with and Without CVE."""
-        input_pkgs = [('flask', "1.1.1", "1.1.1"), ('django', "1.1.1", "1.1.1")]
-        normalised_input_pkgs = [normlize_packages(pkg, vr, gvn_vr, False)
-                                 for pkg, vr, gvn_vr in input_pkgs]
+        input_pkgs = [("flask", "flask", "1.1.1", "1.1.1"), ("django", "django", "1.1.1", "1.1.1")]
+        normalised_input_pkgs = [normlize_packages(pkg, gvn_pkg, vr, gvn_vr, False)
+                                 for pkg, gvn_pkg, vr, gvn_vr in input_pkgs]
         batch_data_no_cve = os.path.join(
             '/bayesian/tests/data/gremlin/batch_data_with_n_without_cve.json')
         with open(batch_data_no_cve) as f:
@@ -104,11 +105,14 @@ class TestComponentAnalyses(unittest.TestCase):
     @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
     def test_get_known_unknown_pkgs_with_and_without_cve_golang(self, _mock1, _mock2, _mock3):
         """Test Known Unknown Pkgs, with and Without CVE for golang."""
-        input_pkgs = [('github.com/hashicorp/nomad', '0.7.1', 'v0.7.1', False),
-                      ('code.cloudfoundry.org/gorouter/route', '0.0.0-20170410000936-a663fba25f7a',
+        input_pkgs = [('github.com/hashicorp/nomad', 'github.com/hashicorp/nomad',
+                       '0.7.1', 'v0.7.1', False),
+                      ('code.cloudfoundry.org/gorouter/route',
+                       'code.cloudfoundry.org/gorouter/route@code.cloudfoundry.org/gorouter',
+                       '0.0.0-20170410000936-a663fba25f7a',
                        'v0.0.0-20170410000936-a663fba25f7a', True)]
-        normalised_input_pkgs = [normlize_packages(pkg, vr, gvn_vr, isp)
-                                 for pkg, vr, gvn_vr, isp in input_pkgs]
+        normalised_input_pkgs = [normlize_packages(pkg, gvn_pkg, vr, gvn_vr, isp)
+                                 for pkg, gvn_pkg, vr, gvn_vr, isp in input_pkgs]
         batch_data_no_cve = os.path.join(
             '/bayesian/tests/data/gremlin/batch_data_with_n_without_cve_golang.json')
         with open(batch_data_no_cve) as f:
@@ -127,11 +131,14 @@ class TestComponentAnalyses(unittest.TestCase):
 
     def test_add_unknown_pkg_info(self):
         """Test Known Unknown Pkgs, with and Without CVE for golang."""
-        input_pkgs = [('github.com/hashicorp/nomad', '0.7.1', 'v0.7.1', False),
-                      ('code.cloudfoundry.org/gorouter/route', '0.0.0-20170410000936-a663fba25f7a',
+        input_pkgs = [('github.com/hashicorp/nomad', 'github.com/hashicorp/nomad',
+                       '0.7.1', 'v0.7.1', False),
+                      ('code.cloudfoundry.org/gorouter/route',
+                       'code.cloudfoundry.org/gorouter/route@code.cloudfoundry.org/gorouter',
+                       '0.0.0-20170410000936-a663fba25f7a',
                        'v0.0.0-20170410000936-a663fba25f7a', True)]
-        unknown_pkgs = set(normlize_packages(pkg, vr, gvn_vr, isp)
-                           for pkg, vr, gvn_vr, isp in input_pkgs)
+        unknown_pkgs = set(normlize_packages(pkg, gvn_pkg, vr, gvn_vr, isp)
+                           for pkg, gvn_pkg, vr, gvn_vr, isp in input_pkgs)
 
         stack_recommendation = [
             {
@@ -150,7 +157,7 @@ class TestComponentAnalyses(unittest.TestCase):
                 "version": "v0.7.1",
                 "package_unknown": True
             }, {
-                "name": "code.cloudfoundry.org/gorouter/route",
+                "name": "code.cloudfoundry.org/gorouter/route@code.cloudfoundry.org/gorouter",
                 "version": "v0.0.0-20170410000936-a663fba25f7a",
                 "package_unknown": True
             }
@@ -219,7 +226,8 @@ class TestCAInputValidator(unittest.TestCase):
             ]
         }
         ideal_result = [
-            {"name": "com.thoughtworks.xstream:xstream", "version": "1.3",
+            {"name": "com.thoughtworks.xstream:xstream",
+             "given_name": "com.thoughtworks.xstream:xstream", "version": "1.3",
              "given_version": "1.3", "is_pseudo_version": False}]
         result, _ = ca_validate_input(input_json, input_json["ecosystem"])
         self.assertEqual(result, ideal_result)
@@ -229,23 +237,29 @@ class TestCAInputValidator(unittest.TestCase):
         input_json = {
             "ecosystem": "golang",
             "package_versions": [
-                {"package": "github.com/cmp/cmp-opt", "version": "v1.2.4"},
-                {"package": "github.com/cmp/version", "version": "v1.2.4+incompatible"},
+                {"package": "github.com/cmp/cmp-opt@github.com/cmp", "version": "v1.2.4"},
+                {"package": "github.com/cmp/version@github.com/cmp",
+                 "version": "v1.2.4+incompatible"},
                 {"package": "github.com/str/cmp", "version": "v0.0.0-20201010080808-abcd1234abcd"},
                 {"package": "github.com/str/extract", "version": "v1.0.5-alpha1.5"},
                 {"package": "github.com/str/merge", "version": "v3.4.5-alpha1.2+incompatible"},
             ]
         }
         ideal_result = [
-            {"name": "github.com/cmp/cmp-opt", "version": "1.2.4",
+            {"name": "github.com/cmp/cmp-opt",
+             "given_name": "github.com/cmp/cmp-opt@github.com/cmp", "version": "1.2.4",
              "given_version": "v1.2.4", "is_pseudo_version": False},
-            {"name": "github.com/cmp/version", "version": "1.2.4",
+            {"name": "github.com/cmp/version",
+             "given_name": "github.com/cmp/version@github.com/cmp", "version": "1.2.4",
              "given_version": "v1.2.4+incompatible", "is_pseudo_version": False},
-            {"name": "github.com/str/cmp", "version": "0.0.0-20201010080808-abcd1234abcd",
+            {"name": "github.com/str/cmp", "given_name": "github.com/str/cmp",
+             "version": "0.0.0-20201010080808-abcd1234abcd",
              "given_version": "v0.0.0-20201010080808-abcd1234abcd", "is_pseudo_version": True},
-            {"name": "github.com/str/extract", "version": "1.0.5-alpha1.5",
+            {"name": "github.com/str/extract", "given_name": "github.com/str/extract",
+             "version": "1.0.5-alpha1.5",
              "given_version": "v1.0.5-alpha1.5", "is_pseudo_version": False},
-            {"name": "github.com/str/merge", "version": "3.4.5-alpha1.2",
+            {"name": "github.com/str/merge", "given_name": "github.com/str/merge",
+             "version": "3.4.5-alpha1.2",
              "given_version": "v3.4.5-alpha1.2+incompatible", "is_pseudo_version": False}
         ]
         result, _ = ca_validate_input(input_json, input_json["ecosystem"])

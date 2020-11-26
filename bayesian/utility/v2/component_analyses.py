@@ -33,7 +33,7 @@ from werkzeug.exceptions import BadRequest
 from bayesian.utility.db_gateway import GraphAnalyses
 
 logger = logging.getLogger(__name__)
-Package = namedtuple("Package", ["name", "version", "package_unknown",
+Package = namedtuple("Package", ["name", "given_name", "version", "package_unknown",
                                  "given_version", "is_pseudo_version"])
 
 
@@ -45,12 +45,14 @@ def validate_version(version: str) -> bool:
     return True
 
 
-def normlize_packages(package: str, version: str, given_version: str,
+def normlize_packages(name: str, given_name: str,
+                      version: str, given_version: str,
                       is_pseudo_version: bool) -> Package:
     """Normalise Packages into hashable."""
     logger.debug('Normalizing Packages.')
     return Package(
-        name=package, version=version, given_version=given_version,
+        name=name, given_name=given_name,
+        version=version, given_version=given_version,
         is_pseudo_version=is_pseudo_version, package_unknown=True)
 
 
@@ -99,7 +101,7 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
     normalised_input_pkgs = []
     for pkg in input_json.get('package_versions'):
         pseudo_version = False
-        package = pkg.get("package")
+        package = given_package = pkg.get("package")
         clean_version = given_version = pkg.get("version")
         if not all([package, given_version]):
             error_msg = "Invalid Input: Package, Version are required."
@@ -122,11 +124,14 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
         if ecosystem == 'golang':
             _, clean_version = GolangDependencyTreeGenerator.clean_version(given_version)
             pseudo_version = gh.is_pseudo_version(clean_version)
+            # Strip module appended to the package name
+            package = package.split('@')[0]
 
         packages_list.append(
-            {"name": package, "version": clean_version, "given_version": given_version,
+            {"name": package, "given_name": given_package,
+             "version": clean_version, "given_version": given_version,
              "is_pseudo_version": pseudo_version})
-        normalised_input_pkgs.append(normlize_packages(package, clean_version,
+        normalised_input_pkgs.append(normlize_packages(package, given_package, clean_version,
                                                        given_version, pseudo_version))
     return packages_list, normalised_input_pkgs
 
@@ -182,6 +187,7 @@ def get_known_unknown_pkgs(
     if ecosystem == 'golang':
         normalised_input_pkg_map = {
             input_pkg.name: {
+                'given_name': input_pkg.given_name,
                 'version': input_pkg.version,
                 'given_version': input_pkg.given_version
             } for input_pkg in normalised_input_pkgs}
@@ -194,12 +200,14 @@ def get_known_unknown_pkgs(
                                           package.get('version').get('version', [''])[0],
                                           normalised_input_pkg_map)
         pseudo_version = gh.is_pseudo_version(clean_version) if ecosystem == 'golang' else False
-        given_pkg_version = get_given_version(pkg_name, clean_version, normalised_input_pkg_map)
+        given_pkg_name, given_pkg_version = get_given_name_and_version(pkg_name, clean_version,
+                                                                       normalised_input_pkg_map)
         pkg_recomendation = CABatchResponseBuilder(ecosystem). \
-            generate_recommendation(package, pkg_name, given_pkg_version)
+            generate_recommendation(package, given_pkg_name, given_pkg_version)
         stack_recommendation.append(pkg_recomendation)
-        known_package_flow(ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
-        db_known_packages.add(normlize_packages(pkg_name, clean_version,
+        known_package_flow(ecosystem, pkg_name, clean_version)
+        db_known_packages.add(normlize_packages(name=pkg_name, given_name=given_pkg_name,
+                                                version=clean_version,
                                                 given_version=given_pkg_version,
                                                 is_pseudo_version=pseudo_version))
 
@@ -221,8 +229,9 @@ def get_clean_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=
     return pkg_version
 
 
-def get_given_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:
-    """Output Package version for each Package.
+def get_given_name_and_version(pkg_name: str, pkg_version: str,
+                               normalised_input_pkg_map=None) -> (str, str):
+    """Output given package name and version in the request.
 
     :param pkg_name: Package Name
     :param normalised_input_pkg_map: Input Package Map
@@ -231,8 +240,10 @@ def get_given_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=
     """
     logger.debug('Fetch Input Package version.')
     if isinstance(normalised_input_pkg_map, dict):
-        return normalised_input_pkg_map[pkg_name]['given_version']
-    return pkg_version
+        normalised_input_pkg = normalised_input_pkg_map.get(pkg_name, None)
+        if normalised_input_pkg:
+            return normalised_input_pkg['given_name'], normalised_input_pkg['given_version']
+    return pkg_name, pkg_version
 
 
 def add_unknown_pkg_info(stack_recommendation: List, unknown_pkgs: Set[Package]) -> List:
@@ -246,6 +257,8 @@ def add_unknown_pkg_info(stack_recommendation: List, unknown_pkgs: Set[Package])
         unknowns = unknown_pkg._asdict()
         unknowns['version'] = unknowns.get('given_version')
         unknowns.pop('given_version', None)
+        unknowns['name'] = unknowns.get('given_name')
+        unknowns.pop('given_name', None)
         unknowns.pop('is_pseudo_version', None)
         stack_recommendation.append(dict(unknowns))
     return stack_recommendation

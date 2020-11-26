@@ -8,8 +8,8 @@
     {
         "highest_severity": "medium",
         "known_security_vulnerability_count": 2,
-        "message": "code.cloudfoundry.org/gorouter/route - v0.0.0-20170410000936-a663fba25f7a has 2 known security vulnerability having medium severity. Recommendation: use version v3.0.7.",
-        "package": "code.cloudfoundry.org/gorouter/route",
+        "message": "code.cloudfoundry.org/gorouter/route@code.cloudfoundry.org/gorouter - v0.0.0-20170410000936-a663fba25f7a has 2 known security vulnerability having medium severity. Recommendation: use version v3.0.7.",
+        "package": "code.cloudfoundry.org/gorouter/route@code.cloudfoundry.org/gorouter",
         "recommended_versions": "v3.0.7",
         "registration_link": "https://app.snyk.io/login",
         "security_advisory_count": 0,
