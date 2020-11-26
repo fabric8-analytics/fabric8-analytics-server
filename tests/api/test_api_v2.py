@@ -259,8 +259,8 @@ class TestCAPostApi(unittest.TestCase):
         response = self.client.post(
             api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
         self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(
-            response.json, {'error': '400 Bad Request: Ecosystem None is not supported for this request'})
+        self.assertDictEqual(response.json, 
+        {'error': '400 Bad Request: Ecosystem None is not supported for this request'})
 
 
 @pytest.mark.usefixtures('client_class')
