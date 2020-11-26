@@ -1,12 +1,4 @@
-flexmock
-freezegun
-pytest >= 3 # Needed for compatibility with celery 4.x fixtures
-pytest-flask
+pytest
 pytest-cov
-requests
-jsonschema
-pylint
-semantic_version
-pydantic
-tenacity
+radon
 -r ../requirements.in
