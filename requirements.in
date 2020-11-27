@@ -1,28 +1,34 @@
-flask
-flask-appconfig>=0.10
-flask-security
-flask-sqlalchemy
-flask-restful
-flask-cors
-jsl
+Werkzeug
+Flask
+requests
+botocore
+flask_appconfig
+flask_cache
+flask_cors
+flask_restful
+flask_sqlalchemy
+GitPython
+py_lru_cache
+lxml
+pydantic
+PyGithub
+raven
+requests_futures
+selinon
+semantic_version
+SQLAlchemy
+tenacity
+
+#packages discovered after running the image on cluster
+psycopg2-binary
+
 # there's a regression in mod_wsgi 4.5.4:
 # https://github.com/GrahamDumpleton/mod_wsgi/issues/147
 # install httpd-devel in order to have apxs command, otherwise build fails
 mod_wsgi!=4.5.4
-psycopg2-binary
-# in order for pyjwt to be able to use RS256 we need pycrypto
-cryptography
-pyjwt>=1.6.1
-requests-futures
-Flask-Cache
-semantic_version
-py_lru_cache
-radon==3.0.1
-pygithub
-codecov
-lxml
-gitpython
-raven[flask]
-pydantic
-tenacity
-semver
+
+
+f8a_worker @ git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@066c2f6#egg=f8a_worker
+f8a_auth @ git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=fabric8a_auth
+f8a_utils @ git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@5a5ce60#egg=f8a_utils
+
