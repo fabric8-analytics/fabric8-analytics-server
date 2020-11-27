@@ -23,15 +23,18 @@ import time
 from collections import namedtuple
 from typing import Dict, Set, List, Tuple
 from f8a_utils.tree_generator import GolangDependencyTreeGenerator
+from f8a_utils.gh_utils import GithubUtils
 from flask import g
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem, \
     server_create_analysis, server_create_component_bookkeeping
 from f8a_worker.utils import MavenCoordinates
 from werkzeug.exceptions import BadRequest
+from bayesian.utility.db_gateway import GraphAnalyses
 
 logger = logging.getLogger(__name__)
-Package = namedtuple("Package", ["name", "version", "package_unknown", "given_version"])
+Package = namedtuple("Package", ["name", "version", "package_unknown",
+                                 "given_version", "is_pseudo_version"])
 
 
 def validate_version(version: str) -> bool:
@@ -42,11 +45,13 @@ def validate_version(version: str) -> bool:
     return True
 
 
-def normlize_packages(package, version, given_version: str) -> Package:
+def normlize_packages(package: str, version: str, given_version: str,
+                      is_pseudo_version: bool) -> Package:
     """Normalise Packages into hashable."""
     logger.debug('Normalizing Packages.')
     return Package(
-        name=package, version=version, given_version=given_version, package_unknown=True)
+        name=package, version=version, given_version=given_version,
+        is_pseudo_version=is_pseudo_version, package_unknown=True)
 
 
 def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
@@ -89,9 +94,11 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
         error_msg: str = "package_versions is missing"
         raise BadRequest(error_msg)
 
+    gh = GithubUtils()
     packages_list = []
     normalised_input_pkgs = []
     for pkg in input_json.get('package_versions'):
+        pseudo_version = False
         package = pkg.get("package")
         clean_version = given_version = pkg.get("version")
         if not all([package, given_version]):
@@ -114,11 +121,51 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
 
         if ecosystem == 'golang':
             _, clean_version = GolangDependencyTreeGenerator.clean_version(given_version)
+            pseudo_version = gh.is_pseudo_version(clean_version)
 
         packages_list.append(
-            {"name": package, "version": clean_version, 'given_version': given_version})
-        normalised_input_pkgs.append(normlize_packages(package, clean_version, given_version))
+            {"name": package, "version": clean_version, "given_version": given_version,
+             "is_pseudo_version": pseudo_version})
+        normalised_input_pkgs.append(normlize_packages(package, clean_version,
+                                                       given_version, pseudo_version))
     return packages_list, normalised_input_pkgs
+
+
+def get_batch_ca_data(ecosystem: str, packages) -> dict:
+    """Fetch package details for component analyses."""
+    logger.debug('Executing get_batch_ca_data')
+    started_at = time.time()
+
+    response = None
+    semver_packages = []
+    pseudo_version_packages = []
+
+    # Need to seperate semver and pseudo verion packages for golang
+    if (ecosystem == "golang"):
+        for p in packages:
+            if p['is_pseudo_version']:
+                pseudo_version_packages.append(p)
+            else:
+                semver_packages.append(p)
+    else:
+        semver_packages = packages
+
+    if len(semver_packages) > 0:
+        response = GraphAnalyses.get_batch_ca_data(ecosystem, semver_packages)
+
+    if len(pseudo_version_packages) > 0:
+        pseudo_response = GraphAnalyses.get_batch_ca_data_for_pseudo_version(
+            ecosystem, pseudo_version_packages)
+        # Merge both data into one.
+        if response:
+            response['result']['data'] += pseudo_response['result']['data']
+        else:
+            response = pseudo_response
+
+    elapsed_time = time.time() - started_at
+    logger.info("It took %s to fetch results from Gremlin.", elapsed_time)
+
+    return response if response else {}
 
 
 def get_known_unknown_pkgs(
@@ -133,28 +180,48 @@ def get_known_unknown_pkgs(
     """
     normalised_input_pkg_map = None  # Mapping is required only for Golang.
     if ecosystem == 'golang':
-        normalised_input_pkg_map = {input_pkg.name: input_pkg.given_version
-                                    for input_pkg in normalised_input_pkgs}
-
+        normalised_input_pkg_map = {
+            input_pkg.name: {
+                'version': input_pkg.version,
+                'given_version': input_pkg.given_version
+            } for input_pkg in normalised_input_pkgs}
     stack_recommendation = []
     db_known_packages = set()
+    gh = GithubUtils()
     for package in graph_response.get('result', {}).get('data'):
         pkg_name = package.get('package').get('name', [''])[0]
-        clean_version = package.get('version').get('version', [''])[0]
-        given_pkg_version = get_version(pkg_name, clean_version, normalised_input_pkg_map)
+        clean_version = get_clean_version(pkg_name,
+                                          package.get('version').get('version', [''])[0],
+                                          normalised_input_pkg_map)
+        pseudo_version = gh.is_pseudo_version(clean_version) if ecosystem == 'golang' else False
+        given_pkg_version = get_given_version(pkg_name, clean_version, normalised_input_pkg_map)
         pkg_recomendation = CABatchResponseBuilder(ecosystem). \
-            generate_recommendation(package, given_pkg_version)
+            generate_recommendation(package, pkg_name, given_pkg_version)
         stack_recommendation.append(pkg_recomendation)
         known_package_flow(ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
         db_known_packages.add(normlize_packages(pkg_name, clean_version,
-                                                given_version=given_pkg_version))
+                                                given_version=given_pkg_version,
+                                                is_pseudo_version=pseudo_version))
 
     input_dependencies = set(normalised_input_pkgs)
     unknown_pkgs: Set = input_dependencies.difference(db_known_packages)
     return stack_recommendation, unknown_pkgs
 
 
-def get_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:
+def get_clean_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:
+    """Output clean package version for each Package.
+
+    :param pkg_name: Package Name
+    :param normalised_input_pkg_map: Input Package Map
+    :return: Given clean package version
+    """
+    logger.debug('Fetch input clean package version.')
+    if isinstance(normalised_input_pkg_map, dict):
+        return normalised_input_pkg_map[pkg_name]['version']
+    return pkg_version
+
+
+def get_given_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:
     """Output Package version for each Package.
 
     :param pkg_name: Package Name
@@ -164,17 +231,8 @@ def get_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) 
     """
     logger.debug('Fetch Input Package version.')
     if isinstance(normalised_input_pkg_map, dict):
-        return normalised_input_pkg_map[pkg_name]
+        return normalised_input_pkg_map[pkg_name]['given_version']
     return pkg_version
-
-
-def build_pkg_recommendation(pack_details, ecosystem) -> Dict:
-    """Build Package Recommendation."""
-    logger.debug('Building Package Recommendation.')
-    pkg_recomendation = CABatchResponseBuilder(ecosystem).generate_recommendation(pack_details)
-    known_package_flow(
-        ecosystem, pkg_recomendation["package"], pkg_recomendation["version"])
-    return pkg_recomendation
 
 
 def add_unknown_pkg_info(stack_recommendation: List, unknown_pkgs: Set[Package]) -> List:
@@ -188,5 +246,6 @@ def add_unknown_pkg_info(stack_recommendation: List, unknown_pkgs: Set[Package])
         unknowns = unknown_pkg._asdict()
         unknowns['version'] = unknowns.get('given_version')
         unknowns.pop('given_version', None)
-        stack_recommendation.append(unknowns)
+        unknowns.pop('is_pseudo_version', None)
+        stack_recommendation.append(dict(unknowns))
     return stack_recommendation

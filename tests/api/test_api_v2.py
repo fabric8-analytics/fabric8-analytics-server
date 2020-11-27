@@ -181,7 +181,7 @@ class TestCAPostApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.add_unknown_pkg_info')
     @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
-    @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
+    @patch('bayesian.api.api_v2.get_batch_ca_data')
     def test_get_component_analyses_post(self, _mock1, _mock2, _mock3, _mock4):
         """CA POST: Valid API."""
         test = [{"package": "markdown2", "version": "2.3.2", "package_unknown": False}]
@@ -203,7 +203,7 @@ class TestCAPostApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
     @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
-    @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
+    @patch('bayesian.api.api_v2.get_batch_ca_data')
     def test_get_component_analyses_unknown_flow(self, _mock1, _mock2, _mock3, _mock4, _mock5):
         """CA POST: Unknown Flow."""
         test = [{"package": "django", "version": "1.1", "package_unknown": True}]
@@ -225,7 +225,7 @@ class TestCAPostApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.api.api_v2.add_unknown_pkg_info')
     @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
-    @patch('bayesian.api.api_v2.GraphAnalyses.get_batch_ca_data')
+    @patch('bayesian.api.api_v2.get_batch_ca_data')
     def test_get_component_analyses_unknown_flow_ingestion_disabled(
             self, _mock1, _mock2, _mock3, _mock4):
         """CA POST: Unknown flow, Ingestion Disabled."""
