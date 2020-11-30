@@ -241,7 +241,7 @@ class ComponentAnalysesApi(Resource):
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
             stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
-            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1" and ecosystem != "golang":
+            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1":
                 # Unknown Packages is Present and INGESTION is Enabled
                 logger.debug(unknown_pkgs)
                 unknown_package_flow(ecosystem, unknown_pkgs)
