@@ -2,10 +2,7 @@ FROM quay.io/openshiftio/rhel-base-fabric8-analytics-server:latest
 LABEL maintainer "Devtools <devtools@redhat.com>"
 LABEL author "Devtools <devtools@redhat.com>"
 
-ENV LANG=en_US.UTF-8 \
-    F8A_WORKER_VERSION=4e822f7 \
-    F8A_AUTH_VERSION=5211e23 \
-    F8A_UTILS=098d3d6
+ENV LANG=en_US.UTF-8
 
 RUN useradd -d /coreapi coreapi
 

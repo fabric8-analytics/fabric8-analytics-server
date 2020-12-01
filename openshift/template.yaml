@@ -49,16 +49,16 @@ objects:
               configMapKeyRef:
                 name: bayesian-config
                 key: auth-url
-          - name: SNYK_API_TOKEN_VALIDATION_URL
-            valueFrom:
-              configMapKeyRef:
-                name: bayesian-config
-                key: snyk_api_token_validation_url
           - name: BAYESIAN_FETCH_PUBLIC_KEY
             valueFrom:
               configMapKeyRef:
                 name: bayesian-config
                 key: auth-url
+          - name: SNYK_API_TOKEN_VALIDATION_URL
+            valueFrom:
+              configMapKeyRef:
+                name: bayesian-config
+                key: snyk_api_token_validation_url
           - name: FABRIC8_ANALYTICS_JWT_AUDIENCE
             value: "fabric8-online-platform,openshiftio-public,https://prod-preview.openshift.io,https://openshift.io"
           - name: SENTRY_DSN

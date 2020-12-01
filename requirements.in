@@ -30,5 +30,5 @@ mod_wsgi!=4.5.4
 
 f8a_worker @ git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@066c2f6#egg=f8a_worker
 f8a_auth @ git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=fabric8a_auth
-f8a_utils @ git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@5a5ce60#egg=f8a_utils
+f8a_utils @ git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@c9d3f47#egg=f8a_utils
 

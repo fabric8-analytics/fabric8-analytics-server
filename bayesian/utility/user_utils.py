@@ -22,9 +22,9 @@ def get_user(uuid_val):
         result = rdb.session.query(UserDetails).filter(UserDetails.user_id == uuid_val)
         user = result.one()
         return user
-    except NoResultFound as e:
+    except NoResultFound:
         logger.exception("User not found with id %s", uuid_val)
-        raise UserNotFoundException("User not found") from e
+        return None
     except SQLAlchemyError as e:
         logger.exception("Error fetching user with id %s", uuid_val)
         raise UserException("Error fetching user") from e
@@ -56,15 +56,6 @@ def create_or_update_user(user_id, snyk_api_token, user_source):
 
 class UserException(Exception):
     """Exception for all User Management."""
-
-    def __init__(self, message):
-        """Initialize the exception."""
-        self.message = message
-        super().__init__(message)
-
-
-class UserNotFoundException(Exception):
-    """Exception for User not found."""
 
     def __init__(self, message):
         """Initialize the exception."""

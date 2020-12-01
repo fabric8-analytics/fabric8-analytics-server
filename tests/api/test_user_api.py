@@ -4,8 +4,6 @@ from unittest.mock import patch
 
 from f8a_worker.models import (UserDetails)
 
-from bayesian.api import user_api
-from bayesian.exceptions import HTTPError
 from bayesian.utility import user_utils
 
 
@@ -40,9 +38,8 @@ class TestUserEndpoints:
             with patch('bayesian.api.user_api.request') as request:
                 request.json.return_value = {'user_id': '123', 'snyk_api_token': 'abc'}
                 is_snyk_token_valid.return_value = False
-
-                with(pytest.raises(HTTPError)):
-                    user_api.create_or_update_user()
+                response = self.client.put('/user')
+                assert response.status_code == 400
 
     def test_user_put(self):
         """Test case for PUT user."""

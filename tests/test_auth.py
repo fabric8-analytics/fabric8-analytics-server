@@ -2,7 +2,6 @@
 from unittest.mock import Mock, patch
 
 from bayesian.auth import validate_user
-from bayesian.utility.user_utils import UserNotFoundException
 import unittest
 
 
@@ -33,7 +32,7 @@ class TestAuth(unittest.TestCase):
     @patch('bayesian.utility.user_utils.get_user')
     def test_validate_user(self, _mock1, _mock2):
         """Test Decorator validate_user."""
-        _mock1.return_value = UserNotFoundException
+        _mock1.return_value = None
         m1 = Mock
         result = validate_user(m1)
         self.assertIsInstance(result, object)
