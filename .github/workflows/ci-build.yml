@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ master ]
+   
+jobs:
+  Code-Quality-Checks:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: 
+        scripts:
+          - run-linter
+          - check-docstyle
+          - detect-dead-code
+          - detect-common-errors
+          - measure-cyclomatic-complexity
+          - measure-maintainability-index    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.6'
+    - name: ${{ matrix.scripts }}
+      run: bash qa/${{ matrix.scripts }}.sh;
+  Unit-Tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.6'
+    - name: Run Unit Tests
+      run: bash qa/runtest.sh

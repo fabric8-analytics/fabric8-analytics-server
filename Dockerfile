@@ -1,10 +1,6 @@
 FROM registry.centos.org/centos/centos:7
 
-ENV LANG=en_US.UTF-8 \
-    F8A_WORKER_VERSION=d403113 \
-    F8A_AUTH_VERSION=5211e23 \
-    F8A_UTILS=f94a04e
-
+ENV LANG=en_US.UTF-8
 RUN useradd -d /coreapi coreapi
 
 # https://copr.fedorainfracloud.org/coprs/fche/pcp/
@@ -34,9 +30,6 @@ RUN pushd /coreapi && \
     python3.6 -m pip install --upgrade pip>=10.0.0 && pip3 install . &&\
     popd
 
-RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@${F8A_WORKER_VERSION}
-RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@${F8A_AUTH_VERSION}
-RUN pip3 install git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@${F8A_UTILS}
 
 # Required by the solver task in worker to resolve dependencies from package.json
 RUN npm install -g semver-ranger

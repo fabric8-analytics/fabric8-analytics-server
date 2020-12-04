@@ -1,0 +1,710 @@
+openapi: 3.0.1
+info:
+  title: Analytics Core API Specs for Version 2
+  version: '2.1'
+servers:
+- url: https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2
+  description: "Dependency Analytics Server"
+security:
+- tokenAuth: []
+paths:
+  /component-analyses/:
+    post:
+      tags:
+        - CA batch call
+      summary: Get security and other details about a software component and recommendations to change to a more secured version in a batched manner.
+      parameters:
+        - name: uuid
+          in: header
+          description: User Identification uuid
+          required: false
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPackageDetails'
+
+      responses:
+        200:
+          description: Detailed response for the requested application component batch
+          headers:
+            uuid:
+              schema:
+                type: string
+              description: User uuid.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  anyOf:
+                    - $ref: '#/components/schemas/FreeUserBatch'
+                    - $ref: '#/components/schemas/RegisteredUserBatch'
+                    - $ref: '#/components/schemas/NoVulnerabilities'
+              examples:
+                FreeUser Batch:
+                  $ref: '#/components/examples/free-user-batch'
+                RegisteredUser Batch:
+                  $ref: '#/components/examples/registered-user-batch'
+                No Vulnerability Batch:
+                  $ref: '#/components/examples/no-vul-batch'
+
+        202:
+          description: If any of Package is unknown, We will have 202 response status code.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  anyOf:
+                    - $ref: '#/components/schemas/UnknownPkgResponse'
+                    - $ref: '#/components/schemas/RegisteredUserBatch'
+                    - $ref: '#/components/schemas/FreeUserBatch'
+              examples:
+                All Packages Unknown:
+                  $ref: '#/components/examples/all-packages-unknown'
+                Some Packages Unknown:
+                  $ref: '#/components/examples/some-packages-unknown'
+
+        401:
+          description: Request unauthorized
+          content: {}
+        404:
+          description: Endpoint not found
+          content: {}
+
+
+  /component-analyses/{eco}/{name}/{ver}:
+    get:
+      tags:
+      - CA Singular Call
+      summary: Get security and other details about a software component and recommendations
+        to change to a more secured version
+      operationId: da_scanner.api_v2.component-analyses
+      parameters:
+      - name: eco
+        in: path
+        description: component ecosystem
+        required: true
+        schema:
+          type: string
+      - name: name
+        in: path
+        description: component name
+        required: true
+        schema:
+          type: string
+      - name: ver
+        in: path
+        description: component version
+        required: true
+        schema:
+          type: string
+      - name: uuid
+        in: header
+        description: User Identification uuid
+        required: false
+        schema:
+          type: string
+
+      responses:
+        200:
+          description: Detailed response for the requested application component
+          headers:
+            uuid:
+              schema:
+                type: string
+              description: User uuid.
+          content:
+            application/json:
+              schema:
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/RegisteredUser'
+                    - $ref: '#/components/schemas/FreeUser'
+                    - $ref: '#/components/schemas/NoVulnerabilities'
+              examples:
+                FreeUser:
+                  $ref: '#/components/examples/free-user'
+                RegisteredUser:
+                  $ref: '#/components/examples/registered-user'
+                No Vulnerability:
+                  $ref: '#/components/examples/no-vul'
+
+        202:
+          description: Package is currently Unavailable. Please try again later
+          content: {}
+        401:
+          description: Request unauthorized
+          content: {}
+        404:
+          description: Data not found
+          content: {}
+
+components:
+  examples:
+    free-user-batch:
+      value:
+        - package: "django"
+          version: "1.1"
+          package_unknown: false
+          vulnerabilities:
+            - id: "SNYK-2010-3082"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids:
+                - "CVE-2010-4534"
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+            - id: "SYNK-2018-1002"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids:
+                - "CVE-2010-4534"
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+          recommended_versions : "2"
+          message: "2 vulnerabilities within this dependency"
+          highest_severity: "high"
+          known_security_vulnerability_count: 2
+          security_advisory_count: 1
+          registration_link: "https://app.snyk.io/login"
+
+        - package: "mango"
+          version: "2.1"
+          package_unknown: false
+          vulnerabilities:
+            - id: "SNYK-2010-3082"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids:
+                - "CVE-2010-4534"
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+            - id: "SNYK-2010-3082"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+          recommended_versions : "2"
+          message: "2 vulnerabilities within this dependency"
+          highest_severity: "high"
+          known_security_vulnerability_count: 2
+          security_advisory_count: 1
+          registration_link: "https://app.snyk.io/login"
+
+    registered-user-batch:
+      value:
+        - package: "django"
+          version: "1.1"
+          package_unknown: false
+          vulnerabilities:
+            - id: "SNYK-2010-3082"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+            - id: "SNYK-2010-30812"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+          recommended_versions : "2"
+          message: "3 vulnerabilities within this dependency, 1 exploitable vulnerabilities"
+          highest_severity: "high"
+          known_security_vulnerability_count: 2
+          security_advisory_count: 1
+          exploitable_vulnerabilities_count: 1
+          vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+        - package: "mango"
+          version: "2.1"
+          package_unknown: false
+          vulnerabilities:
+            - id: "SNYK-2010-1111"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+            - id: "SNYK-2010-0000"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+          recommended_versions : "2"
+          message: "3 vulnerabilities within this dependency, 1 exploitable vulnerabilities"
+          highest_severity: "high"
+          known_security_vulnerability_count: 2
+          security_advisory_count: 1
+          exploitable_vulnerabilities_count: 1
+          vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+    no-vul-batch:
+      value:
+        - package: "django"
+          version: "1.1"
+          recommendation: {}
+
+    registered-user:
+      value:
+        package: "django"
+        version: "1.1"
+        recommendation:
+          component_analyses:
+            vulnerability:
+              - vendor_cve_ids: "SNYK-2018-1002"
+                cvss: "1.2"
+                is_private: true
+              - vendor_cve_ids: "SNYK-2010-3082"
+                cvss: "1.3"
+                is_private: false
+          recommended_version : "2"
+          message: "3 vulnerabilities within this dependency, 1 exploitable vulnerabilities"
+          severity: "high"
+          public_vulnerabilities_count: 2
+          private_vulnerabilities_count: 1
+          exploitable_vulnerabilities_count: 1
+          vendor_package_link: "https://snyk.io/vuln/maven:org.zeroturnaround%3Azt-zip"
+
+    free-user:
+      value:
+        package: "mango"
+        version: "2.1"
+        recommendation:
+          component_analyses:
+            vulnerability:
+              - vendor_cve_ids: "SNYK-2018-1002"
+                cvss: "1.2"
+                is_private: true
+              - vendor_cve_ids: "SNYK-2010-3082"
+                cvss: "1.3"
+                is_private: false
+          recommended_version : "2"
+          message: "2 vulnerabilities within this dependency"
+          severity: "high"
+          public_vulnerabilities_count: 2
+          private_vulnerabilities_count: 1
+          registration_link: "https://app.snyk.io/login"
+
+    no-vul:
+      value:
+        package: "mango"
+        version: "2.1"
+        recommendation: {}
+
+    all-packages-unknown:
+      value:
+        - package: "django"
+          version: "1.1"
+          package_unknown: true
+
+    some-packages-unknown:
+      value:
+        - package: "django"
+          version: "1.1"
+          package_unknown: false
+          vulnerability:
+            - id: "SNYK-2010-0000"
+              cvss: "1.2"
+              is_private: false
+              cwes:
+                - "CWE-264"
+              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+              severity: "medium"
+              title: "Information Exposure"
+              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+              cve_ids: [
+                "CVE-2010-4534"
+              ]
+              fixed_in:
+                - "1.1.3"
+                - "1.2.4"
+          recommended_versions : "2"
+          message: "2 vulnerabilities within this dependency"
+          highest_severity: "high"
+          known_security_vulnerability_count: 2
+          security_advisory_count: 1
+          registration_link: "https://app.snyk.io/login"
+        - package: "django"
+          version: "1.1"
+          package_unknown: true
+  schemas:
+    RequestPackageDetails:
+      title: CA Batch Call Request Body
+      type: object
+      properties:
+        ecosystem:
+          type: string
+          enum:
+            - maven
+            - pypi
+            - npm
+        package_versions:
+          type: array
+          items:
+            type: object
+            properties:
+                package:
+                  type: string
+                version:
+                  type: string
+          example:
+            - package: django
+              version: 1.1
+            - package: mango
+              version: 2.1
+
+    RegisteredUserBatch:
+      title: Vendor Private Recommendation
+      type: object
+      properties:
+        package_unknown:
+          type: boolean
+          example: False
+        package:
+          type: string
+          example: "django"
+        version:
+          type: string
+          example: "1.1"
+        recommended_versions:
+          type: string
+          example: 2
+        vulnerability:
+          type: array
+          items:
+            $ref: '#/components/schemas/VulnerabilityDetailsBatch'
+        message:
+          type: string
+          example: "3 vulnerabilities within this dependency, 1 exploitable vulnerabilities"
+        highest_severity:
+          type: string
+          example: "high"
+        known_security_vulnerability_count:
+          type: integer
+          example: 0
+        security_advisory_count:
+          type: integer
+          example: 0
+        exploitable_vulnerabilities_count:
+          type: integer
+          example: 1
+        vendor_package_link:
+          type: string
+          example : "https://snyk.io/vuln/maven:org.webjars%3Ajquery-form"
+
+    FreeUserBatch:
+      title: Vendor Public Recommendation
+      type: object
+      properties:
+        package:
+          type: string
+          example: "django"
+        package_unknown:
+          type: boolean
+          example: False
+        version:
+          type: string
+          example: "1.1"
+        recommended_versions:
+          type: string
+          example: "3.1"
+        vulnerability:
+          type: array
+          items:
+            $ref: '#/components/schemas/VulnerabilityDetailsBatch'
+        message:
+          type: string
+          example: "2 vulnerabilities within this dependency"
+        highest_severity:
+          type: string
+          example: "high"
+        known_security_vulnerability_count:
+          type: integer
+          example: 1
+        security_advisory_count:
+          type: integer
+          example: 1
+        registration_link:
+          type: string
+          example : "https://app.snyk.io/login"
+
+    VulnerabilityDetailsBatch:
+      title: Vulnerability Details Batch
+      description: Information of the vulnerability found
+      type: object
+      properties:
+        id:
+          type: string
+          example: "SNYK-1234"
+        cvss:
+          type: string
+          example: 9.2
+        is_private:
+          type: boolean
+          example: true
+        cwes:
+          type: array
+          items:
+            type: string
+          example:
+            - "CWE-264"
+        cvss_v3:
+          type: string
+          example: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+        severity:
+          type: string
+          example: "medium"
+        title:
+          type: string
+          example: "Information Exposure"
+        url:
+          type: string
+          example: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
+        cve_ids:
+          type: array
+          items:
+            type: string
+          example:
+            - "CVE-2010-4534"
+        fixed_in:
+          type: array
+          items:
+            type: string
+          example:
+            - "1.1.3"
+            - "1.2.4"
+
+    UnknownPkgResponse:
+      title: All Unknown Packages Response
+      description: Information of the vulnerability found
+      type: object
+      properties:
+        package:
+          type: string
+          example: "django"
+        package_unknown:
+          type: boolean
+          example: true
+        version:
+          type: string
+          example: "1.1"
+
+    VulnerabilityDetails:
+      title: Vulnerability Details
+      description: Information of the vulnerability found
+      type: object
+      properties:
+        vulnerability:
+          type: array
+          items:
+            type: object
+            properties:
+              vendor_cve_ids:
+                type: string
+                example: "SNYK-1234"
+              cvss:
+                type: string
+                example: 9.2
+              is_private:
+                type: boolean
+                example: true
+              cve_ids:
+                type: array
+                items:
+                  type: string
+                example:
+                  - CVE-2014-0474
+                  - CVE-2014-0475
+              cwes:
+                type: array
+                items:
+                  type: string
+                example:
+                  - CWE-185
+                  - CWE-730
+              cvss_v3:
+                type: string
+                example: "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+              severity:
+                type: string
+                enum:
+                  - low
+                  - medium
+                  - high
+                  - critical
+              title:
+                type: string
+                example: SQL Injection
+              url:
+                type: string
+                example: https://snyk.io/vuln/SNYK-PYTHON-DJANGO-4002
+              fixed_in:
+                type: array
+                items:
+                  type: string
+                example:
+                  - ">=0.19.0-beta.1"
+
+    RegisteredUser:
+      title: Vendor Private Recommendation
+      type: object
+      properties:
+        package:
+          type: string
+          example: "django"
+        version:
+          type: string
+          example: "1.1"
+        recommendation:
+          type: object
+          properties:
+            recommended_version:
+              type: string
+              example: 2
+            component_analyses:
+              $ref: '#/components/schemas/VulnerabilityDetails'
+            message:
+              type: string
+              example: "3 vulnerabilities within this dependency, 1 exploitable vulnerabilities"
+            severity:
+              type: string
+              example: "high"
+            known_security_vulnerability_count:
+              type: integer
+              example: 0
+            security_advisory_count:
+              type: integer
+              example: 0
+            exploitable_vulnerabilities_count:
+              type: integer
+              example: 1
+            vendor_package_link:
+              type: string
+              example : "https://snyk.io/vuln/maven:org.webjars%3Ajquery-form"
+
+    FreeUser:
+      title: Vendor Public Recommendation
+      type: object
+      properties:
+        package:
+          type: string
+          example: "django"
+        version:
+          type: string
+          example: "1.1"
+        recommendation:
+          type: object
+          properties:
+            recommended_version:
+              type: string
+              example: "3.1"
+            component_analyses:
+              $ref: '#/components/schemas/VulnerabilityDetails'
+            message:
+              type: string
+              example: "2 vulnerabilities within this dependency"
+            highest_severity:
+              type: string
+              example: "high"
+            known_security_vulnerability_count:
+              type: integer
+              example: 1
+            security_advisory_count:
+              type: integer
+              example: 1
+            registration_link:
+              type: string
+              example : "https://app.snyk.io/login"
+
+    NoVulnerabilities:
+      title: No Vulnerability Response
+      type: object
+      properties:
+        package:
+          type: string
+          example: "django"
+        version:
+          type: string
+          example: "1.1"
+        recommendation:
+          type: object
+          example: {}
+
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      description: 3Scale Token Auth is used for Authentication
+      name: user_key
+      in: query

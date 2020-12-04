@@ -1,0 +1,151 @@
+{
+    "requestId": "c89174df-b40a-42f0-99ea-04af3d0a1e8b",
+    "status": {
+        "message": "",
+        "code": 200,
+        "attributes": {}
+    },
+    "result": {
+        "data": [
+            {
+                "severity": [
+                    "low"
+                ],
+                "snyk_url": [
+                    "https://snyk.io/vuln/SNYK-GOLANG-GITHUBCOMKUBERNETESKUBERNETESSTAGINGSRCK8SIOCLIENTGODISCOVERYCACHEDDISK-174835"
+                ],
+                "references": [
+                    "GitHub Issue:https://github.com/kubernetes/kubernetes/issues/76676",
+                    "GitHub PR:https://github.com/kubernetes/kubernetes/pull/77874"
+                ],
+                "snyk_cwes": [
+                    "CWE-276"
+                ],
+                "vertex_label": [
+                    "SCVE"
+                ],
+                "description": [
+                    "## Overview\n\n"
+                ],
+                "cvss_scores": [
+                    2.8
+                ],
+                "snyk_cve_ids": [
+                    "CVE-2019-11244"
+                ],
+                "modified_date": [
+                    "20201105"
+                ],
+                "title": [
+                    "World Writable Files"
+                ],
+                "snyk_ecosystem": [
+                    "golang"
+                ],
+                "malicious": [
+                    false
+                ],
+                "snyk_cvss_v3": [
+                    "CVSS:3.0/AV:L/AC:L/PR:L/UI:R/S:U/C:N/I:L/A:N"
+                ],
+                "vuln_commit_date_rules": [
+                    ">=#2017-09-02T00:06:32Z&<#2019-05-14T17:40:18Z"
+                ],
+                "package_name": [
+                    "github.com/crda/test/package1"
+                ],
+                "fixed_in": [
+                    "1.12.9"
+                ],
+                "snyk_vuln_id": [
+                    "SNYK-GOLANG-GITHUBCOMKUBERNETESKUBERNETESSTAGINGSRCK8SIOCLIENTGODISCOVERYCACHEDDISK-174835"
+                ],
+                "snyk_pvt_vulnerability": [
+                    false
+                ],
+                "module_name": [
+                    "github.com/crda/test"
+                ],
+                "exploit": [
+                    "Not Defined"
+                ],
+                "patch_exists": [
+                    ""
+                ],
+                "fixable": [
+                    true
+                ]
+            },
+            {
+                "severity": [
+                    "low"
+                ],
+                "snyk_url": [
+                    "https://snyk.io/vuln/SNYK-GOLANG-GITHUBCOMKUBERNETESKUBERNETESSTAGINGSRCK8SIOCLIENTGODISCOVERYCACHEDDISK-174835"
+                ],
+                "references": [
+                    "GitHub Issue:https://github.com/kubernetes/kubernetes/issues/76676",
+                    "GitHub PR:https://github.com/kubernetes/kubernetes/pull/77874"
+                ],
+                "snyk_cwes": [
+                    "CWE-276"
+                ],
+                "vertex_label": [
+                    "SCVE"
+                ],
+                "description": [
+                    "## Overview\n\n"
+                ],
+                "cvss_scores": [
+                    2.8
+                ],
+                "snyk_cve_ids": [
+                    "CVE-2019-11244"
+                ],
+                "modified_date": [
+                    "20201105"
+                ],
+                "title": [
+                    "World Writable Files"
+                ],
+                "snyk_ecosystem": [
+                    "golang"
+                ],
+                "malicious": [
+                    false
+                ],
+                "snyk_cvss_v3": [
+                    "CVSS:3.0/AV:L/AC:L/PR:L/UI:R/S:U/C:N/I:L/A:N"
+                ],
+                "vuln_commit_date_rules": [
+                    ">=#2015-09-02T00:06:32Z&<#2020-05-14T17:40:18Z"
+                ],
+                "package_name": [
+                    "github.com/crda/test"
+                ],
+                "fixed_in": [
+                    "1.12.9"
+                ],
+                "snyk_vuln_id": [
+                    "SNYK-GOLANG-GITHUBCOMKUBERNETESKUBERNETESSTAGINGSRCK8SIOCLIENTGODISCOVERYCACHEDDISK-174835"
+                ],
+                "snyk_pvt_vulnerability": [
+                    false
+                ],
+                "module_name": [
+                    "github.com/crda/test"
+                ],
+                "exploit": [
+                    "Not Defined"
+                ],
+                "patch_exists": [
+                    ""
+                ],
+                "fixable": [
+                    true
+                ]
+            }
+        ],
+        "meta": {}
+    }
+}

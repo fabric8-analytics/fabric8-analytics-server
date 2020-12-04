@@ -12,6 +12,7 @@ import time
 from collections import defaultdict
 
 import botocore
+import logging
 from requests_futures.sessions import FuturesSession
 from flask import Blueprint, current_app, request, url_for, Response, g
 from flask.json import jsonify
@@ -31,7 +32,7 @@ from fabric8a_auth.auth import login_required
 from .auth import get_access_token
 from .exceptions import HTTPError
 from .utils import (get_system_version, retrieve_worker_result,
-                    server_create_component_bookkeeping, GraphAnalyses,
+                    server_create_component_bookkeeping,
                     server_create_analysis, get_analyses_from_graph,
                     search_packages_from_graph, fetch_file_from_github_release,
                     get_item_from_list_by_key_value, RecommendationReason,
@@ -50,6 +51,8 @@ from .generate_manifest import PomXMLTemplate
 from .default_config import COMPONENT_ANALYSES_LIMIT
 from fabric8a_auth.errors import AuthError
 
+
+logger = logging.getLogger(__name__)
 
 # TODO: improve maintainability index
 # TODO: https://github.com/fabric8-analytics/fabric8-analytics-server/issues/373
@@ -111,8 +114,7 @@ def readiness():
 def liveness():
     """Handle the /liveness REST API call."""
     # Check database connection
-    current_app.logger.debug("Liveness probe - trying to connect to database "
-                             "and execute a query")
+    logger.debug('Liveness probe - trying to connect to database and execute a query')
     rdb.session.query(Ecosystem).count()
     return jsonify({}), 200
 
@@ -152,7 +154,7 @@ def paginated(func):
             elif len(res) == 2:
                 res, code = func_res
             else:
-                raise HTTPError('Internal error', 500)
+                raise HTTPError(500, 'Internal error')
 
         args = pagination_parser.parse_args()
         page, per_page = args['page'], args['per_page']
@@ -245,8 +247,21 @@ class ComponentAnalyses(Resource):
 
     @staticmethod
     def get(ecosystem, package, version):
-        """Handle the GET REST API call."""
-        security_vendor = request.headers.get('security-vendor', None)
+        """Handle the GET REST API call.
+
+        Component Analyses:
+            - If package is Known (exists in GraphDB) returns Json formatted response.
+            - If package is not Known:
+                - DISABLE_UNKNOWN_PACKAGE_FLOW flag is 1: Skips the unknown package and returns 202
+                - DISABLE_UNKONWN_PACKAGE_FLOW flag is 0: Than checks below condition.
+                    - INVOKE_API_WORKERS flag is 1: Trigger bayesianApiFlow to fetch
+                                                    Package details
+                    - INVOKE_API_WORKERS flag is 0: Trigger bayesianFlow to fetch
+                                                    Package details
+
+        :return:
+            JSON Response
+        """
         st = time.time()
         metrics_payload = {
             "pid": os.getpid(),
@@ -274,15 +289,16 @@ class ComponentAnalyses(Resource):
                 _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
                 raise HTTPError(400, msg)
 
-        package = case_sensitivity_transform(ecosystem, package)
-        # Querying GraphDB for CVE Info.
+        result = None
+        # Exception is raised when an unknown package is requested. Ignoring this with below
+        # try-except block as further flow takes care of unknown package flow.
+        try:
+            package = case_sensitivity_transform(ecosystem, package)
 
-        if security_vendor:
-            graph_obj = GraphAnalyses(ecosystem, package, version, vendor=security_vendor)
-            result = graph_obj.get_analyses_for_snyk()
-        else:
-            # Old Flow
+            # Querying GraphDB for CVE Info.
             result = get_analyses_from_graph(ecosystem, package, version)
+        except Exception as e:
+            logger.error('ERROR: %s', str(e))
 
         if result is not None:
             # Known component for Bayesian
@@ -292,6 +308,11 @@ class ComponentAnalyses(Resource):
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
 
             return result
+        elif os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1":
+            msg = f"No data found for {ecosystem} package {package}/{version} " \
+                   "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
+
+            return {'error': msg}, 202
 
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
             # Enter the unknown path
@@ -615,7 +636,7 @@ class UserIntentGET(Resource):
         except botocore.exceptions.ClientError:
             err_msg = "Failed to fetch data for the user {u}, ecosystem {e}".format(u=user,
                                                                                     e=ecosystem)
-            current_app.logger.exception(err_msg)
+            logger.exception(err_msg)
             raise HTTPError(404, error=err_msg)
 
         return result
@@ -644,7 +665,7 @@ class MasterTagsGET(Resource):
             result = s3.fetch_master_tags(ecosystem)
         except botocore.exceptions.ClientError:
             err_msg = "Failed to fetch master tags for the ecosystem {e}".format(e=ecosystem)
-            current_app.logger.exception(err_msg)
+            logger.exception(err_msg)
             raise HTTPError(404, error=err_msg)
 
         return result
@@ -791,8 +812,7 @@ class StackAnalyses(Resource):
                 filepaths = request.values.getlist('filePath[]')
                 license_files = request.files.getlist('license[]')
 
-                current_app.logger.info('%r' % files)
-                current_app.logger.info('%r' % filepaths)
+                logger.info('files: %s filepaths: %s', files, filepaths)
 
                 # At least one manifest file path should be present to analyse a stack
                 if not filepaths:
@@ -969,8 +989,7 @@ class SubmitFeedback(Resource):
             return {'status': 'success'}
         except SQLAlchemyError as e:
             # TODO: please log the actual error too here
-            current_app.logger.exception(
-                'Failed to create new analysis request')
+            logger.exception('Failed to create new analysis request')
             raise HTTPError(
                 500, "Error inserting log for request {t}".format(t=stack_id)) from e
 
@@ -1045,7 +1064,7 @@ class CoreDependencies(Resource):
             }
             return response, 200
         except Exception as e:
-            current_app.logger.error('ERROR: {}'.format(str(e)))
+            logger.error('ERROR: %s', str(e))
 
 
 class EmptyBooster(Resource):
@@ -1158,15 +1177,14 @@ class CveByDateEcosystem(Resource):
             msg = 'Invalid datetime specified. Please specify in YYYYMMDD format'
             raise HTTPError(400, msg)
         try:
-            cve_sources = request.args.get('cve_sources', 'all')
             date_range = int(request.args.get('date_range', 7))
             if date_range <= 0:
                 raise HTTPError(400, error="date_range parameter should be a positive integer")
-            getcve = CveByDateEcosystemUtils(None, cve_sources,
+            getcve = CveByDateEcosystemUtils(None,
                                              modified_date, ecosystem, date_range)
             result = getcve.get_cves_by_date_ecosystem()
         except Exception as e:
-            current_app.logger.error('ERROR: {}'.format(str(e)))
+            logger.error('ERROR: %s', str(e))
             msg = "No cve data found for {ecosystem} ".format(ecosystem=ecosystem)
             raise HTTPError(404, msg)
 
@@ -1185,7 +1203,7 @@ class EpvsByCveidService(Resource):
             getcve = CveByDateEcosystemUtils(cve_id)
             result = getcve.get_cves_epv_by_date()
         except Exception as e:
-            current_app.logger.error('ERROR: {}'.format(str(e)))
+            logger.error('ERROR: %s', str(e))
             msg = "No epv data found for {cve_id} ".format(cve_id=cve_id)
             raise HTTPError(404, msg)
 

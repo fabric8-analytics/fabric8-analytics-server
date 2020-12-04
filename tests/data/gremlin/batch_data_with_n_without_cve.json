@@ -1,0 +1,368 @@
+{
+    "requestId": "eb0176fb-ff34-4e05-9e2b-f555a49b75f7",
+    "status": {
+        "message": "",
+        "code": 200,
+        "attributes": {}
+    },
+    "result": {
+        "data": [
+            {
+                "package": {
+                    "gh_issues_last_month_opened": [
+                        -1
+                    ],
+                    "gh_prs_last_year_closed": [
+                        -1
+                    ],
+                    "ecosystem": [
+                        "pypi"
+                    ],
+                    "gh_subscribers_count": [
+                        2286
+                    ],
+                    "gh_contributors_count": [
+                        -1
+                    ],
+                    "latest_version_last_updated": [
+                        "20200708"
+                    ],
+                    "vertex_label": [
+                        "Package"
+                    ],
+                    "libio_dependents_repos": [
+                        "114481"
+                    ],
+                    "latest_non_cve_version": [
+                        "1.1.2"
+                    ],
+                    "gh_issues_last_year_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_month_closed": [
+                        -1
+                    ],
+                    "gh_open_issues_count": [
+                        29
+                    ],
+                    "libio_dependents_projects": [
+                        "1345"
+                    ],
+                    "latest_version": [
+                        "1.1.2"
+                    ],
+                    "tokens": [
+                        "flask"
+                    ],
+                    "package_relative_used": [
+                        "not used"
+                    ],
+                    "gh_stargazers": [
+                        51702
+                    ],
+                    "gh_forks": [
+                        13680
+                    ],
+                    "package_dependents_count": [
+                        0
+                    ],
+                    "gh_prs_last_month_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_year_closed": [
+                        -1
+                    ],
+                    "last_updated": [
+                        1.5978501520968673E9
+                    ],
+                    "gh_prs_last_month_closed": [
+                        -1
+                    ],
+                    "topics": [
+                        "flask",
+                        "jinja",
+                        "python",
+                        "web-framework",
+                        "werkzeug",
+                        "wsgi"
+                    ],
+                    "libio_total_releases": [
+                        "32"
+                    ],
+                    "gh_refreshed_on": [
+                        "2020-08-19 14:47:41"
+                    ],
+                    "gh_prs_last_year_opened": [
+                        -1
+                    ],
+                    "name": [
+                        "flask"
+                    ],
+                    "libio_latest_version": [
+                        "1.1.1"
+                    ],
+                    "libio_latest_release": [
+                        1.562608828E9
+                    ]
+                },
+                "version": {
+                    "gh_release_date": [
+                        1.562608828E9
+                    ],
+                    "licenses": [
+                        "BSD-Modified"
+                    ],
+                    "last_updated": [
+                        1.5845467698538392E9
+                    ],
+                    "declared_licenses": [
+                        "BSD-3-Clause"
+                    ],
+                    "source_repo": [
+                        "pypi"
+                    ],
+                    "pecosystem": [
+                        "pypi"
+                    ],
+                    "pname": [
+                        "flask"
+                    ],
+                    "vertex_label": [
+                        "Version"
+                    ],
+                    "description": [
+                        "A simple framework for building complex web applications."
+                    ],
+                    "version": [
+                        "1.1.1"
+                    ]
+                },
+                "cve": []
+            },
+            {
+                "package": {
+                    "gh_issues_last_month_opened": [
+                        -1
+                    ],
+                    "gh_prs_last_year_closed": [
+                        -1
+                    ],
+                    "ecosystem": [
+                        "pypi"
+                    ],
+                    "latest_version_last_updated": [
+                        "20200517"
+                    ],
+                    "vertex_label": [
+                        "Package"
+                    ],
+                    "libio_dependents_repos": [
+                        "115375"
+                    ],
+                    "latest_non_cve_version": [
+                        "3.0.7"
+                    ],
+                    "gh_issues_last_year_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_month_closed": [
+                        -1
+                    ],
+                    "libio_dependents_projects": [
+                        "2311"
+                    ],
+                    "latest_version": [
+                        "3.0.7"
+                    ],
+                    "tokens": [
+                        "django"
+                    ],
+                    "package_relative_used": [
+                        "not used"
+                    ],
+                    "gh_stargazers": [
+                        -1
+                    ],
+                    "gh_forks": [
+                        -1
+                    ],
+                    "package_dependents_count": [
+                        -1
+                    ],
+                    "gh_prs_last_month_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_year_closed": [
+                        -1
+                    ],
+                    "last_updated": [
+                        1.5922009557316282E9
+                    ],
+                    "gh_prs_last_month_closed": [
+                        -1
+                    ],
+                    "libio_total_releases": [
+                        "225"
+                    ],
+                    "gh_prs_last_year_opened": [
+                        -1
+                    ],
+                    "name": [
+                        "django"
+                    ],
+                    "libio_latest_version": [
+                        "3.1a1"
+                    ],
+                    "libio_latest_release": [
+                        1.589449265E9
+                    ]
+                },
+                "version": {
+                    "last_updated": [
+                        1.5920746022975206E9
+                    ],
+                    "pecosystem": [
+                        "pypi"
+                    ],
+                    "pname": [
+                        "django"
+                    ],
+                    "vertex_label": [
+                        "Version"
+                    ],
+                    "version": [
+                        "1.1.1"
+                    ]
+                },
+                "cve": [
+                    {
+                        "severity": [
+                            "medium"
+                        ],
+                        "snyk_url": [
+                            "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40304"
+                        ],
+                        "references": [
+                            "Django Vulnerability Description:https://www.djangoproject.com/weblog/2015/jan/13/security/",
+                            "NVD:https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-0221"
+                        ],
+                        "snyk_cwes": [
+                            "CWE-399"
+                        ],
+                        "vertex_label": [
+                            "SCVE"
+                        ],
+                        "description": [
+                            "## Overview\r\n[`django`](https://pypi.python.org/pypi/django) is a high-level Python Web framework that encourages rapid development and clean, pragmatic design.\r\n\r\nAffected versions of this package are vulnerable to Denial of Service (DoS) attacks. The `serve()` view reads files an entire line at a time, which allows remote attackers to cause high memory consumption via a long line in a file.\r\n\r\n## Details\nDenial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users.\r\n\r\nUnlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime.\r\n\r\nOne popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines.\r\n\r\nWhen it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries.\r\n\r\nTwo common types of DoS vulnerabilities:\r\n\r\n* High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, [commons-fileupload:commons-fileupload](SNYK-JAVA-COMMONSFILEUPLOAD-30082).\r\n\r\n* Crash - An attacker sending crafted requests that could cause the system to crash. For Example,  [npm `ws` package](npm:ws:20171108)\n\n## References\r\n- [Django Vulnerability Description](https://www.djangoproject.com/weblog/2015/jan/13/security/)\r\n- [CVE](https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-0221)\r\n"
+                        ],
+                        "cvss_scores": [
+                            5.3
+                        ],
+                        "snyk_cve_ids": [
+                            "CVE-2015-0221"
+                        ],
+                        "modified_date": [
+                            "20200516"
+                        ],
+                        "title": [
+                            "Denial of Service (DoS)"
+                        ],
+                        "snyk_ecosystem": [
+                            "pypi"
+                        ],
+                        "malicious": [
+                            false
+                        ],
+                        "snyk_cvss_v3": [
+                            "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+                        ],
+                        "fixed_in": [
+                            "1.4.18",
+                            "1.6.10",
+                            "1.7.3"
+                        ],
+                        "snyk_vuln_id": [
+                            "SNYK-PYTHON-DJANGO-40304"
+                        ],
+                        "snyk_pvt_vulnerability": [
+                            false
+                        ],
+                        "exploit": [
+                            "Not Defined"
+                        ],
+                        "patch_exists": [
+                            ""
+                        ],
+                        "fixable": [
+                            true
+                        ]
+                    },
+                    {
+                        "severity": [
+                            "medium"
+                        ],
+                        "snyk_url": [
+                            "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40318"
+                        ],
+                        "references": [
+                            "Django Vulnerability Description:https://www.djangoproject.com/weblog/2015/mar/18/security-releases/",
+                            "NVD:https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-2317",
+                            "Oracle Security Bulletin:http://www.oracle.com/technetwork/topics/security/bulletinapr2015-2511959.html"
+                        ],
+                        "snyk_cwes": [
+                            "CWE-79"
+                        ],
+                        "vertex_label": [
+                            "SCVE"
+                        ],
+                        "description": [
+                            "## Overview\r\n[`django`](https://pypi.python.org/pypi/django) is a high-level Python Web framework that encourages rapid development and clean, pragmatic design.\r\n\r\nAffected versions of this package are vulnerable to Cross-site Scripting (XSS) attacks. The `utils.http.is_safe_url` function did not properly validate URLs, allowing the execustion of URLs of the sort: `\\x08javascript: URL`.\r\n\r\n## Details\r\nA cross-site scripting attack occurs when the attacker tricks a legitimate web-based application or site to accept a request as originating from a trusted source.\r\n\r\nThis is done by escaping the context of the web application; the web application then delivers that data to its users along with other trusted dynamic content, without validating it. The browser unknowingly executes malicious script on the client side (through client-side languages; usually JavaScript or HTML)  in order to perform actions that are otherwise typically blocked by the browser’s Same Origin Policy.\r\n\r\nֿInjecting malicious code is the most prevalent manner by which XSS is exploited; for this reason, escaping characters in order to prevent this manipulation is the top method for securing code against this vulnerability.\r\n\r\nEscaping means that the application is coded to mark key characters, and particularly key characters included in user input, to prevent those characters from being interpreted in a dangerous context. For example, in HTML, `<` can be coded as  `&lt`; and `>` can be coded as `&gt`; in order to be interpreted and displayed as themselves in text, while within the code itself, they are used for HTML tags. If malicious content is injected into an application that escapes special characters and that malicious content uses `<` and `>` as HTML tags, those characters are nonetheless not interpreted as HTML tags by the browser if they’ve been correctly escaped in the application code and in this way the attempted attack is diverted.\r\n \r\nThe most prominent use of XSS is to steal cookies (source: OWASP HttpOnly) and hijack user sessions, but XSS exploits have been used to expose sensitive information, enable access to privileged services and functionality and deliver malware. \r\n\r\n### Types of attacks\r\nThere are a few methods by which XSS can be manipulated:\r\n\r\n|Type|Origin|Description|\r\n|--|--|--|\r\n|**Stored**|Server|The malicious code is inserted in the application (usually as a link) by the attacker. The code is activated every time a user clicks the link.|\r\n|**Reflected**|Server|The attacker delivers a malicious link externally from the vulnerable web site application to a user. When clicked, malicious code is sent to the vulnerable web site, which reflects the attack back to the user’s browser.| \r\n|**DOM-based**|Client|The attacker forces the user’s browser to render a malicious page. The data in the page itself delivers the cross-site scripting data.|\r\n|**Mutated**| |The attacker injects code that appears safe, but is then rewritten and modified by the browser, while parsing the markup. An example is rebalancing unclosed quotation marks or even adding quotation marks to unquoted parameters.|\r\n\r\n### Affected environments\r\nThe following environments are susceptible to an XSS attack:\r\n\r\n* Web servers\r\n* Application servers\r\n* Web application environments\r\n\r\n### How to prevent\r\nThis section describes the top best practices designed to specifically protect your code: \r\n\r\n* Sanitize data input in an HTTP request before reflecting it back, ensuring all data is validated, filtered or escaped before echoing anything back to the user, such as the values of query parameters during searches. \r\n* Convert special characters such as `?`, `&`, `/`, `<`, `>` and spaces to their respective HTML or URL encoded equivalents. \r\n* Give users the option to disable client-side scripts.\r\n* Redirect invalid requests.\r\n* Detect simultaneous logins, including those from two separate IP addresses, and invalidate those sessions.\r\n* Use and enforce a Content Security Policy (source: Wikipedia) to disable any features that might be manipulated for an XSS attack.\r\n* Read the documentation for any of the libraries referenced in your code to understand which elements allow for embedded HTML.\n\r\n\r\n## References\r\n- [Django Vulnerability Description](https://www.djangoproject.com/weblog/2015/mar/18/security-releases/)\r\n- [Oracle Security Bulletin](http://www.oracle.com/technetwork/topics/security/bulletinapr2015-2511959.html)\r\n- [CVE](https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-2317)\r\n"
+                        ],
+                        "cvss_scores": [
+                            4.3
+                        ],
+                        "snyk_cve_ids": [
+                            "CVE-2015-2317"
+                        ],
+                        "modified_date": [
+                            "20200516"
+                        ],
+                        "title": [
+                            "Cross-site Scripting (XSS)"
+                        ],
+                        "snyk_ecosystem": [
+                            "pypi"
+                        ],
+                        "malicious": [
+                            false
+                        ],
+                        "snyk_cvss_v3": [
+                            "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N"
+                        ],
+                        "fixed_in": [
+                            "1.4.20",
+                            "1.6.11",
+                            "1.7.7"
+                        ],
+                        "snyk_vuln_id": [
+                            "SNYK-PYTHON-DJANGO-40318"
+                        ],
+                        "snyk_pvt_vulnerability": [
+                            false
+                        ],
+                        "exploit": [
+                            "Not Defined"
+                        ],
+                        "patch_exists": [
+                            ""
+                        ],
+                        "fixable": [
+                            true
+                        ]
+                    }
+                ]
+            }
+        ],
+        "meta": {}
+    }
+}

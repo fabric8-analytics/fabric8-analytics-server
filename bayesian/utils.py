@@ -28,7 +28,7 @@ from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
 from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
 from f8a_worker.process import Git
 from f8a_worker.setup_celery import init_celery
-from urllib.parse import quote
+
 
 from . import rdb
 from .exceptions import HTTPError
@@ -40,7 +40,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from github import Github, BadCredentialsException, GithubException, RateLimitExceededException
 from git import Repo, Actor
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
@@ -68,16 +68,14 @@ def server_run_flow(flow_name, flow_args):
     :param flow_args: arguments for the flow
     :return: dispatcher ID handling flow
     """
-    current_app.logger.debug('Running flow {}'.format(flow_name))
+    logger.debug('Running flow %s', flow_name)
     start = datetime.datetime.now()
 
     init_celery(result_backend=False)
     dispacher_id = run_flow(flow_name, flow_args)
 
-    # compute the elapsed time
-    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    current_app.logger.debug("It took {t} seconds to start {f} flow.".format(
-        t=elapsed_seconds, f=flow_name))
+    logger.debug('It took %f seconds to start %s flow.',
+                 (datetime.datetime.now() - start).total_seconds(), flow_name)
     return dispacher_id
 
 
@@ -329,98 +327,6 @@ def search_packages_from_graph(tokens):
     return {'result': pkg_list}
 
 
-class GraphAnalyses:
-    """It Queries GraphDB Based on vendor and returns json converted data."""
-
-    def __init__(self, ecosystem, package, version, vendor=None):
-        """For Flows related to Security Vendor Integrations."""
-        self.vendor = vendor
-        self.ecosystem = ecosystem
-        self.version = version
-        self.package = package
-
-    def get_analyses_for_snyk(self):
-        """Fetch analysis for given package+version from the graph database.
-
-        It finally builds and returns JSON Response. This is vendor specific Function.
-        """
-        logger.debug('Executing Vendor Analyses')
-        cve_info_query = """
-            g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version)
-            .as('version').in('has_version').dedup().as('package').select('version')
-            .coalesce(out('has_snyk_cve').as('cve').select('package','version','cve')
-            .by(valueMap()),select('package','version').by(valueMap()));
-            """
-        payload = {
-            'gremlin': cve_info_query,
-            'bindings': {
-                'ecosystem': self.ecosystem,
-                'name': self.package,
-                'version': self.version
-            }
-        }
-        start = datetime.datetime.now()
-        try:
-            clubbed_data = []
-            logger.debug("Executing Gremlin calls with payload {}".format(payload))
-            graph_req = post(gremlin_url, data=json.dumps(payload))
-
-            if graph_req is None:
-                return None
-
-            resp = graph_req.json()
-            result_data = resp['result'].get('data')
-
-            if not (result_data and len(result_data) > 0):
-                # trigger unknown component flow in API for missing package
-                return None
-
-            clubbed_data.append({
-                "epv": result_data
-            })
-
-            if "cve" in result_data[0]:
-                # if cve if present
-                recommended_version = result_data[0].get('package', {}).get(
-                                                'latest_non_cve_version', {})
-                clubbed_data.append({
-                    "recommended_versions": recommended_version,
-                    "snyk_pkg_link": self.get_link(),
-                })
-                logger.info("latest non cve version for {eco} {pkg} is {ver}".format(
-                    eco=self.ecosystem,
-                    pkg=self.package,
-                    ver=recommended_version
-                ))
-            else:
-                clubbed_data.append({
-                    "recommended_versions": []
-                })
-
-        except Exception as e:
-            logger.debug(' '.join([type(e), ':', str(e)]))
-            return None
-
-        finally:
-            elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-            epv = "{e}/{p}/{v}".format(e=self.ecosystem, p=self.package, v=self.version)
-            logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
-                                                                        t=elapsed_seconds))
-        logger.debug('Generating Recommendation')
-        return generate_recommendation(clubbed_data, self.package, self.version)
-
-    def get_link(self):
-        """Generate link to Snyk Vulnerability Page."""
-        logger.debug('Generate Synk link')
-        snyk_ecosystem = {
-            'maven': 'maven',
-            'pypi': 'pip',
-            'npm': 'npm'
-        }
-        return "https://snyk.io/vuln/{}:{}".format(
-                snyk_ecosystem[self.ecosystem], quote(self.package))
-
-
 def get_analyses_from_graph(ecosystem, package, version):
     """Read analysis for given package+version from the graph database.
 
@@ -490,10 +396,9 @@ g.V().has('pecosystem', ecosystem).has('pname', name).has('version', version).as
         logger.debug(' '.join([type(e), ':', str(e)]))
         return None
     finally:
-        elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
         epv = "{e}/{p}/{v}".format(e=ecosystem, p=package, v=version)
-        logger.debug("Gremlin request {p} took {t} seconds.".format(p=epv,
-                                                                    t=elapsed_seconds))
+        logger.debug('Gremlin request %s took %f seconds.',
+                     epv, (datetime.datetime.now() - start).total_seconds())
 
     resp = generate_recommendation(clubbed_data, package, version)
     return resp
@@ -511,28 +416,19 @@ class CveByDateEcosystemUtils:
     .in("has_cve").valueMap()\
     """
 
-    # Get CVEs by date & ecosystem
-    cve_nodes_by_date_ecosystem_script_template = """\
-    g.V().has('modified_date', modified_date)\
-    .has('cecosystem',ecosystem)\
-    .has('cve_sources',cve_sources)\
-    .valueMap()\
-    """
-
     cve_nodes_by_date_ecosystem_script_template_all = """\
     g.V().has('modified_date', modified_date)\
     .has('cecosystem',ecosystem)\
     .valueMap()\
     """
 
-    def __init__(self, cve_id, cve_sources='all', bydate=None,
+    def __init__(self, cve_id, bydate=None,
                  ecosystem='all', date_range=7):
         """Initialize CvaeDate Ecosystem Utils."""
         self._cve_id = cve_id
         if cve_id is None:
             self._bydate = bydate
             self._ecosystem = ecosystem
-            self._cve_sources = cve_sources
             self._date_range = date_range
 
     def get_cves_by_date_ecosystem(self):
@@ -545,14 +441,11 @@ class CveByDateEcosystemUtils:
             for dt in didx:
                 dt = datetime.datetime.strftime(dt, '%Y%m%d')
                 # Gremlin script execution
-                script = self.cve_nodes_by_date_ecosystem_script_template_all \
-                    if self._cve_sources == 'all' \
-                    else self.cve_nodes_by_date_ecosystem_script_template
+                script = self.cve_nodes_by_date_ecosystem_script_template_all
 
                 self._ecosystem = self._ecosystem.lower()
                 bindings = {
-                    'modified_date': dt, 'ecosystem': self._ecosystem,
-                    'cve_sources': self._cve_sources
+                    'modified_date': dt, 'ecosystem': self._ecosystem
                 }
                 """Call Gremlin and get the CVE information."""
                 json_payload = self.prepare_payload(script, bindings)
@@ -595,7 +488,6 @@ class CveByDateEcosystemUtils:
                 "description": cve.get('description', [None])[0],
                 "ecosystem": cve.get('cecosystem', [None])[0],
                 "fixed_in": cve.get('fixed_in', [None])[0],
-                "cve_sources": cve.get('cve_sources', [None])[0],
                 "link": "https://nvd.nist.gov/vuln/detail/" +
                         cve.get('cve_id', [''])[0]
             }
@@ -684,13 +576,11 @@ def get_next_component_from_graph(ecosystem, user_id, company):
     try:
         graph_req = post(gremlin_url, data=json.dumps(payload))
     except Exception as e:
-        current_app.logger.debug(' '.join([type(e), ':', str(e)]))
+        logger.debug(' '.join([type(e), ':', str(e)]))
         return None
     finally:
-        elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        current_app.logger.debug("Gremlin request for next component for"
-                                 " ecosystem {e} took {t} seconds."
-                                 .format(e=ecosystem, t=elapsed_seconds))
+        logger.debug('Gremlin request for next component for ecosystem %s took %f seconds.',
+                     ecosystem, (datetime.datetime.now() - start).total_seconds())
 
     resp = graph_req.json()
 
@@ -728,10 +618,8 @@ def set_tags_to_component(ecosystem, package, tags, user_id, company):
     except Exception as e:
         return False, ' '.join([type(e), ':', str(e)])
     finally:
-        elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-        current_app.logger.debug(("Gremlin request for setting tags to component for ecosystem"
-                                  " {e} took {t} seconds."
-                                  .format(e=ecosystem, t=elapsed_seconds)))
+        logger.debug('Gremlin request for setting tags to component for ecosystem %s took %f '
+                     'seconds.', ecosystem, (datetime.datetime.now() - start).total_seconds())
     return True, None
 
 
@@ -770,10 +658,8 @@ def retrieve_worker_results(rdb, external_request_id):
         raise
 
     # compute elapsed time
-    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    msg = "It took {t} seconds to retrieve " \
-          "all worker results for {r}.".format(t=elapsed_seconds, r=external_request_id)
-    current_app.logger.debug(msg)
+    logger.debug('%s took %f seconds to retrieve all worker results.',
+                 external_request_id, (datetime.datetime.now() - start).total_seconds())
 
     return results
 
@@ -794,10 +680,9 @@ def retrieve_worker_result(rdb, external_request_id, worker):
     result_dict = result.to_dict()
 
     # compute elapsed time
-    elapsed_seconds = (datetime.datetime.now() - start).total_seconds()
-    msg = "It took {t} seconds to retrieve {w} " \
-          "worker results for {r}.".format(t=elapsed_seconds, w=worker, r=external_request_id)
-    current_app.logger.debug(msg)
+    logger.debug('%s took %f seconds to retrieve %s worker results.',
+                 external_request_id, (datetime.datetime.now() - start).total_seconds(),
+                 worker)
 
     return result_dict
 
@@ -971,8 +856,7 @@ class RecommendationReason:
                 This should track any future occurence of this[1] error:
                 Error:https://github.com/openshiftio/openshift.io/issues/2167
                 """
-                current_app.logger.error(
-                    "Stack Count for {} when confidence=None is {}".format(name, stack_count))
+                logger.error('Stack Count for %s when confidence=None is %d', name, stack_count)
 
             # 0% confidence is as good as not showing it on the UI.
             if stack_confidence == 0:
@@ -1025,9 +909,8 @@ def convert_version_to_proper_semantic(version, package_name=None):
         version = version.replace('-', '+', 3)
         conv_version = sv.Version.coerce(version)
     except ValueError:
-        current_app.logger.info(
-            "Unexpected ValueError for the package {} due to version {}"
-            .format(package_name, version))
+        logger.error('Unexpected ValueError for the package %s due to version %s',
+                     package_name, version)
         pass
     finally:
         return conv_version
@@ -1065,10 +948,8 @@ def select_latest_version(latest='', libio='', package_name=None):
         """In case of failure let's not show any latest version at all.
         Also, no generation of stack trace,
         as we are only intersted in the package that is causing the error."""
-        current_app.logger.info(
-            "Unexpected ValueError while selecting latest version for package {}. Debug:{}"
-            .format(package_name,
-                    {'latest': latest, 'libio': libio}))
+        logger.error('Unexpected ValueError while selecting latest version for package %s. '
+                     'Debug:%s', package_name, {'latest': latest, 'libio': libio})
         return_version = ''
     finally:
         return return_version
@@ -1095,9 +976,9 @@ def fetch_file_from_github(url, filename, branch='master'):
             'content': response.content.decode('utf-8')
         }]
     except ValueError:
-        current_app.logger.error('Error fetching file from given url')
+        logger.error('Error fetching file from given url')
     except Exception as e:
-        current_app.logger.error('ERROR: {}'.format(str(e)))
+        logger.error('ERROR: %s', str(e))
 
 
 def fetch_file_from_github_release(url, filename, token, ref=None):
@@ -1128,10 +1009,10 @@ def fetch_file_from_github_release(url, filename, token, ref=None):
         except GithubException as e:
             HTTPError(404, 'Github repository does not exist {}'.format(str(e)))
         except Exception as e:
-            current_app.logger.error('An Exception occured while fetching file github release {}'
-                                     .format(str(e)))
+            logger.error('An Exception occured while fetching file github release %s',
+                         str(e))
     else:
-        current_app.logger.error("Github access token is not provided")
+        logger.error('Github access token is not provided')
 
 
 def is_valid(param):
@@ -1304,13 +1185,14 @@ accepted_file_names = {
         "golist.json": "golang",
         "pylist.json": "pypi",
         "dependencies.txt": "maven"
-    }
+}
 
 
 accepted_ecosystems = [
     "npm",
     "maven",
-    "pypi"
+    "pypi",
+    "golang",
 ]
 
 

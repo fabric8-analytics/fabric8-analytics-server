@@ -1,0 +1,198 @@
+{
+    "requestId": "abc",
+    "status": {
+        "message": "",
+        "code": 200,
+        "attributes": {}
+    },
+    "result": {
+        "data": [
+            {
+                "package": {
+                    "gh_issues_last_month_opened": [
+                        -1
+                    ],
+                    "gh_prs_last_year_closed": [
+                        -1
+                    ],
+                    "libio_usedby": [
+                        "PokeAPI/pokeapi:1015",
+                        "PokeAPI/pokeapi:951",
+                        "SiCKRAGETV/SiCKRAGE:1477",
+                        "SiCKRAGETV/SiCKRAGE:1491",
+                        "arguman/arguman.org:936",
+                        "arguman/arguman.org:939",
+                        "eudicots/Cactus:3043",
+                        "eudicots/Cactus:3052",
+                        "frappe/frappe:632",
+                        "frappe/frappe:642",
+                        "jayfk/statuspage:3444",
+                        "jayfk/statuspage:3449",
+                        "phalt/swapi:401",
+                        "phalt/swapi:410",
+                        "scragg0x/realms-wiki:673",
+                        "scragg0x/realms-wiki:674",
+                        "trentm/django-markdown-deux:211",
+                        "trentm/django-markdown-deux:213",
+                        "zedshaw/lamson:596",
+                        "zedshaw/lamson:597"
+                    ],
+                    "ecosystem": [
+                        "pypi"
+                    ],
+                    "gh_subscribers_count": [
+                        68
+                    ],
+                    "gh_contributors_count": [
+                        30
+                    ],
+                    "vertex_label": [
+                        "Package"
+                    ],
+                    "libio_dependents_repos": [
+                        "1699"
+                    ],
+                    "latest_non_cve_version": [
+                        "2.3.8"
+                    ],
+                    "gh_issues_last_year_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_month_closed": [
+                        -1
+                    ],
+                    "gh_open_issues_count": [
+                        92
+                    ],
+                    "libio_dependents_projects": [
+                        "6"
+                    ],
+                    "latest_version": [
+                        "2.3.8"
+                    ],
+                    "tokens": [
+                        "markdown2"
+                    ],
+                    "package_relative_used": [
+                        "not used"
+                    ],
+                    "gh_stargazers": [
+                        1645
+                    ],
+                    "gh_forks": [
+                        251
+                    ],
+                    "package_dependents_count": [
+                        -1
+                    ],
+                    "gh_prs_last_month_opened": [
+                        -1
+                    ],
+                    "gh_issues_last_year_closed": [
+                        -1
+                    ],
+                    "last_updated": [
+                        1.5886678720735044E9
+                    ],
+                    "gh_prs_last_month_closed": [
+                        -1
+                    ],
+                    "libio_total_releases": [
+                        "36"
+                    ],
+                    "gh_prs_last_year_opened": [
+                        -1
+                    ],
+                    "name": [
+                        "markdown2"
+                    ],
+                    "libio_latest_version": [
+                        "2.3.6"
+                    ],
+                    "libio_latest_release": [
+                        1.537922358E9
+                    ]
+                },
+                "version": {
+                    "last_updated": [
+                        1.5886664340290043E9
+                    ],
+                    "pecosystem": [
+                        "pypi"
+                    ],
+                    "pname": [
+                        "markdown2"
+                    ],
+                    "vertex_label": [
+                        "Version"
+                    ],
+                    "version": [
+                        "2.3.2"
+                    ]
+                },
+                "cve": [
+                    {
+                        "severity": [
+                            "medium"
+                        ],
+                        "snyk_url": [
+                            "https://snyk.io/vuln/SNYK-PYTHON-MARKDOWN2-40770"
+                        ],
+                        "references": [
+                            "GitHub Commit #1:https://github.com/trentm/python-markdown2/commit/1b1dcdd727c0ef03453b9f5ef5ae3679f1d72323",
+                            "GitHub Commit #2:https://github.com/trentm/python-markdown2/commit/1fb702d650d35f7a6fee7f8dbe819e53ceaff53e",
+                            "GitHub Issue:https://github.com/trentm/python-markdown2/issues/285",
+                            "Github PR:https://github.com/trentm/python-markdown2/pull/315"
+                        ],
+                        "snyk_cwes": [
+                            "CWE-79"
+                        ],
+                        "vertex_label": [
+                            "SCVE"
+                        ],
+                        "description": [
+                            "## Overview\r\n[`markdown2`](http://pypi.python.org/pypi/markdown2) is A fast and complete Python implementation of Markdown.\r\n\r\nAffected versions of the package are vulnerable to Cross-site Scripting (XSS) attacks via the `safe_mode` feature, which is supposed to sanitize user input against XSS. With a crafted payload, XSS can be triggered, as demonstrated by omitting the final > character from an IMG tag.\r\n\r\n### PoC by Vineet Kumar\r\n```py\r\n>>> from markdown2 import markdown as mark\r\n>>> mark(<img src= onerror=alert(/XSS/)>, safe_mode=True)\r\nu<p>[HTML_REMOVED]</p>\\n\r\n>>> mark(<img src= onerror=alert(/XSS/) , safe_mode=True) # Please notice the space at end of string.\r\nu<p><img src= onerror=alert(/XSS/) </p>\\n\r\n>>> mark(<img src= onerror=alert(/XSS/)>, safe_mode=escape)\r\nu<p>&lt;img src= onerror=alert(/XSS/)&gt;</p>\\n\r\n>>> mark(<img src= onerror=alert(/XSS/) , safe_mode=escape)\r\nu<p><img src= onerror=alert(/XSS/) </p>\\n\r\n```\r\n\r\n## Details\r\nCross-Site Scripting (XSS) attacks occur when an attacker tricks a user’s browser to execute malicious JavaScript code in the context of a victim’s domain. Such scripts can steal the user’s session cookies for the domain, scrape or modify its content, and perform or modify actions on the user’s behalf, actions typically blocked by the browser’s Same Origin Policy.\r\n\r\nThese attacks are possible by escaping the context of the web application and injecting malicious scripts in an otherwise trusted website. These scripts can introduce additional attributes (say, a new option in a dropdown list or a new link to a malicious site) and can potentially execute code on the clients side, unbeknown to the victim. This occurs when characters like `<` `>` `` `` are not escaped properly.\r\n\r\nThere are a few types of XSS:\r\n- **Persistent XSS** is an attack in which the malicious code persists into the web app’s database.\r\n- **Reflected XSS** is an which the website echoes back a portion of the request. The attacker needs to trick the user into clicking a malicious link (for instance through a phishing email or malicious JS on another page), which triggers the XSS attack.\r\n- **DOM-based XSS** is an that occurs purely in the browser when client-side JavaScript echoes back a portion of the URL onto the page. DOM-Based XSS is notoriously hard to detect, as the server never gets a chance to see the attack taking place.\r\n\r\n## Remediation\r\nUpgrade `markdown2` to version 2.3.7 or higher.\n\n## References\n- [GitHub Commit #1](https://github.com/trentm/python-markdown2/commit/1b1dcdd727c0ef03453b9f5ef5ae3679f1d72323)\n- [GitHub Commit #2](https://github.com/trentm/python-markdown2/commit/1fb702d650d35f7a6fee7f8dbe819e53ceaff53e)\n- [GitHub Issue](https://github.com/trentm/python-markdown2/issues/285)\n- [Github PR](https://github.com/trentm/python-markdown2/pull/315)\n"
+                        ],
+                        "cvss_scores": [
+                            6.1
+                        ],
+                        "snyk_cve_ids": [
+                            "CVE-2018-5773"
+                        ],
+                        "modified_date": [
+                            "20200420"
+                        ],
+                        "title": [
+                            "Cross-site Scripting (XSS)"
+                        ],
+                        "snyk_ecosystem": [
+                            "pypi"
+                        ],
+                        "malicious": [
+                            false
+                        ],
+                        "snyk_cvss_v3": [
+                            "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N"
+                        ],
+                        "snyk_vuln_id": [
+                            "SNYK-PYTHON-MARKDOWN2-40770"
+                        ],
+                        "snyk_pvt_vulnerability": [
+                            false
+                        ],
+                        "exploit": [
+                            "Not Defined"
+                        ],
+                        "patch_exists": [
+                            false
+                        ],
+                        "fixable": [
+                            true
+                        ]
+                    }
+                ]
+            }
+        ],
+        "meta": {}
+    }
+}

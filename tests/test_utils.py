@@ -7,7 +7,6 @@ import tempfile
 import os
 import json
 from unittest.mock import Mock, patch
-from urllib.parse import quote
 from bayesian.utils import (
     get_core_dependencies,
     do_projection,
@@ -21,8 +20,7 @@ from bayesian.utils import (
     CveByDateEcosystemUtils,
     resolved_files_exist,
     get_ecosystem_from_manifest,
-    check_for_accepted_ecosystem,
-    get_analyses_from_graph, GraphAnalyses
+    check_for_accepted_ecosystem, get_analyses_from_graph
 )
 from f8a_worker.enums import EcosystemBackend
 from f8a_worker.models import Analysis, Ecosystem, Package, Version, WorkerResult
@@ -449,7 +447,7 @@ def test_get_cves_by_date_ecosystem_add(mocker):
     mocker.return_value = mock_response = Mock()
     mock_response.json.return_value = mocker_input_cve
 
-    cve = CveByDateEcosystemUtils(None, 'all', '20190509', 'npm', 2)
+    cve = CveByDateEcosystemUtils(None, '20190509', 'npm', 2)
     response = cve.get_cves_by_date_ecosystem()
 
     assert response
@@ -559,67 +557,3 @@ def test_get_analyses_from_graph(mocker):
     mock_response.json.return_value = non_cve_input
     resp = get_analyses_from_graph("npm", "lodash", "4.17.4")
     assert resp['result']['recommendation']['change_to'] == "4.17.11"
-
-
-def get_vendor_data(vendor):
-    """Read Vendor Data from JSON."""
-    vendor_obj = {
-        'snyk': 'snyk_component_analyses_response.json'
-    }
-    rest_json_path = os.path.join(
-        os.path.dirname(__file__),
-        'data/gremlin/{}'.format(vendor_obj[vendor])
-    )
-    with open(rest_json_path) as f:
-        resp_json = json.load(f)
-    return resp_json
-
-
-@patch("bayesian.utils.post")
-@patch("bayesian.utils.generate_recommendation")
-def test_graph_analyses(gr_mocker, post_mocker):
-    """Test Graph Analyses Class for Integration."""
-    snyk_data = get_vendor_data('snyk')
-    post_mocker.return_value = MockedGremlinResponse(snyk_data)
-    gr_mocker.return_value = GenerateRecommendationMocker(snyk_data).clubbed_data()
-    graph_analyses_obj = GraphAnalyses(
-        'maven', 'com.fasterxml.jackson.core:jackson-databind', '2.8.9')
-    response = graph_analyses_obj.get_analyses_for_snyk()
-    assert type(response['recommended_versions']) is list
-    assert response['recommended_versions'][0] == '2.9.0'
-    assert 'epv' in response
-
-
-class MockedGremlinResponse:
-    """Mock Gremlin Response."""
-
-    def __init__(self, data):
-        """Intialize class with Snyk data."""
-        self.data = data
-
-    def json(self):
-        """Mock Json Call."""
-        return self.data
-
-
-class GenerateRecommendationMocker:
-    """Mock Response Object for Generate Recommendation Function."""
-
-    def __init__(self, resp):
-        """Intialize constructor with response data obj."""
-        self.resp = resp
-
-    def clubbed_data(self):
-        """Generate Json Response for Recommendation Mocker."""
-        return {
-            "epv": self.resp['result'].get('data'),
-            "recommended_versions": self.resp['result'].get('data')[0]['cve']['sfixed_in']
-        }
-
-
-def test_get_link():
-    """Test link to vendor website."""
-    link = GraphAnalyses(
-        'maven', 'com.fasterxml.jackson.core:jackson-databind', '2.8.9').get_link()
-    assert link == "https://snyk.io/vuln/maven:" + quote(
-        "com.fasterxml.jackson.core:jackson-databind")

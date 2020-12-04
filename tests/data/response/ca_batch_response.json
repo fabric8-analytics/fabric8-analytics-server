@@ -1,0 +1,31 @@
+[
+    {
+        "package": "markdown2",
+        "version": "2.3.2",
+        "recommended_versions": "2.3.8",
+        "registration_link": "https://app.snyk.io/login",
+        "package_unknown": false,
+        "vulnerability": [
+            {
+                "id": "SNYK-PYTHON-MARKDOWN2-40770",
+                "cvss": "6.1",
+                "is_private": false,
+                "cwes": [
+                    "CWE-79"
+                ],
+                "cvss_v3": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+                "severity": "medium",
+                "title": "Cross-site Scripting (XSS)",
+                "url": "https://snyk.io/vuln/SNYK-PYTHON-MARKDOWN2-40770",
+                "cve_ids": [
+                    "CVE-2018-5773"
+                ],
+                "fixed_in": []
+            }
+        ],
+        "message": "markdown2 - 2.3.2 has 1 known security vulnerability having medium severity. Recommendation: use version 2.3.8.",
+        "highest_severity": "medium",
+        "known_security_vulnerability_count": 1,
+        "security_advisory_count": 0
+    }
+]

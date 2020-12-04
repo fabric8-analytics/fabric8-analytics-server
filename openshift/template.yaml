@@ -54,6 +54,11 @@ objects:
               configMapKeyRef:
                 name: bayesian-config
                 key: auth-url
+          - name: SNYK_API_TOKEN_VALIDATION_URL
+            valueFrom:
+              configMapKeyRef:
+                name: bayesian-config
+                key: snyk_api_token_validation_url
           - name: FABRIC8_ANALYTICS_JWT_AUDIENCE
             value: "fabric8-online-platform,openshiftio-public,https://prod-preview.openshift.io,https://openshift.io"
           - name: SENTRY_DSN
@@ -63,6 +68,8 @@ objects:
                 key: sentry_dsn
           - name: INVOKE_API_WORKERS
             value: "1"
+          - name: DISABLE_UNKNOWN_PACKAGE_FLOW
+            value: ${DISABLE_UNKNOWN_PACKAGE_FLOW}
           - name: SHOW_TRANSITIVE_REPORT
             value: ${SHOW_TRANSITIVE_REPORT}
           - name: POSTGRESQL_DATABASE
@@ -90,6 +97,11 @@ objects:
               secretKeyRef:
                 name: aws-sqs
                 key: aws_secret_access_key
+          - name: ENCRYPTION_KEY_FOR_SNYK_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: snyk-secrets
+                key: encryption_key_for_snyk_token
           - name: THREESCALE_ACCOUNT_SECRET
             valueFrom:
               secretKeyRef:
@@ -197,6 +209,12 @@ parameters:
   required: false
   name: FLASK_LOGGING_LEVEL
   value: "WARNING"
+
+- description: Flag to enable or disable the unknown package ingetion flow
+  displayName: DISABLE UNKNOWN PACKAGE FLOW
+  required: false
+  name: DISABLE_UNKNOWN_PACKAGE_FLOW
+  value: "0"
 
 - description: Flag to enable or disable the transitive report from stack report
   displayName: SHOW TRANSITIVE REPORT
