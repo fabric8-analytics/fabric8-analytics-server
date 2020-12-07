@@ -31,10 +31,19 @@ from bayesian.utils import check_for_accepted_ecosystem, \
 from f8a_worker.utils import MavenCoordinates
 from werkzeug.exceptions import BadRequest
 from bayesian.utility.db_gateway import GraphAnalyses
+from requests_futures.sessions import FuturesSession
 
 logger = logging.getLogger(__name__)
 Package = namedtuple("Package", ["name", "given_name", "version", "package_unknown",
                                  "given_version", "is_pseudo_version"])
+
+_APP_SECRET_KEY = os.getenv('APP_SECRET_KEY', 'not-set')
+_INGESTION_API_URL = "http://{host}:{port}/{endpoint}".format(
+    host=os.environ.get("INGESTION_SERVICE_HOST", "bayesian-jobs"),
+    port=os.environ.get("INGESTION_SERVICE_PORT", "34000"),
+    endpoint='ingestions/epv')
+worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
+_session = FuturesSession(max_workers=worker_count)
 
 
 def validate_version(version: str) -> bool:
@@ -59,11 +68,27 @@ def normlize_packages(name: str, given_name: str,
 def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
     """Unknown Package flow. Trigger bayesianApiFlow."""
     logger.debug('Triggered Unknown Package Flow.')
-    api_flow: bool = os.environ.get("INVOKE_API_WORKERS", "") == "1"
     started_at = time.time()
+    logger.info('ecosystem {}'.format(ecosystem))
+    logger.info('unknown_pkgs {}'.format(unknown_pkgs))
+
+    payload = {
+        "ecosystem": ecosystem,
+        "packages": [],
+        "force": False,
+        "force_graph_sync": True
+    }
+
     for pkg in unknown_pkgs:
-        server_create_analysis(ecosystem, pkg.name, pkg.version, user_profile=g.decoded_token,
-                               api_flow=api_flow, force=False, force_graph_sync=True)
+        payload['packages'].append({'package': pkg.name, 'version': pkg.version})
+        server_create_component_bookkeeping(ecosystem, pkg.name, pkg.version, g.decoded_token)
+
+    logger.info('payload = {}'.format(payload))
+
+    _session.post(url=_INGESTION_API_URL,
+                  json=payload,
+                  headers={'auth_token': _APP_SECRET_KEY})
+
     elapsed_time = time.time() - started_at
     logger.info('Unknown flow for %f packages took %f seconds', len(unknown_pkgs), elapsed_time)
     return True

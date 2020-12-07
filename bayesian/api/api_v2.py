@@ -53,7 +53,7 @@ from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
                                          RDBInvalidRequestException,
                                          RDBServerException)
 from werkzeug.exceptions import BadRequest
-
+from bayesian.utility.v2.component_analyses import normlize_packages
 
 logger = logging.getLogger(__name__)
 
@@ -184,10 +184,15 @@ class ComponentAnalysesApi(Resource):
 
             return response_template({'error': msg}, 202)
 
+        unknown_pkgs = set()
+        unknown_pkgs.add(normlize_packages(name=package, given_name=package,
+                                           version=version,
+                                           given_version=version,
+                                           is_pseudo_version=False))
+
         if os.environ.get("INVOKE_API_WORKERS", "") == "1":
             # Trigger the unknown component ingestion.
-            server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
-                                   api_flow=True, force=False, force_graph_sync=True)
+            unknown_package_flow(ecosystem, unknown_pkgs)
             msg = f"Package {ecosystem}/{package}/{version} is unavailable. " \
                   "The package will be available shortly," \
                   " please retry after some time."
@@ -198,8 +203,8 @@ class ComponentAnalysesApi(Resource):
             return response_template({'error': msg}, 202)
 
         # No data has been found and INVOKE_API_WORKERS flag is down.
-        server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
-                               api_flow=False, force=False, force_graph_sync=True)
+        unknown_package_flow(ecosystem, unknown_pkgs)
+
         msg = f"No data found for {ecosystem} package {package}/{version}"
 
         metrics_payload.update({"status_code": 404, "value": time.time() - st})
@@ -241,7 +246,7 @@ class ComponentAnalysesApi(Resource):
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
             stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
-            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1" and ecosystem != "golang":
+            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1":
                 # Unknown Packages is Present and INGESTION is Enabled
                 logger.debug(unknown_pkgs)
                 unknown_package_flow(ecosystem, unknown_pkgs)
