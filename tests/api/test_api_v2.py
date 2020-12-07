@@ -101,11 +101,10 @@ class TestComponentAnalysesApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.g')
     @patch('bayesian.api.api_v2._session')
     @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
     def test_get_component_analyses_with_disable_unknown_package_flow(self, _sensitive, _request,
-                                                                      _analyses, _bookkeeping,
+                                                                      _bookkeeping,
                                                                       _session, _g):
         """No Analyses Data found, with DISABLE_UNKNOWN_PACKAGE_FLOW flag, returns 202."""
         with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
@@ -117,11 +116,10 @@ class TestComponentAnalysesApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.g')
     @patch('bayesian.api.api_v2._session')
     @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
     def test_get_component_analyses(self, _sensitive, _request,
-                                    _analyses, _bookkeeping, _session, _g):
+                                    _bookkeeping, _session, _g):
         """CA GET: No Analyses Data found, without INVOKE_API_WORKERS flag, Raises HTTP Error."""
         ca = ComponentAnalysesApi()
         self.assertRaises(HTTPError, ca.get, 'npm', 'pkg', 'ver')
@@ -129,13 +127,12 @@ class TestComponentAnalysesApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.g')
     @patch('bayesian.api.api_v2._session')
     @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
     @patch('bayesian.utility.v2.ca_response_builder.'
            'ComponentAnalyses.get_component_analyses_response', return_value=None)
     def test_get_component_analyses_with_invoke_api_workers(
-            self, _vendor, _sensitive, _request, _analyses, _bookkeeping, _session, _g):
+            self, _vendor, _sensitive, _request, _bookkeeping, _session, _g):
         """CA GET: No Analyses Data found with API worker flag."""
         ca = ComponentAnalysesApi()
         with patch.dict('os.environ', {'INVOKE_API_WORKERS': '1'}):
@@ -147,13 +144,12 @@ class TestComponentAnalysesApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.g')
     @patch('bayesian.api.api_v2._session')
     @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
     @patch('bayesian.utility.v2.ca_response_builder.'
            'ComponentAnalyses.get_component_analyses_response')
     def test_get_component_analyses_with_result_not_none(
-            self, _vendor_analyses, _sensitive, _request, _analyses, _bookkeeping, _session, _g):
+            self, _vendor_analyses, _sensitive, _request, _bookkeeping, _session, _g):
         """CA GET: with VALID result."""
         result = 'my_package_analyses_result'
         _vendor_analyses.return_value = result

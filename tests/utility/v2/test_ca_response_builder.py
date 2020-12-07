@@ -34,8 +34,9 @@ def test_validate_version():
     assert not validate_version("1.2.*"), "Invalid Version"
 
 
+@patch('bayesian.utility.v2.component_analyses._session')
 @patch('bayesian.utility.v2.component_analyses.g')
-def test_get_component_analyses_with_result_not_none(_analyses, _g):
+def test_get_component_analyses_with_result_not_none(_session, _g):
     """CA Test Unknown Package flow."""
     unknown_package = unknown_package_flow('eco', {Mock()})
     assert unknown_package

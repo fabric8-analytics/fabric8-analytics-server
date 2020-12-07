@@ -39,7 +39,6 @@ from bayesian.utility.v2.component_analyses import ca_validate_input, \
     unknown_package_flow, get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
-                            server_create_analysis,
                             check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,

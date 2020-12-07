@@ -88,8 +88,6 @@ def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
         _session.post(url=_INGESTION_API_URL,
                       json=payload,
                       headers={'auth_token': _APP_SECRET_KEY})
-    else:
-        logger.info('No packages to ingest.')
 
     elapsed_time = time.time() - started_at
     logger.info('Unknown flow for %f packages took %f seconds', len(unknown_pkgs), elapsed_time)
