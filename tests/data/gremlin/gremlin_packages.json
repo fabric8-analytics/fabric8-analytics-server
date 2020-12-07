@@ -1,0 +1,36 @@
+{
+    "requestId": "c89174df-b40a-42f0-99ea-04af3d0a1e8b",
+    "status": {
+        "message": "",
+        "code": 200,
+        "attributes": {}
+    },
+    "result": {
+        "data": [
+            {
+                "last_updated": [
+                    1604556536.1707258
+                ],
+                "ecosystem": [
+                    "golang"
+                ],
+                "latest_version": [
+                    "1.12.10"
+                ],
+                "name": [
+                    "github.com/crda/test/package1"
+                ],
+                "vertex_label": [
+                    "Package"
+                ],
+                "latest_non_cve_version": [
+                    "1.12.9"
+                ],
+                "gh_link": [
+                    "https://github.com/kubernetes/kubernetes"
+                ]
+            }
+        ],
+        "meta": {}
+    }
+}

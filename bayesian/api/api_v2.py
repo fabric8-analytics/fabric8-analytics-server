@@ -36,7 +36,7 @@ from fabric8a_auth.auth import login_required, AuthError
 from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    unknown_package_flow, get_known_unknown_pkgs, add_unknown_pkg_info
+    unknown_package_flow, get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
@@ -51,7 +51,7 @@ from bayesian.utility.v2.sa_models import StackAnalysesPostRequest
 from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
                                          RDBInvalidRequestException,
-                                         RDBServerException, GraphAnalyses)
+                                         RDBServerException)
 from werkzeug.exceptions import BadRequest
 
 
@@ -225,8 +225,8 @@ class ComponentAnalysesApi(Resource):
         try:
             # Step1: Gather and clean Request
             packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
-            # Step2: Query GraphDB,
-            graph_response = GraphAnalyses.get_batch_ca_data(ecosystem, packages_list)
+            # Step2: Get aggregated CA data from Query GraphDB,
+            graph_response = get_batch_ca_data(ecosystem, packages_list)
             # Step3: Build Unknown packages and Generates Stack Recommendation.
             stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
                 ecosystem, graph_response, normalised_input_pkgs)

@@ -10,7 +10,7 @@ from f8a_utils.user_token_utils import is_snyk_token_valid, encrypt_api_token, U
 
 from bayesian.exceptions import HTTPError
 from bayesian.utility import user_utils
-from bayesian.utility.user_utils import UserException, UserNotFoundException
+from bayesian.utility.user_utils import UserException
 
 user_api = Blueprint('user_api', __name__, url_prefix='/user')
 
@@ -22,9 +22,11 @@ def get_user(user_id):
     if not user_id:
         raise HTTPError(400, "user id should be present")
 
+    user_status = UserStatus.FREETIER.name
     user = user_utils.get_user(user_id)
-    user_status = user.status if user.status else UserStatus.FREETIER.name
-    return jsonify(user_id=user.user_id, status=user_status)
+    if user:
+        user_status = user.status if user.status else UserStatus.FREETIER.name
+    return jsonify(user_id=user_id, status=user_status)
 
 
 @user_api.route('', methods=['POST'])
@@ -40,17 +42,20 @@ def generate_uuid_for_user():
 def create_or_update_user():
     """Endpoint for creating or updating user details."""
     content = request.json
+    if not content:
+        return jsonify(message='User ID and Snyk Token should be present', status=400), 400
+
     user_id = content.get('user_id')
 
     if not user_id:
-        raise HTTPError(400, "user id should be present")
+        return jsonify(message='User ID should be present', status=400), 400
 
     snyk_api_token = content.get('snyk_api_token')
     if not snyk_api_token:
-        raise HTTPError(400, 'snyk api token should be present')
+        return jsonify(message='Snyk API Token should be present', status=400), 400
 
     if not is_snyk_token_valid(snyk_api_token):
-        raise HTTPError(400, "Invalid API Token")
+        return jsonify(message='Snyk API Token is invalid', status=400), 400
 
     encrypted_api_token = encrypt_api_token(snyk_api_token)
     user_utils.create_or_update_user(user_id, encrypted_api_token.decode(), "SNYK")
@@ -67,9 +72,3 @@ def handle_authorization_error(e):
 def handle_user_exception(e):
     """Exception handler for handling user management errors."""
     return jsonify(message=e.message, status='500'), 500
-
-
-@user_api.errorhandler(UserNotFoundException)
-def handle_user_not_found_exception(e):
-    """Exception handler for handling user not found errors."""
-    return jsonify(message=e.message, status='404'), 404
