@@ -35,7 +35,6 @@ def test_validate_version():
 
 
 @patch('bayesian.utility.v2.component_analyses.g')
-@patch('bayesian.utility.v2.component_analyses.server_create_analysis')
 def test_get_component_analyses_with_result_not_none(_analyses, _g):
     """CA Test Unknown Package flow."""
     unknown_package = unknown_package_flow('eco', {Mock()})

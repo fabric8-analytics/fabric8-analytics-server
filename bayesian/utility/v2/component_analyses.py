@@ -27,7 +27,7 @@ from f8a_utils.gh_utils import GithubUtils
 from flask import g
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem, \
-    server_create_analysis, server_create_component_bookkeeping
+    server_create_component_bookkeeping
 from f8a_worker.utils import MavenCoordinates
 from werkzeug.exceptions import BadRequest
 from bayesian.utility.db_gateway import GraphAnalyses
@@ -67,11 +67,10 @@ def normlize_packages(name: str, given_name: str,
 
 def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
     """Unknown Package flow. Trigger bayesianApiFlow."""
-    logger.debug('Triggered Unknown Package Flow.')
+    logger.debug('Triggered Unknown Package Flow for ecosystem: {} and Package: {}'
+                 .format(ecosystem, unknown_pkgs))
     started_at = time.time()
-    logger.info('ecosystem {}'.format(ecosystem))
-    logger.info('unknown_pkgs {}'.format(unknown_pkgs))
-
+    # Create payload to be passed to ingestion API
     payload = {
         "ecosystem": ecosystem,
         "packages": [],
@@ -79,15 +78,18 @@ def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
         "force_graph_sync": True
     }
 
+    # Set the unknown packages and versions
     for pkg in unknown_pkgs:
         payload['packages'].append({'package': pkg.name, 'version': pkg.version})
         server_create_component_bookkeeping(ecosystem, pkg.name, pkg.version, g.decoded_token)
 
-    logger.info('payload = {}'.format(payload))
-
-    _session.post(url=_INGESTION_API_URL,
-                  json=payload,
-                  headers={'auth_token': _APP_SECRET_KEY})
+    if payload['packages']:
+        logger.info('Invoking Ingestion URL for payload = {}'.format(payload))
+        _session.post(url=_INGESTION_API_URL,
+                      json=payload,
+                      headers={'auth_token': _APP_SECRET_KEY})
+    else:
+        logger.info('No packages to ingest.')
 
     elapsed_time = time.time() - started_at
     logger.info('Unknown flow for %f packages took %f seconds', len(unknown_pkgs), elapsed_time)

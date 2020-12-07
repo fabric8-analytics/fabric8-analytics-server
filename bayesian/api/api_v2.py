@@ -184,6 +184,7 @@ class ComponentAnalysesApi(Resource):
 
             return response_template({'error': msg}, 202)
 
+        # Creating a set to be passed to the function unknown_package_flow
         unknown_pkgs = set()
         unknown_pkgs.add(normlize_packages(name=package, given_name=package,
                                            version=version,
