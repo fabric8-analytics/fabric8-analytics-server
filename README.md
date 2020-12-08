@@ -1,4 +1,3 @@
-
 [![Build Status](https://ci.centos.org/view/Devtools/job/devtools-fabric8-analytics-server-f8a-build-master/badge/icon)](https://ci.centos.org/view/Devtools/job/devtools-fabric8-analytics-server-f8a-build-master/)
 
 # Fabric8-Analytics Core API Documentation
