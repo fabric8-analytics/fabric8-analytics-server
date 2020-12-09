@@ -237,7 +237,6 @@ class RdbAnalyses:
             insert_stmt = insert(StackAnalysisRequest).values(
                 id=self.request_id,
                 submitTime=self.submit_time,
-                requestJson={'manifest': self.manifest},
                 dep_snapshot=self.deps
             )
             do_update_stmt = insert_stmt.on_conflict_do_update(
