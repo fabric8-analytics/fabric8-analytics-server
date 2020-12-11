@@ -173,6 +173,11 @@ def get_batch_ca_data(ecosystem: str, packages) -> dict:
     return response if response else {}
 
 
+def get_package_version_key(pkg_name, pkg_version):
+    """Return unique key combining package name and version."""
+    return pkg_name + '@' + pkg_version
+
+
 def get_known_unknown_pkgs(
         ecosystem: str, graph_response: Dict,
         normalised_input_pkgs: List) -> Tuple[List[Dict], Set[Package]]:
@@ -186,7 +191,7 @@ def get_known_unknown_pkgs(
     normalised_input_pkg_map = None  # Mapping is required only for Golang.
     if ecosystem == 'golang':
         normalised_input_pkg_map = {
-            input_pkg.name: {
+            get_package_version_key(input_pkg.name, input_pkg.version): {
                 'given_name': input_pkg.given_name,
                 'version': input_pkg.version,
                 'given_version': input_pkg.given_version
@@ -225,7 +230,8 @@ def get_clean_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=
     """
     logger.debug('Fetch input clean package version.')
     if isinstance(normalised_input_pkg_map, dict):
-        return normalised_input_pkg_map[pkg_name]['version']
+        return normalised_input_pkg_map[get_package_version_key(
+            pkg_name, pkg_version)]['version']
     return pkg_version
 
 
@@ -240,7 +246,8 @@ def get_given_name_and_version(pkg_name: str, pkg_version: str,
     """
     logger.debug('Fetch Input Package version.')
     if isinstance(normalised_input_pkg_map, dict):
-        normalised_input_pkg = normalised_input_pkg_map.get(pkg_name, None)
+        normalised_input_pkg = normalised_input_pkg_map.get(
+            get_package_version_key(pkg_name, pkg_version), None)
         if normalised_input_pkg:
             return normalised_input_pkg['given_name'], normalised_input_pkg['given_version']
     return pkg_name, pkg_version
