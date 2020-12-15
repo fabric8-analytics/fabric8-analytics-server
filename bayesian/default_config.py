@@ -28,7 +28,7 @@ API_TOKEN_LIFETIME = 3600
 # /<url>/<org>/<repo>/<branch>/<dir/file>
 LIC_SYNONYMS_URL = '/'.join(['https://raw.githubusercontent.com', 'fabric8-analytics',
                              'fabric8-analytics-license-analysis', 'master',
-                             'tests/synonyms/license_synonyms.json'])
+                             'src/synonyms/license_synonyms.json'])
 
 
 # Info about deployed version
