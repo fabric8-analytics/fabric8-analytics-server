@@ -142,29 +142,29 @@ class TestComponentAnalyses(unittest.TestCase):
 
         stack_recommendation = [
             {
-                "name": "github.com/existing/package",
+                "package": "github.com/existing/package",
                 "version": "v3.4.0",
                 "package_unknown": False
             }
         ]
         ideal_output = [
             {
-                "name": "github.com/existing/package",
+                "package": "github.com/existing/package",
                 "version": "v3.4.0",
                 "package_unknown": False
             }, {
-                "name": "github.com/hashicorp/nomad",
+                "package": "github.com/hashicorp/nomad",
                 "version": "v0.7.1",
                 "package_unknown": True
             }, {
-                "name": "code.cloudfoundry.org/gorouter/route@code.cloudfoundry.org/gorouter",
+                "package": "code.cloudfoundry.org/gorouter/route@code.cloudfoundry.org/gorouter",
                 "version": "v0.0.0-20170410000936-a663fba25f7a",
                 "package_unknown": True
             }
         ]
         stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
-        self.assertListEqual(sorted(stack_recommendation, key=itemgetter('name')),
-                             sorted(ideal_output, key=itemgetter('name')))
+        self.assertListEqual(sorted(stack_recommendation, key=itemgetter('package')),
+                             sorted(ideal_output, key=itemgetter('package')))
 
 
 class TestCAInputValidator(unittest.TestCase):

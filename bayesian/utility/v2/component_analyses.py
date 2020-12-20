@@ -33,7 +33,7 @@ from werkzeug.exceptions import BadRequest
 from bayesian.utility.db_gateway import GraphAnalyses
 
 logger = logging.getLogger(__name__)
-Package = namedtuple("Package", ["name", "given_name", "version", "package_unknown",
+Package = namedtuple("Package", ["package", "given_name", "version", "package_unknown",
                                  "given_version", "is_pseudo_version"])
 
 
@@ -51,7 +51,7 @@ def normlize_packages(name: str, given_name: str,
     """Normalise Packages into hashable."""
     logger.debug('Normalizing Packages.')
     return Package(
-        name=name, given_name=given_name,
+        package=name, given_name=given_name,
         version=version, given_version=given_version,
         is_pseudo_version=is_pseudo_version, package_unknown=True)
 
@@ -62,7 +62,7 @@ def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
     api_flow: bool = os.environ.get("INVOKE_API_WORKERS", "") == "1"
     started_at = time.time()
     for pkg in unknown_pkgs:
-        server_create_analysis(ecosystem, pkg.name, pkg.version, user_profile=g.decoded_token,
+        server_create_analysis(ecosystem, pkg.package, pkg.version, user_profile=g.decoded_token,
                                api_flow=api_flow, force=False, force_graph_sync=True)
     elapsed_time = time.time() - started_at
     logger.info('Unknown flow for %f packages took %f seconds', len(unknown_pkgs), elapsed_time)
@@ -191,7 +191,7 @@ def get_known_unknown_pkgs(
     normalised_input_pkg_map = None  # Mapping is required only for Golang.
     if ecosystem == 'golang':
         normalised_input_pkg_map = {
-            get_package_version_key(input_pkg.name, input_pkg.version): {
+            get_package_version_key(input_pkg.package, input_pkg.version): {
                 'given_name': input_pkg.given_name,
                 'version': input_pkg.version,
                 'given_version': input_pkg.given_version
@@ -264,7 +264,7 @@ def add_unknown_pkg_info(stack_recommendation: List, unknown_pkgs: Set[Package])
         unknowns = unknown_pkg._asdict()
         unknowns['version'] = unknowns.get('given_version')
         unknowns.pop('given_version', None)
-        unknowns['name'] = unknowns.get('given_name')
+        unknowns['package'] = unknowns.get('given_name')
         unknowns.pop('given_name', None)
         unknowns.pop('is_pseudo_version', None)
         stack_recommendation.append(dict(unknowns))
