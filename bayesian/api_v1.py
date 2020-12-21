@@ -929,6 +929,7 @@ class StackAnalyses(Resource):
             insert_stmt = insert(StackAnalysisRequest).values(
                 id=request_id,
                 submitTime=str(dt),
+                requestJson={'manifest': manifests},
                 dep_snapshot=deps
             )
             do_update_stmt = insert_stmt.on_conflict_do_update(
