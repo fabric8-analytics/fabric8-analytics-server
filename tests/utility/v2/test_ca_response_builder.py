@@ -24,23 +24,13 @@ import unittest
 import pytest
 from urllib.parse import urlparse
 
-from bayesian.utility.v2.component_analyses import unknown_package_flow, \
-    validate_version
+from bayesian.utility.v2.component_analyses import validate_version
 
 
 def test_validate_version():
     """Check the function validate_version."""
     assert validate_version("1.2.3")
     assert not validate_version("1.2.*"), "Invalid Version"
-
-
-@patch('bayesian.utility.v2.component_analyses._session')
-@patch('bayesian.utility.v2.component_analyses.g')
-@patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
-def test_get_component_analyses_with_result_not_none(_session, _g, _unknown):
-    """CA Test Unknown Package flow."""
-    unknown_package = unknown_package_flow('eco', {Mock()})
-    assert unknown_package
 
 
 class ComponentAnalysesTest(unittest.TestCase):

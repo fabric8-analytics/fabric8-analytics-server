@@ -36,7 +36,7 @@ from fabric8a_auth.auth import login_required, AuthError
 from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    unknown_package_flow, get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
+    get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             check_for_accepted_ecosystem)
@@ -53,6 +53,7 @@ from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
                                          RDBServerException)
 from werkzeug.exceptions import BadRequest
 from bayesian.utility.v2.component_analyses import normlize_packages
+from f8a_utils.ingestion_utils import unknown_package_flow
 
 logger = logging.getLogger(__name__)
 
