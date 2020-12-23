@@ -171,18 +171,41 @@ class GraphAnalysesTest(unittest.TestCase):
         """Test vuln filtering for module/packages."""
         vulnerabilities = self.gremlin_vulnerabilities.get('result', {}).get('data', [])
         package_version_map = {
-            'github.com/crda/test': 'v0.0.0-20160902000632-abcd4321dcba',
-            'github.com/crda/test/package1': 'v0.0.0-20180902000632-abcd4321dcba',
-            'github.com/crda/test/package2': 'v0.0.0-20181002000632-abcd4321dcba',
-            'github.com/crda/test2': 'v0.0.0-20161002000632-abcd4321dcba'
+            'github.com/crda/test': {'v0.0.0-20160902000632-abcd4321dcba': {}},
+            'github.com/crda/test/package1': {'v0.0.0-20180902000632-abcd4321dcba': {}},
+            'github.com/crda/test/package2': {'v0.0.0-20181002000632-abcd4321dcba': {}},
+            'github.com/crda/test2': {'v0.0.0-20161002000632-abcd4321dcba': {}}
         }
         vuln = GraphAnalyses.filter_vulnerable_packages(vulnerabilities, package_version_map)
         self.assertIsInstance(vuln, dict)
         self.assertEqual(len(vuln), 2)
         self.assertIn('github.com/crda/test', vuln)
         self.assertIn('github.com/crda/test/package1', vuln)
-        self.assertIsInstance(vuln.get('github.com/crda/test/package1'), list)
-        self.assertEqual(len(vuln.get('github.com/crda/test/package1')), 1)
+        self.assertIsInstance(vuln.get('github.com/crda/test/package1', {}).get(
+            'v0.0.0-20180902000632-abcd4321dcba', {}).get('cve'), list)
+        self.assertEqual(len(vuln.get('github.com/crda/test/package1', {}).get(
+            'v0.0.0-20180902000632-abcd4321dcba', {}).get('cve')), 1)
+
+    def test_filter_vulnerable_packages_different_version(self):
+        """Test vuln filtering for module/packages with different version."""
+        vulnerabilities = self.gremlin_vulnerabilities.get('result', {}).get('data', [])
+        package_version_map = {
+            'github.com/crda/test': {'v0.0.0-20160902000632-abcd4321dcba': {}},
+            'github.com/crda/test/package1': {
+                'v0.0.0-20180902000632-abcd4321dcba': {},
+                'v0.0.0-20201002000632-dcbaabcd4321': {}}
+        }
+        vuln = GraphAnalyses.filter_vulnerable_packages(vulnerabilities, package_version_map)
+        self.assertIsInstance(vuln, dict)
+        self.assertEqual(len(vuln), 2)
+        self.assertIn('github.com/crda/test', vuln)
+        self.assertIn('github.com/crda/test/package1', vuln)
+        self.assertIsInstance(vuln.get('github.com/crda/test/package1', {}).get(
+            'v0.0.0-20180902000632-abcd4321dcba', {}).get('cve'), list)
+        self.assertEqual(len(vuln.get('github.com/crda/test/package1', {}).get(
+            'v0.0.0-20180902000632-abcd4321dcba', {}).get('cve')), 1)
+        self.assertEqual(vuln.get('github.com/crda/test/package1', {}).get(
+            'v0.0.0-20181002000632-dcbaabcd4321', None), None)
 
     @patch('bayesian.utility.db_gateway.GraphAnalyses.get_vulnerabilities_for_packages')
     @patch('bayesian.utility.db_gateway.GraphAnalyses.get_package_details')

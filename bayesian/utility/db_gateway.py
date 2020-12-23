@@ -144,12 +144,17 @@ class GraphAnalyses:
         gh = GithubUtils()
         for vuln in vulnerabilities:
             package_name = vuln['package_name'][0]
-            if gh._is_commit_date_in_vuln_range(
-               gh.extract_timestamp(
-                   package_version_map[package_name]), vuln['vuln_commit_date_rules'][0]):
-                if package_name not in filter_vulnerabilities:
-                    filter_vulnerabilities[package_name] = []
-                filter_vulnerabilities[package_name].append(vuln)
+            for package_version, _ in package_version_map[package_name].items():
+                if gh._is_commit_date_in_vuln_range(gh.extract_timestamp(
+                                                    package_version),
+                                                    vuln['vuln_commit_date_rules'][0]):
+                    if package_name not in filter_vulnerabilities:
+                        filter_vulnerabilities[package_name] = {}
+                    if package_version not in filter_vulnerabilities[package_name]:
+                        filter_vulnerabilities[package_name][package_version] = {
+                            'cve': []
+                        }
+                    filter_vulnerabilities[package_name][package_version]['cve'].append(vuln)
 
         return filter_vulnerabilities
 
@@ -165,7 +170,9 @@ class GraphAnalyses:
         for pckg in packages:
             package_name = pckg['name'].split('@')[0]
             filter_packages.add(package_name)
-            package_version_map[package_name] = pckg['version']
+            if not package_version_map.get(package_name, None):
+                package_version_map[package_name] = {}
+            package_version_map[package_name][pckg['version']] = {}
 
         vuln_response = GraphAnalyses.get_vulnerabilities_for_packages(
             ecosystem, list(filter_packages))
@@ -177,11 +184,25 @@ class GraphAnalyses:
         # Merge the package and vunlerability data into response.
         data = []
         for pckg in pckg_response.get('result', {}).get('data', []):
-            data.append({
-                'package': pckg,
-                'version': {},
-                'cve': vulnerabilities.get(pckg['name'][0], [])
-            })
+            for pckg_version, vuln in vulnerabilities.get(pckg['name'][0]).items():
+                data.append({
+                    'package': pckg,
+                    'version': {
+                        "pecosystem": [
+                            ecosystem
+                        ],
+                        "pname": [
+                            pckg['name'][0]
+                        ],
+                        "vertex_label": [
+                            "Version"
+                        ],
+                        "version": [
+                            pckg_version
+                        ]
+                    },
+                    'cve': vuln['cve']
+                })
         pckg_response['result']['data'] = data
 
         elapsed_time = time.time() - started_at

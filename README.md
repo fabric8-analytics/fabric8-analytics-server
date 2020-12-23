@@ -1,11 +1,10 @@
-
 [![Build Status](https://ci.centos.org/view/Devtools/job/devtools-fabric8-analytics-server-f8a-build-master/badge/icon)](https://ci.centos.org/view/Devtools/job/devtools-fabric8-analytics-server-f8a-build-master/)
 
 # Fabric8-Analytics Core API Documentation
 
 The Fabric8-Analytics API is a microservice that is responsible for:
 
-* Serving generated analysis results to clients through API
+* Serving generated analysis results to clients
 * Scheduling new analyses based on client requests
 
 ## API information
