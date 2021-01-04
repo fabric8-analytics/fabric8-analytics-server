@@ -19,7 +19,7 @@
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses, \
     ComponentAnalysisResponseBuilder, CABatchResponseBuilder
 from urllib.parse import quote
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 import unittest
 import pytest
 from urllib.parse import urlparse
