@@ -27,7 +27,7 @@ from f8a_utils.gh_utils import GithubUtils
 from flask import g
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem, \
-    server_create_analysis, server_create_component_bookkeeping
+    server_create_component_bookkeeping
 from f8a_worker.utils import MavenCoordinates
 from werkzeug.exceptions import BadRequest
 from bayesian.utility.db_gateway import GraphAnalyses
@@ -54,19 +54,6 @@ def normlize_packages(name: str, given_name: str,
         package=name, given_name=given_name,
         version=version, given_version=given_version,
         is_pseudo_version=is_pseudo_version, package_unknown=True)
-
-
-def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
-    """Unknown Package flow. Trigger bayesianApiFlow."""
-    logger.debug('Triggered Unknown Package Flow.')
-    api_flow: bool = os.environ.get("INVOKE_API_WORKERS", "") == "1"
-    started_at = time.time()
-    for pkg in unknown_pkgs:
-        server_create_analysis(ecosystem, pkg.package, pkg.version, user_profile=g.decoded_token,
-                               api_flow=api_flow, force=False, force_graph_sync=True)
-    elapsed_time = time.time() - started_at
-    logger.info('Unknown flow for %f packages took %f seconds', len(unknown_pkgs), elapsed_time)
-    return True
 
 
 def known_package_flow(ecosystem: str, package: str, version: str) -> bool:
