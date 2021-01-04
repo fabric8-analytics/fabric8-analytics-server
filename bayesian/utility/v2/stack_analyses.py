@@ -22,12 +22,10 @@ import json
 import logging
 from flask import g
 from flask import request
-
 from bayesian.dependency_finder import DependencyFinder
 from bayesian.utility.db_gateway import RdbAnalyses
 from bayesian.utility.v2.backbone_server import BackboneServer
 from bayesian.utility.v2.sa_models import HeaderData
-
 
 logger = logging.getLogger(__name__)
 

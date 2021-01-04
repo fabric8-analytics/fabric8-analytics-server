@@ -31,7 +31,6 @@ from sqlalchemy.dialects.postgresql import insert
 
 from f8a_worker.models import StackAnalysisRequest
 
-
 logger = logging.getLogger(__name__)
 gremlin_url = "http://{host}:{port}".format(
     host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
@@ -255,7 +254,6 @@ class RdbAnalyses:
 
     def save_post_request(self):
         """Save the post request data into RDS."""
-        print(self.user_id)
         try:
             start = time.time()
             insert_stmt = insert(StackAnalysisRequest).values(
