@@ -31,6 +31,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from f8a_worker.models import StackAnalysisRequest
 
+
 logger = logging.getLogger(__name__)
 gremlin_url = "http://{host}:{port}".format(
     host=os.environ.get("BAYESIAN_GREMLIN_HTTP_SERVICE_HOST", "localhost"),
@@ -217,12 +218,13 @@ class RdbAnalyses:
     Provides interfaces to save and read request post data for stack analyses v2.
     """
 
-    def __init__(self, request_id, submit_time=None, manifest=None, deps=None):
+    def __init__(self, request_id, submit_time=None, manifest=None, deps=None, user_id=None):
         """Set request id."""
         self.request_id = request_id
         self.submit_time = submit_time
         self.manifest = manifest
         self.deps = deps
+        self.user_id = user_id
 
     def get_request_data(self):
         """Read request data for given request id from RDS."""
@@ -253,13 +255,15 @@ class RdbAnalyses:
 
     def save_post_request(self):
         """Save the post request data into RDS."""
+        print(self.user_id)
         try:
             start = time.time()
             insert_stmt = insert(StackAnalysisRequest).values(
                 id=self.request_id,
                 submitTime=self.submit_time,
                 requestJson={'manifest': self.manifest},
-                dep_snapshot=self.deps
+                dep_snapshot=self.deps,
+                user_id=self.user_id
             )
             do_update_stmt = insert_stmt.on_conflict_do_update(
                 index_elements=['id'],

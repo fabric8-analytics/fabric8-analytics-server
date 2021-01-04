@@ -293,7 +293,7 @@ def stack_analyses():
     start = time.time()
     if request.method == 'GET':
         raise HTTPError(400, error="Request id missing")
-
+    
     sa_post_request = None
     try:
         # 1. Validate and build request object.
