@@ -25,7 +25,6 @@ from flask import request
 from bayesian.dependency_finder import DependencyFinder
 from bayesian.utility.db_gateway import RdbAnalyses
 from bayesian.utility.v2.backbone_server import BackboneServer
-from bayesian.utility.v2.sa_models import HeaderData
 
 logger = logging.getLogger(__name__)
 
@@ -58,15 +57,14 @@ class StackAnalyses():
         self._new_request_id = str(uuid.uuid4().hex)
         date_str = str(datetime.datetime.now())
         # Fetch uuid from header
-        header_data = HeaderData(uuid=request.headers.get('uuid', None))
+        uuid_data = request.headers.get('uuid', None)
 
         # Make backbone request
         deps = self._make_backbone_request()
 
         # Finally save results in RDS and upon success return request id.
-        rdbAnalyses = RdbAnalyses(self._new_request_id, date_str,
-                                  self._manifest_file_info, deps, header_data.uuid)
-        rdbAnalyses.save_post_request()
+        rdbAnalyses = RdbAnalyses(self._new_request_id)
+        rdbAnalyses.save_post_request(date_str, uuid_data, deps, self._manifest_file_info)
         data = {
             'status': 'success',
             'submitted_at': date_str,
