@@ -22,6 +22,7 @@ import json
 import logging
 from flask import g
 from flask import request
+from flask import has_request_context
 from bayesian.dependency_finder import DependencyFinder
 from bayesian.utility.db_gateway import RdbAnalyses
 from bayesian.utility.v2.backbone_server import BackboneServer
@@ -57,8 +58,10 @@ class StackAnalyses():
         self._new_request_id = str(uuid.uuid4().hex)
         date_str = str(datetime.datetime.now())
         # Fetch uuid from header
-        uuid_data = request.headers.get('uuid', None)
-
+        if has_request_context():
+            uuid_data = request.headers.get('uuid', None)
+        else:
+            uuid_data = None
         # Make backbone request
         deps = self._make_backbone_request()
 
