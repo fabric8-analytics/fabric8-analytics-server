@@ -263,14 +263,14 @@ class TestRdbAnalyses(unittest.TestCase):
            side_effect=SQLAlchemyError('Mock exception'))
     def test_save_post_request_error(self, _execute):
         """Test error save request that raises exception."""
-        rdbAnalyses = RdbAnalyses('dummy_request_id', '', {}, {})
+        rdbAnalyses = RdbAnalyses('dummy_request_id')
         with pytest.raises(Exception) as exception:
-            rdbAnalyses.save_post_request()
+            rdbAnalyses.save_post_request('', '', {}, {})
         self.assertIs(exception.type, RDBSaveException)
 
     @patch('bayesian.utility.db_gateway.rdb.session.execute', return_value=0)
     @patch('bayesian.utility.db_gateway.rdb.session.commit', return_value=0)
     def test_save_post_request_success(self, _commit, _execute):
         """Test success save request."""
-        rdbAnalyses = RdbAnalyses('dummy_request_id', '', {}, {})
-        self.assertEqual(rdbAnalyses.save_post_request(), None)
+        rdbAnalyses = RdbAnalyses('dummy_request_id')
+        self.assertEqual(rdbAnalyses.save_post_request('', '', {}, {}), None)
