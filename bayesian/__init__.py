@@ -66,9 +66,9 @@ def create_app(configfile=None):
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     CORS(app, resources={r"/user/*": {"origins": "*"}})
 
-    #@app.route('/')
-    #def base_url():
-    ##    return redirect(url_for('api_v1.apiendpoints__slashless'))
+    # @app.route('/')
+    # def base_url():
+    #    return redirect(url_for('api_v1.apiendpoints__slashless'))
 
     setup_logging(app)
 
