@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-amqp==5.0.2               # via kombu
+amqp==2.6.1               # via kombu
 aniso8601==8.0.0          # via flask-restful
 anymarkup-core==0.8.1     # via anymarkup
 anymarkup==0.8.1          # via f8a-worker
@@ -16,21 +16,19 @@ blinker==1.4              # via flask-mail, flask-principal
 boto3==1.16.25            # via f8a-worker
 botocore==1.19.25         # via -r requirements.in, boto3, f8a-worker, s3transfer
 bs4==0.0.1                # via f8a-utils
-celery==5.0.2             # via selinon
+celery==4.4.7             # via f8a-worker
 certifi==2020.11.8        # via requests
 cffi==1.14.4              # via cryptography
 chardet==3.0.4            # via requests
-click-didyoumean==0.0.3   # via celery
-click-repl==0.1.6         # via celery
-click==7.1.2              # via anymarkup, celery, click-didyoumean, click-repl, flask, flask-appconfig, selinon
+click==7.1.2              # via anymarkup, flask, flask-appconfig, selinon
 codegen==1.0              # via selinon
 colorama==0.4.4           # via rainbow-logging-handler
 configobj==5.0.6          # via anymarkup
 cryptography==3.2.1       # via f8a-utils, fabric8a-auth
 deprecated==1.2.10        # via pygithub
-git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@5a5ce60#egg=f8a_utils  # via -r requirements.in, f8a-worker
+git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@c9d3f47#egg=f8a_utils  # via -r requirements.in, f8a-worker
 git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git@8a57ac7#egg=f8a_version_comparator  # via f8a-utils
-git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@066c2f6#egg=f8a_worker  # via -r requirements.in
+git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@b4e1fea#egg=f8a_worker  # via -r requirements.in
 git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=fabric8a_auth  # via -r requirements.in
 flask-appconfig==0.11.1   # via -r requirements.in
 flask-babelex==0.9.4      # via flask-security
@@ -56,13 +54,12 @@ jmespath==0.10.0          # via boto3, botocore
 jsl==0.2.4                # via f8a-worker
 json5==0.9.5              # via anymarkup
 jsonschema==3.2.0         # via f8a-worker, selinon
-kombu==5.0.2              # via celery
+kombu==4.6.11             # via celery
 logutils==0.3.5           # via rainbow-logging-handler
 lxml==4.6.1               # via -r requirements.in, f8a-utils, f8a-worker
 markupsafe==1.1.1         # via jinja2, wtforms
 mod-wsgi==4.7.1           # via -r requirements.in
 passlib==1.7.4            # via flask-security
-prompt-toolkit==3.0.8     # via click-repl
 psycopg2-binary==2.8.6    # via -r requirements.in
 py-lru-cache==0.1.4       # via -r requirements.in
 pycparser==2.20           # via cffi
@@ -81,7 +78,7 @@ s3transfer==0.3.3         # via boto3
 selinon==1.0.0            # via -r requirements.in, f8a-worker
 semantic-version==2.8.5   # via -r requirements.in, f8a-worker
 semver==2.13.0            # via f8a-utils
-six==1.15.0               # via anymarkup-core, click-repl, configobj, cryptography, flask-appconfig, flask-cors, flask-restful, jsonschema, python-dateutil, tenacity
+six==1.15.0               # via anymarkup-core, configobj, cryptography, flask-appconfig, flask-cors, flask-restful, jsonschema, python-dateutil, tenacity
 smmap==3.0.4              # via gitdb
 soupsieve==2.0.1          # via beautifulsoup4
 speaklater==1.3           # via flask-babelex
@@ -89,8 +86,7 @@ sqlalchemy==1.3.20        # via -r requirements.in, f8a-worker, flask-sqlalchemy
 tenacity==6.2.0           # via -r requirements.in, f8a-utils, f8a-worker
 toml==0.9.4               # via anymarkup, f8a-worker
 urllib3==1.26.2           # via botocore, requests
-vine==5.0.0               # via amqp, celery
-wcwidth==0.2.5            # via prompt-toolkit
+vine==1.3.0               # via amqp, celery
 werkzeug==0.16.1          # via -r requirements.in, f8a-worker, flask
 wrapt==1.12.1             # via deprecated
 wtforms==2.3.3            # via flask-wtf
