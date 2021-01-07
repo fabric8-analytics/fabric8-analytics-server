@@ -217,12 +217,9 @@ class RdbAnalyses:
     Provides interfaces to save and read request post data for stack analyses v2.
     """
 
-    def __init__(self, request_id, submit_time=None, manifest=None, deps=None):
+    def __init__(self, request_id):
         """Set request id."""
         self.request_id = request_id
-        self.submit_time = submit_time
-        self.manifest = manifest
-        self.deps = deps
 
     def get_request_data(self):
         """Read request data for given request id from RDS."""
@@ -251,19 +248,20 @@ class RdbAnalyses:
         """Read and return recommendation data from RDS."""
         return retrieve_worker_result(rdb, self.request_id, 'recommendation_v2')
 
-    def save_post_request(self):
+    def save_post_request(self, date_str, uuid_data, deps, manifest):
         """Save the post request data into RDS."""
         try:
             start = time.time()
             insert_stmt = insert(StackAnalysisRequest).values(
                 id=self.request_id,
-                submitTime=self.submit_time,
-                requestJson={'manifest': self.manifest},
-                dep_snapshot=self.deps
+                submitTime=date_str,
+                requestJson={'manifest': manifest},
+                dep_snapshot=deps,
+                user_id=uuid_data
             )
             do_update_stmt = insert_stmt.on_conflict_do_update(
                 index_elements=['id'],
-                set_=dict(dep_snapshot=self.deps)
+                set_=dict(dep_snapshot=deps)
             )
             rdb.session.execute(do_update_stmt)
             rdb.session.commit()
