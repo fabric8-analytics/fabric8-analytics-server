@@ -20,6 +20,7 @@ from selinon import run_flow
 from lru import lru_cache_function
 from flask import current_app
 from flask.json import JSONEncoder
+from flask import has_request_context, request
 import semantic_version as sv
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from urllib.parse import urljoin
@@ -91,8 +92,14 @@ def get_user_email(user_profile):
 
 def server_create_component_bookkeeping(ecosystem, name, version, user_profile):
     """Run the component analysis for given ecosystem+package+version."""
+    if has_request_context():
+            uuid_data = request.headers.get('uuid', None)
+        else:
+            uuid_data = None
+
     args = {
         'external_request_id': uuid.uuid4().hex,
+        'user_id': uuid_data,
         'data': {
             'api_name': 'component_analyses',
             'user_email': get_user_email(user_profile),
