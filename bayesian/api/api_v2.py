@@ -40,6 +40,7 @@ from bayesian.utility.v2.component_analyses import ca_validate_input, \
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
                             server_create_analysis,
+                            server_create_component_bookkeeping_post,
                             check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
@@ -222,6 +223,8 @@ class ComponentAnalysesApi(Resource):
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
         headers = {"uuid": request.headers.get('uuid', None)}
+        # Known component for Fabric8 Analytics
+        server_create_component_bookkeeping_post(ecosystem, headers)
         try:
             # Step1: Gather and clean Request
             packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
