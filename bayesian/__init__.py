@@ -58,7 +58,7 @@ def create_app(configfile=None):
     app.register_blueprint(api_v2)
     app.register_blueprint(user_api)
     # Redirect to latest API version if /api is accessed
-    app.route('/api')(lambda: redirect(url_for('api_v1.apiendpoints__slashless')))
+    app.route('/api')(lambda: redirect(url_for('api_v2.apiendpoints__slashless')))
     # Likewise for base URL, and make that accessible by name
 
     # Configure CORS.
@@ -66,9 +66,9 @@ def create_app(configfile=None):
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     CORS(app, resources={r"/user/*": {"origins": "*"}})
 
-    # @app.route('/')
-    # def base_url():
-    #    return redirect(url_for('api_v1.apiendpoints__slashless'))
+    @app.route('/')
+    def base_url():
+        return redirect(url_for('api_v2.apiendpoints__slashless'))
 
     setup_logging(app)
 
