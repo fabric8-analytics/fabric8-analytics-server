@@ -222,7 +222,7 @@ class ComponentAnalysesApi(Resource):
             pkgs_to_ingest = set(map(lambda pkg: ingestion_utils.Package(package=pkg.package,
                                                                          version=pkg.version),
                                      unknown_pkgs))
-            logger.debug(pkgs_to_ingest)
+            logger.debug("Unknown ingestion triggered for %s", pkgs_to_ingest)
             unknown_package_flow(ecosystem, pkgs_to_ingest)
 
             return response_template(stack_recommendation, 202, headers)
