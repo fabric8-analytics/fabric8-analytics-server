@@ -6,39 +6,20 @@
 # TODO: https://github.com/fabric8-analytics/fabric8-analytics-server/issues/373
 
 import datetime
-import json
 import os
 import uuid
-import shutil
 import hashlib
-import zipfile
 import logging
-
-from io import BytesIO
-from functools import lru_cache
 from selinon import run_flow
-from lru import lru_cache_function
 from flask import current_app
 from flask.json import JSONEncoder
 import semantic_version as sv
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-from urllib.parse import urljoin
-from f8a_worker.models import (Analysis, Ecosystem, Package, Version,
-                               WorkerResult, StackAnalysisRequest, RecommendationFeedback)
-from f8a_worker.utils import json_serial, MavenCoordinates, parse_gh_repo
-from f8a_worker.process import Git
+from f8a_worker.models import (WorkerResult, StackAnalysisRequest)
+from f8a_worker.utils import json_serial, MavenCoordinates
 from f8a_worker.setup_celery import init_celery
-
-
-from . import rdb
-from .exceptions import HTTPError
-from .default_config import BAYESIAN_COMPONENT_TAGGED_COUNT, CORE_DEPENDENCIES_REPO_URL, \
-    STACK_ANALYSIS_REQUEST_TIMEOUT
-
-from requests import get, post
+from .default_config import STACK_ANALYSIS_REQUEST_TIMEOUT
 from sqlalchemy.exc import SQLAlchemyError
-from github import Github, BadCredentialsException, GithubException, RateLimitExceededException
-from git import Repo, Actor
 
 logger = logging.getLogger(__name__)
 

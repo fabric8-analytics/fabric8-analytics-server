@@ -3,10 +3,6 @@
 import datetime
 import pytest
 import semantic_version as sv
-import tempfile
-import os
-import json
-from unittest.mock import Mock, patch
 from bayesian.utils import (
     is_valid, get_user_email,
     convert_version_to_proper_semantic as cvs,
