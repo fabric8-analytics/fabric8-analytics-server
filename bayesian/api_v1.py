@@ -184,6 +184,6 @@ def api_401_handler(err):
 # NOTE: this *must* come in the end, unless it'll overwrite rules defined
 # after this
 @api_v1.route('/<path:invalid_path>')
-def api_404_handler(*args, **kwargs):
+def api_404_handler():
     """Handle all other routes not defined above."""
     return jsonify(error='Cannot match given query to any API v1 endpoint'), 404
