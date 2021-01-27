@@ -40,6 +40,7 @@ def create_app(configfile=None):
     """Create the web application and define basic endpoints."""
     # do the imports here to not shadow e.g. "import bayesian.frontend.api_v1"
     # by Blueprint imported here
+    from bayesian.api_v1 import api_v1
     from bayesian.api.api_v2 import api_v2
     from bayesian.api.user_api import user_api
     from bayesian.utils import JSONEncoderWithExtraTypes
@@ -54,7 +55,7 @@ def create_app(configfile=None):
 
     # We need JSON encoder that can serialize datetime.datetime
     app.json_encoder = JSONEncoderWithExtraTypes
-
+    app.register_blueprint(api_v1)
     app.register_blueprint(api_v2)
     app.register_blueprint(user_api)
     # Redirect to latest API version if /api is accessed
