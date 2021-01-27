@@ -14,6 +14,7 @@ from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.v2.sa_response_builder import (SARBRequestInvalidException,
                                                      SARBRequestInprogressException,
                                                      SARBRequestTimeoutException)
+from bayesian.utility.v2.component_analyses import Package
 
 
 def api_route_for(route):
@@ -101,59 +102,24 @@ class TestComponentAnalysesApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.g')
     @patch('bayesian.api.api_v2._session')
     @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    def test_get_component_analyses_with_disable_unknown_package_flow(self, _sensitive, _request,
-                                                                      _analyses, _bookkeeping,
-                                                                      _session, _g):
-        """No Analyses Data found, with DISABLE_UNKNOWN_PACKAGE_FLOW flag, returns 202."""
-        with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
-            ca = ComponentAnalysesApi()
-            response = ca.get('npm', 'pkg', 'ver')
-            self.assertEqual(response.status, 202)
-            self.assertIsInstance(response, tuple)
-
-    @patch('bayesian.api.api_v2.g')
-    @patch('bayesian.api.api_v2._session')
-    @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
-    @patch('bayesian.api.api_v2.request')
-    @patch('bayesian.api.api_v2.case_sensitivity_transform')
+    @patch('bayesian.api.api_v2.unknown_package_flow')
     def test_get_component_analyses(self, _sensitive, _request,
-                                    _analyses, _bookkeeping, _session, _g):
-        """CA GET: No Analyses Data found, without INVOKE_API_WORKERS flag, Raises HTTP Error."""
+                                    _bookkeeping, _session, _g, _unknown):
+        """CA GET: No Analyses Data found, Raises HTTP Error."""
         ca = ComponentAnalysesApi()
         self.assertRaises(HTTPError, ca.get, 'npm', 'pkg', 'ver')
 
     @patch('bayesian.api.api_v2.g')
     @patch('bayesian.api.api_v2._session')
     @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
-    @patch('bayesian.api.api_v2.request')
-    @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    @patch('bayesian.utility.v2.ca_response_builder.'
-           'ComponentAnalyses.get_component_analyses_response', return_value=None)
-    def test_get_component_analyses_with_invoke_api_workers(
-            self, _vendor, _sensitive, _request, _analyses, _bookkeeping, _session, _g):
-        """CA GET: No Analyses Data found with API worker flag."""
-        ca = ComponentAnalysesApi()
-        with patch.dict('os.environ', {'INVOKE_API_WORKERS': '1'}):
-            response = ca.get('npm', 'pkg', 'ver')
-            self.assertEqual(response.status, 202)
-            self.assertIsInstance(response, tuple)
-        self.assertNotIn('INVOKE_API_WORKERS', os.environ)
-
-    @patch('bayesian.api.api_v2.g')
-    @patch('bayesian.api.api_v2._session')
-    @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
     @patch('bayesian.utility.v2.ca_response_builder.'
            'ComponentAnalyses.get_component_analyses_response')
     def test_get_component_analyses_with_result_not_none(
-            self, _vendor_analyses, _sensitive, _request, _analyses, _bookkeeping, _session, _g):
+            self, _vendor_analyses, _sensitive, _request, _bookkeeping, _session, _g):
         """CA GET: with VALID result."""
         result = 'my_package_analyses_result'
         _vendor_analyses.return_value = result
@@ -208,7 +174,11 @@ class TestCAPostApi(unittest.TestCase):
         """CA POST: Unknown Flow."""
         test = [{"package": "django", "version": "1.1", "package_unknown": True}]
         _mock1.return_value = self.gremlin_batch_data
-        _mock4.return_value = self.recommendation_data, {"unknown_pkg"}
+        unknown_pkgs = set()
+        unknown_pkgs.add(Package(package='django', given_name='django', version='1.1',
+                                 given_version='1.1', is_pseudo_version=False,
+                                 package_unknown=True))
+        _mock4.return_value = self.recommendation_data, unknown_pkgs
         _mock5.return_value = test
         payload = {
             "ecosystem": 'pypi',
@@ -221,31 +191,6 @@ class TestCAPostApi(unittest.TestCase):
             api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
         self.assertEqual(response.status_code, 202)
         self.assertEqual(response.json, test)
-
-    @patch('bayesian.api.api_v2.unknown_package_flow')
-    @patch('bayesian.api.api_v2.add_unknown_pkg_info')
-    @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
-    @patch('bayesian.api.api_v2.get_batch_ca_data')
-    def test_get_component_analyses_unknown_flow_ingestion_disabled(
-            self, _mock1, _mock2, _mock3, _mock4):
-        """CA POST: Unknown flow, Ingestion Disabled."""
-        _mock1.return_value = self.gremlin_batch_data
-        _mock2.return_value = {}, {"unknown_pkg"}
-        test = [{"package": "django", "version": "1.1", "package_unknown": True}]
-        _mock3.return_value = test
-
-        with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
-            payload = {
-                "ecosystem": 'pypi',
-                "package_versions": [
-                    {"package": "markdown2", "version": "2.3.2"}
-                ]
-            }
-            accept_json = [('Content-Type', 'application/json;')]
-            response = self.client.post(
-                api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
-            self.assertEqual(response.status_code, 202)
-            self.assertListEqual(response.json, test)
 
     def test_get_component_analyses_bad_request(self):
         """CA POST: Bad Request."""
