@@ -84,6 +84,3 @@ latex/
 
 .DS_Store
 *.err
-
-# contains git-info
-coreapi-release

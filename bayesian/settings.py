@@ -1,8 +1,7 @@
 """Abstracts settings based on env variables."""
 
 
-from typing import Dict
-from pydantic import BaseSettings, HttpUrl, AnyHttpUrl, Field
+from pydantic import BaseSettings, Field
 
 
 class GunicornSettings(BaseSettings):
