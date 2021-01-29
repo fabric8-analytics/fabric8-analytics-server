@@ -9,17 +9,18 @@ check_python_version() {
 
 check_python_version
 
+pip3 install -r /coreapi/tests/requirements.txt
 set -e
 
 echo "*****************************************"
 echo "*** Cyclomatic complexity measurement ***"
 echo "*****************************************"
-radon cc -s -a -i venv /bayesian/bayesian/
+radon cc -s -a -i venv /coreapi/bayesian/
 
 echo "*****************************************"
 echo "*** Maintainability Index measurement ***"
 echo "*****************************************"
-radon mi -s -i venv /bayesian/bayesian/
+radon mi -s -i venv /coreapi/bayesian/
 
 echo "*****************************************"
 echo "*** Unit tests ***"
@@ -27,8 +28,4 @@ echo "*****************************************"
 
 # we need no:cacheprovider, otherwise pytest will try to write to directory .cache which is in /usr under unprivileged
 # user and will cause exception
-py.test -p no:cacheprovider --cov=/bayesian/bayesian/ --cov-report term-missing --cov-fail-under=$COVERAGE_THRESHOLD -vv $@
-
-# this is necessary - codecov expect proper git repo
-cp -r /bayesian/.git ./
-
+py.test -p no:cacheprovider --cov=/coreapi/bayesian/ --cov-report term-missing --cov-fail-under=$COVERAGE_THRESHOLD -vv $@

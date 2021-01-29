@@ -2,11 +2,10 @@ REGISTRY ?= quay.io
 DEFAULT_TAG = latest
 TESTS_IMAGE=server-tests
 
+DOCKERFILE := Dockerfile
 ifeq ($(TARGET),rhel)
-    DOCKERFILE := Dockerfile.rhel
 	REPOSITORY ?= openshiftio/rhel-bayesian-bayesian-api
 else
-    DOCKERFILE := Dockerfile
 	REPOSITORY ?= openshiftio/bayesian-bayesian-api
 endif
 
@@ -15,6 +14,7 @@ endif
 all: fast-docker-build
 
 docker-build:
+	git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD > coreapi-release
 	docker build --no-cache -t $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) -f $(DOCKERFILE) .
 	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(TESTS_IMAGE):$(DEFAULT_TAG)
 	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) bayesian-api
