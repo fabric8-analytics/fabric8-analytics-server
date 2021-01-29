@@ -19,7 +19,7 @@ def when_ready(server):  # noqa
     """Log when worker is ready to serve."""
     logger = logging.getLogger(__name__)
     logger.info(
-        "Starting backbone gunicorn with %s workers %s worker class and preload %s",
+        "Starting gunicorn with %s workers %s worker class and preload %s",
         workers,
         worker_class,
         preload_app,
