@@ -44,6 +44,16 @@ objects:
             value: "100"
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
+          - name: WORKER_COUNT
+            value: "4"
+          - name: WORKER_CLASS
+            value: "gevent"
+          - name: WORKER_TIMEOUT
+            value: "300"
+          - name: WORKER_PRELOAD
+            value: "True"
+          - name: WORKER_CONNECTIONS
+            value: "1024"
           - name: OSIO_AUTH_URL
             valueFrom:
               configMapKeyRef:
