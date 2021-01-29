@@ -34,3 +34,22 @@ jobs:
         python-version: '3.6'
     - name: Run Unit Tests
       run: bash qa/runtest.sh
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+  openshift-yaml-validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install oc
+      uses: redhat-actions/oc-installer@v1
+      with:
+        version: '4.6'
+    - name: Run oc process
+      run: oc process --local -f openshift/template.yaml -o yaml > blueprint.yaml
+    - name: validate openshift yaml
+      uses: instrumenta/kubeval-action@master
+      with:
+          files: blueprint.yaml
