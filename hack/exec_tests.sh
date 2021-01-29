@@ -4,27 +4,13 @@
 COVERAGE_THRESHOLD=40
 
 check_python_version() {
-    python3 /bayesian/tools/check_python_version.py 3 6
+    python3 /coreapi/tools/check_python_version.py 3 6
 }
 
 check_python_version
 
 pip3 install -r /coreapi/tests/requirements.txt
-set -e
-
-echo "*****************************************"
-echo "*** Cyclomatic complexity measurement ***"
-echo "*****************************************"
-radon cc -s -a -i venv /coreapi/bayesian/
-
-echo "*****************************************"
-echo "*** Maintainability Index measurement ***"
-echo "*****************************************"
-radon mi -s -i venv /coreapi/bayesian/
-
-echo "*****************************************"
-echo "*** Unit tests ***"
-echo "*****************************************"
+ln -s /coreapi /bayesian
 
 # we need no:cacheprovider, otherwise pytest will try to write to directory .cache which is in /usr under unprivileged
 # user and will cause exception

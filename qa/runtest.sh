@@ -54,17 +54,18 @@ docker run -d \
     --name "${DB_CONTAINER_NAME}" "${POSTGRES_IMAGE_NAME}"
 DB_CONTAINER_IP=$(docker inspect --format "{{.NetworkSettings.Networks.${DOCKER_NETWORK}.IPAddress}}" ${DB_CONTAINER_NAME})
 
+# TODO: this is duplicating code with server's runtest, we should refactor
 echo "Waiting for postgres to fully initialize"
-set +x
 for i in {1..10}; do
-  retcode=$(curl http://${DB_CONTAINER_IP}:5432 &>/dev/null || echo $?)
-  if test "$retcode" == "52"; then
+  set +e
+  docker exec -it "${DB_CONTAINER_NAME}" bash -c pg_isready
+  if [[ "$?" == "0" ]]; then
     break
   fi;
-  sleep 1
+  set -e
+  sleep 2
 done;
-set -x
-
+echo "Postgres is ready.."
 
 echo "Starting test suite"
 docker run -t \
@@ -75,12 +76,13 @@ docker run -t \
   -e POSTGRESQL_PASSWORD=coreapi \
   -e POSTGRESQL_DATABASE=coreapi \
   -e PGBOUNCER_SERVICE_HOST=coreapi-pgbouncer \
-  -e DISABLE_AUTHENTICATION 1 \
+  -e DISABLE_AUTHENTICATION=1 \
   -e PGBOUNCER_SERVICE_HOST="${DB_CONTAINER_NAME}" \
   -e DEPLOYMENT_PREFIX='test' \
   -e WORKER_ADMINISTRATION_REGION='api' \
   -e SENTRY_DSN='' \
-  ${IMAGE_NAME} /coreapi/bayesian/hack/exec_tests.sh $@ /bayesian/tests/
+  --entrypoint bash \
+  bayesian-api /coreapi/hack/exec_tests.sh $@ /coreapi/tests/
 
 echo "Test suite passed \\o/"
 popd > /dev/null

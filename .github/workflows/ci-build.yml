@@ -3,19 +3,19 @@ name: CI
 on:
   pull_request:
     branches: [ master ]
-   
+
 jobs:
   Code-Quality-Checks:
     runs-on: ubuntu-latest
     strategy:
-      matrix: 
+      matrix:
         scripts:
           - run-linter
           - check-docstyle
           - detect-dead-code
           - detect-common-errors
           - measure-cyclomatic-complexity
-          - measure-maintainability-index    
+          - measure-maintainability-index
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.6
