@@ -15,7 +15,6 @@ all: fast-docker-build
 
 docker-build:
 	git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD > hack/coreapi-release
-	sleep 10000
 	docker build --no-cache -t $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) -f $(DOCKERFILE) .
 	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(TESTS_IMAGE):$(DEFAULT_TAG)
 	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) bayesian-api
