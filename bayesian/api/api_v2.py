@@ -39,6 +39,7 @@ from bayesian.utility.v2.component_analyses import ca_validate_input, \
     get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
 from bayesian.utils import (get_system_version,
                             server_create_component_bookkeeping,
+                            create_component_bookkeeping,
                             check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
@@ -199,6 +200,7 @@ class ComponentAnalysesApi(Resource):
         response_template: Tuple = namedtuple("response_template", ["message", "status", "headers"])
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
+        user_agent = request.headers.get('User-Agent', None)
         headers = {"uuid": request.headers.get('uuid', None)}
         try:
             # Step1: Gather and clean Request
@@ -215,6 +217,8 @@ class ComponentAnalysesApi(Resource):
             msg = "Internal Server Exception. Please contact us if problem persists."
             logger.error(e)
             raise HTTPError(400, msg) from e
+
+        create_component_bookkeeping(ecosystem, packages_list, headers.get("uuid"), user_agent)
 
         # Step4: Handle Unknown Packages
         if unknown_pkgs:

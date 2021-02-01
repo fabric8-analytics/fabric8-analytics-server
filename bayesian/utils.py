@@ -103,6 +103,20 @@ def server_create_component_bookkeeping(ecosystem, name, version, user_profile):
     return server_run_flow('componentApiFlow', args)
 
 
+def create_component_bookkeeping(ecosystem, packages_list, user_id, user_agent):
+    """Run the component analysis for given ecosystem+package+version."""
+    args = {
+        'api_name': 'component_analyses_post',
+        'external_request_id': uuid.uuid4().hex,
+        'ecosystem': ecosystem,
+        'data': 'empty',
+        'packages_list': packages_list,
+        'user_id': user_id,
+        'user_agent': user_agent
+    }
+    return server_run_flow('componentApiFlow', args)
+
+
 def server_create_analysis(ecosystem, package, version, user_profile,
                            api_flow=True, force=False, force_graph_sync=False):
     """Create bayesianApiFlow handling analyses for specified EPV.
