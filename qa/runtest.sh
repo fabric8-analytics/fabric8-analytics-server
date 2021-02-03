@@ -54,16 +54,16 @@ docker run -d \
     --name "${DB_CONTAINER_NAME}" "${POSTGRES_IMAGE_NAME}"
 
 # TODO: this is duplicating code with server's runtest, we should refactor
+set +e
 echo "Waiting for postgres to fully initialize"
 for i in {1..10}; do
-  set +e
   docker exec -it "${DB_CONTAINER_NAME}" bash -c pg_isready
   if [[ "$?" == "0" ]]; then
     break
   fi;
-  set -e
   sleep 2
 done;
+set -e
 echo "Postgres is ready.."
 
 echo "Starting test suite"
