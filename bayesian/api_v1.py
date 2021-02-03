@@ -166,6 +166,7 @@ class SubmitFeedback(Resource):
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
 add_resource_no_matter_slashes(SubmitFeedback, '/submit-feedback')
+add_resource_no_matter_slashes(SystemVersion, '/system/version')
 
 
 @api_v1.errorhandler(HTTPError)
