@@ -52,7 +52,6 @@ docker run -d \
     --env-file tests/postgres.env \
     --network ${DOCKER_NETWORK} \
     --name "${DB_CONTAINER_NAME}" "${POSTGRES_IMAGE_NAME}"
-DB_CONTAINER_IP=$(docker inspect --format "{{.NetworkSettings.Networks.${DOCKER_NETWORK}.IPAddress}}" ${DB_CONTAINER_NAME})
 
 # TODO: this is duplicating code with server's runtest, we should refactor
 echo "Waiting for postgres to fully initialize"
