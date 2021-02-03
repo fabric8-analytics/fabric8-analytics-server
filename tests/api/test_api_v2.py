@@ -172,7 +172,8 @@ class TestCAPostApi(unittest.TestCase):
     @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.api.api_v2.get_batch_ca_data')
-    def test_get_component_analyses_unknown_flow(self, _mock1, _mock2, _mock3, _mock4, _mock5, _mock6):
+    def test_get_component_analyses_unknown_flow(self, _mock1, _mock2,
+                                                 _mock3, _mock4, _mock5, _mock6):
         """CA POST: Unknown Flow."""
         test = [{"package": "django", "version": "1.1", "package_unknown": True}]
         _mock1.return_value = self.gremlin_batch_data
