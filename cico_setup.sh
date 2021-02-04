@@ -21,7 +21,10 @@ load_jenkins_vars() {
 
 prep() {
     yum -y update
-    yum -y install docker git openssl-devel gcc
+    yum -y install docker git openssl-devel gcc subscription-manager-rhsm-certificates
+    # fix based on https://github.com/minishift/minishift-centos-iso/pull/255
+    # to enable ubi builds
+    touch /etc/rhsm/ca/redhat-uep.pem
     systemctl start docker
 }
 
