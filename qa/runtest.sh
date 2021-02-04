@@ -40,7 +40,7 @@ trap gc EXIT SIGINT
 if [ "$REBUILD" == "1" ] || \
      !(docker inspect $IMAGE_NAME > /dev/null 2>&1); then
   echo "Building $IMAGE_NAME for testing"
-  docker build --tag="$IMAGE_NAME" .
+  make docker-build IMAGE_NAME=$IMAGE_NAME
 fi
 
 echo "Creating network ${DOCKER_NETWORK}"

@@ -1,6 +1,6 @@
 REGISTRY ?= quay.io
 DEFAULT_TAG = latest
-TESTS_IMAGE=server-tests
+IMAGE_NAME ?= bayesian-api
 
 DOCKERFILE := Dockerfile
 ifeq ($(TARGET),rhel)
@@ -9,28 +9,22 @@ else
 	REPOSITORY ?= openshiftio/bayesian-bayesian-api
 endif
 
-.PHONY: all docker-build fast-docker-build test get-image-name get-image-repository docker-build-tests fast-docker-build-tests
+.PHONY: all docker-build fast-docker-build test get-image-name get-image-repository
 
 all: fast-docker-build
 
-docker-build:
+hack/coreapi-release:
 	git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD > hack/coreapi-release
+
+docker-build: hack/coreapi-release
 	docker build --no-cache -t $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) -f $(DOCKERFILE) .
-	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(TESTS_IMAGE):$(DEFAULT_TAG)
-	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) bayesian-api
+	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(IMAGE_NAME)
 
-docker-build-tests: docker-build
-	docker build --no-cache -t $(TESTS_IMAGE) -f Dockerfile.tests .
-
-fast-docker-build:
+fast-docker-build: hack/coreapi-release
 	docker build -t $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) -f $(DOCKERFILE) .
-	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(TESTS_IMAGE):$(DEFAULT_TAG)
-	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) bayesian-api
+	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(IMAGE_NAME)
 
-fast-docker-build-tests:
-	docker build -t $(TESTS_IMAGE) -f Dockerfile.tests .
-
-test: fast-docker-build-tests
+test: fast-docker-build
 	./runtest.sh
 
 get-image-name:

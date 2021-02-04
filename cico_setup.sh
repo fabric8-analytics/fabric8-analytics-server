@@ -39,7 +39,7 @@ docker_login() {
 
 build_image() {
     # build image and tests
-    make docker-build-tests
+    make docker-build
 }
 
 tag_push() {
