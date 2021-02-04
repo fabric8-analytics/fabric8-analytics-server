@@ -18,7 +18,6 @@ TIMESTAMP="$(date +%F-%H-%M-%S)"
 DB_CONTAINER_NAME="db-server-tests-${TIMESTAMP}"
 CONTAINER_NAME="server-tests-${TIMESTAMP}"
 IMAGE_NAME=${IMAGE_NAME:-bayesian-api}
-TEST_IMAGE_NAME="server-tests"
 POSTGRES_IMAGE_NAME="registry.centos.org/centos/postgresql-96-centos7:latest"
 DOCKER_NETWORK="F8aServerTest"
 
@@ -41,13 +40,7 @@ trap gc EXIT SIGINT
 if [ "$REBUILD" == "1" ] || \
      !(docker inspect $IMAGE_NAME > /dev/null 2>&1); then
   echo "Building $IMAGE_NAME for testing"
-  docker build --pull --tag="$IMAGE_NAME" .
-fi
-
-if [ "$REBUILD" == "1" ] || \
-     !(docker inspect $TEST_IMAGE_NAME > /dev/null 2>&1); then
-  echo "Building $TEST_IMAGE_NAME test image"
-  docker build -f Dockerfile.tests --tag=$TEST_IMAGE_NAME .
+  docker build --tag="$IMAGE_NAME" .
 fi
 
 echo "Creating network ${DOCKER_NETWORK}"
@@ -59,37 +52,36 @@ docker run -d \
     --env-file tests/postgres.env \
     --network ${DOCKER_NETWORK} \
     --name "${DB_CONTAINER_NAME}" "${POSTGRES_IMAGE_NAME}"
-DB_CONTAINER_IP=$(docker inspect --format "{{.NetworkSettings.Networks.${DOCKER_NETWORK}.IPAddress}}" ${DB_CONTAINER_NAME})
 
+# TODO: this is duplicating code with server's runtest, we should refactor
+set +e
 echo "Waiting for postgres to fully initialize"
-set +x
 for i in {1..10}; do
-  retcode=$(curl http://${DB_CONTAINER_IP}:5432 &>/dev/null || echo $?)
-  if test "$retcode" == "52"; then
+  docker exec -it "${DB_CONTAINER_NAME}" bash -c pg_isready
+  if [[ "$?" == "0" ]]; then
     break
   fi;
-  sleep 1
+  sleep 2
 done;
-set -x
-
-
-# mount f8a_worker, if available (won't be in CI)
-f8a_worker_path="${here}/../worker/f8a_worker"
-if [ -d "${f8a_worker_path}" ]; then
-    f8a_worker_vol="${f8a_worker_path}:/usr/lib/python3.6/site-packages/f8a_worker:ro,Z"
-fi
+set -e
+echo "Postgres is ready.."
 
 echo "Starting test suite"
 docker run -t \
-  -v "${here}:/bayesian:ro,Z" \
-  ${f8a_worker_vol:+-v} ${f8a_worker_vol:-} \
+  -v "${here}:/coreapi:rw,Z" \
   --network "${DOCKER_NETWORK}" \
   --name="${CONTAINER_NAME}" \
+  -e POSTGRESQL_USER=coreapi \
+  -e POSTGRESQL_PASSWORD=coreapi \
+  -e POSTGRESQL_DATABASE=coreapi \
+  -e PGBOUNCER_SERVICE_HOST=coreapi-pgbouncer \
+  -e DISABLE_AUTHENTICATION=1 \
   -e PGBOUNCER_SERVICE_HOST="${DB_CONTAINER_NAME}" \
   -e DEPLOYMENT_PREFIX='test' \
   -e WORKER_ADMINISTRATION_REGION='api' \
   -e SENTRY_DSN='' \
-  ${TEST_IMAGE_NAME} /bayesian/hack/exec_tests.sh $@ /bayesian/tests/
+  --entrypoint bash \
+  bayesian-api /coreapi/hack/exec_tests.sh $@ /coreapi/tests/
 
 echo "Test suite passed \\o/"
 popd > /dev/null
