@@ -33,7 +33,7 @@ jobs:
           username: ${{ github.event.client_payload.github.actor }}
           password: ${{ secrets.CR_PAT }}
       - name: Build Image
-        run:   docker build --no-cache -t ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}} -f Dockerfile .
+        run:   docker build -t ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}} -f Dockerfile .
       - name: Push Image
         run: docker push ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}}
       - name: Create success comment
