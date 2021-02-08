@@ -60,4 +60,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run Docker Build
-      run: docker build --no-cache -t tests-image -f Dockerfile .
+      run: docker build -t tests-image -f Dockerfile .
