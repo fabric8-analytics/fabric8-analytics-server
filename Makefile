@@ -15,6 +15,7 @@ all: fast-docker-build
 
 coreapi-release:
 	git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD > hack/coreapi-release
+	git update-index --assume-unchanged hack/coreapi-release
 
 docker-build: coreapi-release
 	docker build --no-cache -t $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) -f $(DOCKERFILE) .

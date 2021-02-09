@@ -84,7 +84,3 @@ latex/
 
 .DS_Store
 *.err
-
-# holds default value and modified by Makefile to add respective git commit hash
-# and date
-hack/coreapi-release
