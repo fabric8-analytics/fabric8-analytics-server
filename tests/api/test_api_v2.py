@@ -144,11 +144,12 @@ class TestCAPostApi(unittest.TestCase):
         with open(recommendation_data) as f:
             cls.recommendation_data = json.load(f)
 
+    @patch('bayesian.api.api_v2.create_component_bookkeeping')
     @patch('bayesian.api.api_v2.add_unknown_pkg_info')
     @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.api.api_v2.get_batch_ca_data')
-    def test_get_component_analyses_post(self, _mock1, _mock2, _mock3, _mock4):
+    def test_get_component_analyses_post(self, _mock1, _mock2, _mock3, _mock4, _mock5):
         """CA POST: Valid API."""
         test = [{"package": "markdown2", "version": "2.3.2", "package_unknown": False}]
         _mock1.return_value = self.gremlin_batch_data
@@ -165,12 +166,14 @@ class TestCAPostApi(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, self.recommendation_data)
 
+    @patch('bayesian.api.api_v2.create_component_bookkeeping')
     @patch('bayesian.api.api_v2.add_unknown_pkg_info')
     @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
     @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.api.api_v2.get_batch_ca_data')
-    def test_get_component_analyses_unknown_flow(self, _mock1, _mock2, _mock3, _mock4, _mock5):
+    def test_get_component_analyses_unknown_flow(self, _mock1, _mock2,
+                                                 _mock3, _mock4, _mock5, _mock6):
         """CA POST: Unknown Flow."""
         test = [{"package": "django", "version": "1.1", "package_unknown": True}]
         _mock1.return_value = self.gremlin_batch_data
