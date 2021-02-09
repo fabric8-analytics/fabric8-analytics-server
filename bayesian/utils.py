@@ -67,15 +67,15 @@ def create_component_bookkeeping(ecosystem, packages_list,
                                  user_id, user_agent, manifest_hash, request_id):
     """Run the component analysis for given ecosystem+package+version."""
     args = {
-        'data': {
-            'api_name': 'component_analyses_post'
-        },
         'external_request_id': request_id,
-        'manifest_hash': hashlib.md5(manifest_hash.encode()).hexdigest(),
-        'ecosystem': ecosystem,
-        'packages_list': packages_list,
-        'user_id': user_id,
-        'user_agent': user_agent
+        'data': {
+            'api_name': 'component_analyses_post',
+            'manifest_hash': hashlib.md5(manifest_hash.encode()).hexdigest(),
+            'ecosystem': ecosystem,
+            'packages_list': packages_list,
+            'user_id': user_id,
+            'user_agent': user_agent
+        }
     }
     return server_run_flow('componentApiFlow', args)
 
