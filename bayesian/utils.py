@@ -7,7 +7,6 @@
 
 import datetime
 import os
-import uuid
 import hashlib
 import logging
 from selinon import run_flow
@@ -62,20 +61,6 @@ def get_user_email(user_profile):
         return user_profile.get('email', default_email)
     else:
         return default_email
-
-
-def server_create_component_bookkeeping(ecosystem, name, version, user_profile):
-    """Run the component analysis for given ecosystem+package+version."""
-    args = {
-        'external_request_id': uuid.uuid4().hex,
-        'data': {
-            'api_name': 'component_analyses',
-            'user_email': get_user_email(user_profile),
-            'user_profile': user_profile,
-            'request': {'ecosystem': ecosystem, 'name': name, 'version': version}
-        }
-    }
-    return server_run_flow('componentApiFlow', args)
 
 
 def create_component_bookkeeping(ecosystem, packages_list,

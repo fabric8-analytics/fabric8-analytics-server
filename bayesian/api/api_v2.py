@@ -27,7 +27,7 @@ from requests_futures.sessions import FuturesSession
 from collections import namedtuple
 from pydantic.error_wrappers import ValidationError
 
-from flask import Blueprint, request, g
+from flask import Blueprint, request
 from flask.json import jsonify
 from flask_restful import Api, Resource
 
@@ -38,7 +38,6 @@ from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
     get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
 from bayesian.utils import (get_system_version,
-                            server_create_component_bookkeeping,
                             create_component_bookkeeping,
                             check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
@@ -167,8 +166,6 @@ class ComponentAnalysesApi(Resource):
             ecosystem, package, version).get_component_analyses_response()
 
         if analyses_result is not None:
-            # Known component for Fabric8 Analytics
-            server_create_component_bookkeeping(ecosystem, package, version, g.decoded_token)
 
             metrics_payload.update({"status_code": 200, "value": time.time() - st})
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)

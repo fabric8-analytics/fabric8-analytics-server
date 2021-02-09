@@ -24,7 +24,7 @@ from operator import itemgetter
 from werkzeug.exceptions import BadRequest
 
 from bayesian.utility.v2.component_analyses import validate_version, \
-    known_package_flow, ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
+    ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
     get_batch_ca_data, add_unknown_pkg_info
 
 
@@ -49,17 +49,7 @@ class TestComponentAnalyses(unittest.TestCase):
         result = validate_version("1.*")
         self.assertFalse(result)
 
-    @patch('bayesian.utility.v2.component_analyses.g')
-    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
-    def test_known_package_flow(self, _mock1, _mock2):
-        """Test get package version."""
-        _mock1.return_value = True
-        result = known_package_flow('pypi', "django", "1.1")
-        self.assertTrue(result)
-
-    @patch('bayesian.utility.v2.component_analyses.g')
-    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
-    def test_get_known_unknown_pkgs_no_cve(self, _mock1, _mock2):
+    def test_get_known_unknown_pkgs_no_cve(self):
         """Test Known Unknown Pkgs, No Cve."""
         normalised_input_pkgs = [normlize_packages("markdown2", "markdown2",
                                                    "2.3.2", "2.3.2", False)]
@@ -77,9 +67,7 @@ class TestComponentAnalyses(unittest.TestCase):
         self.assertSetEqual(unknown_pkgs, set())
 
     @patch('bayesian.utility.v2.ca_response_builder.g')
-    @patch('bayesian.utility.v2.component_analyses.g')
-    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
-    def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1, _mock2, _mock3):
+    def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1):
         """Test Known Unknown Pkgs, with and Without CVE."""
         input_pkgs = [("flask", "flask", "1.1.1", "1.1.1"), ("django", "django", "1.1.1", "1.1.1")]
         normalised_input_pkgs = [normlize_packages(pkg, gvn_pkg, vr, gvn_vr, False)
@@ -101,9 +89,7 @@ class TestComponentAnalyses(unittest.TestCase):
         self.assertSetEqual(unknown_pkgs, set())
 
     @patch('bayesian.utility.v2.ca_response_builder.g')
-    @patch('bayesian.utility.v2.component_analyses.g')
-    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
-    def test_get_known_unknown_pkgs_with_and_without_cve_golang(self, _mock1, _mock2, _mock3):
+    def test_get_known_unknown_pkgs_with_and_without_cve_golang(self, _mock1):
         """Test Known Unknown Pkgs, with and Without CVE for golang."""
         input_pkgs = [('github.com/hashicorp/nomad', 'github.com/hashicorp/nomad',
                        '0.7.1', 'v0.7.1', False),

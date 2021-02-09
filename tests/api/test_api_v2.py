@@ -99,27 +99,23 @@ class TestCommonEndpoints():
 class TestComponentAnalysesApi(unittest.TestCase):
     """Component Analyses Unit Tests."""
 
-    @patch('bayesian.api.api_v2.g')
     @patch('bayesian.api.api_v2._session')
-    @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     def test_get_component_analyses(self, _sensitive, _request,
-                                    _bookkeeping, _session, _g, _unknown):
+                                    _session, _unknown):
         """CA GET: No Analyses Data found, Raises HTTP Error."""
         ca = ComponentAnalysesApi()
         self.assertRaises(HTTPError, ca.get, 'npm', 'pkg', 'ver')
 
-    @patch('bayesian.api.api_v2.g')
     @patch('bayesian.api.api_v2._session')
-    @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
     @patch('bayesian.utility.v2.ca_response_builder.'
            'ComponentAnalyses.get_component_analyses_response')
     def test_get_component_analyses_with_result_not_none(
-            self, _vendor_analyses, _sensitive, _request, _bookkeeping, _session, _g):
+            self, _vendor_analyses, _sensitive, _request, _session):
         """CA GET: with VALID result."""
         result = 'my_package_analyses_result'
         _vendor_analyses.return_value = result
@@ -146,14 +142,13 @@ class TestCAPostApi(unittest.TestCase):
 
     @patch('bayesian.api.api_v2.create_component_bookkeeping')
     @patch('bayesian.api.api_v2.add_unknown_pkg_info')
-    @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.api.api_v2.get_batch_ca_data')
-    def test_get_component_analyses_post(self, _mock1, _mock2, _mock3, _mock4, _mock5):
+    def test_get_component_analyses_post(self, _mock1, _mock2, _mock3, _mock4):
         """CA POST: Valid API."""
         test = [{"package": "markdown2", "version": "2.3.2", "package_unknown": False}]
         _mock1.return_value = self.gremlin_batch_data
-        _mock4.return_value = test
+        _mock3.return_value = test
         payload = {
             "ecosystem": 'pypi',
             "package_versions": [
@@ -169,11 +164,10 @@ class TestCAPostApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.create_component_bookkeeping')
     @patch('bayesian.api.api_v2.add_unknown_pkg_info')
     @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
-    @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.api.api_v2.get_batch_ca_data')
     def test_get_component_analyses_unknown_flow(self, _mock1, _mock2,
-                                                 _mock3, _mock4, _mock5, _mock6):
+                                                 _mock3, _mock4, _mock5):
         """CA POST: Unknown Flow."""
         test = [{"package": "django", "version": "1.1", "package_unknown": True}]
         _mock1.return_value = self.gremlin_batch_data
@@ -181,8 +175,8 @@ class TestCAPostApi(unittest.TestCase):
         unknown_pkgs.add(Package(package='django', given_name='django', version='1.1',
                                  given_version='1.1', is_pseudo_version=False,
                                  package_unknown=True))
-        _mock4.return_value = self.recommendation_data, unknown_pkgs
-        _mock5.return_value = test
+        _mock3.return_value = self.recommendation_data, unknown_pkgs
+        _mock4.return_value = test
         payload = {
             "ecosystem": 'pypi',
             "package_versions": [
