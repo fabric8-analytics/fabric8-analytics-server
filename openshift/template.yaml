@@ -44,6 +44,16 @@ objects:
             value: "100"
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
+          - name: WORKER_COUNT
+            value: "4"
+          - name: WORKER_CLASS
+            value: "gevent"
+          - name: WORKER_TIMEOUT
+            value: "300"
+          - name: WORKER_PRELOAD
+            value: "True"
+          - name: WORKER_CONNECTIONS
+            value: "1024"
           - name: OSIO_AUTH_URL
             valueFrom:
               configMapKeyRef:
@@ -66,10 +76,6 @@ objects:
               secretKeyRef:
                 name: worker
                 key: sentry_dsn
-          - name: INVOKE_API_WORKERS
-            value: "1"
-          - name: DISABLE_UNKNOWN_PACKAGE_FLOW
-            value: ${DISABLE_UNKNOWN_PACKAGE_FLOW}
           - name: SHOW_TRANSITIVE_REPORT
             value: ${SHOW_TRANSITIVE_REPORT}
           - name: POSTGRESQL_DATABASE
@@ -111,6 +117,11 @@ objects:
             value: ${STACK_ANALYSIS_REQUEST_TIMEOUT}
           - name: FLASK_LOGGING_LEVEL
             value: ${FLASK_LOGGING_LEVEL}
+          - name: APP_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: jobs
+                key: flask-app-secret-key
           image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
           name: bayesian-api
           ports:
@@ -209,12 +220,6 @@ parameters:
   required: false
   name: FLASK_LOGGING_LEVEL
   value: "WARNING"
-
-- description: Flag to enable or disable the unknown package ingetion flow
-  displayName: DISABLE UNKNOWN PACKAGE FLOW
-  required: false
-  name: DISABLE_UNKNOWN_PACKAGE_FLOW
-  value: "0"
 
 - description: Flag to enable or disable the transitive report from stack report
   displayName: SHOW TRANSITIVE REPORT

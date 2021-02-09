@@ -2,4 +2,3 @@ pytest
 pytest-flask
 pytest-cov
 radon
--r ../requirements.in

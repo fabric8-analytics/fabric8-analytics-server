@@ -55,12 +55,11 @@ def create_app(configfile=None):
 
     # We need JSON encoder that can serialize datetime.datetime
     app.json_encoder = JSONEncoderWithExtraTypes
-
     app.register_blueprint(api_v1)
     app.register_blueprint(api_v2)
     app.register_blueprint(user_api)
     # Redirect to latest API version if /api is accessed
-    app.route('/api')(lambda: redirect(url_for('api_v1.apiendpoints__slashless')))
+    app.route('/api')(lambda: redirect(url_for('api_v2.apiendpoints__slashless')))
     # Likewise for base URL, and make that accessible by name
 
     # Configure CORS.
@@ -70,7 +69,7 @@ def create_app(configfile=None):
 
     @app.route('/')
     def base_url():
-        return redirect(url_for('api_v1.apiendpoints__slashless'))
+        return redirect(url_for('api_v2.apiendpoints__slashless'))
 
     setup_logging(app)
 
