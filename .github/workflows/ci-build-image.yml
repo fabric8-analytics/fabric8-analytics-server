@@ -21,17 +21,19 @@ jobs:
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v1
         with:
-          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          edit-mode: replace
+          comment-id: ${{ github.event.client_payload.github.payload.comment.id }} 
           body: |
-            :test_tube: [CI has Started Image Build]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})
+            **Edit:** :test_tube: [CI has Started Image Build]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})
+          reactions: eyes  
       - name: Login to Github Container Registry
         uses: docker/login-action@v1
         with:
-          registry: ghcr.io
+          registry: ${{ env. REGISTRY }}
           username: ${{ github.event.client_payload.github.actor }}
           password: ${{ secrets.CR_PAT }}
       - name: Build Image
-        run:   docker build --no-cache -t ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}} -f Dockerfile .
+        run:   docker build -t ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}} -f Dockerfile .
       - name: Push Image
         run: docker push ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}}
       - name: Create success comment
@@ -40,15 +42,19 @@ jobs:
         env:
           IMAGE_URL: ${{env.REGISTRY}}/${{env.REPOSITORY}}/${{env.FULL_NAME}}:${{env.DEFAULT_TAG}}
         with:
-          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          edit-mode: replace
+          comment-id: ${{ github.event.client_payload.github.payload.comment.id }} 
           body: |
-           :v: [Image Build Successfull]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}) @${{github.event.client_payload.github.actor}}, Avaliable at: ```${{ env.IMAGE_URL }}``` 
-  
+           **Edit:** :v: [Image Build Successfull]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}) @${{github.event.client_payload.github.actor}}, Avaliable at: ```${{ env.IMAGE_URL }}``` 
+          reactions: hooray, heart
       - name: Create fail comment
         if: failure()
         uses: peter-evans/create-or-update-comment@v1
         with:
-          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          edit-mode: replace
+          comment-id: ${{ github.event.client_payload.github.payload.comment.id }} 
           body: |
-           :facepalm: [Build and Push Image Failed]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})
+           **Edit:** :facepalm: [Build and Push Image Failed]( https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})
+          reactions: confused
+
      
