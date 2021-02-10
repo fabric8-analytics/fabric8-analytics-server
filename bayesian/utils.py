@@ -7,7 +7,6 @@
 
 import datetime
 import os
-import uuid
 import hashlib
 import logging
 from selinon import run_flow
@@ -64,15 +63,18 @@ def get_user_email(user_profile):
         return default_email
 
 
-def server_create_component_bookkeeping(ecosystem, name, version, user_profile):
+def create_component_bookkeeping(ecosystem, packages_list,
+                                 user_id, user_agent, manifest_hash, request_id):
     """Run the component analysis for given ecosystem+package+version."""
     args = {
-        'external_request_id': uuid.uuid4().hex,
+        'external_request_id': request_id,
         'data': {
-            'api_name': 'component_analyses',
-            'user_email': get_user_email(user_profile),
-            'user_profile': user_profile,
-            'request': {'ecosystem': ecosystem, 'name': name, 'version': version}
+            'api_name': 'component_analyses_post',
+            'manifest_hash': hashlib.md5(manifest_hash.encode()).hexdigest(),
+            'ecosystem': ecosystem,
+            'packages_list': packages_list,
+            'user_id': user_id,
+            'user_agent': user_agent
         }
     }
     return server_run_flow('componentApiFlow', args)
@@ -91,7 +93,6 @@ def server_create_analysis(ecosystem, package, version, user_profile,
     """
     # Bookkeeping first
     component = MavenCoordinates.normalize_str(package) if ecosystem == 'maven' else package
-    server_create_component_bookkeeping(ecosystem, component, version, user_profile)
 
     args = {
         'ecosystem': ecosystem,

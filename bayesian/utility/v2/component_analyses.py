@@ -23,10 +23,8 @@ from collections import namedtuple
 from typing import Dict, Set, List, Tuple
 from f8a_utils.tree_generator import GolangDependencyTreeGenerator
 from f8a_utils.gh_utils import GithubUtils
-from flask import g
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
-from bayesian.utils import check_for_accepted_ecosystem, \
-    server_create_component_bookkeeping
+from bayesian.utils import check_for_accepted_ecosystem
 from f8a_worker.utils import MavenCoordinates
 from werkzeug.exceptions import BadRequest
 from bayesian.utility.db_gateway import GraphAnalyses
@@ -53,14 +51,6 @@ def normlize_packages(name: str, given_name: str,
         package=name, given_name=given_name,
         version=version, given_version=given_version,
         is_pseudo_version=is_pseudo_version, package_unknown=True)
-
-
-def known_package_flow(ecosystem: str, package: str, version: str) -> bool:
-    """Known Package flow.Trigger componentApiFlow."""
-    logger.debug('Triggered Known Package Flow.')
-    server_create_component_bookkeeping(
-        ecosystem, package, version, g.decoded_token)
-    return True
 
 
 def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], List[Package]]:
@@ -196,7 +186,6 @@ def get_known_unknown_pkgs(
         pkg_recomendation = CABatchResponseBuilder(ecosystem). \
             generate_recommendation(package, given_pkg_name, given_pkg_version)
         stack_recommendation.append(pkg_recomendation)
-        known_package_flow(ecosystem, pkg_name, clean_version)
         db_known_packages.add(normlize_packages(name=pkg_name, given_name=given_pkg_name,
                                                 version=clean_version,
                                                 given_version=given_pkg_version,
