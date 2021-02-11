@@ -13,6 +13,7 @@ timeout = GUNICORN_SETTINGS.timeout
 preload_app = GUNICORN_SETTINGS.preload
 worker_connections = GUNICORN_SETTINGS.worker_connections
 reload = preload_app is not True
+accesslog = "-"
 
 
 def when_ready(server):  # noqa
