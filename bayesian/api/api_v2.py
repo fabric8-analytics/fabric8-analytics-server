@@ -198,7 +198,8 @@ class ComponentAnalysesApi(Resource):
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
         user_agent = request.headers.get('User-Agent', None)
-        manifest_hash = str(request.headers.get('manifest_hash', None))
+        manifest_hash = request.Post.get('utm_content', None)
+        source = request.Post.get('utm_source', None)
         request_id = request.headers.get('request_id', None)
         headers = {"uuid": request.headers.get('uuid', None)}
         try:
@@ -218,7 +219,7 @@ class ComponentAnalysesApi(Resource):
             raise HTTPError(400, msg) from e
 
         create_component_bookkeeping(ecosystem, packages_list, headers.get("uuid"),
-                                     user_agent, manifest_hash, request_id)
+                                     user_agent, manifest_hash, request_id, source)
 
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
