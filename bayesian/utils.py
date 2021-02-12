@@ -70,7 +70,7 @@ def create_component_bookkeeping(ecosystem, packages_list, source,
         'external_request_id': request_id,
         'data': {
             'api_name': 'component_analyses_post',
-            'manifest_hash': hashlib.md5(manifest_hash.encode()).hexdigest(),
+            'manifest_hash': manifest_hash,
             'ecosystem': ecosystem,
             'packages_list': packages_list,
             'user_id': user_id,
