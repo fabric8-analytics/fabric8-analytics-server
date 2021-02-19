@@ -27,7 +27,7 @@ from requests_futures.sessions import FuturesSession
 from collections import namedtuple
 from pydantic.error_wrappers import ValidationError
 
-from flask import Blueprint, request
+from flask import Blueprint, request, g
 from flask.json import jsonify
 from flask_restful import Api, Resource
 
@@ -36,9 +36,10 @@ from fabric8a_auth.auth import login_required, AuthError
 from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
+    unknown_package_flow, get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
 from bayesian.utils import (get_system_version,
-                            create_component_bookkeeping,
+                            server_create_component_bookkeeping,
+                            server_create_analysis,
                             check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
@@ -52,8 +53,7 @@ from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
                                          RDBInvalidRequestException,
                                          RDBServerException)
 from werkzeug.exceptions import BadRequest
-from f8a_utils.ingestion_utils import unknown_package_flow
-from f8a_utils import ingestion_utils
+
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,13 @@ class ComponentAnalysesApi(Resource):
 
         Component Analyses:
             - If package is Known (exists in GraphDB (Snyk Edge) returns Json formatted response.
-            - If package is not Known: Call Util's function to trigger ingestion flow.
+            - If package is not Known:
+                - DISABLE_UNKNOWN_PACKAGE_FLOW flag is 1: Skips the unknown package and returns 202
+                - DISABLE_UNKONWN_PACKAGE_FLOW flag is 0: Than checks below condition.
+                    - INVOKE_API_WORKERS flag is 1: Trigger bayesianApiFlow to fetch
+                                                    Package details
+                    - INVOKE_API_WORKERS flag is 0: Trigger bayesianFlow to fetch
+                                                    Package details
 
         :return:
             JSON Response
@@ -166,16 +172,34 @@ class ComponentAnalysesApi(Resource):
             ecosystem, package, version).get_component_analyses_response()
 
         if analyses_result is not None:
+            # Known component for Fabric8 Analytics
+            server_create_component_bookkeeping(ecosystem, package, version, g.decoded_token)
 
             metrics_payload.update({"status_code": 200, "value": time.time() - st})
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
             return analyses_result
+        elif os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1":
+            msg = f"No data found for {ecosystem} package {package}/{version} " \
+                  "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
 
-        # No data has been found
-        unknown_pkgs = set()
-        unknown_pkgs.add(ingestion_utils.Package(package=package, version=version))
-        unknown_package_flow(ecosystem, unknown_pkgs)
+            return response_template({'error': msg}, 202)
 
+        if os.environ.get("INVOKE_API_WORKERS", "") == "1":
+            # Trigger the unknown component ingestion.
+            server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
+                                   api_flow=True, force=False, force_graph_sync=True)
+            msg = f"Package {ecosystem}/{package}/{version} is unavailable. " \
+                  "The package will be available shortly," \
+                  " please retry after some time."
+
+            metrics_payload.update({"status_code": 202, "value": time.time() - st})
+            _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
+
+            return response_template({'error': msg}, 202)
+
+        # No data has been found and INVOKE_API_WORKERS flag is down.
+        server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,ma
+                               api_flow=False, force=False, force_graph_sync=True)
         msg = f"No data found for {ecosystem} package {package}/{version}"
 
         metrics_payload.update({"status_code": 404, "value": time.time() - st})
@@ -197,9 +221,6 @@ class ComponentAnalysesApi(Resource):
         response_template: Tuple = namedtuple("response_template", ["message", "status", "headers"])
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
-        user_agent = request.headers.get('User-Agent', None)
-        manifest_hash = str(request.headers.get('manifest_hash', None))
-        request_id = request.headers.get('request_id', None)
         headers = {"uuid": request.headers.get('uuid', None)}
         try:
             # Step1: Gather and clean Request
@@ -217,17 +238,13 @@ class ComponentAnalysesApi(Resource):
             logger.error(e)
             raise HTTPError(400, msg) from e
 
-        create_component_bookkeeping(ecosystem, packages_list, headers.get("uuid"),
-                                     user_agent, manifest_hash, request_id)
-
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
             stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
-            pkgs_to_ingest = set(map(lambda pkg: ingestion_utils.Package(package=pkg.package,
-                                                                         version=pkg.version),
-                                     unknown_pkgs))
-            logger.debug("Unknown ingestion triggered for %s", pkgs_to_ingest)
-            unknown_package_flow(ecosystem, pkgs_to_ingest)
+            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1" and ecosystem != "golang":
+                # Unknown Packages is Present and INGESTION is Enabled
+                logger.debug(unknown_pkgs)
+                unknown_package_flow(ecosystem, unknown_pkgs)
 
             return response_template(stack_recommendation, 202, headers)
         return response_template(stack_recommendation, 200, headers)
