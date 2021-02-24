@@ -218,8 +218,8 @@ class ComponentAnalysesApi(Resource):
             logger.error(e)
             raise HTTPError(400, msg) from e
 
-        create_component_bookkeeping(ecosystem, packages_list, headers.get("uuid"),
-                                     user_agent, manifest_hash, request_id, source)
+        create_component_bookkeeping(ecosystem, packages_list, source, headers.get("uuid"),
+                                     user_agent, manifest_hash, request_id)
 
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
