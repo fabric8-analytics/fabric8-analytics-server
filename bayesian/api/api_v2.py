@@ -15,19 +15,19 @@
 # Author: Deepak Sharma <deepshar@redhat.com>
 #
 """Definition of all v2 REST API endpoints of the server module."""
-
+import html
 import os
 import time
 import urllib
 import logging
 import re
 from typing import Dict, Tuple
-
+import json
 from requests_futures.sessions import FuturesSession
 from collections import namedtuple
 from pydantic.error_wrappers import ValidationError
 
-from flask import Blueprint, request
+from flask import Blueprint, request, redirect
 from flask.json import jsonify
 from flask_restful import Api, Resource
 
@@ -54,6 +54,8 @@ from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
 from werkzeug.exceptions import BadRequest
 from f8a_utils.ingestion_utils import unknown_package_flow
 from f8a_utils import ingestion_utils
+from bayesian.default_config import THREESCALE_USER_KEY, \
+    BAYESIAN_API_HOSTNAME, STACK_REPORT_UI_HOSTNAME
 
 logger = logging.getLogger(__name__)
 
@@ -301,6 +303,34 @@ def stack_analyses():
         raise HTTPError(500, e.args[0])
     except RDBSaveException as e:
         raise HTTPError(500, e.args[0])
+
+
+@api_v2.route('/stack-report/<stack_id>', methods=['GET'])
+def stack_report_url(stack_id: str):
+    """URL redirect for Stack Report UI."""
+    stack_id: str = html.escape(stack_id)
+    try:
+        stack_request = RdbAnalyses(stack_id).get_request_data()
+        crda_key = stack_request.user_id
+    except (RDBServerException, RDBInvalidRequestException):
+        logger.exception("Invalid Stack ID %s", stack_id)
+        return jsonify({"error": f"Invalid Stack ID {stack_id}"}), 400
+    if not crda_key:
+        return jsonify({"error": "User corresponding to given Stack Id doesn't exists. "
+                       "Please authenticate yourself and try again."}), 400
+    path = f"{STACK_REPORT_UI_HOSTNAME}/#/analyze/{stack_id}"
+    query_params = "?interframe=true&api_data=" + json.dumps({
+        "access_token": "undefined",
+        "route_config": {
+            "api_url": BAYESIAN_API_HOSTNAME,
+            "ver": "v3",
+            "uuid": str(crda_key)
+        },
+        "user_key": THREESCALE_USER_KEY
+    })
+    final_path = path + query_params
+    logger.info("Redirected to URL: %s ", final_path)
+    return redirect(final_path, code=302)
 
 
 @api_v2.route('/_error')
