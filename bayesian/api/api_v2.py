@@ -200,7 +200,7 @@ class ComponentAnalysesApi(Resource):
         user_agent = request.headers.get('User-Agent', None)
         manifest_hash = request.args.get('utm_content', None)
         source = request.args.get('utm_source', None)
-        request_id = request.headers.get('request_id', None)
+        request_id = request.headers.get('X-Request_Id', None)
         headers = {"uuid": request.headers.get('uuid', None)}
         try:
             # Step1: Gather and clean Request
