@@ -63,8 +63,8 @@ def get_user_email(user_profile):
         return default_email
 
 
-def create_component_bookkeeping(ecosystem, packages_list, source,
-                                 user_id, user_agent, manifest_hash, request_id):
+def create_component_bookkeeping(ecosystem, packages_list, source, user_id,
+                                 user_agent, manifest_hash, request_id, telemetry_id):
     """Run the component analysis for given ecosystem+package+version."""
     args = {
         'external_request_id': request_id,
@@ -75,7 +75,8 @@ def create_component_bookkeeping(ecosystem, packages_list, source,
             'packages_list': packages_list,
             'user_id': user_id,
             'user_agent': user_agent,
-            'source': source
+            'source': source,
+            'telemetry_id': telemetry_id
         }
     }
     return server_run_flow('componentApiFlow', args)

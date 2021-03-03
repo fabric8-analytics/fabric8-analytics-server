@@ -201,6 +201,7 @@ class ComponentAnalysesApi(Resource):
         manifest_hash = request.args.get('utm_content', None)
         source = request.args.get('utm_source', None)
         request_id = request.headers.get('X-Request_Id', None)
+        telemetry_id = request.headers.get('X-Telemetry_Id', None)
         headers = {"uuid": request.headers.get('uuid', None)}
         try:
             # Step1: Gather and clean Request
@@ -219,7 +220,7 @@ class ComponentAnalysesApi(Resource):
             raise HTTPError(400, msg) from e
 
         create_component_bookkeeping(ecosystem, packages_list, source, headers.get("uuid"),
-                                     user_agent, manifest_hash, request_id)
+                                     user_agent, manifest_hash, request_id, telemetry_id)
 
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
