@@ -16,13 +16,17 @@
 #
 """Component Analyses Utility Stand."""
 
+import functools
 import logging
 import re
 import time
 from collections import namedtuple
-from typing import Dict, Set, List, Tuple
+from concurrent.futures import ThreadPoolExecutor
+from typing import Dict, Set, List, Tuple, Callable
 from f8a_utils.tree_generator import GolangDependencyTreeGenerator
 from f8a_utils.gh_utils import GithubUtils
+from bayesian.default_config import (COMPONENT_ANALYSES_BATCH_SIZE,
+                                     COMPONENT_ANALYSES_CONCURRENCY_LIMIT)
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem
 from f8a_worker.utils import MavenCoordinates
@@ -112,7 +116,14 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
     return packages_list, normalised_input_pkgs
 
 
-def get_batch_ca_data(ecosystem: str, packages) -> dict:
+def _fetcher_in_batches(func: Callable, packages: List,
+                        batch_size: int = COMPONENT_ANALYSES_BATCH_SIZE) -> Callable:
+    """Create partial function with batch package association."""
+    for i in range(0, len(packages), batch_size):
+        yield functools.partial(func, packages[i:i + batch_size])
+
+
+def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
     """Fetch package details for component analyses."""
     logger.debug('Executing get_batch_ca_data')
     started_at = time.time()
@@ -131,22 +142,29 @@ def get_batch_ca_data(ecosystem: str, packages) -> dict:
     else:
         semver_packages = packages
 
+    graph_data_fetcher = []
     if len(semver_packages) > 0:
-        response = GraphAnalyses.get_batch_ca_data(ecosystem, semver_packages)
+        get_semver_data = functools.partial(GraphAnalyses.get_batch_ca_data, ecosystem)
+        graph_data_fetcher = list(_fetcher_in_batches(get_semver_data, semver_packages))
 
     if len(pseudo_version_packages) > 0:
-        pseudo_response = GraphAnalyses.get_batch_ca_data_for_pseudo_version(
-            ecosystem, pseudo_version_packages)
-        # Merge both data into one.
-        if response:
-            response['result']['data'] += pseudo_response['result']['data']
-        else:
-            response = pseudo_response
+        get_pseudo_data = functools.partial(GraphAnalyses.get_batch_ca_data_for_pseudo_version,
+                                            ecosystem)
+        graph_data_fetcher += list(_fetcher_in_batches(get_pseudo_data, pseudo_version_packages))
+
+    response = {
+        "result": {
+            "data": []
+        }
+    }
+    with ThreadPoolExecutor(max_workers=COMPONENT_ANALYSES_CONCURRENCY_LIMIT) as executor:
+        result = executor.map(lambda f: f(), graph_data_fetcher)
+        for r in result:
+            response["result"]["data"] += r["result"]["data"]
 
     elapsed_time = time.time() - started_at
     logger.info("It took %s to fetch results from Gremlin.", elapsed_time)
-
-    return response if response else {}
+    return response
 
 
 def get_package_version_key(pkg_name, pkg_version):

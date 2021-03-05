@@ -55,6 +55,8 @@ GEMINI_SERVER_URL = "http://{host}:{port}".format(
                      host=os.getenv('F8A_GEMINI_SERVER_SERVICE_HOST'),
                      port=os.getenv('F8A_GEMINI_SERVER_SERVICE_PORT'))
 
-COMPONENT_ANALYSES_LIMIT = int(os.getenv('COMPONENT_ANALYSES_LIMIT', 10))
+COMPONENT_ANALYSES_BATCH_SIZE = int(os.getenv('COMPONENT_ANALYSES_BATCH_SIZE', 10))
+# This must be equal to gremlin replica count for better concurrency.
+COMPONENT_ANALYSES_CONCURRENCY_LIMIT = int(os.getenv('COMPONENT_ANALYSES_CONCURRENCY_LIMIT', 10))
 
 STACK_ANALYSIS_REQUEST_TIMEOUT = int(os.getenv('STACK_ANALYSIS_REQUEST_TIMEOUT', 120))
