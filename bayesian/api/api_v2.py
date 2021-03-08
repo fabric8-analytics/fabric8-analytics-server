@@ -197,9 +197,6 @@ class ComponentAnalysesApi(Resource):
         response_template: Tuple = namedtuple("response_template", ["message", "status", "headers"])
         input_json: Dict = request.get_json()
         ecosystem: str = input_json.get('ecosystem')
-        user_agent = request.headers.get('User-Agent', None)
-        manifest_hash = str(request.headers.get('manifest_hash', None))
-        request_id = request.headers.get('request_id', None)
         headers = {"uuid": request.headers.get('uuid', None)}
         try:
             # Step1: Gather and clean Request
@@ -217,8 +214,7 @@ class ComponentAnalysesApi(Resource):
             logger.error(e)
             raise HTTPError(400, msg) from e
 
-        create_component_bookkeeping(ecosystem, packages_list, headers.get("uuid"),
-                                     user_agent, manifest_hash, request_id)
+        create_component_bookkeeping(ecosystem, packages_list, request.args, request.headers)
 
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
