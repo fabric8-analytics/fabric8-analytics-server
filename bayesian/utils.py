@@ -194,7 +194,7 @@ def request_timed_out(request):
     return False
 
 
-def convert_version_to_proper_semantic(version, package_name=None):
+def convert_version_to_proper_semantic(ecosystem, version, package_name=None):
     """Perform Semantic versioning.
 
     : type version: string
@@ -206,16 +206,19 @@ def convert_version_to_proper_semantic(version, package_name=None):
     try:
         if version in ('', '-1', None):
             version = '0.0.0'
-        """Needed for maven version like 1.5.2.RELEASE to be converted to
-        1.5.2 - RELEASE for semantic version to work."""
-        version = version.replace('.', '-', 3)
-        version = version.replace('-', '.', 2)
-        # Needed to add this so that -RELEASE is account as a Version.build
-        version = version.replace('-', '+', 3)
+
+        if ecosystem == "maven":
+            """Needed for maven version like 1.5.2.RELEASE to be converted to
+            1.5.2 - RELEASE for semantic version to work."""
+            version = version.replace('.', '-', 3)
+            version = version.replace('-', '.', 2)
+            # Needed to add this so that -RELEASE is account as a Version.build
+            version = version.replace('-', '+', 3)
+
         conv_version = sv.Version.coerce(version)
     except ValueError:
-        logger.error('Unexpected ValueError for the package %s due to version %s',
-                     package_name, version)
+        logger.warn('Unexpected ValueError for the package %s due to version %s',
+                    package_name, version)
         pass
     finally:
         return conv_version

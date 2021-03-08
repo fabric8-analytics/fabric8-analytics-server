@@ -161,19 +161,19 @@ class ComponentResponseBase(ABC):
         """
         logger.info("All Versions with Vulnerabilities.")
         input_version_tuple = version_info_tuple(
-            convert_version_to_proper_semantic(self.version)
+            convert_version_to_proper_semantic(self.ecosystem, self.version)
         )
         highest_version = ''
         for version in latest_non_cve_versions:
 
             graph_version_tuple = version_info_tuple(
-                convert_version_to_proper_semantic(version)
+                convert_version_to_proper_semantic(self.ecosystem, version)
             )
             if graph_version_tuple > input_version_tuple:
                 if not highest_version:
                     highest_version = version
                 highest_version_tuple = version_info_tuple(
-                    convert_version_to_proper_semantic(highest_version)
+                    convert_version_to_proper_semantic(self.ecosystem, highest_version)
                 )
                 # If version to recommend is closer to what a user is using then, use less than
                 # If recommendation is to show highest version then, use greater than

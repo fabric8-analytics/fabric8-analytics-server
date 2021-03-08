@@ -215,22 +215,48 @@ class TestFetchFileFromGithub:
 def test_semantic_versioning():
     """Check the function cvs()."""
     package_name = "test_package"
-    version = "-1"
-    assert cvs(version, package_name) == sv.Version("0.0.0")
-    version = ""
-    assert cvs(version, package_name) == sv.Version("0.0.0")
-    version = None
-    assert cvs(version, package_name) == sv.Version("0.0.0")
-    version = "1.5.2.RELEASE"
-    assert cvs(version, package_name) == sv.Version("1.5.2+RELEASE")
+    for ecosystem in ["maven", "pypi", "npm", "golang"]:
+        version = "-1"
+        assert cvs(ecosystem, version, package_name) == sv.Version("0.0.0")
+
+        version = ""
+        assert cvs(ecosystem, version, package_name) == sv.Version("0.0.0")
+
+        version = None
+        assert cvs(ecosystem, version, package_name) == sv.Version("0.0.0")
+
+        version = "upstream/1.0.1"
+        assert cvs(version, package_name) == sv.Version("0.0.0")
+
+        version = "INVALID_VERSION"
+        assert cvs(version, package_name) == sv.Version("0.0.0")
+
+        version = "kubernetes-1.14.0-beta.1"
+        assert cvs(version, package_name) == sv.Version("0.0.0")
+
+        version = "1.5.2.RELEASE"
+        assert cvs(ecosystem, version, package_name) == sv.Version("1.5.2+RELEASE")
+
+        version = "2"
+        assert cvs(ecosystem, version, package_name) == sv.Version("2.0.0")
+
+        version = "2.3"
+        assert cvs(ecosystem, version, package_name) == sv.Version("2.3.0")
+
+        version = "2.0.rc1"
+        assert cvs(ecosystem, version, package_name) == sv.Version("2.0.0+rc1")
+
+        version = "1.10.3"
+        assert cvs(ecosystem, version, package_name) == sv.Version("1.10.3")
+
+        version = "11.5.4.0"
+        assert cvs(ecosystem, version, package_name) == sv.Version("11.5.4+0")
+
     version = "1.5-2.RELEASE"
-    assert cvs(version, package_name) == sv.Version("1.5.2+RELEASE")
-    version = "2"
-    assert cvs(version, package_name) == sv.Version("2.0.0")
-    version = "2.3"
-    assert cvs(version, package_name) == sv.Version("2.3.0")
-    version = "2.0.rc1"
-    assert cvs(version, package_name) == sv.Version("2.0.0+rc1")
+    assert cvs("maven", version, package_name) == sv.Version("1.5.2+RELEASE")
+
+    version = "0.0.0-20201203092725-db298ee30ce6"
+    assert cvs("golang", version, package_name) == sv.Version("0.0.0-20201203092725-db298ee30ce6")
 
 
 def test_version_info_tuple():
