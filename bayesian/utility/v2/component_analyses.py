@@ -163,7 +163,7 @@ def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
             response["result"]["data"] += r["result"]["data"]
 
     elapsed_time = time.time() - started_at
-    logger.info("It took %s to fetch results from Gremlin.", elapsed_time)
+    logger.info("concurrent batch exec took %s sec", elapsed_time)
     return response
 
 

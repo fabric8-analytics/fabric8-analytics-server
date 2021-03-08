@@ -37,11 +37,11 @@ class GraphAnalysesTest(unittest.TestCase):
         cls.ver = '1'
         cls.pkg = 'pkg'
         # Read Vendor Data from JSON.
-        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
+        gremlin_batch_data = os.path.join('tests/data/gremlin/gremlin_batch_data.json')
         gremlin_vulnerabilities_data = os.path.join(
-            '/bayesian/tests/data/gremlin/gremlin_vulnerabilities.json')
-        gremlin_package_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_packages.json')
-        ca_batch_response = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
+            'tests/data/gremlin/gremlin_vulnerabilities.json')
+        gremlin_package_data = os.path.join('tests/data/gremlin/gremlin_packages.json')
+        ca_batch_response = os.path.join('tests/data/response/ca_batch_response.json')
 
         with open(ca_batch_response) as f:
             cls.batch_response = json.load(f)

@@ -100,7 +100,7 @@ class GraphAnalyses:
         response = post(url=gremlin_url, data=json.dumps(payload))
         response.raise_for_status()
         elapsed_time = time.time() - started_at
-        logger.info("It took %s to fetch results from Gremlin.", elapsed_time)
+        logger.debug("gremlin call took %s sec", elapsed_time)
         return response.json()
 
     @classmethod
