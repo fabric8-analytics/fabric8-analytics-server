@@ -123,6 +123,9 @@ def _fetcher_in_batches(func: Callable, packages: List,
         yield functools.partial(func, packages[i:i + batch_size])
 
 
+EXECUTOR = ThreadPoolExecutor(max_workers=COMPONENT_ANALYSES_CONCURRENCY_LIMIT)
+
+
 def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
     """Fetch package details for component analyses."""
     logger.debug('Executing get_batch_ca_data')
@@ -157,10 +160,9 @@ def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
             "data": []
         }
     }
-    with ThreadPoolExecutor(max_workers=COMPONENT_ANALYSES_CONCURRENCY_LIMIT) as executor:
-        result = executor.map(lambda f: f(), graph_data_fetcher)
-        for r in result:
-            response["result"]["data"] += r["result"]["data"]
+    result = EXECUTOR.map(lambda f: f(), graph_data_fetcher)
+    for r in result:
+        response["result"]["data"] += r["result"]["data"]
 
     elapsed_time = time.time() - started_at
     logger.info("concurrent batch exec took %s sec", elapsed_time)
