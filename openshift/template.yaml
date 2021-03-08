@@ -25,6 +25,8 @@ objects:
         - env:
           - name: BAYESIAN_COMPONENT_TAGGED_COUNT
             value: "2"
+          - name: COMPONENT_ANALYSES_CONCURRENCY_LIMIT
+            value: ${COMPONENT_ANALYSES_CONCURRENCY_LIMIT}
           - name: COMPONENT_ANALYSES_BATCH_SIZE
             value: ${COMPONENT_ANALYSES_BATCH_SIZE}
           - name: DEPLOYMENT_PREFIX
