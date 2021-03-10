@@ -20,6 +20,7 @@ import os
 import json
 import time
 import logging
+import tenacity
 from datetime import datetime
 from requests import post
 from bayesian import rdb
@@ -90,6 +91,8 @@ class GraphAnalyses:
         return query_result.json()
 
     @classmethod
+    @tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(3),
+                    wait=tenacity.wait_exponential(multiplier=1, min=4, max=10))
     def post_gremlin(cls, query: str, bindings: dict = None) -> dict:
         """Post the given query and bindings to gremlin endpoint."""
         payload = {
