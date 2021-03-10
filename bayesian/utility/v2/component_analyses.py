@@ -25,8 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Set, List, Tuple, Callable
 from f8a_utils.tree_generator import GolangDependencyTreeGenerator
 from f8a_utils.gh_utils import GithubUtils
-from bayesian.default_config import (COMPONENT_ANALYSES_BATCH_SIZE,
-                                     COMPONENT_ANALYSES_CONCURRENCY_LIMIT)
+from bayesian.settings import COMPONENT_ANALYSES_SETTINGS
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
 from bayesian.utils import check_for_accepted_ecosystem
 from f8a_worker.utils import MavenCoordinates
@@ -36,6 +35,9 @@ from bayesian.utility.db_gateway import GraphAnalyses
 logger = logging.getLogger(__name__)
 Package = namedtuple("Package", ["package", "given_name", "version", "package_unknown",
                                  "given_version", "is_pseudo_version"])
+# global executor helps to avoid chocking of gremlin http by blocking calls
+# beyound the configured concurrency limit.
+EXECUTOR = ThreadPoolExecutor(max_workers=COMPONENT_ANALYSES_SETTINGS.concurrent_limit)
 
 
 def validate_version(version: str) -> bool:
@@ -117,13 +119,10 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
 
 
 def _fetcher_in_batches(func: Callable, packages: List,
-                        batch_size: int = COMPONENT_ANALYSES_BATCH_SIZE) -> Callable:
+                        batch_size: int = COMPONENT_ANALYSES_SETTINGS.batch_size) -> Callable:
     """Create partial function with batch package association."""
     for i in range(0, len(packages), batch_size):
         yield functools.partial(func, packages[i:i + batch_size])
-
-
-EXECUTOR = ThreadPoolExecutor(max_workers=COMPONENT_ANALYSES_CONCURRENCY_LIMIT)
 
 
 def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
