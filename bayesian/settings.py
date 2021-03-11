@@ -32,5 +32,5 @@ COMPONENT_ANALYSES_SETTINGS = ComponentAnalysesSettings()
 
 def log_all_settings():
     """Use for debugging."""
-    logger.info("gunicorn settings %s", str(GUNICORN_SETTINGS.dict()))
-    logger.info("component analysis settings %s", str(GUNICORN_SETTINGS.dict()))
+    logger.info("gunicorn: %s", str(GUNICORN_SETTINGS.dict()))
+    logger.info("component analysis: %s", str(COMPONENT_ANALYSES_SETTINGS.dict()))
