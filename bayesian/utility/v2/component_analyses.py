@@ -37,7 +37,7 @@ Package = namedtuple("Package", ["package", "given_name", "version", "package_un
                                  "given_version", "is_pseudo_version"])
 # global executor helps to avoid chocking of gremlin http by blocking calls
 # beyound the configured concurrency limit.
-EXECUTOR = ThreadPoolExecutor(max_workers=COMPONENT_ANALYSES_SETTINGS.concurrent_limit)
+EXECUTOR = ThreadPoolExecutor(max_workers=COMPONENT_ANALYSES_SETTINGS.concurrency_limit)
 
 
 def validate_version(version: str) -> bool:

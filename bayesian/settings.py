@@ -23,7 +23,7 @@ class ComponentAnalysesSettings(BaseSettings):
     batch_size: int = Field(default=10, env="COMPONENT_ANALYSES_BATCH_SIZE")
     # This must be equal to gremlin replica count for better concurrency.
     # Having more than gremlin replica might choke the overall response time.
-    concurrent_limit: int = Field(default=2, env="COMPONENT_ANALYSES_CONCURRENCY_LIMIT")
+    concurrency_limit: int = Field(default=2, env="COMPONENT_ANALYSES_CONCURRENCY_LIMIT")
 
 
 GUNICORN_SETTINGS = GunicornSettings()
