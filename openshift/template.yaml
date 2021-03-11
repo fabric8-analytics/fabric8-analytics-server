@@ -47,7 +47,7 @@ objects:
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
           - name: WORKER_COUNT
-            value: "4"
+            value: "2"
           - name: WORKER_CLASS
             value: "gevent"
           - name: WORKER_TIMEOUT
@@ -221,7 +221,7 @@ parameters:
   displayName: Number of concurrent component analysis query to be executed
   required: true
   name: COMPONENT_ANALYSES_CONCURRENCY_LIMIT
-  value: "10"
+  value: "2"
 
 - description: "Flask logging level (see: https://docs.python.org/3/library/logging.html#levels)"
   displayName: Flask logging level
