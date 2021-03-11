@@ -1,7 +1,10 @@
 """Abstracts settings based on env variables."""
 
 
+import logging
 from pydantic import BaseSettings, Field
+
+logger = logging.getLogger(__name__)
 
 
 class GunicornSettings(BaseSettings):
@@ -25,3 +28,9 @@ class ComponentAnalysesSettings(BaseSettings):
 
 GUNICORN_SETTINGS = GunicornSettings()
 COMPONENT_ANALYSES_SETTINGS = ComponentAnalysesSettings()
+
+
+def log_all_settings():
+    """Use for debugging."""
+    logger.info("gunicorn settings %s", str(GUNICORN_SETTINGS.dict()))
+    logger.info("component analysis settings %s", str(GUNICORN_SETTINGS.dict()))
