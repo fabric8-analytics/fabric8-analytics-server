@@ -54,8 +54,8 @@ from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
 from werkzeug.exceptions import BadRequest
 from f8a_utils.ingestion_utils import unknown_package_flow
 from f8a_utils import ingestion_utils
-from bayesian.default_config import THREESCALE_USER_KEY, \
-    BAYESIAN_API_HOSTNAME, STACK_REPORT_UI_HOSTNAME
+from bayesian.default_config import (THREESCALE_USER_KEY, THREESCALE_API_URL,
+                                     STACK_REPORT_UI_HOSTNAME)
 
 logger = logging.getLogger(__name__)
 
@@ -322,7 +322,7 @@ def stack_report_url(stack_id: str):
     query_params = "?interframe=true&api_data=" + json.dumps({
         "access_token": "undefined",
         "route_config": {
-            "api_url": BAYESIAN_API_HOSTNAME,
+            "api_url": THREESCALE_API_URL,
             "ver": "v3",
             "uuid": str(crda_key)
         },
