@@ -78,6 +78,10 @@ objects:
                 key: sentry_dsn
           - name: SHOW_TRANSITIVE_REPORT
             value: ${SHOW_TRANSITIVE_REPORT}
+          - name: STACK_REPORT_UI_HOSTNAME
+            value: ${STACK_REPORT_UI_HOSTNAME}
+          - name: THREESCALE_API_URL
+            value: ${THREESCALE_API_URL}
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
@@ -113,6 +117,11 @@ objects:
               secretKeyRef:
                 name: 3scale
                 key: three_scale_account_secret
+          - name:  THREESCALE_USER_KEY
+            valueFrom:
+              secretKeyRef:
+                name: 3scale
+                key: three_scale_user_key
           - name: STACK_ANALYSIS_REQUEST_TIMEOUT
             value: ${STACK_ANALYSIS_REQUEST_TIMEOUT}
           - name: FLASK_LOGGING_LEVEL
@@ -184,6 +193,18 @@ parameters:
   displayName: Bayesian API hostname
   required: false
   name: BAYESIAN_API_HOSTNAME
+
+- description: A 3 scale routed API Host URL(will be of Prod if empty)
+  displayName: CRDA API Server URL
+  required: true
+  name: THREESCALE_API_URL
+  value: "https://f8a-analytics-2445582058137.production.gw.apicast.io/"
+
+- description: Stack Report UI (will be of Prod, if empty)
+  displayName: Stack Report UI
+  required: false
+  name: STACK_REPORT_UI_HOSTNAME
+  value: "https://stack-analytics-report.openshift.io"
 
 - description: Docker registry where the image is
   displayName: Docker registry
