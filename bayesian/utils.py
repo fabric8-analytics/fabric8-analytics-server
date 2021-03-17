@@ -19,8 +19,17 @@ from f8a_worker.utils import json_serial, MavenCoordinates
 from f8a_worker.setup_celery import init_celery
 from .default_config import STACK_ANALYSIS_REQUEST_TIMEOUT
 from sqlalchemy.exc import SQLAlchemyError
+from requests_futures.sessions import FuturesSession
+
 
 logger = logging.getLogger(__name__)
+
+# _INGESTION_API_URL = "http://{host}:{port}/{endpoint}".format(
+#    host=os.environ.get("INGESTION_SERVICE_HOST", "bayesian-jobs"),
+#    port=os.environ.get("INGESTION_SERVICE_PORT", "34000"),
+#    endpoint='internal/ingestions/epv')
+
+_INGESTION_API_URL = "http://bayesian-jobs-rafiu-code-ready-development-analytics.apps.ocp.lab.psi.redhat.com:34000/ingestions/trigger-workerflow"
 
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
@@ -65,20 +74,32 @@ def get_user_email(user_profile):
 
 def create_component_bookkeeping(ecosystem, packages_list, request_args, headers):
     """Run the component analysis for given ecosystem+package+version."""
-    args = {
-        'external_request_id': headers.get('X-Request-Id', None),
-        'data': {
-            'api_name': 'component_analyses_post',
-            'manifest_hash': request_args.get('utm_content', None),
-            'ecosystem': ecosystem,
-            'packages_list': packages_list,
-            'user_id': headers.get('uuid', None),
-            'user_agent': headers.get('User-Agent', None),
-            'source': request_args.get('utm_source', None),
-            'telemetry_id': headers.get('X-Telemetry-Id', None)
+    _session = FuturesSession()
+    payload = {
+        "external_request_id": headers.get('X-Request-Id', None),
+        "flowname": "componentApiFlow",
+        "data": {
+            "api_name": "component_analyses_post",
+            "manifest_hash": request_args.get('utm_content', None),
+            "ecosystem": ecosystem,
+            "packages_list": packages_list,
+            "user_id": headers.get('uuid', None),
+            "user_agent": headers.get('User-Agent', None),
+            "source": request_args.get('utm_source', None),
+            "telemetry_id": headers.get('X-Telemetry-Id', None)
         }
     }
-    return server_run_flow('componentApiFlow', args)
+
+    print(payload)
+
+    try:
+        _session.post(url=_INGESTION_API_URL, json=payload)
+    except Exception as e:
+        logger.error('Failed to trigger unknown flow for payload %s with error %s',
+                     payload, e)
+        raise Exception('Ingestion failed') from e
+    else:
+        logger.info('Ingestion call being executed')
 
 
 def server_create_analysis(ecosystem, package, version, user_profile,
