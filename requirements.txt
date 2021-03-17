@@ -68,7 +68,7 @@ git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@839e022#egg
     # via
     #   -r requirements.in
     #   f8a-worker
-git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git@2f54ada#egg=f8a_version_comparator
+git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.git@8a57ac7#egg=f8a_version_comparator
     # via f8a-utils
 git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@af1680a#egg=f8a_worker
     # via -r requirements.in
