@@ -26,7 +26,9 @@ def get_user(user_id):
     user = user_utils.get_user(user_id)
     if user:
         user_status = user.status if user.status else UserStatus.FREETIER.name
-    return jsonify(user_id=user_id, status=user_status)
+        return jsonify(user_id=user_id, status=user_status)
+    else:
+        return jsonify(message='User not found', status=404), 404
 
 
 @user_api.route('', methods=['POST'])
