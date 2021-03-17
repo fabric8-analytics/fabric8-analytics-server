@@ -23,7 +23,7 @@ def get_user(uuid_val):
         user = result.one()
         return user
     except NoResultFound:
-        logger.exception("User not found with id %s", uuid_val)
+        logger.info("User not found with id %s", uuid_val)
         return None
     except SQLAlchemyError as e:
         logger.exception("Error fetching user with id %s", uuid_val)
