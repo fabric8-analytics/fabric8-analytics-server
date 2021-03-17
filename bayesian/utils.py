@@ -24,12 +24,11 @@ from requests_futures.sessions import FuturesSession
 
 logger = logging.getLogger(__name__)
 
-# _INGESTION_API_URL = "http://{host}:{port}/{endpoint}".format(
-#    host=os.environ.get("INGESTION_SERVICE_HOST", "bayesian-jobs"),
-#    port=os.environ.get("INGESTION_SERVICE_PORT", "34000"),
-#    endpoint='internal/ingestions/epv')
+_INGESTION_API_URL = "http://{host}:{port}/{endpoint}".format(
+   host=os.environ.get("INGESTION_SERVICE_HOST", "bayesian-jobs"),
+   port=os.environ.get("INGESTION_SERVICE_PORT", "34000"),
+   endpoint='internal/ingestions/trigger-workerflow')
 
-_INGESTION_API_URL = "http://bayesian-jobs-rafiu-code-ready-development-analytics.apps.ocp.lab.psi.redhat.com:34000/ingestions/trigger-workerflow"
 
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
@@ -74,7 +73,6 @@ def get_user_email(user_profile):
 
 def create_component_bookkeeping(ecosystem, packages_list, request_args, headers):
     """Run the component analysis for given ecosystem+package+version."""
-    _session = FuturesSession()
     payload = {
         "external_request_id": headers.get('X-Request-Id', None),
         "flowname": "componentApiFlow",
@@ -90,7 +88,7 @@ def create_component_bookkeeping(ecosystem, packages_list, request_args, headers
         }
     }
 
-    print(payload)
+    _session = FuturesSession()
 
     try:
         _session.post(url=_INGESTION_API_URL, json=payload)
