@@ -20,7 +20,7 @@ import logging
 
 from bayesian.utility.db_gateway import GraphAnalyses
 from f8a_utils.user_token_utils import UserStatus
-from bayesian.utils import version_info_tuple, convert_version_to_proper_semantic
+from f8a_version_comparator.comparable_version import ComparableVersion
 from typing import Dict, List, Optional
 from collections import namedtuple
 from abc import ABC
@@ -159,26 +159,25 @@ class ComponentResponseBase(ABC):
 
         :return: Highest Version out of all latest_non_cve_versions.
         """
-        logger.info("All Versions with Vulnerabilities.")
-        input_version_tuple = version_info_tuple(
-            convert_version_to_proper_semantic(self.ecosystem, self.version)
-        )
         highest_version = ''
-        for version in latest_non_cve_versions:
+        try:
+            input_version_comparable = ComparableVersion(self.version)
+            for version in latest_non_cve_versions:
+                version_comparable = ComparableVersion(version)
+                if version_comparable > input_version_comparable:
+                    if not highest_version:
+                        highest_version = version
+                    highest_version_comparable = ComparableVersion(highest_version)
 
-            graph_version_tuple = version_info_tuple(
-                convert_version_to_proper_semantic(self.ecosystem, version)
-            )
-            if graph_version_tuple > input_version_tuple:
-                if not highest_version:
-                    highest_version = version
-                highest_version_tuple = version_info_tuple(
-                    convert_version_to_proper_semantic(self.ecosystem, highest_version)
-                )
-                # If version to recommend is closer to what a user is using then, use less than
-                # If recommendation is to show highest version then, use greater than
-                if graph_version_tuple > highest_version_tuple:
-                    highest_version = version
+                    # If version to recommend is closer to what a user is using then, use less than
+                    # If recommendation is to show highest version then, use greater than
+                    if version_comparable > highest_version_comparable:
+                        highest_version = version
+        except Exception as e:
+            logger.error(f"Package {self.package} @ {self.version} raised exception {e}")
+
+        logger.info("Highest non-cve version for "
+                    f"{self.package} @ {self.version} is {highest_version}")
         return highest_version
 
     def has_cves(self):

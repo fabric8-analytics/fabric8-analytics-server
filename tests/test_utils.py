@@ -2,11 +2,8 @@
 
 import datetime
 import pytest
-import semantic_version as sv
 from bayesian.utils import (
     is_valid, get_user_email,
-    convert_version_to_proper_semantic as cvs,
-    version_info_tuple as vt,
     resolved_files_exist,
     get_ecosystem_from_manifest,
     check_for_accepted_ecosystem
@@ -210,77 +207,6 @@ class TestFetchFileFromGithub:
         """Check for github repo exist or not."""
         assert urlopen(
             self.__url).code == 200, "Not able to access the url {}".format(self.__url)
-
-
-def test_semantic_versioning():
-    """Check the function cvs()."""
-    package_name = "test_package"
-    for ecosystem in ["maven", "pypi", "npm", "golang"]:
-        version = "-1"
-        assert cvs(ecosystem, version, package_name) == sv.Version("0.0.0")
-
-        version = ""
-        assert cvs(ecosystem, version, package_name) == sv.Version("0.0.0")
-
-        version = None
-        assert cvs(ecosystem, version, package_name) == sv.Version("0.0.0")
-
-        version = "upstream/1.0.1"
-        assert cvs(version, package_name) == sv.Version("0.0.0")
-
-        version = "INVALID_VERSION"
-        assert cvs(version, package_name) == sv.Version("0.0.0")
-
-        version = "kubernetes-1.14.0-beta.1"
-        assert cvs(version, package_name) == sv.Version("0.0.0")
-
-        version = "1.5.2.RELEASE"
-        assert cvs(ecosystem, version, package_name) == sv.Version("1.5.2+RELEASE")
-
-        version = "2"
-        assert cvs(ecosystem, version, package_name) == sv.Version("2.0.0")
-
-        version = "2.3"
-        assert cvs(ecosystem, version, package_name) == sv.Version("2.3.0")
-
-        version = "2.0.rc1"
-        assert cvs(ecosystem, version, package_name) == sv.Version("2.0.0+rc1")
-
-        version = "1.10.3"
-        assert cvs(ecosystem, version, package_name) == sv.Version("1.10.3")
-
-        version = "11.5.4.0"
-        assert cvs(ecosystem, version, package_name) == sv.Version("11.5.4+0")
-
-    version = "1.5-2.RELEASE"
-    assert cvs("maven", version, package_name) == sv.Version("1.5.2+RELEASE")
-
-    version = "0.0.0-20201203092725-db298ee30ce6"
-    assert cvs("golang", version, package_name) == sv.Version("0.0.0-20201203092725-db298ee30ce6")
-
-
-def test_version_info_tuple():
-    """Check the function vt()."""
-    version_str = "2.0.rc1"
-    package_name = "test_package"
-    version_obj = cvs(version_str, package_name)
-    version_info = vt(version_obj)
-    assert len(version_info) == 4
-    assert version_info[0] == version_obj.major
-    assert version_info[1] == version_obj.minor
-    assert version_info[2] == version_obj.patch
-    assert version_info[3] == version_obj.build
-
-
-def test_version_info_tuple_empty_version_obj():
-    """Check the function vt() for empty version object."""
-    version_obj = ""
-    version_info = vt(version_obj)
-    assert len(version_info) == 4
-    assert version_info[0] == 0
-    assert version_info[1] == 0
-    assert version_info[2] == 0
-    assert version_info[3] == tuple()
 
 
 def test_get_user_email():
