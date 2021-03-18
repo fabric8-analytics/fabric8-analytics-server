@@ -162,17 +162,13 @@ class ComponentResponseBase(ABC):
         highest_version = ''
         try:
             input_version_comparable = ComparableVersion(self.version)
-            for version in latest_non_cve_versions:
-                version_comparable = ComparableVersion(version)
-                if version_comparable > input_version_comparable:
-                    if not highest_version:
-                        highest_version = version
-                    highest_version_comparable = ComparableVersion(highest_version)
 
-                    # If version to recommend is closer to what a user is using then, use less than
-                    # If recommendation is to show highest version then, use greater than
-                    if version_comparable > highest_version_comparable:
-                        highest_version = version
+            # latest non-cve is list with only one entry.
+            latest_non_cve_version_comparable = ComparableVersion(latest_non_cve_versions[0])
+
+            if latest_non_cve_version_comparable > input_version_comparable:
+                highest_version = latest_non_cve_versions[0]
+
         except Exception as e:
             logger.error(f"Package {self.package} @ {self.version} raised exception {e}")
 
