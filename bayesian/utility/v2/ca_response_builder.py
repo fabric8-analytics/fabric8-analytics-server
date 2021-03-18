@@ -15,6 +15,7 @@
 #
 """Utility function from API v2."""
 
+# import typing
 from urllib.parse import quote
 import logging
 
@@ -169,11 +170,11 @@ class ComponentResponseBase(ABC):
             if latest_non_cve_version_comparable > input_version_comparable:
                 highest_version = latest_non_cve_versions[0]
 
-        except Exception as e:
-            logger.error(f"Package {self.package} @ {self.version} raised exception {e}")
+        except TypeError:
+            logger.error("Package %s@%s raised a TypeError", self.package, self.version)
 
-        logger.info("Highest non-cve version for "
-                    f"{self.package} @ {self.version} is {highest_version}")
+        logger.info("Highest non-cve version for %s@%s is %s", self.package, self.version,
+                    highest_version)
         return highest_version
 
     def has_cves(self):
