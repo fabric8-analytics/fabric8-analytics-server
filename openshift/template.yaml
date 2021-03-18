@@ -47,15 +47,15 @@ objects:
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
           - name: WORKER_COUNT
-            value: "2"
+            value: ${WORKER_COUNT}
           - name: WORKER_CLASS
-            value: "gevent"
+            value: ${WORKER_CLASS}
           - name: WORKER_TIMEOUT
-            value: "300"
+            value: ${WORKER_TIMEOUT}
           - name: WORKER_PRELOAD
             value: "True"
           - name: WORKER_CONNECTIONS
-            value: "1024"
+            value: ${WORKER_CONNECTIONS}
           - name: OSIO_AUTH_URL
             valueFrom:
               configMapKeyRef:
@@ -273,3 +273,27 @@ parameters:
   required: true
   name: STACK_ANALYSIS_REQUEST_TIMEOUT
   value: "120"
+
+- description: Gevent Worker Timeout
+  displayName: Gevent Worker Timeout
+  required: true
+  name: WORKER_TIMEOUT
+  value: "120"
+
+- description: Gevent Worker connections
+  displayName: Gevent Worker connections
+  required: true
+  name: WORKER_CONNECTIONS
+  value: "1024"
+
+- description: Gevent Worker class
+  displayName: Gevent Worker class
+  required: true
+  name: WORKER_CLASS
+  value: "gevent"
+
+- description: Gevent Worker Count
+  displayName: Gevent Worker Count
+  required: true
+  name: WORKER_COUNT
+  value: "2"
