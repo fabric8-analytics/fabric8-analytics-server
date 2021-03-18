@@ -182,7 +182,6 @@ class ComponentResponseBase(ABC):
         :return: True - Package has vulnerability.
                 False - Package has no vulnerability.
         """
-        logger.info("Checking vulnerabilities.")
         return bool(self._cves)
 
     def generate_response(self):
@@ -195,7 +194,7 @@ class ComponentResponseBase(ABC):
         Populates Private and Public vulnerability count.
         :return: None
         """
-        logger.info("Get Vulnerabilities count.")
+        logger.debug("Get Vulnerabilities count.")
         public_vul = 0
         pvt_vul = 0
         try:
@@ -269,7 +268,7 @@ class ComponentResponseBase(ABC):
 
         :return: Highest ranking severities among all input_severities.
         """
-        logger.info("Get maximum severity.")
+        logger.debug("Get maximum severity.")
         try:
             # Fetch all severities from Input
             input_severities = [cve['severity'][0] for cve in self._cves
