@@ -2,7 +2,10 @@
 
 import datetime
 import pytest
+import unittest
+from unittest.mock import patch
 from bayesian.utils import (
+    server_run_flow, create_component_bookkeeping, server_create_analysis,
     is_valid, get_user_email,
     resolved_files_exist,
     get_ecosystem_from_manifest,
@@ -207,6 +210,33 @@ class TestFetchFileFromGithub:
         """Check for github repo exist or not."""
         assert urlopen(
             self.__url).code == 200, "Not able to access the url {}".format(self.__url)
+
+
+class TestRunFlows(unittest.TestCase):
+    """Test run flow uses cases here."""
+
+    @patch('bayesian.utils.init_celery', return_value=None)
+    @patch('bayesian.utils.run_flow', return_value=1234)
+    def test_server_run_flow(self, _rf_mock, _cf_mock):
+        """Test basic run flow function."""
+        assert server_run_flow('RUN_FLOW_NAME', {}) == 1234
+
+    @patch('bayesian.utils.init_celery', return_value=None)
+    @patch('bayesian.utils.run_flow', return_value=1234)
+    def test_create_component_bookkeeping(self, _rf_mock, _cf_mock):
+        """Verify create componenet book keeping utility function."""
+        assert create_component_bookkeeping('pypi', ['pkg1', 'pkg2'], {}, {}) == 1234
+
+    @patch('bayesian.utils.init_celery', return_value=None)
+    @patch('bayesian.utils.run_flow', return_value=1234)
+    def test_server_create_analysis(self, _rf_mock, _cf_mock):
+        """Verify various combinations of create analysis function."""
+        assert server_create_analysis('pypi', 'pkg1', '1.5.4', None, False, False, False) == 1234
+
+        assert server_create_analysis('pypi', 'pkg1', '1.5.4', None, True, False, False) == 1234
+
+        pkg = 'debug:artifact:0.4.3'
+        assert server_create_analysis('maven', pkg, '0.4.3', None, False, False, False) == 1234
 
 
 def test_get_user_email():
