@@ -34,7 +34,7 @@ class TestComponentAnalyses(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         """Init Test class."""
-        batch_data_no_cve = os.path.join('/bayesian/tests/data/gremlin/batch_data_no_cve.json')
+        batch_data_no_cve = os.path.join('tests/data/gremlin/batch_data_no_cve.json')
 
         with open(batch_data_no_cve) as f:
             cls.gremlin_batch_data_no_cve = json.load(f)
@@ -53,7 +53,7 @@ class TestComponentAnalyses(unittest.TestCase):
         """Test Known Unknown Pkgs, No Cve."""
         normalised_input_pkgs = [normlize_packages("markdown2", "markdown2",
                                                    "2.3.2", "2.3.2", False)]
-        batch_data_no_cve = os.path.join('/bayesian/tests/data/gremlin/batch_data_no_cve.json')
+        batch_data_no_cve = os.path.join('tests/data/gremlin/batch_data_no_cve.json')
         with open(batch_data_no_cve) as f:
             gremlin_batch_data_no_cve = json.load(f)
 
@@ -73,12 +73,12 @@ class TestComponentAnalyses(unittest.TestCase):
         normalised_input_pkgs = [normlize_packages(pkg, gvn_pkg, vr, gvn_vr, False)
                                  for pkg, gvn_pkg, vr, gvn_vr in input_pkgs]
         batch_data_no_cve = os.path.join(
-            '/bayesian/tests/data/gremlin/batch_data_with_n_without_cve.json')
+            'tests/data/gremlin/batch_data_with_n_without_cve.json')
         with open(batch_data_no_cve) as f:
             data_with_n_without_cve = json.load(f)
 
         ideal_resp = os.path.join(
-            '/bayesian/tests/data/response/ca_batch_with_n_without_vul.json')
+            'tests/data/response/ca_batch_with_n_without_vul.json')
         with open(ideal_resp) as f:
             ideal_output = json.load(f)
 
@@ -100,12 +100,12 @@ class TestComponentAnalyses(unittest.TestCase):
         normalised_input_pkgs = [normlize_packages(pkg, gvn_pkg, vr, gvn_vr, isp)
                                  for pkg, gvn_pkg, vr, gvn_vr, isp in input_pkgs]
         batch_data_no_cve = os.path.join(
-            '/bayesian/tests/data/gremlin/batch_data_with_n_without_cve_golang.json')
+            'tests/data/gremlin/batch_data_with_n_without_cve_golang.json')
         with open(batch_data_no_cve) as f:
             data_with_n_without_cve = json.load(f)
 
         ideal_resp = os.path.join(
-            '/bayesian/tests/data/response/ca_batch_with_n_without_vul_golang.json')
+            'tests/data/response/ca_batch_with_n_without_vul_golang.json')
         with open(ideal_resp) as f:
             ideal_output = json.load(f)
 
@@ -258,7 +258,7 @@ class TestGetBatchCAData(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Intialize data."""
-        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
+        gremlin_batch_data = os.path.join('tests/data/gremlin/gremlin_batch_data.json')
 
         with open(gremlin_batch_data) as f:
             cls.gremlin_batch = json.load(f)
@@ -267,7 +267,7 @@ class TestGetBatchCAData(unittest.TestCase):
         """Test Ca batch data."""
         result = get_batch_ca_data('golang', [])
         self.assertIsInstance(result, dict)
-        self.assertEqual(result, {})
+        self.assertEqual(result, {"result": {"data": []}})
 
     @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.get_batch_ca_data')
     def test_get_batch_ca_data_semver(self, _mockca):
@@ -283,10 +283,6 @@ class TestGetBatchCAData(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertIn('result', result)
         self.assertIsInstance(result.get('result'), dict)
-        self.assertIn('requestId', result)
-        self.assertIsInstance(result.get('requestId'), str)
-        self.assertIn('status', result)
-        self.assertIsInstance(result.get('status'), dict)
 
     @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.'
            'get_batch_ca_data_for_pseudo_version')
@@ -303,10 +299,6 @@ class TestGetBatchCAData(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertIn('result', result)
         self.assertIsInstance(result.get('result'), dict)
-        self.assertIn('requestId', result)
-        self.assertIsInstance(result.get('requestId'), str)
-        self.assertIn('status', result)
-        self.assertIsInstance(result.get('status'), dict)
 
     @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.get_batch_ca_data')
     @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.'
@@ -333,7 +325,3 @@ class TestGetBatchCAData(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertIn('result', result)
         self.assertIsInstance(result.get('result'), dict)
-        self.assertIn('requestId', result)
-        self.assertIsInstance(result.get('requestId'), str)
-        self.assertIn('status', result)
-        self.assertIsInstance(result.get('status'), dict)
