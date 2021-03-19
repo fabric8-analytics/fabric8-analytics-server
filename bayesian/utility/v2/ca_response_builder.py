@@ -168,9 +168,9 @@ class ComponentResponseBase(ABC):
             latest_non_cve_version_comparable = ComparableVersion(latest_non_cve_versions[0])
         except TypeError:
             logger.error("Package %s@%s raised a TypeError", self.package, self.version)
-
-        if latest_non_cve_version_comparable > input_version_comparable:
-            highest_version = latest_non_cve_versions[0]
+        else:
+            if latest_non_cve_version_comparable > input_version_comparable:
+                highest_version = latest_non_cve_versions[0]
 
         logger.info("Highest non-cve version for %s@%s is %s", self.package, self.version,
                     highest_version)
