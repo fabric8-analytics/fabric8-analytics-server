@@ -81,7 +81,11 @@ def create_component_bookkeeping(ecosystem, packages_list, request_args, headers
         }
     }
 
-    trigger_workerflow(payload)
+    try:
+        trigger_workerflow(payload)
+    except Exception as e:
+        logger.error('Failed to trigger worker flow for payload %s with error %s',
+                     payload, e)
 
 
 def server_create_analysis(ecosystem, package, version, user_profile,
