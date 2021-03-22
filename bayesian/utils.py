@@ -19,8 +19,7 @@ from f8a_worker.utils import json_serial, MavenCoordinates
 from f8a_worker.setup_celery import init_celery
 from .default_config import STACK_ANALYSIS_REQUEST_TIMEOUT
 from sqlalchemy.exc import SQLAlchemyError
-from requests_futures.sessions import FuturesSession
-
+from f8a_utils.ingestion_utils import trigger_workerflow
 
 logger = logging.getLogger(__name__)
 
@@ -88,16 +87,7 @@ def create_component_bookkeeping(ecosystem, packages_list, request_args, headers
         }
     }
 
-    _session = FuturesSession()
-
-    try:
-        _session.post(url=_INGESTION_API_URL, json=payload)
-    except Exception as e:
-        logger.error('Failed to trigger unknown flow for payload %s with error %s',
-                     payload, e)
-        raise Exception('Ingestion failed') from e
-    else:
-        logger.info('Ingestion call being executed')
+    trigger_workerflow(payload)
 
 
 def server_create_analysis(ecosystem, package, version, user_profile,
