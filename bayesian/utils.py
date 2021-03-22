@@ -23,12 +23,6 @@ from f8a_utils.ingestion_utils import trigger_workerflow
 
 logger = logging.getLogger(__name__)
 
-_INGESTION_API_URL = "http://{host}:{port}/{endpoint}".format(
-   host=os.environ.get("INGESTION_SERVICE_HOST", "bayesian-jobs"),
-   port=os.environ.get("INGESTION_SERVICE_PORT", "34000"),
-   endpoint='internal/ingestions/trigger-workerflow')
-
-
 # TODO remove hardcoded gremlin_url when moving to Production This is just
 #      a stop-gap measure for demo
 
