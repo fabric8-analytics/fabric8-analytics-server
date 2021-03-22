@@ -64,7 +64,7 @@ dataclasses==0.8
     # via pydantic
 deprecated==1.2.11
     # via pygithub
-git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@839e022#egg=f8a_utils
+git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@f4fef58#egg=f8a_utils
     # via
     #   -r requirements.in
     #   f8a-worker
@@ -72,7 +72,7 @@ git+https://github.com/fabric8-analytics/fabric8-analytics-version-comparator.gi
     # via
     #   -r requirements.in
     #   f8a-utils
-git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@af1680a#egg=f8a_worker
+git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@c74145b#egg=f8a_worker
     # via -r requirements.in
 git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=fabric8a_auth
     # via -r requirements.in
@@ -234,7 +234,6 @@ six==1.15.0
     # via
     #   anymarkup-core
     #   configobj
-    #   cryptography
     #   flask-appconfig
     #   flask-cors
     #   flask-restful

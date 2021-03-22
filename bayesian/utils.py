@@ -19,6 +19,7 @@ from f8a_worker.utils import json_serial, MavenCoordinates
 from f8a_worker.setup_celery import init_celery
 from .default_config import STACK_ANALYSIS_REQUEST_TIMEOUT
 from sqlalchemy.exc import SQLAlchemyError
+from f8a_utils.ingestion_utils import trigger_workerflow
 
 logger = logging.getLogger(__name__)
 
@@ -65,20 +66,26 @@ def get_user_email(user_profile):
 
 def create_component_bookkeeping(ecosystem, packages_list, request_args, headers):
     """Run the component analysis for given ecosystem+package+version."""
-    args = {
-        'external_request_id': headers.get('X-Request-Id', None),
-        'data': {
-            'api_name': 'component_analyses_post',
-            'manifest_hash': request_args.get('utm_content', None),
-            'ecosystem': ecosystem,
-            'packages_list': packages_list,
-            'user_id': headers.get('uuid', None),
-            'user_agent': headers.get('User-Agent', None),
-            'source': request_args.get('utm_source', None),
-            'telemetry_id': headers.get('X-Telemetry-Id', None)
+    payload = {
+        "external_request_id": headers.get('X-Request-Id', None),
+        "flowname": "componentApiFlow",
+        "data": {
+            "api_name": "component_analyses_post",
+            "manifest_hash": request_args.get('utm_content', None),
+            "ecosystem": ecosystem,
+            "packages_list": packages_list,
+            "user_id": headers.get('uuid', None),
+            "user_agent": headers.get('User-Agent', None),
+            "source": request_args.get('utm_source', None),
+            "telemetry_id": headers.get('X-Telemetry-Id', None)
         }
     }
-    return server_run_flow('componentApiFlow', args)
+
+    try:
+        trigger_workerflow(payload)
+    except Exception as e:
+        logger.error('Failed to trigger worker flow for payload %s with error %s',
+                     payload, e)
 
 
 def server_create_analysis(ecosystem, package, version, user_profile,
