@@ -283,8 +283,8 @@ class ComponentAnalysisResponseBuilderTest(unittest.TestCase):
     def test_get_version_without_cves_highest(self):
         """Test Get highest version without cves."""
         response_obj = ComponentAnalysisResponseBuilder(self.eco, self.pkg, self.ver)
-        version = response_obj.get_version_without_cves(['2', '3'])
-        self.assertEqual(version, '3')
+        version = response_obj.get_version_without_cves(['0.6'])
+        self.assertEqual(version, '')
 
     @patch('bayesian.utility.v2.ca_response_builder.'
            'ComponentAnalysisResponseBuilder.get_cve_maps')

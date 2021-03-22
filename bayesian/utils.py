@@ -195,48 +195,6 @@ def request_timed_out(request):
     return False
 
 
-def convert_version_to_proper_semantic(version, package_name=None):
-    """Perform Semantic versioning.
-
-    : type version: string
-    : param version: The raw input version that needs to be converted.
-    : type return: semantic_version.base.Version
-    : return: The semantic version of raw input version.
-    """
-    conv_version = sv.Version.coerce('0.0.0')
-    try:
-        if version in ('', '-1', None):
-            version = '0.0.0'
-        """Needed for maven version like 1.5.2.RELEASE to be converted to
-        1.5.2 - RELEASE for semantic version to work."""
-        version = version.replace('.', '-', 3)
-        version = version.replace('-', '.', 2)
-        # Needed to add this so that -RELEASE is account as a Version.build
-        version = version.replace('-', '+', 3)
-        conv_version = sv.Version.coerce(version)
-    except ValueError:
-        logger.error('Unexpected ValueError for the package %s due to version %s',
-                     package_name, version)
-        pass
-    finally:
-        return conv_version
-
-
-def version_info_tuple(version):
-    """Return version information in form of (major, minor, patch, build) for a given sem Version.
-
-    : type version: semantic_version.base.Version
-    : param version: The semantic version whole details are needed.
-    : return: A tuple in form of Version.(major, minor, patch, build)
-    """
-    if type(version) == sv.base.Version:
-        return(version.major,
-               version.minor,
-               version.patch,
-               version.build)
-    return (0, 0, 0, tuple())
-
-
 def is_valid(param):
     """Return true is the param is not a null value."""
     return param is not None
