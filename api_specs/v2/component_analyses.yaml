@@ -22,7 +22,7 @@ paths:
             type: string
         - name: X-Request-ID
           in: header
-          description: Unique id for every Ca call
+          description: Unique id for every CA call
           required: false
           schema:
             type: string
