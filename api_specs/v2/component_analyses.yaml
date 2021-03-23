@@ -20,6 +20,18 @@ paths:
           required: false
           schema:
             type: string
+        - name: X-Request-ID
+          in: header
+          description: Unique id for every Ca call
+          required: false
+          schema:
+            type: string
+        - name: X-Telemetry-ID
+          in: header
+          description: Unique RedHat id
+          required: false
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
