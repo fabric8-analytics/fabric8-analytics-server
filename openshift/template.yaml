@@ -25,8 +25,10 @@ objects:
         - env:
           - name: BAYESIAN_COMPONENT_TAGGED_COUNT
             value: "2"
-          - name: COMPONENT_ANALYSES_LIMIT
-            value: ${COMPONENT_ANALYSES_LIMIT}
+          - name: COMPONENT_ANALYSES_CONCURRENCY_LIMIT
+            value: ${COMPONENT_ANALYSES_CONCURRENCY_LIMIT}
+          - name: COMPONENT_ANALYSES_BATCH_SIZE
+            value: ${COMPONENT_ANALYSES_BATCH_SIZE}
           - name: DEPLOYMENT_PREFIX
             valueFrom:
               configMapKeyRef:
@@ -45,15 +47,15 @@ objects:
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
           - name: WORKER_COUNT
-            value: "4"
+            value: ${WORKER_COUNT}
           - name: WORKER_CLASS
-            value: "gevent"
+            value: ${WORKER_CLASS}
           - name: WORKER_TIMEOUT
-            value: "300"
+            value: ${WORKER_TIMEOUT}
           - name: WORKER_PRELOAD
             value: "True"
           - name: WORKER_CONNECTIONS
-            value: "1024"
+            value: ${WORKER_CONNECTIONS}
           - name: OSIO_AUTH_URL
             valueFrom:
               configMapKeyRef:
@@ -78,6 +80,10 @@ objects:
                 key: sentry_dsn
           - name: SHOW_TRANSITIVE_REPORT
             value: ${SHOW_TRANSITIVE_REPORT}
+          - name: STACK_REPORT_UI_HOSTNAME
+            value: ${STACK_REPORT_UI_HOSTNAME}
+          - name: THREESCALE_API_URL
+            value: ${THREESCALE_API_URL}
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
@@ -113,6 +119,11 @@ objects:
               secretKeyRef:
                 name: 3scale
                 key: three_scale_account_secret
+          - name:  THREESCALE_USER_KEY
+            valueFrom:
+              secretKeyRef:
+                name: 3scale
+                key: three_scale_user_key
           - name: STACK_ANALYSIS_REQUEST_TIMEOUT
             value: ${STACK_ANALYSIS_REQUEST_TIMEOUT}
           - name: FLASK_LOGGING_LEVEL
@@ -185,6 +196,18 @@ parameters:
   required: false
   name: BAYESIAN_API_HOSTNAME
 
+- description: A 3 scale routed API Host URL(will be of Prod if empty)
+  displayName: CRDA API Server URL
+  required: true
+  name: THREESCALE_API_URL
+  value: "https://f8a-analytics-2445582058137.production.gw.apicast.io/"
+
+- description: Stack Report UI (will be of Prod, if empty)
+  displayName: Stack Report UI
+  required: false
+  name: STACK_REPORT_UI_HOSTNAME
+  value: "https://stack-analytics-report.openshift.io"
+
 - description: Docker registry where the image is
   displayName: Docker registry
   required: true
@@ -209,11 +232,17 @@ parameters:
   name: REPLICAS
   value: "1"
 
-- description: Number of dependencies allowed in one component analyses call
-  displayName: Number of dependencies allowed in one component analyses call
+- description: Batch size for component analysis gremlin query
+  displayName: Batch size for component analysis gremlin query
   required: true
-  name: COMPONENT_ANALYSES_LIMIT
+  name: COMPONENT_ANALYSES_BATCH_SIZE
   value: "10"
+
+- description: Number of concurrent component analysis query to be executed
+  displayName: Number of concurrent component analysis query to be executed
+  required: true
+  name: COMPONENT_ANALYSES_CONCURRENCY_LIMIT
+  value: "2"
 
 - description: "Flask logging level (see: https://docs.python.org/3/library/logging.html#levels)"
   displayName: Flask logging level
@@ -244,3 +273,27 @@ parameters:
   required: true
   name: STACK_ANALYSIS_REQUEST_TIMEOUT
   value: "120"
+
+- description: Gevent Worker Timeout
+  displayName: Gevent Worker Timeout
+  required: true
+  name: WORKER_TIMEOUT
+  value: "120"
+
+- description: Gevent Worker connections
+  displayName: Gevent Worker connections
+  required: true
+  name: WORKER_CONNECTIONS
+  value: "1024"
+
+- description: Gevent Worker class
+  displayName: Gevent Worker class
+  required: true
+  name: WORKER_CLASS
+  value: "gevent"
+
+- description: Gevent Worker Count
+  displayName: Gevent Worker Count
+  required: true
+  name: WORKER_COUNT
+  value: "2"

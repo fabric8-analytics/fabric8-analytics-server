@@ -19,6 +19,7 @@ from f8a_worker.utils import json_serial, MavenCoordinates
 from f8a_worker.setup_celery import init_celery
 from .default_config import STACK_ANALYSIS_REQUEST_TIMEOUT
 from sqlalchemy.exc import SQLAlchemyError
+from f8a_utils.ingestion_utils import trigger_workerflow
 
 logger = logging.getLogger(__name__)
 
@@ -63,21 +64,28 @@ def get_user_email(user_profile):
         return default_email
 
 
-def create_component_bookkeeping(ecosystem, packages_list,
-                                 user_id, user_agent, manifest_hash, request_id):
+def create_component_bookkeeping(ecosystem, packages_list, request_args, headers):
     """Run the component analysis for given ecosystem+package+version."""
-    args = {
-        'external_request_id': request_id,
-        'data': {
-            'api_name': 'component_analyses_post',
-            'manifest_hash': hashlib.md5(manifest_hash.encode()).hexdigest(),
-            'ecosystem': ecosystem,
-            'packages_list': packages_list,
-            'user_id': user_id,
-            'user_agent': user_agent
+    payload = {
+        "external_request_id": headers.get('X-Request-Id', None),
+        "flowname": "componentApiFlow",
+        "data": {
+            "api_name": "component_analyses_post",
+            "manifest_hash": request_args.get('utm_content', None),
+            "ecosystem": ecosystem,
+            "packages_list": packages_list,
+            "user_id": headers.get('uuid', None),
+            "user_agent": headers.get('User-Agent', None),
+            "source": request_args.get('utm_source', None),
+            "telemetry_id": headers.get('X-Telemetry-Id', None)
         }
     }
-    return server_run_flow('componentApiFlow', args)
+
+    try:
+        trigger_workerflow(payload)
+    except Exception as e:
+        logger.error('Failed to trigger worker flow for payload %s with error %s',
+                     payload, e)
 
 
 def server_create_analysis(ecosystem, package, version, user_profile,
@@ -192,48 +200,6 @@ def request_timed_out(request):
     if diff > int(STACK_ANALYSIS_REQUEST_TIMEOUT):
         return True
     return False
-
-
-def convert_version_to_proper_semantic(version, package_name=None):
-    """Perform Semantic versioning.
-
-    : type version: string
-    : param version: The raw input version that needs to be converted.
-    : type return: semantic_version.base.Version
-    : return: The semantic version of raw input version.
-    """
-    conv_version = sv.Version.coerce('0.0.0')
-    try:
-        if version in ('', '-1', None):
-            version = '0.0.0'
-        """Needed for maven version like 1.5.2.RELEASE to be converted to
-        1.5.2 - RELEASE for semantic version to work."""
-        version = version.replace('.', '-', 3)
-        version = version.replace('-', '.', 2)
-        # Needed to add this so that -RELEASE is account as a Version.build
-        version = version.replace('-', '+', 3)
-        conv_version = sv.Version.coerce(version)
-    except ValueError:
-        logger.error('Unexpected ValueError for the package %s due to version %s',
-                     package_name, version)
-        pass
-    finally:
-        return conv_version
-
-
-def version_info_tuple(version):
-    """Return version information in form of (major, minor, patch, build) for a given sem Version.
-
-    : type version: semantic_version.base.Version
-    : param version: The semantic version whole details are needed.
-    : return: A tuple in form of Version.(major, minor, patch, build)
-    """
-    if type(version) == sv.base.Version:
-        return(version.major,
-               version.minor,
-               version.patch,
-               version.build)
-    return (0, 0, 0, tuple())
 
 
 def is_valid(param):

@@ -15,19 +15,19 @@
 # Author: Deepak Sharma <deepshar@redhat.com>
 #
 """Definition of all v2 REST API endpoints of the server module."""
-
+import html
 import os
 import time
 import urllib
 import logging
 import re
 from typing import Dict, Tuple
-
+import json
 from requests_futures.sessions import FuturesSession
 from collections import namedtuple
 from pydantic.error_wrappers import ValidationError
 
-from flask import Blueprint, request, g
+from flask import Blueprint, request, redirect
 from flask.json import jsonify
 from flask_restful import Api, Resource
 
@@ -36,10 +36,9 @@ from fabric8a_auth.auth import login_required, AuthError
 from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    unknown_package_flow, get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
+    get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
 from bayesian.utils import (get_system_version,
-                            server_create_component_bookkeeping,
-                            server_create_analysis,
+                            create_component_bookkeeping,
                             check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
@@ -53,7 +52,10 @@ from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
                                          RDBInvalidRequestException,
                                          RDBServerException)
 from werkzeug.exceptions import BadRequest
-
+from f8a_utils.ingestion_utils import unknown_package_flow
+from f8a_utils import ingestion_utils
+from bayesian.default_config import (THREESCALE_USER_KEY, THREESCALE_API_URL,
+                                     STACK_REPORT_UI_HOSTNAME)
 
 logger = logging.getLogger(__name__)
 
@@ -123,13 +125,7 @@ class ComponentAnalysesApi(Resource):
 
         Component Analyses:
             - If package is Known (exists in GraphDB (Snyk Edge) returns Json formatted response.
-            - If package is not Known:
-                - DISABLE_UNKNOWN_PACKAGE_FLOW flag is 1: Skips the unknown package and returns 202
-                - DISABLE_UNKONWN_PACKAGE_FLOW flag is 0: Than checks below condition.
-                    - INVOKE_API_WORKERS flag is 1: Trigger bayesianApiFlow to fetch
-                                                    Package details
-                    - INVOKE_API_WORKERS flag is 0: Trigger bayesianFlow to fetch
-                                                    Package details
+            - If package is not Known: Call Util's function to trigger ingestion flow.
 
         :return:
             JSON Response
@@ -172,34 +168,16 @@ class ComponentAnalysesApi(Resource):
             ecosystem, package, version).get_component_analyses_response()
 
         if analyses_result is not None:
-            # Known component for Fabric8 Analytics
-            server_create_component_bookkeeping(ecosystem, package, version, g.decoded_token)
 
             metrics_payload.update({"status_code": 200, "value": time.time() - st})
             _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
             return analyses_result
-        elif os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1":
-            msg = f"No data found for {ecosystem} package {package}/{version} " \
-                  "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
 
-            return response_template({'error': msg}, 202)
+        # No data has been found
+        unknown_pkgs = set()
+        unknown_pkgs.add(ingestion_utils.Package(package=package, version=version))
+        unknown_package_flow(ecosystem, unknown_pkgs)
 
-        if os.environ.get("INVOKE_API_WORKERS", "") == "1":
-            # Trigger the unknown component ingestion.
-            server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
-                                   api_flow=True, force=False, force_graph_sync=True)
-            msg = f"Package {ecosystem}/{package}/{version} is unavailable. " \
-                  "The package will be available shortly," \
-                  " please retry after some time."
-
-            metrics_payload.update({"status_code": 202, "value": time.time() - st})
-            _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
-
-            return response_template({'error': msg}, 202)
-
-        # No data has been found and INVOKE_API_WORKERS flag is down.
-        server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,ma
-                               api_flow=False, force=False, force_graph_sync=True)
         msg = f"No data found for {ecosystem} package {package}/{version}"
 
         metrics_payload.update({"status_code": 404, "value": time.time() - st})
@@ -238,13 +216,16 @@ class ComponentAnalysesApi(Resource):
             logger.error(e)
             raise HTTPError(400, msg) from e
 
+        create_component_bookkeeping(ecosystem, packages_list, request.args, request.headers)
+
         # Step4: Handle Unknown Packages
         if unknown_pkgs:
             stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
-            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1" and ecosystem != "golang":
-                # Unknown Packages is Present and INGESTION is Enabled
-                logger.debug(unknown_pkgs)
-                unknown_package_flow(ecosystem, unknown_pkgs)
+            pkgs_to_ingest = set(map(lambda pkg: ingestion_utils.Package(package=pkg.package,
+                                                                         version=pkg.version),
+                                     unknown_pkgs))
+            logger.debug("Unknown ingestion triggered for %s", pkgs_to_ingest)
+            unknown_package_flow(ecosystem, pkgs_to_ingest)
 
             return response_template(stack_recommendation, 202, headers)
         return response_template(stack_recommendation, 200, headers)
@@ -322,6 +303,34 @@ def stack_analyses():
         raise HTTPError(500, e.args[0])
     except RDBSaveException as e:
         raise HTTPError(500, e.args[0])
+
+
+@api_v2.route('/stack-report/<stack_id>', methods=['GET'])
+def stack_report_url(stack_id: str):
+    """URL redirect for Stack Report UI."""
+    stack_id: str = html.escape(stack_id)
+    try:
+        stack_request = RdbAnalyses(stack_id).get_request_data()
+        crda_key = stack_request.user_id
+    except (RDBServerException, RDBInvalidRequestException):
+        logger.exception("Invalid Stack ID %s", stack_id)
+        return jsonify({"error": f"Invalid Stack ID {stack_id}"}), 400
+    if not crda_key:
+        return jsonify({"error": "User corresponding to given Stack Id doesn't exists. "
+                       "Please authenticate yourself and try again."}), 400
+    path = f"{STACK_REPORT_UI_HOSTNAME}/#/analyze/{stack_id}"
+    query_params = "?interframe=true&api_data=" + json.dumps({
+        "access_token": "undefined",
+        "route_config": {
+            "api_url": THREESCALE_API_URL,
+            "ver": "v3",
+            "uuid": str(crda_key)
+        },
+        "user_key": THREESCALE_USER_KEY
+    })
+    final_path = path + query_params
+    logger.info("Redirected to URL: %s ", final_path)
+    return redirect(final_path, code=302)
 
 
 @api_v2.route('/_error')

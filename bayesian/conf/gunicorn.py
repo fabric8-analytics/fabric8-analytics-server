@@ -5,7 +5,7 @@ from gevent import monkey
 monkey.patch_all()
 
 import logging
-from bayesian.settings import GUNICORN_SETTINGS
+from bayesian.settings import GUNICORN_SETTINGS, log_all_settings
 
 workers = GUNICORN_SETTINGS.workers
 worker_class = GUNICORN_SETTINGS.worker_class
@@ -25,3 +25,4 @@ def when_ready(server):  # noqa
         worker_class,
         preload_app,
     )
+    log_all_settings()
