@@ -183,7 +183,7 @@ class ComponentAnalysesApi(Resource):
         metrics_payload.update({"status_code": 404, "value": time.time() - st})
         _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
 
-        raise HTTPError(404, msg)
+        return jsonify(message=msg), 202
 
     @staticmethod
     @validate_user
