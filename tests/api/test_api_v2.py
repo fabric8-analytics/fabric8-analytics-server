@@ -7,7 +7,6 @@ import pytest
 import unittest
 from pathlib import Path
 from unittest.mock import patch, Mock
-from bayesian.exceptions import HTTPError
 from bayesian.api.api_v2 import _session, ApiEndpoints, ComponentAnalysesApi
 from bayesian.utility.db_gateway import RDBSaveException, RDBInvalidRequestException
 from bayesian.utility.v2.backbone_server import BackboneServerException
@@ -103,11 +102,20 @@ class TestComponentAnalysesApi(unittest.TestCase):
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
     @patch('bayesian.api.api_v2.unknown_package_flow')
-    def test_get_component_analyses(self, _sensitive, _request,
+    @patch('bayesian.utility.v2.ca_response_builder.'
+           'ComponentAnalyses.get_component_analyses_response')
+    def test_get_component_analyses(self, _vendor_analyses, _sensitive, _request,
                                     _session, _unknown):
-        """CA GET: No Analyses Data found, Raises HTTP Error."""
+        """CA GET: No Analyses Data found."""
+        eco, package, version = 'maven', \
+                                'com.netease.ysf.architecture:qiyu-es-spring-boot-starter', '1.1.0'
+        returned = {
+            "message": f"No data found for {eco} package {package}/{version}"
+        }
+        _vendor_analyses.return_value = returned
         ca = ComponentAnalysesApi()
-        self.assertRaises(HTTPError, ca.get, 'npm', 'pkg', 'ver')
+        response = ca.get(eco, package, version)
+        self.assertEqual(response, returned)
 
     @patch('bayesian.api.api_v2._session')
     @patch('bayesian.api.api_v2.request')
