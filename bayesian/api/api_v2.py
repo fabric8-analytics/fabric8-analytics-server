@@ -178,12 +178,12 @@ class ComponentAnalysesApi(Resource):
         unknown_pkgs.add(ingestion_utils.Package(package=package, version=version))
         unknown_package_flow(ecosystem, unknown_pkgs)
 
-        msg = f"No data found for {ecosystem} package {package}/{version}"
+        msg = {"message": f"No data found for {ecosystem} package {package}/{version}"}
 
         metrics_payload.update({"status_code": 404, "value": time.time() - st})
         _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
 
-        return jsonify(message=msg), 404
+        return msg, 404
 
     @staticmethod
     @validate_user
