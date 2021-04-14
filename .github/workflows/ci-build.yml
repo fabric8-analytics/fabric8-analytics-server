@@ -26,6 +26,26 @@ jobs:
         python-version: '3.6'
     - name: ${{ matrix.scripts }}
       run: bash qa/${{ matrix.scripts }}.sh;
+  dependency-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.6'
+      - name: setup
+        run: |
+          mkdir -p site-dir
+          pip3 install --target=site-dir -r requirements.txt --upgrade
+      - name: redhat-codeready-dependency-analysis
+        uses: fabric8-analytics/gh-actions@main
+        with:
+          manifest-file-path: requirements.txt
+          output-file-path: dependency-analysis-report.json
+          pkg-installation-directory-path: site-dir
+        env:
+          CRDA_KEY: ${{ secrets.CRDA_KEY }}      
   Unit-Tests:
     runs-on: ubuntu-latest
     steps:
