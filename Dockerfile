@@ -8,10 +8,10 @@ LABEL name="bayesian-api" \
       app-license="Apache 2.0"
 
 ENV LANG=en_US.UTF-8 PYTHONDONTWRITEBYTECODE=1
+ENV prometheus_multiproc_dir='/coreapi/bayesian/observability'
 
 ADD ./requirements.txt /coreapi/
 ADD bayesian/ /coreapi/bayesian/
-
 RUN microdnf install python3 git && microdnf clean all
 RUN pip3 install --upgrade pip --no-cache-dir
 RUN pip3 install -r /coreapi/requirements.txt --no-cache-dir

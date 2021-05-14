@@ -2,16 +2,24 @@
 
 import logging
 import os
+import time
+from typing import Optional, Dict
 
 from f8a_worker.setup_celery import init_selinon
-from flask import Flask
+from flask import Flask, request_started, request_finished, request
 from flask import g
 from flask import redirect
 from flask import url_for
 from flask_appconfig import AppConfig
 from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
+from prometheus_client import make_wsgi_app, CollectorRegistry
+from prometheus_client.metrics import MetricWrapperBase
 from raven.contrib.flask import Sentry
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from bayesian.observability.metrics import (emit_response_metrics,
+                                            init_metrics_registry,
+                                            init_metrics)
 
 
 def setup_logging(app):
@@ -33,6 +41,10 @@ logging.basicConfig(level=log_level,
 # we must initialize DB here to not create import loop with .auth...
 #  flask really sucks at this
 rdb = SQLAlchemy()
+
+METRICS_REGISTRY: CollectorRegistry = init_metrics_registry()
+METRICS: Optional[Dict[str, MetricWrapperBase]] = init_metrics(METRICS_REGISTRY)
+
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 
 
@@ -93,6 +105,28 @@ def create_app(configfile=None):
 init_selinon()
 
 app = create_app()
+
+# Add prometheus wsgi middleware to route /metrics requests
+app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+    '/metrics': make_wsgi_app(METRICS_REGISTRY)
+})
+
+
+def log_request_started(sender, **args):  # noqa
+    """Request Start Signal."""
+    setattr(g, 'time_start', time.time())
+    sender.logger.debug('Request context is set up')
+
+
+def log_request_finished(sender, **extra):
+    """Request Finish Signal."""
+    emit_response_metrics(extra.get("response").status_code, METRICS)
+    sender.logger.debug('Request is finished', request.path)
+
+
+request_started.connect(log_request_started, app)
+request_finished.connect(log_request_finished, app)
+
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
 sentry = Sentry(app, dsn=SENTRY_DSN, logging=True, level=logging.ERROR)

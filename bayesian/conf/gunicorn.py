@@ -1,6 +1,7 @@
 """Gunicorn config."""
 # NOTE: Must be before we import or call anything that may be synchronous.
 from gevent import monkey
+from prometheus_client import multiprocess
 
 monkey.patch_all()
 
@@ -26,3 +27,8 @@ def when_ready(server):  # noqa
         preload_app,
     )
     log_all_settings()
+
+
+def child_exit(server, worker):  # noqa
+    """Execute on Worker Exit."""
+    multiprocess.mark_process_dead(worker.pid)
