@@ -7,6 +7,10 @@ IMG="${BASE_IMG}:latest"
 
 GIT_HASH=`git rev-parse --short=7 HEAD`
 
+# coreapi-release
+git show -s --format="COMMITTED_AT=%ai%nCOMMIT_HASH=%h%n" HEAD > hack/coreapi-release
+git update-index --assume-unchanged hack/coreapi-release
+
 # build the image
 docker build  --no-cache \
               --force-rm \
