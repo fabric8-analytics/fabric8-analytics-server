@@ -7,11 +7,9 @@ from prometheus_client import Counter, Histogram
 from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.utils import INF
 from typing import Dict, Optional
-import logging
 import os
 from prometheus_client import CollectorRegistry
 from prometheus_client.multiprocess import MultiProcessCollector
-from pydantic import ValidationError
 
 
 METRICS_PARAMS = {
@@ -37,13 +35,7 @@ METRICS_PARAMS = {
 
 def get_metrics_registry() -> CollectorRegistry:
     """Initialize a observability registry."""
-    try:
-        prometheus_multiproc_dir = os.environ.get('PROMETHEUS_MULTIPROC_DIR')
-    except (ValidationError, AttributeError):
-        logging.warning("Prometheus Multiproc Dir is not set. "
-                        "Please export `PROMETHEUS_MULTIPROC_DIR`")
-        prometheus_multiproc_dir = None
-
+    prometheus_multiproc_dir = os.environ.get('PROMETHEUS_MULTIPROC_DIR')
     registry = CollectorRegistry()
     if prometheus_multiproc_dir:
         MultiProcessCollector(registry, path=prometheus_multiproc_dir)
