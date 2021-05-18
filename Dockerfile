@@ -8,7 +8,7 @@ LABEL name="bayesian-api" \
       app-license="Apache 2.0"
 
 ENV LANG=en_US.UTF-8 PYTHONDONTWRITEBYTECODE=1
-ENV prometheus_multiproc_dir='/coreapi/bayesian/observability'
+ENV PROMETHEUS_MULTIPROC_DIR='/coreapi/bayesian/observability'
 
 ADD ./requirements.txt /coreapi/
 ADD bayesian/ /coreapi/bayesian/

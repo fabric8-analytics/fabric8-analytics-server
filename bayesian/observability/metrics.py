@@ -35,14 +35,13 @@ METRICS_PARAMS = {
 }
 
 
-def init_metrics_registry() -> CollectorRegistry:
+def get_metrics_registry() -> CollectorRegistry:
     """Initialize a observability registry."""
     try:
-        prometheus_multiproc_dir = os.environ.get('prometheus_multiproc_dir')
-        print("ENV NAME", prometheus_multiproc_dir)
+        prometheus_multiproc_dir = os.environ.get('PROMETHEUS_MULTIPROC_DIR')
     except (ValidationError, AttributeError):
-        logging.error("Prometheus Multiproc Dir is not set. "
-                      "Please export `prometheus_multiproc_dir`")
+        logging.warning("Prometheus Multiproc Dir is not set. "
+                        "Please export `PROMETHEUS_MULTIPROC_DIR`")
         prometheus_multiproc_dir = None
 
     registry = CollectorRegistry()

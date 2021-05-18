@@ -18,7 +18,7 @@ from prometheus_client.metrics import MetricWrapperBase
 from raven.contrib.flask import Sentry
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from bayesian.observability.metrics import (emit_response_metrics,
-                                            init_metrics_registry,
+                                            get_metrics_registry,
                                             init_metrics)
 
 
@@ -42,7 +42,7 @@ logging.basicConfig(level=log_level,
 #  flask really sucks at this
 rdb = SQLAlchemy()
 
-METRICS_REGISTRY: CollectorRegistry = init_metrics_registry()
+METRICS_REGISTRY: CollectorRegistry = get_metrics_registry()
 METRICS: Optional[Dict[str, MetricWrapperBase]] = init_metrics(METRICS_REGISTRY)
 
 cache = Cache(config={'CACHE_TYPE': 'simple'})
@@ -93,9 +93,9 @@ def create_app(configfile=None):
     def access_control_allow_origin(response):
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "authorization, content-type, " \
-            "x-3scale-account-secret"
+                                                           "x-3scale-account-secret"
         response.headers["Access-Control-Allow-Methods"] = "DELETE, GET, HEAD, OPTIONS, " \
-            "PATCH, POST, PUT"
+                                                           "PATCH, POST, PUT"
         response.headers["Allow"] = "GET, HEAD, OPTIONS, PATCH, POST, PUT"
         return response
 
@@ -126,7 +126,6 @@ def log_request_finished(sender, **extra):
 
 request_started.connect(log_request_started, app)
 request_finished.connect(log_request_finished, app)
-
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
 sentry = Sentry(app, dsn=SENTRY_DSN, logging=True, level=logging.ERROR)
