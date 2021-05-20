@@ -26,6 +26,7 @@ METRICS_PARAMS = {
             "name": "http_requests_duration",
             "documentation": "Gauge of requests processing time by path (in seconds)",
             "labelnames": ["method", "path_template", "status_code"],
+            "multiprocess_mode": 'livesum',
         },
     )
 }
