@@ -3,9 +3,8 @@
 import time
 
 from flask import current_app, g, request
-from prometheus_client import Counter, Histogram
+from prometheus_client import Counter, Gauge
 from prometheus_client.metrics import MetricWrapperBase
-from prometheus_client.utils import INF
 from typing import Dict, Optional
 import os
 from prometheus_client import CollectorRegistry
@@ -22,12 +21,11 @@ METRICS_PARAMS = {
         },
     ),
     "requests_duration": (
-        Histogram,
+        Gauge,
         {
-            "name": "http_requests_duration_seconds",
-            "documentation": "Histogram of requests processing time by path (in seconds)",
-            "labelnames": ["method", "path_template", "status_code_family"],
-            "buckets": (0.1, 0.5, 1, 5, 10, INF),
+            "name": "http_requests_duration",
+            "documentation": "Gauge of requests processing time by path (in seconds)",
+            "labelnames": ["method", "path_template", "status_code"],
         },
     )
 }
@@ -52,27 +50,36 @@ def init_metrics(registry: CollectorRegistry) -> Dict[str, MetricWrapperBase]:
 
 
 def emit_response_metrics(status_code: int, metrics: Dict[str, MetricWrapperBase]) -> None:
-    """Emit observability for a response."""
+    """Emit metrics for a response."""
     if not metrics:
         return
     path_template = get_path_template()
     if path_template is None:
         path_template = "default"
 
-    # Counter
+    add_to_counter(metrics, path_template, status_code)
+    add_to_guage(metrics, path_template, status_code)
+
+
+def add_to_counter(metrics: Dict, path_template: str, status_code: int):
+    """Build Counter."""
     method = request.method
     metrics["requests"].labels(
-        method=method, path_template=path_template, status_code=status_code
+        method=method,
+        path_template=path_template,
+        status_code=status_code
     ).inc()
 
-    # Histogram
+
+def add_to_guage(metrics: Dict, path_template: str, status_code: int):
+    """Build Gauge."""
+    method = request.method
     duration_s = time.time() - getattr(g, 'time_start')
-    status_code_family = str(status_code)[0] + "xx"
     metrics["requests_duration"].labels(
         method=method,
         path_template=path_template,
-        status_code_family=status_code_family,
-    ).observe(duration_s)
+        status_code=status_code,
+    ).set(duration_s)
 
 
 def get_path_template() -> Optional[str]:
