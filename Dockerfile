@@ -18,4 +18,5 @@ ADD hack/coreapi-release /etc/
 ADD bayesian/ /coreapi/bayesian/
 ADD bayesian/scripts/entrypoint.sh /coreapi/bayesian/scripts/entrypoint.sh
 
+ENV PROMETHEUS_MULTIPROC_DIR=/tmp
 ENTRYPOINT ["bash", "/coreapi/bayesian/scripts/entrypoint.sh"]
