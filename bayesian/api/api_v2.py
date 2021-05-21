@@ -51,6 +51,8 @@ from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
                                          RDBInvalidRequestException,
                                          RDBServerException)
+from bayesian.settings import SNYK_SETTINGS
+from bayesian.utility.snyk import Enricher
 from werkzeug.exceptions import BadRequest
 from f8a_utils.ingestion_utils import unknown_package_flow
 from f8a_utils import ingestion_utils
@@ -215,6 +217,10 @@ class ComponentAnalysesApi(Resource):
             msg = "Internal Server Exception. Please contact us if problem persists."
             logger.error(e)
             raise HTTPError(400, msg) from e
+
+        if request.user_agent.string == "claircore/crda/RemoteMatcher":
+            snyk = Enricher(ecosystem, SNYK_SETTINGS.attribution, SNYK_SETTINGS.utm)
+            snyk.add_attribution_with_utm(stack_recommendation)
 
         create_component_bookkeeping(ecosystem, packages_list, request.args, request.headers)
 

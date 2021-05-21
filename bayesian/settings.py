@@ -26,11 +26,26 @@ class ComponentAnalysesSettings(BaseSettings):
     concurrency_limit: int = Field(default=2, env="COMPONENT_ANALYSES_CONCURRENCY_LIMIT")
 
 
+class SynkAttributionSettings(BaseSettings):
+    """Snyk attribution related params."""
+
+    attribution: str = Field(
+        default="",
+        env="SNYK_ATTRIBUTION",
+    )
+    utm: str = Field(
+        default="",
+        env="SNYK_UTM",
+    )
+
+
 GUNICORN_SETTINGS = GunicornSettings()
 COMPONENT_ANALYSES_SETTINGS = ComponentAnalysesSettings()
+SNYK_SETTINGS = SynkAttributionSettings()
 
 
 def log_all_settings():
     """Use for debugging."""
     logger.info("gunicorn: %s", str(GUNICORN_SETTINGS.dict()))
     logger.info("component analysis: %s", str(COMPONENT_ANALYSES_SETTINGS.dict()))
+    logger.info("snyk attribution: %s", str(SNYK_SETTINGS.dict()))

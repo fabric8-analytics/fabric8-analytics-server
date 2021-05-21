@@ -56,6 +56,10 @@ objects:
             value: "True"
           - name: WORKER_CONNECTIONS
             value: ${WORKER_CONNECTIONS}
+          - name: SNYK_ATTRIBUTION
+            value: ${SNYK_ATTRIBUTION}
+          - name: SNYK_UTM
+            value: ${SNYK_UTM}
           - name: OSIO_AUTH_URL
             valueFrom:
               configMapKeyRef:
@@ -297,3 +301,15 @@ parameters:
   required: true
   name: WORKER_COUNT
   value: "2"
+
+- description: Snyk attribution text
+  displayName: Snyk attribution text
+  required: true
+  name: SNYK_ATTRIBUTION
+  value: "(data source: https://snyk.io/vuln) Sign up at https://snyk.co/crda"
+
+- description: Snyk UTM
+  displayName: Snyk UTM
+  required: true
+  name: SNYK_UTM
+  value: "utm_medium=Partner&utm_source=RedHat&utm_campaign=Code-Ready-Analytics-2020&utm_content=vuln/{ecosystem}:{package}"
