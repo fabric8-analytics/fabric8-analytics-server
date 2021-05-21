@@ -6,6 +6,7 @@ monkey.patch_all()
 
 import logging
 from bayesian.settings import GUNICORN_SETTINGS, log_all_settings
+from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
 
 workers = GUNICORN_SETTINGS.workers
 worker_class = GUNICORN_SETTINGS.worker_class
@@ -26,3 +27,8 @@ def when_ready(server):  # noqa
         preload_app,
     )
     log_all_settings()
+    GunicornPrometheusMetrics.start_http_server_when_ready(GUNICORN_SETTINGS.metrics_port)
+
+
+def child_exit(server, worker):  # noqa
+    GunicornPrometheusMetrics.mark_process_dead_on_child_exit(worker.pid)

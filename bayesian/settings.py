@@ -15,6 +15,7 @@ class GunicornSettings(BaseSettings):
     timeout: int = Field(default=300, env="WORKER_TIMEOUT")
     preload: bool = Field(default=True, env="WORKER_PRELOAD")
     worker_connections: int = Field(default=1024, env="WORKER_CONNECTIONS")
+    metrics_port: int = Field(default=8000, env="METRICS_PORT")
 
 
 class ComponentAnalysesSettings(BaseSettings):
