@@ -139,8 +139,8 @@ class TestCAPostApi(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         """Init Test class."""
-        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
-        recommendation_data = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
+        gremlin_batch_data = os.path.join('tests/data/gremlin/gremlin_batch_data.json')
+        recommendation_data = os.path.join('tests/data/response/ca_batch_response.json')
 
         with open(gremlin_batch_data) as f:
             cls.gremlin_batch_data = json.load(f)
