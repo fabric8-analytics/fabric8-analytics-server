@@ -9,6 +9,7 @@ check_python_version() {
 
 check_python_version
 
+export PROMETHEUS_MULTIPROC_DIR=/tmp
 pip3 install -r /coreapi/tests/requirements.txt
 ln -s /coreapi /bayesian
 cd /coreapi
