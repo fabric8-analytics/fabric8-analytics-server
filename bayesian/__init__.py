@@ -13,6 +13,7 @@ from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
 from raven.contrib.flask import Sentry
 from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
+from prometheus_flask_exporter import NO_PREFIX
 
 
 def setup_logging(app):
@@ -35,6 +36,7 @@ logging.basicConfig(level=log_level,
 #  flask really sucks at this
 rdb = SQLAlchemy()
 cache = Cache(config={'CACHE_TYPE': 'simple'})
+
 
 def create_app(configfile=None):
     """Create the web application and define basic endpoints."""
@@ -88,7 +90,7 @@ def create_app(configfile=None):
         return response
 
     # metrics obj to be used to track endpoints
-    GunicornPrometheusMetrics(app, excluded_paths="^((?!\/api/v2/).)*$")
+    GunicornPrometheusMetrics(app, excluded_paths=r"^((?!/api/v2/).)*$", defaults_prefix=NO_PREFIX)
     return app
 
 
