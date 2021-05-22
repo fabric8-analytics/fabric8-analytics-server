@@ -71,7 +71,6 @@ def component_analyses_get(ecosystem, package, version):
     :return:
         JSON Response
     """
-    st = time.time()
     input_json = {
         "package_versions": [{
             "package": package,

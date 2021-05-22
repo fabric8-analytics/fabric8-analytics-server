@@ -7,7 +7,7 @@ import pytest
 import unittest
 from pathlib import Path
 from unittest.mock import patch, Mock
-from bayesian.api.api_v2 import _session, ApiEndpoints, ComponentAnalysesApi
+from bayesian.api.api_v2 import ApiEndpoints, ComponentAnalysesApi
 from bayesian.utility.db_gateway import RDBSaveException, RDBInvalidRequestException
 from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.v2.sa_response_builder import (SARBRequestInvalidException,
@@ -74,18 +74,14 @@ class TestCommonEndpoints():
 
     def test_get_component_analyses_invalid_package(self, accept_json, monkeypatch):
         """Test Component Analyses get. Invalid Package."""
-        monkeypatch.setattr(_session, 'post', Mock)
         response = self.client.get(
             api_route_for('/component-analyses/maven/package/2.7.5'), headers=accept_json)
-        monkeypatch.delattr(_session, 'post')
         assert response.json == {'error': 'Invalid maven format - package'}
 
     def test_get_component_analyses_invalid_version(self, accept_json, monkeypatch):
         """Test Component Analyses get. Invalid Version."""
-        monkeypatch.setattr(_session, 'post', Mock)
         response = self.client.get(
             api_route_for('/component-analyses/maven/package/2.7.*'), headers=accept_json)
-        monkeypatch.delattr(_session, 'post')
         assert response.json == {'error': "Package version should not have special characters."}
 
     def test_get_component_analyses_unknown_ecosystem(self, accept_json):
@@ -98,14 +94,13 @@ class TestCommonEndpoints():
 class TestComponentAnalysesApi(unittest.TestCase):
     """Component Analyses Unit Tests."""
 
-    @patch('bayesian.api.api_v2._session')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.utility.v2.ca_response_builder.'
            'ComponentAnalyses.get_component_analyses_response')
     def test_get_component_analyses(self, _vendor_analyses, _sensitive, _request,
-                                    _session, _unknown):
+                                    _unknown):
         """CA GET: No Analyses Data found."""
         eco, package, version = 'maven', \
                                 'com.netease.ysf.architecture:qiyu-es-spring-boot-starter', '1.1.0'
@@ -117,13 +112,12 @@ class TestComponentAnalysesApi(unittest.TestCase):
         response = ca.get(eco, package, version)
         self.assertEqual(response, returned)
 
-    @patch('bayesian.api.api_v2._session')
     @patch('bayesian.api.api_v2.request')
     @patch('bayesian.api.api_v2.case_sensitivity_transform')
     @patch('bayesian.utility.v2.ca_response_builder.'
            'ComponentAnalyses.get_component_analyses_response')
     def test_get_component_analyses_with_result_not_none(
-            self, _vendor_analyses, _sensitive, _request, _session):
+            self, _vendor_analyses, _sensitive, _request):
         """CA GET: with VALID result."""
         result = 'my_package_analyses_result'
         _vendor_analyses.return_value = result

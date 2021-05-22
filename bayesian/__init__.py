@@ -6,8 +6,6 @@ import os
 from f8a_worker.setup_celery import init_selinon
 from flask import Flask
 from flask import g
-from flask import redirect
-from flask import url_for
 from flask.json import jsonify
 from flask_appconfig import AppConfig
 from flask_cache import Cache
