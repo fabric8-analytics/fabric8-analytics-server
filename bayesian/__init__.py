@@ -8,6 +8,7 @@ from flask import Flask
 from flask import g
 from flask import redirect
 from flask import url_for
+from flask.json import jsonify
 from flask_appconfig import AppConfig
 from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
@@ -58,8 +59,6 @@ def create_app(configfile=None):
     app.register_blueprint(api_v1)
     app.register_blueprint(api_v2)
     app.register_blueprint(user_api)
-    # Redirect to latest API version if /api is accessed
-    app.route('/api')(lambda: redirect(url_for('api_v2.apiendpoints__slashless')))
     # Likewise for base URL, and make that accessible by name
 
     # Configure CORS.
@@ -68,10 +67,13 @@ def create_app(configfile=None):
     CORS(app, resources={r"/user/*": {"origins": "*"}})
 
     @app.route('/')
+    @app.route('/api')
     def base_url():
-        return redirect(url_for('api_v2.apiendpoints__slashless'))
-
-    setup_logging(app)
+        endpoints = set()
+        for rule in app.url_map.iter_rules():
+            if rule.endpoint != 'static':
+                endpoints.add(rule.rule)
+        return jsonify({'paths': sorted(endpoints)})
 
     @app.before_request
     def set_current_user():
@@ -87,6 +89,7 @@ def create_app(configfile=None):
         response.headers["Allow"] = "GET, HEAD, OPTIONS, PATCH, POST, PUT"
         return response
 
+    setup_logging(app)
     return app
 
 
