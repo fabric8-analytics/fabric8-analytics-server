@@ -6,8 +6,8 @@ import json
 import pytest
 import unittest
 from pathlib import Path
-from unittest.mock import patch, Mock
-from bayesian.api.api_v2 import ApiEndpoints, ComponentAnalysesApi
+from unittest.mock import patch
+from bayesian.api.api_v2 import ComponentAnalysesApi
 from bayesian.utility.db_gateway import RDBSaveException, RDBInvalidRequestException
 from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.v2.sa_response_builder import (SARBRequestInvalidException,
@@ -19,21 +19,6 @@ from bayesian.utility.v2.component_analyses import Package
 def api_route_for(route):
     """Construct an URL to the endpoint for given route."""
     return '/api/v2' + route
-
-
-class TestApiEndpoints(unittest.TestCase):
-    """Test APIEnpoints Register Class."""
-
-    @classmethod
-    def setUp(cls):
-        """Initialise class with required params."""
-        cls._resource_paths = ['a', 'b']
-
-    def test_get(self):
-        """Test Get method of API Endpoints."""
-        result = ApiEndpoints().get()
-        self.assertIsInstance(result, dict)
-        self.assertIn('paths', result)
 
 
 @pytest.mark.usefixtures('client_class')
@@ -48,11 +33,6 @@ class TestCommonEndpoints():
     def test_liveness(self, accept_json):
         """Test the /liveness endpoint."""
         response = self.client.get(api_route_for('/liveness'), headers=accept_json)
-        assert response.status_code == 200
-
-    def test_system_version(self, accept_json):
-        """Test the /system/version endpoint."""
-        response = self.client.get(api_route_for('/system/version'), headers=accept_json)
         assert response.status_code == 200
 
     def test_error_exception(self, accept_json):
