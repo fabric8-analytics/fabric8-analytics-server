@@ -38,10 +38,6 @@ objects:
             value: "api"
           - name: F8_API_BACKBONE_HOST
             value: "http://f8a-server-backbone:5000"
-          - name: METRICS_ACCUMULATOR_HOST
-            value: ${METRICS_ACCUMULATOR_HOST}
-          - name: METRICS_ACCUMULATOR_PORT
-            value: ${METRICS_ACCUMULATOR_PORT}
           - name: FUTURES_SESSION_WORKER_COUNT
             value: "100"
           - name: PGBOUNCER_SERVICE_HOST
@@ -54,6 +50,8 @@ objects:
             value: ${WORKER_TIMEOUT}
           - name: WORKER_PRELOAD
             value: "True"
+          - name: METRICS_PORT
+            value: ${METRICS_PORT}
           - name: WORKER_CONNECTIONS
             value: ${WORKER_CONNECTIONS}
           - name: OSIO_AUTH_URL
@@ -171,6 +169,7 @@ objects:
   metadata:
     labels:
       service: bayesian-api
+      monitoring: enabled
     name: bayesian-api
   spec:
     ports:
@@ -178,6 +177,10 @@ objects:
       port: 32000
       protocol: TCP
       targetPort: 5000
+    - name: metrics
+      port: 33000
+      protocol: TCP
+      targetPort: ${METRICS_PORT}
     selector:
       service: bayesian-api
 - apiVersion: v1
@@ -256,17 +259,11 @@ parameters:
   name: SHOW_TRANSITIVE_REPORT
   value: "false"
 
-- description: Metrics accumulator service host
-  displayName: METRICS ACCUMULATOR HOST
+- description: Prometheus metrics endpoint port
+  displayName: Prometheus metrics endpoint port
   required: true
-  name: METRICS_ACCUMULATOR_HOST
-  value: "metrics-accumulator"
-
-- description: Metrics accumulator service port
-  displayName: METRICS ACCUMULATOR PORT
-  required: true
-  name: METRICS_ACCUMULATOR_PORT
-  value: "5200"
+  name: METRICS_PORT
+  value: "8000"
 
 - description: Stack analysis request timeout
   displayName: STACK_ANALYSIS_REQUEST_TIMEOUT
