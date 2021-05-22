@@ -12,8 +12,6 @@ from flask_appconfig import AppConfig
 from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
 from raven.contrib.flask import Sentry
-from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
-from prometheus_flask_exporter import NO_PREFIX
 
 
 def setup_logging(app):
@@ -89,8 +87,6 @@ def create_app(configfile=None):
         response.headers["Allow"] = "GET, HEAD, OPTIONS, PATCH, POST, PUT"
         return response
 
-    # metrics obj to be used to track endpoints
-    GunicornPrometheusMetrics(app, excluded_paths=r"^((?!/api/v2/).)*$", defaults_prefix=NO_PREFIX)
     return app
 
 

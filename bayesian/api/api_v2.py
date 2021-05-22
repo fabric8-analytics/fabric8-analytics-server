@@ -37,8 +37,7 @@ from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
     get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
-from bayesian.utils import (get_system_version,
-                            create_component_bookkeeping,
+from bayesian.utils import (create_component_bookkeeping,
                             check_for_accepted_ecosystem)
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
@@ -56,6 +55,8 @@ from f8a_utils.ingestion_utils import unknown_package_flow
 from f8a_utils import ingestion_utils
 from bayesian.default_config import (THREESCALE_USER_KEY, THREESCALE_API_URL,
                                      STACK_REPORT_UI_HOSTNAME)
+from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
+from prometheus_flask_exporter import NO_PREFIX
 
 logger = logging.getLogger(__name__)
 
@@ -83,35 +84,18 @@ worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
 _session = FuturesSession(max_workers=worker_count)
 _resource_paths = []
 
-
-@api_v2.route('/readiness')
-def readiness():
-    """Handle the /readiness REST API call."""
-    return jsonify({}), 200
-
-
-@api_v2.route('/liveness')
-def liveness():
-    """Handle the /liveness REST API call."""
-    return jsonify({}), 200
+# metrics obj to be used to track endpoints
+metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix=NO_PREFIX)
 
 
 class ApiEndpoints(Resource):
     """Implementation of / REST API call."""
 
     @staticmethod
+    @metrics.do_not_track()
     def get():
         """Handle the GET REST API call."""
         return {'paths': sorted(_resource_paths)}
-
-
-class SystemVersion(Resource):
-    """Implementation of /system/version REST API call."""
-
-    @staticmethod
-    def get():
-        """Handle the GET REST API call."""
-        return get_system_version()
 
 
 class ComponentAnalysesApi(Resource):
@@ -374,7 +358,6 @@ def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None
 
 
 add_resource_no_matter_slashes(ApiEndpoints, '')
-add_resource_no_matter_slashes(SystemVersion, '/system/version')
 
 # Component analyses routes
 add_resource_no_matter_slashes(ComponentAnalysesApi,
