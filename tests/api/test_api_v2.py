@@ -7,7 +7,6 @@ import pytest
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from bayesian.api.api_v2 import ComponentAnalysesApi
 from bayesian.utility.db_gateway import RDBSaveException, RDBInvalidRequestException
 from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.v2.sa_response_builder import (SARBRequestInvalidException,
@@ -25,16 +24,6 @@ def api_route_for(route):
 class TestCommonEndpoints():
     """Basic tests for several endpoints."""
 
-    def test_readiness(self, accept_json):
-        """Test the /readiness endpoint."""
-        response = self.client.get(api_route_for('/readiness'), headers=accept_json)
-        assert response.status_code == 200
-
-    def test_liveness(self, accept_json):
-        """Test the /liveness endpoint."""
-        response = self.client.get(api_route_for('/liveness'), headers=accept_json)
-        assert response.status_code == 200
-
     def test_error_exception(self, accept_json):
         """Test the /error endpoint. Direct Access."""
         response = self.client.get(api_route_for('/_error'), headers=accept_json)
@@ -51,59 +40,6 @@ class TestCommonEndpoints():
         monkeypatch.setenv('REDIRECT_STATUS', '405')
         response = self.client.get(api_route_for('/_error'), headers=accept_json)
         assert response.status_code == 405
-
-    def test_get_component_analyses_invalid_package(self, accept_json, monkeypatch):
-        """Test Component Analyses get. Invalid Package."""
-        response = self.client.get(
-            api_route_for('/component-analyses/maven/package/2.7.5'), headers=accept_json)
-        assert response.json == {'error': 'Invalid maven format - package'}
-
-    def test_get_component_analyses_invalid_version(self, accept_json, monkeypatch):
-        """Test Component Analyses get. Invalid Version."""
-        response = self.client.get(
-            api_route_for('/component-analyses/maven/package/2.7.*'), headers=accept_json)
-        assert response.json == {'error': "Package version should not have special characters."}
-
-    def test_get_component_analyses_unknown_ecosystem(self, accept_json):
-        """CA GET: Invalid Ecosystem."""
-        response = self.client.get(
-            api_route_for('/component-analyses/unknown/package/version'), headers=accept_json)
-        assert response.json == {'error': 'Ecosystem unknown is not supported for this request'}
-
-
-class TestComponentAnalysesApi(unittest.TestCase):
-    """Component Analyses Unit Tests."""
-
-    @patch('bayesian.api.api_v2.request')
-    @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    @patch('bayesian.api.api_v2.unknown_package_flow')
-    @patch('bayesian.utility.v2.ca_response_builder.'
-           'ComponentAnalyses.get_component_analyses_response')
-    def test_get_component_analyses(self, _vendor_analyses, _sensitive, _request,
-                                    _unknown):
-        """CA GET: No Analyses Data found."""
-        eco, package, version = 'maven', \
-                                'com.netease.ysf.architecture:qiyu-es-spring-boot-starter', '1.1.0'
-        returned = {
-            "message": f"No data found for {eco} package {package}/{version}"
-        }
-        _vendor_analyses.return_value = returned
-        ca = ComponentAnalysesApi()
-        response = ca.get(eco, package, version)
-        self.assertEqual(response, returned)
-
-    @patch('bayesian.api.api_v2.request')
-    @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    @patch('bayesian.utility.v2.ca_response_builder.'
-           'ComponentAnalyses.get_component_analyses_response')
-    def test_get_component_analyses_with_result_not_none(
-            self, _vendor_analyses, _sensitive, _request):
-        """CA GET: with VALID result."""
-        result = 'my_package_analyses_result'
-        _vendor_analyses.return_value = result
-        ca = ComponentAnalysesApi()
-        analyses_result = ca.get('npm', 'pkg', 'ver')
-        self.assertEqual(analyses_result, result)
 
 
 @pytest.mark.usefixtures('client_class')
