@@ -26,7 +26,7 @@ fast-docker-build: coreapi-release
 	docker tag $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG) $(IMAGE_NAME)
 
 test: fast-docker-build
-	./runtest.sh
+	./qa/runtest.sh
 
 get-image-name:
 	@echo $(REGISTRY)/$(REPOSITORY):$(DEFAULT_TAG)

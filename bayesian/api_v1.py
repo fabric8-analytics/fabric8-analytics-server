@@ -1,7 +1,6 @@
 """Definition of all REST API endpoints of the server module."""
 
 import logging
-from requests_futures.sessions import FuturesSession
 from flask import Blueprint, request
 from flask.json import jsonify
 from flask_restful import Api, Resource
@@ -11,7 +10,6 @@ from . import rdb
 from fabric8a_auth.auth import login_required
 from .exceptions import HTTPError
 from .utils import (get_system_version, is_valid,)
-import os
 from fabric8a_auth.errors import AuthError
 
 logger = logging.getLogger(__name__)
@@ -28,20 +26,6 @@ errors = {
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 rest_api_v1 = Api(api_v1, errors=errors)
-
-
-ANALYSIS_ACCESS_COUNT_KEY = 'access_count'
-TOTAL_COUNT_KEY = 'total_count'
-
-ANALYTICS_API_VERSION = "v1.0"
-HOSTNAME = os.environ.get('HOSTNAME', 'bayesian-api')
-METRICS_SERVICE_URL = "http://{}:{}".format(
-    os.environ.get('METRICS_ACCUMULATOR_HOST', 'metrics-accumulator'),
-    os.environ.get('METRICS_ACCUMULATOR_PORT', '5200')
-)
-
-worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
-_session = FuturesSession(max_workers=worker_count)
 
 
 @api_v1.route('/_error')

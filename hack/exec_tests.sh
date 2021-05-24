@@ -9,8 +9,8 @@ check_python_version() {
 
 check_python_version
 
+export PROMETHEUS_MULTIPROC_DIR=/tmp
 pip3 install -r /coreapi/tests/requirements.txt
-ln -s /coreapi /bayesian
 cd /coreapi
 
 # we need no:cacheprovider, otherwise pytest will try to write to directory .cache which is in /usr under unprivileged
