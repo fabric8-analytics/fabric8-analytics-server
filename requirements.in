@@ -20,7 +20,7 @@ SQLAlchemy
 tenacity
 gunicorn
 gevent
-prometheus-client
+prometheus-flask-exporter
 
 #packages discovered after running the image on cluster
 psycopg2-binary

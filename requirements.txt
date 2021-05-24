@@ -60,7 +60,7 @@ cryptography==3.4.6
     # via
     #   f8a-utils
     #   fabric8a-auth
-dataclasses==0.8
+dataclasses
     # via pydantic
 deprecated==1.2.11
     # via pygithub
@@ -113,6 +113,7 @@ flask==0.12.5
     #   flask-security
     #   flask-sqlalchemy
     #   flask-wtf
+    #   prometheus-flask-exporter
 gevent==21.1.2
     # via -r requirements.in
 git2json==0.2.3
@@ -172,6 +173,8 @@ markupsafe==1.1.1
 passlib==1.7.4
     # via flask-security
 prometheus-client==0.10.1
+    # via prometheus-flask-exporter
+prometheus-flask-exporter==0.18.2
     # via -r requirements.in
 psycopg2-binary==2.8.6
     # via -r requirements.in

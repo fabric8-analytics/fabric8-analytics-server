@@ -1,7 +1,7 @@
 """Gunicorn config."""
 # NOTE: Must be before we import or call anything that may be synchronous.
 from gevent import monkey
-from prometheus_client import multiprocess
+from prometheus_flask_exporter.multiprocess import GunicornInternalPrometheusMetrics
 
 monkey.patch_all()
 
@@ -31,4 +31,4 @@ def when_ready(server):  # noqa
 
 def child_exit(server, worker):  # noqa
     """Execute on Worker Exit."""
-    multiprocess.mark_process_dead(worker.pid)
+    GunicornInternalPrometheusMetrics.mark_process_dead_on_child_exit(worker.pid)

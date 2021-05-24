@@ -23,6 +23,8 @@ import logging
 import re
 from typing import Dict, Tuple
 import json
+
+from prometheus_flask_exporter.multiprocess import GunicornInternalPrometheusMetrics
 from requests_futures.sessions import FuturesSession
 from collections import namedtuple
 from pydantic.error_wrappers import ValidationError
@@ -33,6 +35,7 @@ from flask_restful import Api, Resource
 
 from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required, AuthError
+
 from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
@@ -66,8 +69,11 @@ errors = {
     }
 }
 
+
 api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 rest_api_v2 = Api(api_v2, errors=errors)
+metrics = GunicornInternalPrometheusMetrics(api_v2, export_defaults=False)
+
 
 ANALYSIS_ACCESS_COUNT_KEY = 'access_count'
 TOTAL_COUNT_KEY = 'total_count'
@@ -83,8 +89,14 @@ worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
 _session = FuturesSession(max_workers=worker_count)
 _resource_paths = []
 
+by_path_counter = metrics.counter(
+    'http_request_counter', 'Request count by request paths',
+    labels={'path': lambda: request.path, 'status': lambda r: r.status_code}
+)
+
 
 @api_v2.route('/readiness')
+@by_path_counter
 def readiness():
     """Handle the /readiness REST API call."""
     return jsonify({}), 200
@@ -232,6 +244,7 @@ class ComponentAnalysesApi(Resource):
 
 
 @api_v2.route('/stack-analyses/<external_request_id>', methods=['GET'])
+@by_path_counter
 @login_required
 @validate_user
 def stack_analyses_with_request_id(external_request_id):
@@ -263,6 +276,7 @@ def stack_analyses_with_request_id(external_request_id):
 
 
 @api_v2.route('/stack-analyses', methods=['GET', 'POST'])
+@by_path_counter
 @login_required
 @validate_user
 def stack_analyses():
