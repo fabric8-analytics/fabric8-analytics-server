@@ -61,6 +61,7 @@ metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix
 
 @api_v2.route('/component-analyses/<ecosystem>/<package>/<version>', methods=['GET'])
 @validate_user
+@login_required
 def component_analyses_get(ecosystem, package, version):
     """Handle the GET REST API call.
 
@@ -77,10 +78,14 @@ def component_analyses_get(ecosystem, package, version):
             "version": version,
          }]
     }
-    packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
-    # Perform Component Analyses on Vendor specific Graph Edge.
-    analyses_result = ComponentAnalyses(
-        ecosystem, package, version).get_component_analyses_response()
+    try:
+        ca_validate_input(input_json, ecosystem)
+        # Perform Component Analyses on Vendor specific Graph Edge.
+        analyses_result = ComponentAnalyses(
+            ecosystem, package, version).get_component_analyses_response()
+    except BadRequest as br:
+        logger.error(br)
+        raise HTTPError(400, str(br)) from br
 
     if analyses_result is not None:
         return jsonify(analyses_result)
@@ -96,6 +101,7 @@ def component_analyses_get(ecosystem, package, version):
 
 @api_v2.route('/component-analyses', methods=['POST'])
 @validate_user
+@login_required
 def component_analyses_post():
     """Handle the POST REST API call.
 
