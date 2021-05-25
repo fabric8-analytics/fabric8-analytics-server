@@ -178,7 +178,7 @@ objects:
       protocol: TCP
       targetPort: 5000
     - name: metrics
-      port: 33000
+      port: 32500
       protocol: TCP
       targetPort: ${METRICS_PORT}
     selector:
