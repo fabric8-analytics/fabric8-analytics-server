@@ -180,7 +180,7 @@ objects:
     - name: metrics
       port: 32500
       protocol: TCP
-      targetPort: ${METRICS_PORT}
+      targetPort: ${{METRICS_PORT}}
     selector:
       service: bayesian-api
 - apiVersion: v1
