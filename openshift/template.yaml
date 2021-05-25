@@ -51,7 +51,7 @@ objects:
           - name: WORKER_PRELOAD
             value: "True"
           - name: METRICS_PORT
-            value: ${METRICS_PORT}
+            value: ${{METRICS_PORT}}
           - name: WORKER_CONNECTIONS
             value: ${WORKER_CONNECTIONS}
           - name: OSIO_AUTH_URL
@@ -180,7 +180,7 @@ objects:
     - name: metrics
       port: 32500
       protocol: TCP
-      targetPort: ${METRICS_PORT}
+      targetPort: ${{METRICS_PORT}}
     selector:
       service: bayesian-api
 - apiVersion: v1
