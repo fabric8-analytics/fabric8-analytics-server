@@ -99,6 +99,7 @@ def component_analyses_get(ecosystem, package, version):
     return jsonify(msg), 404
 
 
+@api_v2.route('/component-analyses/', methods=['POST'])
 @api_v2.route('/component-analyses', methods=['POST'])
 @validate_user
 @login_required
