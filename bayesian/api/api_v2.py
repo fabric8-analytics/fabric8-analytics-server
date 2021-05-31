@@ -114,6 +114,8 @@ def component_analyses_post():
     """
     input_json: Dict = request.get_json()
     ecosystem: str = input_json.get('ecosystem')
+    if request.user_agent.string == "claircore/crda/RemoteMatcher":
+        return jsonify({"message": "disabled"}), 404
     try:
         # Step1: Gather and clean Request
         packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
