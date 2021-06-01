@@ -117,7 +117,8 @@ def component_analyses_post():
     ecosystem: str = input_json.get('ecosystem')
     if request.user_agent.string == "claircore/crda/RemoteMatcher":
         try:
-            md5_hash = hashlib.md5(json.dumps(input_json, sort_keys=True).encode('utf-8')).hexdigest()
+            md5_hash = hashlib.md5(json.dumps(input_json, sort_keys=True).
+                                   encode('utf-8')).hexdigest()
             logger.info("Ecosystem: %s => body md5 hash: %s", ecosystem, md5_hash)
         except Exception as e:
             logger.error("Exception %s", e)
