@@ -21,6 +21,7 @@ import time
 import logging
 from typing import Dict
 import json
+import hashlib
 from pydantic.error_wrappers import ValidationError
 
 from flask import Blueprint, request, redirect
@@ -115,6 +116,11 @@ def component_analyses_post():
     input_json: Dict = request.get_json()
     ecosystem: str = input_json.get('ecosystem')
     if request.user_agent.string == "claircore/crda/RemoteMatcher":
+        try:
+            md5_hash = hashlib.md5(json.dumps(input_json, sort_keys=True).encode('utf-8')).hexdigest()
+            logger.info("Ecosystem: %s => body md5 hash: %s", ecosystem, md5_hash)
+        except Exception as e:
+            logger.error("Exception %s", e)
         return jsonify({"message": "disabled"}), 404
     try:
         # Step1: Gather and clean Request
