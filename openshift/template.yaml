@@ -188,6 +188,8 @@ objects:
   metadata:
     name: bayesian-api
   spec:
+    port:
+      targetPort: "32000"
     host: ${BAYESIAN_API_HOSTNAME}
     to:
       kind: Service
