@@ -139,7 +139,7 @@ def component_analyses_post():
         logger.error(e)
         raise HTTPError(400, msg) from e
 
-    create_component_bookkeeping(ecosystem, packages_list, request.args, request.headers)
+    # create_component_bookkeeping(ecosystem, packages_list, request.args, request.headers)
 
     # Step4: Handle Unknown Packages
     if unknown_pkgs:
