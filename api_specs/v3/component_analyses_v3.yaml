@@ -157,79 +157,39 @@ components:
           package_unknown: false
           vulnerabilities:
             - id: "SNYK-2010-3082"
-              cvss: "1.2"
-              is_private: false
-              cwes:
-                - "CWE-264"
-              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
               severity: "medium"
               title: "Information Exposure"
               url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
-              cve_ids:
-                - "CVE-2010-4534"
               fixed_in:
                 - "1.1.3"
                 - "1.2.4"
             - id: "SYNK-2018-1002"
-              cvss: "1.2"
-              is_private: false
-              cwes:
-                - "CWE-264"
-              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
               severity: "medium"
               title: "Information Exposure"
               url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
-              cve_ids:
-                - "CVE-2010-4534"
               fixed_in:
                 - "1.1.3"
                 - "1.2.4"
-          recommended_versions : "2"
-          message: "2 vulnerabilities within this dependency"
-          highest_severity: "high"
-          known_security_vulnerability_count: 2
-          security_advisory_count: 1
-          registration_link: "https://app.snyk.io/login"
 
         - package: "mango"
           version: "2.1"
           package_unknown: false
           vulnerabilities:
             - id: "SNYK-2010-3082"
-              cvss: "1.2"
-              is_private: false
-              cwes:
-                - "CWE-264"
-              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
               severity: "medium"
               title: "Information Exposure"
               url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
-              cve_ids:
-                - "CVE-2010-4534"
               fixed_in:
                 - "1.1.3"
                 - "1.2.4"
             - id: "SNYK-2010-3082"
-              cvss: "1.2"
-              is_private: false
-              cwes:
-                - "CWE-264"
-              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
               severity: "medium"
               title: "Information Exposure"
               url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
-              cve_ids: [
-                "CVE-2010-4534"
-              ]
               fixed_in:
                 - "1.1.3"
                 - "1.2.4"
-          recommended_versions : "2"
-          message: "2 vulnerabilities within this dependency"
-          highest_severity: "high"
-          known_security_vulnerability_count: 2
-          security_advisory_count: 1
-          registration_link: "https://app.snyk.io/login"
+
     no-vul-batch:
       value:
         - package: "django"
@@ -244,17 +204,8 @@ components:
           component_analyses:
             vulnerability:
               - vendor_cve_ids: "SNYK-2018-1002"
-                cvss: "1.2"
-                is_private: true
               - vendor_cve_ids: "SNYK-2010-3082"
-                cvss: "1.3"
-                is_private: false
-          recommended_version : "2"
-          message: "2 vulnerabilities within this dependency"
           severity: "high"
-          public_vulnerabilities_count: 2
-          private_vulnerabilities_count: 1
-          registration_link: "https://app.snyk.io/login"
 
     no-vul:
       value:
@@ -356,21 +307,6 @@ components:
         id:
           type: string
           example: "SNYK-1234"
-        cvss:
-          type: string
-          example: 9.2
-        is_private:
-          type: boolean
-          example: true
-        cwes:
-          type: array
-          items:
-            type: string
-          example:
-            - "CWE-264"
-        cvss_v3:
-          type: string
-          example: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
         severity:
           type: string
           example: "medium"
@@ -380,12 +316,6 @@ components:
         url:
           type: string
           example: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
-        cve_ids:
-          type: array
-          items:
-            type: string
-          example:
-            - "CVE-2010-4534"
         fixed_in:
           type: array
           items:
@@ -422,29 +352,6 @@ components:
               vendor_cve_ids:
                 type: string
                 example: "SNYK-1234"
-              cvss:
-                type: string
-                example: 9.2
-              is_private:
-                type: boolean
-                example: true
-              cve_ids:
-                type: array
-                items:
-                  type: string
-                example:
-                  - CVE-2014-0474
-                  - CVE-2014-0475
-              cwes:
-                type: array
-                items:
-                  type: string
-                example:
-                  - CWE-185
-                  - CWE-730
-              cvss_v3:
-                type: string
-                example: "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
               severity:
                 type: string
                 enum:
@@ -483,21 +390,6 @@ components:
               example: "3.1"
             component_analyses:
               $ref: '#/components/schemas/VulnerabilityDetails'
-            message:
-              type: string
-              example: "2 vulnerabilities within this dependency"
-            highest_severity:
-              type: string
-              example: "high"
-            known_security_vulnerability_count:
-              type: integer
-              example: 1
-            security_advisory_count:
-              type: integer
-              example: 1
-            registration_link:
-              type: string
-              example : "https://app.snyk.io/login"
 
     NoVulnerabilities:
       title: No Vulnerability Response
