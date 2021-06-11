@@ -1,18 +1,18 @@
 openapi: 3.0.1
 info:
-  title: Analytics Core API Specs for Version 3
+  title: Analytics Core API Specs for Version 2
   version: '3.1'
 servers:
-- url: https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v3
+- url: https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2
   description: "Dependency Analytics Server"
 security:
 - tokenAuth: []
 paths:
-  /component-analyses/:
+  /component-vulnerability-analyses/:
     post:
       tags:
         - CA batch call
-      summary: Get security and other details about a software component and recommendations to change to a more secured version in a batched manner.
+      summary: Get vulnerability details about a software component and recommendations to change to a more secured version in a batched manner.
       parameters:
         - name: uuid
           in: header
@@ -84,11 +84,11 @@ paths:
           content: {}
 
 
-  /component-analyses/{eco}/{name}/{ver}:
+  /component-vulnerability-analyses/{eco}/{name}/{ver}:
     get:
       tags:
       - CA Singular Call
-      summary: Get security and other details about a software component and recommendations
+      summary: Get vulnerability details about a software component and recommendations
         to change to a more secured version
       operationId: da_scanner.api_v3.component-analyses
       parameters:
