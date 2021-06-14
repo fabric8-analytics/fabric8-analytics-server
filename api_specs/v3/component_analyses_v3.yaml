@@ -195,7 +195,7 @@ components:
       value:
         package: "mango"
         version: "2.1"
-        recommendation: "No vulnerabilities found for pakage"
+        recommendation: "No vulnerabilities found for package"
 
     all-packages-unknown:
       value:
