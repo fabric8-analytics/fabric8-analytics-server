@@ -8,7 +8,7 @@ servers:
 security:
 - tokenAuth: []
 paths:
-  /component-vulnerability-analyses/:
+  /component-vulnerability-analysis/:
     post:
       tags:
         - CA batch call
@@ -68,7 +68,7 @@ paths:
           content: {}
 
 
-  /component-vulnerability-analyses/{eco}/{name}/{ver}:
+  /component-vulnerability-analysis/{eco}/{name}/{ver}:
     get:
       tags:
       - CA Singular Call
