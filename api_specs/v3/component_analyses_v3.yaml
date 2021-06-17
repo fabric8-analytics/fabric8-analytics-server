@@ -196,43 +196,6 @@ components:
         package: "mango"
         version: "2.1"
         recommendation: "No vulnerabilities found for package"
-
-    all-packages-unknown:
-      value:
-        - package: "django"
-          version: "1.1"
-          package_unknown: true
-
-    some-packages-unknown:
-      value:
-        - package: "django"
-          version: "1.1"
-          package_unknown: false
-          vulnerability:
-            - id: "SNYK-2010-0000"
-              cvss: "1.2"
-              is_private: false
-              cwes:
-                - "CWE-264"
-              cvss_v3: "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
-              severity: "medium"
-              title: "Information Exposure"
-              url: "https://snyk.io/vuln/SNYK-PYTHON-DJANGO-40055"
-              cve_ids: [
-                "CVE-2010-4534"
-              ]
-              fixed_in:
-                - "1.1.3"
-                - "1.2.4"
-          recommended_versions : "2"
-          message: "2 vulnerabilities within this dependency"
-          highest_severity: "high"
-          known_security_vulnerability_count: 2
-          security_advisory_count: 1
-          registration_link: "https://app.snyk.io/login"
-        - package: "django"
-          version: "1.1"
-          package_unknown: true
   schemas:
     RequestPackageDetails:
       title: CA Batch Call Request Body
