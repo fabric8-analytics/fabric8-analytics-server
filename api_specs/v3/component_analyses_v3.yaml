@@ -138,7 +138,6 @@ components:
       value:
         - package: "django"
           version: "1.1"
-          package_unknown: false
           vulnerabilities:
             - id: "SNYK-2010-3082"
               severity: "medium"
@@ -157,7 +156,6 @@ components:
 
         - package: "mango"
           version: "2.1"
-          package_unknown: false
           vulnerabilities:
             - id: "SNYK-2010-3082"
               severity: "medium"
@@ -229,9 +227,6 @@ components:
         package:
           type: string
           example: "django"
-        package_unknown:
-          type: boolean
-          example: False
         version:
           type: string
           example: "1.1"
