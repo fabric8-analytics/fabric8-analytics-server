@@ -237,9 +237,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VulnerabilityDetailsBatch'
-        message:
-          type: string
-          example: "2 vulnerabilities within this dependency"
 
     VulnerabilityDetailsBatch:
       title: Vulnerability Details Batch
