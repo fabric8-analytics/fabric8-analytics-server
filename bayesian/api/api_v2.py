@@ -60,6 +60,61 @@ api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix=NO_PREFIX)
 
 
+
+@api_v2.route('/component-vulnerability-analyses/', methods=['POST'])
+@api_v2.route('/component-analyses', methods=['POST'])
+@validate_user
+@login_required
+def component_analyses_post():
+    """Handle the POST REST API call.
+
+    Component Analyses Batch is 4 Step Process:
+    1. Gather and clean Request.
+    2. Query GraphDB.
+    3. Build Stack Recommendation and Build Unknown Packages and Trigger componentApiFlow.
+    4. Handle Unknown Packages and Trigger bayesianApiFlow.
+    """
+    input_json: Dict = request.get_json()
+    ecosystem: str = input_json.get('ecosystem')
+    if request.user_agent.string == "claircore/crda/RemoteMatcher":
+        try:
+            md5_hash = hashlib.md5(json.dumps(input_json, sort_keys=True).
+                                   encode('utf-8')).hexdigest()
+            logger.info("Ecosystem: %s => body md5 hash: %s", ecosystem, md5_hash)
+        except Exception as e:
+            logger.error("Exception %s", e)
+        return jsonify({"message": "disabled"}), 404
+    try:
+        # Step1: Gather and clean Request
+        packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
+        # Step2: Get aggregated CA data from Query GraphDB,
+        graph_response = get_batch_ca_data(ecosystem, packages_list)
+        # Step3: Build Unknown packages and Generates Stack Recommendation.
+        stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
+            ecosystem, graph_response, normalised_input_pkgs)
+    except BadRequest as br:
+        logger.error(br)
+        raise HTTPError(400, str(br)) from br
+    except Exception as e:
+        msg = "Internal Server Exception. Please contact us if problem persists."
+        logger.error(e)
+        raise HTTPError(400, msg) from e
+
+    create_component_bookkeeping(ecosystem, packages_list, request.args, request.headers)
+
+    # Step4: Handle Unknown Packages
+    if unknown_pkgs:
+        stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
+        pkgs_to_ingest = set(map(lambda pkg: ingestion_utils.Package(package=pkg.package,
+                                                                     version=pkg.version),
+                                 unknown_pkgs))
+        logger.debug("Unknown ingestion triggered for %s", pkgs_to_ingest)
+        unknown_package_flow(ecosystem, pkgs_to_ingest)
+        return jsonify(stack_recommendation), 202
+
+    return jsonify(stack_recommendation), 200
+
+
 @api_v2.route('/component-analyses/<ecosystem>/<package>/<version>', methods=['GET'])
 @validate_user
 @login_required

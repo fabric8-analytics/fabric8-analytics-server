@@ -168,6 +168,49 @@ def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
     return response
 
 
+def get_batch_ca_vulnerability_data(ecosystem: str, packages: List) -> dict:
+    """Fetch package details for component analyses."""
+    logger.debug('Executing get_batch_ca_data')
+    started_at = time.time()
+
+    response = None
+    semver_packages = []
+    pseudo_version_packages = []
+
+    # Need to seperate semver and pseudo verion packages for golang
+    if (ecosystem == "golang"):
+        for p in packages:
+            if p['is_pseudo_version']:
+                pseudo_version_packages.append(p)
+            else:
+                semver_packages.append(p)
+    else:
+        semver_packages = packages
+
+    graph_data_fetcher = []
+    if len(semver_packages) > 0:
+        get_semver_data = functools.partial(GraphAnalyses.get_batch_ca_vulnerability_data, ecosystem)
+        graph_data_fetcher = list(_fetcher_in_batches(get_semver_data, semver_packages))
+
+    if len(pseudo_version_packages) > 0:
+        get_pseudo_data = functools.partial(GraphAnalyses.get_batch_ca_data_for_pseudo_version,
+                                            ecosystem)
+        graph_data_fetcher += list(_fetcher_in_batches(get_pseudo_data, pseudo_version_packages))
+
+    response = {
+        "result": {
+            "data": []
+        }
+    }
+    result = EXECUTOR.map(lambda f: f(), graph_data_fetcher)
+    for r in result:
+        response["result"]["data"] += r["result"]["data"]
+
+    elapsed_time = time.time() - started_at
+    logger.info("concurrent batch exec took %s sec", elapsed_time)
+    return response
+
+
 def get_package_version_key(pkg_name, pkg_version):
     """Return unique key combining package name and version."""
     return pkg_name + '@' + pkg_version
