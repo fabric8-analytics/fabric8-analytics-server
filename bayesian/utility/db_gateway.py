@@ -95,7 +95,6 @@ class GraphAnalyses:
                     wait=tenacity.wait_exponential(multiplier=1, min=4, max=10))
     def post_gremlin(cls, query: str, bindings: dict = None) -> dict:
         """Post the given query and bindings to gremlin endpoint."""
-        print("hey3................................")
         payload = {
             'gremlin': query,
             'bindings': bindings
@@ -131,7 +130,6 @@ class GraphAnalyses:
     def get_vulnerabilities_for_packages(cls, ecosystem: str, packages) -> dict:
         """Get vulnerabilities for given packages."""
         logger.debug('Executing get_vulnerabilities_for_packages')
-        print("hey2")
         bindings = {
             'ecosystem': ecosystem,
             'packages': packages

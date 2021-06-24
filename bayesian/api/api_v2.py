@@ -79,10 +79,8 @@ def component_vulnerability_analysis_post():
     try:
         # Step1: Gather and clean Request
         packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
-        print("validated.......................................................................")
         # Step2: Get aggregated CA data from Query GraphDB,
         graph_response = get_batch_ca_vulnerability_data(ecosystem, packages_list)
-        print(json.dumps(graph_response))
         # Step3: Build Unknown packages and Generates Stack Recommendation.
         stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
             ecosystem, graph_response, normalised_input_pkgs)
