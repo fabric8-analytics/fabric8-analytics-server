@@ -189,8 +189,8 @@ def get_batch_ca_vulnerability_data(ecosystem: str, packages: List) -> dict:
 
     graph_data_fetcher = []
     if len(semver_packages) > 0:
-        get_semver_data = functools.partial
-        (GraphAnalyses.get_batch_ca_vulnerability_data, ecosystem)
+        get_semver_data = functools.partial(GraphAnalyses.get_batch_ca_vulnerability_data,
+                                            ecosystem)
         graph_data_fetcher = list(_fetcher_in_batches(get_semver_data, semver_packages))
 
     if len(pseudo_version_packages) > 0:
