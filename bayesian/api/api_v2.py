@@ -74,7 +74,6 @@ def component_vulnerability_analysis_post():
     """
     input_json: Dict = request.get_json()
     ecosystem: str = input_json.get('ecosystem')
-    print(ecosystem)
 
     try:
         # Step1: Gather and clean Request
