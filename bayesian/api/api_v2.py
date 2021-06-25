@@ -32,7 +32,7 @@ from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
     get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data, \
-    get_batch_ca_vulnerability_data
+    get_vulnerability_data
 from bayesian.utils import create_component_bookkeeping
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
@@ -79,7 +79,7 @@ def component_vulnerability_analysis_post():
         # Step1: Gather and clean Request
         packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
         # Step2: Get aggregated CA data from Query GraphDB,
-        graph_response = get_batch_ca_vulnerability_data(ecosystem, packages_list)
+        graph_response = get_vulnerability_data(ecosystem, packages_list)
         # Step3: Build Unknown packages and Generates Stack Recommendation.
         stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
             ecosystem, graph_response, normalised_input_pkgs)
@@ -94,7 +94,7 @@ def component_vulnerability_analysis_post():
     # Step4: Handle Unknown Packages
     if unknown_pkgs:
         stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
-        return jsonify(stack_recommendation), 202
+        return jsonify(stack_recommendation), 200
 
     return jsonify(stack_recommendation), 200
 

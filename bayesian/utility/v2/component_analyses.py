@@ -168,7 +168,7 @@ def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
     return response
 
 
-def get_batch_ca_vulnerability_data(ecosystem: str, packages: List) -> dict:
+def get_vulnerability_data(ecosystem: str, packages: List) -> dict:
     """Fetch package details for component analyses."""
     logger.debug('Executing get_batch_ca_data')
     started_at = time.time()
@@ -189,7 +189,7 @@ def get_batch_ca_vulnerability_data(ecosystem: str, packages: List) -> dict:
 
     graph_data_fetcher = []
     if len(semver_packages) > 0:
-        get_semver_data = functools.partial(GraphAnalyses.get_batch_ca_vulnerability_data,
+        get_semver_data = functools.partial(GraphAnalyses.get_vulnerability_data,
                                             ecosystem)
         graph_data_fetcher = list(_fetcher_in_batches(get_semver_data, semver_packages))
 
