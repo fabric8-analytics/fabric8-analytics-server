@@ -1,14 +1,20 @@
 """Authorization token handling."""
 import logging
+import os
 from functools import wraps
 from flask import g, request
 from pydantic.error_wrappers import ValidationError
-from bayesian.utility.user_utils import get_user, UserException
+from bayesian.utility.user_utils import (get_user,
+                                         UserException,
+                                         get_user_from_cache)
 from bayesian.utility.v2.sa_models import HeaderData
 from bayesian.exceptions import HTTPError
 from f8a_utils.user_token_utils import UserStatus
 
 logger = logging.getLogger(__name__)
+
+DB_CACHE_DIR = os.environ.get("DB_CACHE_DIR")
+ENABLE_USER_CACHING = os.environ.get('ENABLE_USER_CACHING', 'true') == 'true'
 
 
 def validate_user(view):
@@ -33,16 +39,25 @@ def validate_user(view):
             header_data = HeaderData(uuid=request.headers.get('uuid', None))
             if header_data.uuid:
                 g.uuid = str(header_data.uuid)
-                user = get_user(g.uuid)
-                if user:
-                    g.user_status = UserStatus[user.status]
+                if ENABLE_USER_CACHING:
+                    logger.debug("Getting user details from cache.")
+                    user = get_user_from_cache(g.uuid)
+                    if user:
+                        g.user_status = UserStatus[user["status"]]
+                        logger.info('For UUID: %s, got user type: %s final uuid: %s',
+                                    header_data.uuid, g.user_status, g.uuid)
+                else:
+                    logger.debug("Getting user details from RDS.")
+                    user = get_user(g.uuid)
+                    if user:
+                        g.user_status = UserStatus[user.status]
+                        logger.info('For UUID: %s, got user type: %s final uuid: %s',
+                                    header_data.uuid, g.user_status, g.uuid)
         except ValidationError as e:
             raise HTTPError(400, "Not a valid uuid") from e
         except UserException:
             logger.warning("Unable to get user status for uuid '{}'".format(header_data.uuid))
 
-        logger.debug('For UUID: %s, got user type: %s final uuid: %s',
-                     header_data.uuid, g.user_status, g.uuid)
         return view(*args, **kwargs)
 
     return wrapper

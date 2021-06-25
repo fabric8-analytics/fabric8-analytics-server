@@ -131,6 +131,10 @@ objects:
               secretKeyRef:
                 name: jobs
                 key: flask-app-secret-key
+          - name: ENABLE_USER_CACHING
+            value: "true"
+          - name: ENABLE_BOOK_KEEPING_FLOW
+            value: "false"
           image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
           name: bayesian-api
           ports:
@@ -159,7 +163,14 @@ objects:
             limits:
               memory: "1024Mi"
               cpu: "1000m"
+          volumeMounts:
+            - mountPath: "/db-cache"
+              name: bayesian-user-pvc
         restartPolicy: Always
+        volumes:
+          - name: bayesian-user-pvc
+            persistentVolumeClaim:
+              claimName: bayesian-user-pvc
     test: false
     triggers:
     - type: ConfigChange
@@ -194,6 +205,16 @@ objects:
     to:
       kind: Service
       name: bayesian-api
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: bayesian-user-pvc
+  spec:
+    accessModes:
+      - ReadWriteMany
+    resources:
+      requests:
+        storage: 1Gi
 
 parameters:
 - description: A hostname where the Bayesian API should be exposed (will be auto-generated if empty)

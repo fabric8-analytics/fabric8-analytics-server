@@ -61,6 +61,8 @@ def create_or_update_user():
 
     encrypted_api_token = encrypt_api_token(snyk_api_token)
     user_utils.create_or_update_user(user_id, encrypted_api_token.decode(), "SNYK")
+    # Update user in Cache to avoid RDS calls
+    user_utils.create_or_update_user_in_cache(user_id, encrypted_api_token.decode(), "SNYK")
     return jsonify(user_id=user_id)
 
 

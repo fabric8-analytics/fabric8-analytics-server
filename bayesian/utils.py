@@ -35,6 +35,8 @@ companion_reason_statement = "along with the provided input stack. " \
 
 zero_version = sv.Version("0.0.0")
 
+ENABLE_BOOK_KEEPING_FLOW = os.environ.get('ENABLE_BOOK_KEEPING_FLOW', 'false') == 'true'
+
 
 def server_run_flow(flow_name, flow_args):
     """Run a flow.
@@ -66,26 +68,27 @@ def get_user_email(user_profile):
 
 def create_component_bookkeeping(ecosystem, packages_list, request_args, headers):
     """Run the component analysis for given ecosystem+package+version."""
-    payload = {
-        "external_request_id": headers.get('X-Request-Id', None),
-        "flowname": "componentApiFlow",
-        "data": {
-            "api_name": "component_analyses_post",
-            "manifest_hash": request_args.get('utm_content', None),
-            "ecosystem": ecosystem,
-            "packages_list": packages_list,
-            "user_id": headers.get('uuid', None),
-            "user_agent": headers.get('User-Agent', None),
-            "source": request_args.get('utm_source', None),
-            "telemetry_id": headers.get('X-Telemetry-Id', None)
+    if ENABLE_BOOK_KEEPING_FLOW:
+        payload = {
+            "external_request_id": headers.get('X-Request-Id', None),
+            "flowname": "componentApiFlow",
+            "data": {
+                "api_name": "component_analyses_post",
+                "manifest_hash": request_args.get('utm_content', None),
+                "ecosystem": ecosystem,
+                "packages_list": packages_list,
+                "user_id": headers.get('uuid', None),
+                "user_agent": headers.get('User-Agent', None),
+                "source": request_args.get('utm_source', None),
+                "telemetry_id": headers.get('X-Telemetry-Id', None)
+            }
         }
-    }
 
-    try:
-        trigger_workerflow(payload)
-    except Exception as e:
-        logger.error('Failed to trigger worker flow for payload %s with error %s',
-                     payload, e)
+        try:
+            trigger_workerflow(payload)
+        except Exception as e:
+            logger.error('Failed to trigger worker flow for payload %s with error %s',
+                         payload, e)
 
 
 def server_create_analysis(ecosystem, package, version, user_profile,

@@ -7,7 +7,7 @@ LABEL name="bayesian-api" \
       target-file="Dockerfile" \
       app-license="Apache 2.0"
 
-ENV LANG=en_US.UTF-8 PYTHONDONTWRITEBYTECODE=1
+ENV LANG=en_US.UTF-8 PYTHONDONTWRITEBYTECODE=1 DB_CACHE_DIR="/db-cache"
 
 RUN pip3 install --upgrade pip --no-cache-dir
 
