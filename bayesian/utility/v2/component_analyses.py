@@ -170,7 +170,7 @@ def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
 
 def get_vulnerability_data(ecosystem: str, packages: List) -> dict:
     """Fetch package details for component analyses."""
-    logger.debug('Executing get_batch_ca_data')
+    logger.debug('Executing get_vulnerability_data')
     started_at = time.time()
 
     response = {
