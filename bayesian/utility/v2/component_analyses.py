@@ -174,29 +174,12 @@ def get_vulnerability_data(ecosystem: str, packages: List) -> dict:
     started_at = time.time()
 
     response = None
-    semver_packages = []
-    pseudo_version_packages = []
-
-    # Need to seperate semver and pseudo verion packages for golang
-    if (ecosystem == "golang"):
-        for p in packages:
-            if p['is_pseudo_version']:
-                pseudo_version_packages.append(p)
-            else:
-                semver_packages.append(p)
-    else:
-        semver_packages = packages
 
     graph_data_fetcher = []
-    if len(semver_packages) > 0:
-        get_semver_data = functools.partial(GraphAnalyses.get_vulnerability_data,
+    if len(packages) > 0:
+        get_data = functools.partial(GraphAnalyses.get_vulnerability_data,
                                             ecosystem)
-        graph_data_fetcher = list(_fetcher_in_batches(get_semver_data, semver_packages))
-
-    if len(pseudo_version_packages) > 0:
-        get_pseudo_data = functools.partial(GraphAnalyses.get_batch_ca_data_for_pseudo_version,
-                                            ecosystem)
-        graph_data_fetcher += list(_fetcher_in_batches(get_pseudo_data, pseudo_version_packages))
+        graph_data_fetcher = list(_fetcher_in_batches(get_data, packages))
 
     response = {
         "result": {
