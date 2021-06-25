@@ -173,18 +173,17 @@ def get_vulnerability_data(ecosystem: str, packages: List) -> dict:
     logger.debug('Executing get_batch_ca_data')
     started_at = time.time()
 
-    response = None
+    response = {
+        "result": {
+            "data": []
+        }
+    }
 
     graph_data_fetcher = []
     if len(packages) > 0:
         get_data = functools.partial(GraphAnalyses.get_vulnerability_data, ecosystem)
         graph_data_fetcher = list(_fetcher_in_batches(get_data, packages))
 
-    response = {
-        "result": {
-            "data": []
-        }
-    }
     result = EXECUTOR.map(lambda f: f(), graph_data_fetcher)
     for r in result:
         response["result"]["data"] += r["result"]["data"]
