@@ -61,7 +61,6 @@ api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix=NO_PREFIX)
 
 
-@api_v2.route('/component-vulnerability-analysis/', methods=['POST'])
 @api_v2.route('/component-vulnerability-analysis', methods=['POST'])
 @login_required
 def component_vulnerability_analysis_post():
