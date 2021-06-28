@@ -31,7 +31,8 @@ from fabric8a_auth.auth import login_required, AuthError
 from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
+    get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data, \
+    get_vulnerability_data
 from bayesian.utils import create_component_bookkeeping
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
@@ -58,6 +59,43 @@ api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 
 # metrics obj to be used to track endpoints
 metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix=NO_PREFIX)
+
+
+@api_v2.route('/component-vulnerability-analysis', methods=['POST'])
+@login_required
+def component_vulnerability_analysis_post():
+    """Handle the POST REST API call.
+
+    Component Analyses Batch is 3 Step Process:
+    1. Gather and clean Request.
+    2. Query GraphDB.
+    3. Build Stack Recommendation
+    """
+    input_json: Dict = request.get_json()
+    ecosystem: str = input_json.get('ecosystem')
+
+    try:
+        # Step1: Gather and clean Request
+        packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
+        # Step2: Get aggregated CA data from Query GraphDB,
+        graph_response = get_vulnerability_data(ecosystem, packages_list)
+        # Step3: Build Unknown packages and Generates Stack Recommendation.
+        stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
+            ecosystem, graph_response, normalised_input_pkgs)
+    except BadRequest as br:
+        logger.error(br)
+        raise HTTPError(400, str(br)) from br
+    except Exception as e:
+        msg = "Internal Server Exception. Please contact us if problem persists."
+        logger.error(e)
+        raise HTTPError(400, msg) from e
+
+    # Step4: Handle Unknown Packages
+    if unknown_pkgs:
+        stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
+        return jsonify(stack_recommendation), 200
+
+    return jsonify(stack_recommendation), 200
 
 
 @api_v2.route('/component-analyses/<ecosystem>/<package>/<version>', methods=['GET'])

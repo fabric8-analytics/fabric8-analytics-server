@@ -168,6 +168,31 @@ def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
     return response
 
 
+def get_vulnerability_data(ecosystem: str, packages: List) -> dict:
+    """Fetch package details for component analyses."""
+    logger.debug('Executing get_vulnerability_data')
+    started_at = time.time()
+
+    response = {
+        "result": {
+            "data": []
+        }
+    }
+
+    graph_data_fetcher = []
+    if len(packages) > 0:
+        get_data = functools.partial(GraphAnalyses.get_vulnerability_data, ecosystem)
+        graph_data_fetcher = list(_fetcher_in_batches(get_data, packages))
+
+    result = EXECUTOR.map(lambda f: f(), graph_data_fetcher)
+    for r in result:
+        response["result"]["data"] += r["result"]["data"]
+
+    elapsed_time = time.time() - started_at
+    logger.info("concurrent batch exec took %s sec", elapsed_time)
+    return response
+
+
 def get_package_version_key(pkg_name, pkg_version):
     """Return unique key combining package name and version."""
     return pkg_name + '@' + pkg_version
