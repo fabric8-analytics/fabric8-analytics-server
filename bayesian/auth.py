@@ -1,6 +1,5 @@
 """Authorization token handling."""
 import logging
-import os
 from functools import wraps
 from flask import g, request
 from pydantic.error_wrappers import ValidationError
