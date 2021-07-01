@@ -10,11 +10,9 @@ from bayesian.utility.user_utils import (get_user,
 from bayesian.utility.v2.sa_models import HeaderData
 from bayesian.exceptions import HTTPError
 from f8a_utils.user_token_utils import UserStatus
+from bayesian.settings import ENABLE_USER_CACHING
 
 logger = logging.getLogger(__name__)
-
-DB_CACHE_DIR = os.environ.get("DB_CACHE_DIR")
-ENABLE_USER_CACHING = os.environ.get('ENABLE_USER_CACHING', 'true') == 'true'
 
 
 def validate_user(view):

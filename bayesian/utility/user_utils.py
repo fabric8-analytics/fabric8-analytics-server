@@ -10,13 +10,12 @@ from sqlalchemy.dialects.postgresql import insert
 
 from f8a_worker.models import (UserDetails)
 from f8a_utils.user_token_utils import UserStatus
+from bayesian.settings import ENABLE_USER_CACHING, DB_CACHE_DIR
 from bayesian import rdb
 import json
 import os
 
 logger = logging.getLogger(__name__)
-DB_CACHE_DIR = os.environ.get("DB_CACHE_DIR")
-ENABLE_USER_CACHING = os.environ.get('ENABLE_USER_CACHING', 'true') == 'true'
 
 
 @retry(reraise=True, stop=tenacity.stop_after_attempt(3), wait=tenacity.wait_fixed(1))
