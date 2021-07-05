@@ -165,12 +165,12 @@ objects:
               cpu: "1000m"
           volumeMounts:
             - mountPath: "/db-cache"
-              name: bayesian-user-pvc
+              name: bayesian-cache-pvc
         restartPolicy: Always
         volumes:
-          - name: bayesian-user-pvc
+          - name: bayesian-cache-pvc
             persistentVolumeClaim:
-              claimName: bayesian-user-pvc
+              claimName: bayesian-cache-pvc
     test: false
     triggers:
     - type: ConfigChange
@@ -208,7 +208,7 @@ objects:
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
-    name: bayesian-user-pvc
+    name: bayesian-cache-pvc
   spec:
     accessModes:
       - ReadWriteMany
