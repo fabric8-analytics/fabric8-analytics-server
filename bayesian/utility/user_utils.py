@@ -77,6 +77,30 @@ def create_or_update_user_in_cache(user_id, snyk_api_token, user_source):
             raise UserException("Error caching user") from e
 
 
+@retry(reraise=True, stop=tenacity.stop_after_attempt(3), wait=tenacity.wait_fixed(1))
+def create_cache():
+    """Get all users and create Cache files for each user."""
+    if ENABLE_USER_CACHING:
+        logger.info("Creating user cache.")
+        try:
+            all_users = rdb.session.query(UserDetails).all()
+            for row in all_users:
+                # Create file for each user into PVC having details about user
+                with open(DB_CACHE_DIR + "/" + row.user_id + ".json", 'w',
+                          encoding='utf-8') as file:
+                    json.dump(vars(row), file, ensure_ascii=False, indent=4, default=str)
+
+            logger.info("Created cache of {} users".format(len(all_users)))
+            message = "User cache is created."
+        except Exception as e:
+            logger.error(e)
+            message = str(e)
+    else:
+        message = "User caching is disabled."
+        logger.info(message)
+    return message
+
+
 def get_user_from_cache(user_id):
     """Get User from cache."""
     user = {}
