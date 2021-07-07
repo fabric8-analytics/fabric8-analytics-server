@@ -215,6 +215,8 @@ objects:
     resources:
       requests:
         storage: 1Gi
+    storageClassName: gp2
+    volumeMode: Filesystem
 
 parameters:
 - description: A hostname where the Bayesian API should be exposed (will be auto-generated if empty)
