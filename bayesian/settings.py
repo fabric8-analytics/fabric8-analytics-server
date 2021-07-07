@@ -32,6 +32,7 @@ GUNICORN_SETTINGS = GunicornSettings()
 COMPONENT_ANALYSES_SETTINGS = ComponentAnalysesSettings()
 ENABLE_USER_CACHING = os.environ.get('ENABLE_USER_CACHING', 'true') == 'true'
 DB_CACHE_DIR = os.environ.get("DB_CACHE_DIR")
+APP_SECRET_KEY = os.getenv('APP_SECRET_KEY')
 
 
 def log_all_settings():
