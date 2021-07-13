@@ -163,14 +163,7 @@ objects:
             limits:
               memory: "1024Mi"
               cpu: "1000m"
-          volumeMounts:
-            - mountPath: "/db-cache"
-              name: bayesian-cache-pvc
         restartPolicy: Always
-        volumes:
-          - name: bayesian-cache-pvc
-            persistentVolumeClaim:
-              claimName: bayesian-cache-pvc
     test: false
     triggers:
     - type: ConfigChange
@@ -205,18 +198,6 @@ objects:
     to:
       kind: Service
       name: bayesian-api
-- apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: bayesian-cache-pvc
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 1Gi
-    storageClassName: gp2
-    volumeMode: Filesystem
 
 parameters:
 - description: A hostname where the Bayesian API should be exposed (will be auto-generated if empty)

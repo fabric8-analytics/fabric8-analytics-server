@@ -40,7 +40,7 @@ def validate_user(view):
                     logger.debug("Getting user details from cache.")
                     user = get_user_from_cache(g.uuid)
                     if user:
-                        g.user_status = UserStatus[user["status"]]
+                        g.user_status = UserStatus[user.get("status")]
                         logger.info('For UUID: %s, got user type: %s final uuid: %s',
                                     header_data.uuid, g.user_status, g.uuid)
                 else:
