@@ -239,6 +239,25 @@ def get_known_unknown_pkgs(
     unknown_pkgs: Set = input_dependencies.difference(db_known_packages)
     return stack_recommendation, unknown_pkgs
 
+def get_known_clair_pkgs(
+        ecosystem: str, graph_response: Dict) -> Tuple[List[Dict], Set[Package]]:
+    """Analyse Known and Unknown Packages."""
+
+    stack_recommendation = []
+    for package in graph_response.get('result', {}).get('data'):
+        pkg_name = package.get('package').get('name', [''])[0]
+        pkg_version = package.get('version').get('version', [''])[0]
+        pkg_recomendation = CABatchResponseBuilder(ecosystem).generate_recommendation(package, pkg_name, pkg_version)
+        print()
+        custom_pkg_recomendation = {
+            "package" : pkg_recomendation["package"],
+            "version" : pkg_recomendation["version"],
+            "vulnerabilities": pkg_recomendation["vulnerability"]
+        }
+        stack_recommendation.append(custom_pkg_recomendation)
+
+    return stack_recommendation
+
 
 def get_clean_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:
     """Output clean package version for each Package.
