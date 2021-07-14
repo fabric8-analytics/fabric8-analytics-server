@@ -59,6 +59,51 @@ def normlize_packages(name: str, given_name: str,
         is_pseudo_version=is_pseudo_version, package_unknown=True)
 
 
+def validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
+    """Validate Request Body."""
+    logger.debug('Validate Request Body.')
+    if not input_json:
+        error_msg = "Expected JSON request"
+        raise BadRequest(error_msg)
+
+    if not isinstance(input_json, dict):
+        error_msg = "Expected list of dependencies in JSON request"
+        raise BadRequest(error_msg)
+
+    if not check_for_accepted_ecosystem(ecosystem):
+        error_msg: str = f"Ecosystem {ecosystem} is not supported for this request"
+        raise BadRequest(error_msg)
+
+    if not input_json.get('package_versions'):
+        error_msg: str = "package_versions is missing"
+        raise BadRequest(error_msg)
+
+    packages_list = []
+    for pkg in input_json.get('package_versions'):
+        package = pkg.get("package")
+        clean_version = pkg.get("version")
+        if not all([package, clean_version]):
+            error_msg = "Invalid Input: Package, Version are required."
+            raise BadRequest(error_msg)
+
+        if (not isinstance(clean_version, str)) or (not isinstance(package, str)):
+            error_msg = "Package version should be string format only."
+            raise BadRequest(error_msg)
+
+        if not validate_version(clean_version):
+            error_msg = "Package version should not have special characters."
+            raise BadRequest(error_msg)
+
+        if ecosystem == 'maven':
+            package = MavenCoordinates.normalize_str(package)
+
+        if ecosystem == 'pypi':
+            package = package.lower()
+
+        packages_list.append({"name": package, "version": clean_version})
+    return packages_list
+
+
 def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], List[Package]]:
     """Validate CA Input."""
     logger.debug('Validating ca input data.')
@@ -179,11 +224,15 @@ def get_vulnerability_data(ecosystem: str, packages: List) -> dict:
         }
     }
 
+    package_list = []
+    for pack in packages:
+        package_list.append(pack["name"])
+
     graph_data_fetcher = []
-    if len(packages) > 0:
+    if len(package_list) > 0:
         get_data = functools.partial(
-            GraphAnalyses.get_vulnerabilities_for_clair_packages, ecosystem)
-        graph_data_fetcher = list(_fetcher_in_batches(get_data, packages))
+            GraphAnalyses.get_vulnerabilities_for_packages, ecosystem)
+        graph_data_fetcher = list(_fetcher_in_batches(get_data, package_list))
 
     result = EXECUTOR.map(lambda f: f(), graph_data_fetcher)
     for r in result:
@@ -241,26 +290,29 @@ def get_known_unknown_pkgs(
     return stack_recommendation, unknown_pkgs
 
 
-def get_known_clair_pkgs(
-        ecosystem: str, graph_response: Dict) -> Tuple[List[Dict], Set[Package]]:
-    """Analyse Known and Unknown Packages."""
-    stack_recommendation = []
-    for package in graph_response.get('result', {}).get('data'):
-        pkg_name = package.get('package').get('name', [''])[0]
-        pkg_version = package.get('version').get('version', [''])[0]
-        pkg_recomendation = CABatchResponseBuilder(ecosystem).generate_recommendation(
-            package, pkg_name, pkg_version)
-        vulnerabilities_array = "No vulnerabilities found for package"
-        if "vulnerability" in pkg_recomendation:
-            vulnerabilities_array = pkg_recomendation["vulnerability"]
-        custom_pkg_recomendation = {
-            "package": pkg_recomendation["package"],
-            "version": pkg_recomendation["version"],
-            "vulnerabilities": vulnerabilities_array
-        }
-        stack_recommendation.append(custom_pkg_recomendation)
+def check_vulnerable_package(version, version_string):
+    """Check if the request version available in vulnerable_versions."""
+    if(version in version_string.split(",")):
+        return True
+    return False
 
-    return stack_recommendation
+
+def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
+    """Analyse Known and Unknown Packages."""
+    for temp in packages_list:
+        temp["vulnerabilities"] = []
+    for package in graph_response.get('result', {}).get('data'):
+        for response_package in packages_list:
+            if(response_package["name"] == package["package_name"][0] and
+                check_vulnerable_package(response_package['version'],
+                                         package['vulnerable_versions'][0])):
+                response_package["vulnerabilities"].append({"id": package["snyk_vuln_id"][0],
+                                                            "severity": package["severity"][0],
+                                                            "title": package["title"][0],
+                                                            "url": package["snyk_url"][0],
+                                                            "fixed_in": package["fixed_in"]})
+                break
+    return packages_list
 
 
 def get_clean_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:

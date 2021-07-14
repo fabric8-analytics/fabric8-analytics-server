@@ -57,13 +57,6 @@ class GraphAnalyses:
             .by(valueMap()).by(valueMap()).by(out('has_snyk_cve')
             .valueMap().fold()).fill(epv);};epv;
             """
-    clair_packages_query = """
-            epv = [];packages.each {g.V().has('pecosystem', ecosystem).has('pname', it.name)
-            .has('version', it.version).as('version', 'cve').select('version').in('has_version')
-            .dedup().as('package').select('package', 'version', 'cve')
-            .by(valueMap()).by(valueMap()).by(out('has_snyk_cve')
-            .valueMap().fold()).fill(epv);};epv;
-            """
 
     get_vuln_query = """
             g.V().has('snyk_ecosystem', ecosystem).has('package_name', within(packages)).valueMap()
@@ -124,14 +117,14 @@ class GraphAnalyses:
         return GraphAnalyses.post_gremlin(cls.ca_batch_query, bindings)
 
     @classmethod
-    def get_vulnerabilities_for_clair_packages(cls, ecosystem: str, packages) -> dict:
+    def get_vulnerabilities_for_packages(cls, ecosystem: str, packages) -> dict:
         """Get vulnerabilities for given packages (clair/quay)."""
         logger.debug('Executing get_vulnerability_data')
         bindings = {
             'ecosystem': ecosystem,
             'packages': packages
         }
-        return GraphAnalyses.post_gremlin(cls.clair_packages_query, bindings)
+        return GraphAnalyses.post_gremlin(cls.get_vuln_query, bindings)
 
     @classmethod
     def get_vulnerabilities_for_packages(cls, ecosystem: str, packages) -> dict:
