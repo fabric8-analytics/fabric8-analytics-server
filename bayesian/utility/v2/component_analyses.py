@@ -248,11 +248,13 @@ def get_known_clair_pkgs(
         pkg_name = package.get('package').get('name', [''])[0]
         pkg_version = package.get('version').get('version', [''])[0]
         pkg_recomendation = CABatchResponseBuilder(ecosystem).generate_recommendation(package, pkg_name, pkg_version)
-        print()
+        vulnerabilities_array = "No vulnerabilities found for package"
+        if "vulnerability" in pkg_recomendation:
+            vulnerabilities_array = pkg_recomendation["vulnerability"]
         custom_pkg_recomendation = {
             "package" : pkg_recomendation["package"],
             "version" : pkg_recomendation["version"],
-            "vulnerabilities": pkg_recomendation["vulnerability"]
+            "vulnerabilities": vulnerabilities_array
         }
         stack_recommendation.append(custom_pkg_recomendation)
 

@@ -59,8 +59,7 @@ api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 
 # metrics obj to be used to track endpoints
 metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix=NO_PREFIX)
-
-
+    
 @api_v2.route('/vulnerability-analysis', methods=['POST'])
 @validate_user
 @login_required
@@ -77,7 +76,7 @@ def component_vulnerability_analysis_post():
 
     try:
         # Step1: Gather and clean Request
-        packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
+        packages_list = ca_validate_input(input_json, ecosystem)
         # Step2: Get aggregated CA data from Query GraphDB,
         graph_response = get_vulnerability_data(ecosystem, packages_list)
         # Step3: Build Unknown packages and Generates Stack Recommendation.
@@ -326,9 +325,3 @@ def api_404_handler(invalid_path):
     return jsonify(error=f'Cannot match given query to any API v2 endpoint. '
                          f'Invalid path {invalid_path}'), 404
 
-
-@api_v2.route('/testMe', methods=['GET'])
-@validate_user
-def test_analyses():
-    """test api."""
-    return jsonify({"msg": "test api"}), 200
