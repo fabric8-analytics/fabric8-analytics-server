@@ -242,7 +242,6 @@ def get_known_unknown_pkgs(
 def get_known_clair_pkgs(
         ecosystem: str, graph_response: Dict) -> Tuple[List[Dict], Set[Package]]:
     """Analyse Known and Unknown Packages."""
-
     stack_recommendation = []
     for package in graph_response.get('result', {}).get('data'):
         pkg_name = package.get('package').get('name', [''])[0]
