@@ -61,7 +61,8 @@ api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix=NO_PREFIX)
 
 
-@api_v2.route('/component-vulnerability-analysis', methods=['POST'])
+@api_v2.route('/vulnerability-analysis', methods=['POST'])
+@validate_user
 @login_required
 def component_vulnerability_analysis_post():
     """Handle the POST REST API call.
@@ -89,11 +90,6 @@ def component_vulnerability_analysis_post():
         msg = "Internal Server Exception. Please contact us if problem persists."
         logger.error(e)
         raise HTTPError(400, msg) from e
-
-    # Step4: Handle Unknown Packages
-    if unknown_pkgs:
-        stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
-        return jsonify(stack_recommendation), 200
 
     return jsonify(stack_recommendation), 200
 
@@ -330,3 +326,10 @@ def api_404_handler(invalid_path):
     """Handle all other routes not defined above."""
     return jsonify(error=f'Cannot match given query to any API v2 endpoint. '
                          f'Invalid path {invalid_path}'), 404
+
+
+@api_v2.route('/testMe', methods=['GET'])
+@validate_user
+def test_analyses():
+    """test api."""
+    return jsonify({"msg": "test api"}), 200
