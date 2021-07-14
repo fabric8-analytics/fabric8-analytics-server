@@ -324,4 +324,3 @@ def api_404_handler(invalid_path):
     """Handle all other routes not defined above."""
     return jsonify(error=f'Cannot match given query to any API v2 endpoint. '
                          f'Invalid path {invalid_path}'), 404
-
