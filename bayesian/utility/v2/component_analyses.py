@@ -181,7 +181,8 @@ def get_vulnerability_data(ecosystem: str, packages: List) -> dict:
 
     graph_data_fetcher = []
     if len(packages) > 0:
-        get_data = functools.partial(GraphAnalyses.get_vulnerabilities_for_clair_packages, ecosystem)
+        get_data = functools.partial(
+            GraphAnalyses.get_vulnerabilities_for_clair_packages, ecosystem)
         graph_data_fetcher = list(_fetcher_in_batches(get_data, packages))
 
     result = EXECUTOR.map(lambda f: f(), graph_data_fetcher)
@@ -239,6 +240,7 @@ def get_known_unknown_pkgs(
     unknown_pkgs: Set = input_dependencies.difference(db_known_packages)
     return stack_recommendation, unknown_pkgs
 
+
 def get_known_clair_pkgs(
         ecosystem: str, graph_response: Dict) -> Tuple[List[Dict], Set[Package]]:
     """Analyse Known and Unknown Packages."""
@@ -246,13 +248,14 @@ def get_known_clair_pkgs(
     for package in graph_response.get('result', {}).get('data'):
         pkg_name = package.get('package').get('name', [''])[0]
         pkg_version = package.get('version').get('version', [''])[0]
-        pkg_recomendation = CABatchResponseBuilder(ecosystem).generate_recommendation(package, pkg_name, pkg_version)
+        pkg_recomendation = CABatchResponseBuilder(ecosystem).generate_recommendation(
+            package, pkg_name, pkg_version)
         vulnerabilities_array = "No vulnerabilities found for package"
         if "vulnerability" in pkg_recomendation:
             vulnerabilities_array = pkg_recomendation["vulnerability"]
         custom_pkg_recomendation = {
-            "package" : pkg_recomendation["package"],
-            "version" : pkg_recomendation["version"],
+            "package": pkg_recomendation["package"],
+            "version": pkg_recomendation["version"],
             "vulnerabilities": vulnerabilities_array
         }
         stack_recommendation.append(custom_pkg_recomendation)

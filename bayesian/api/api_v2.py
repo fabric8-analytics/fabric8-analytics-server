@@ -59,7 +59,8 @@ api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 
 # metrics obj to be used to track endpoints
 metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix=NO_PREFIX)
-    
+
+
 @api_v2.route('/vulnerability-analysis', methods=['POST'])
 @validate_user
 @login_required
