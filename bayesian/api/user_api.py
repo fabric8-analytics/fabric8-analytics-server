@@ -11,6 +11,7 @@ from f8a_utils.user_token_utils import is_snyk_token_valid, encrypt_api_token, U
 from bayesian.exceptions import HTTPError
 from bayesian.utility import user_utils
 from bayesian.utility.user_utils import UserException
+from bayesian.settings import APP_SECRET_KEY
 
 user_api = Blueprint('user_api', __name__, url_prefix='/user')
 
@@ -61,7 +62,21 @@ def create_or_update_user():
 
     encrypted_api_token = encrypt_api_token(snyk_api_token)
     user_utils.create_or_update_user(user_id, encrypted_api_token.decode(), "SNYK")
+    # Update user in Cache to avoid RDS calls
+    user_utils.create_or_update_user_in_cache(user_id, encrypted_api_token.decode(), "SNYK")
     return jsonify(user_id=user_id)
+
+
+@user_api.route('/refresh_user_cache')
+def refresh_user_cache():
+    """Endpoint for creating user detail cache."""
+    app_secret_key = request.headers.get("APP_SECRET_KEY")
+
+    if app_secret_key is not None and APP_SECRET_KEY == app_secret_key:
+        message, status_code = user_utils.create_cache(), 200
+    else:
+        message, status_code = "Authentication failed", 401
+    return jsonify(message=message, status=status_code)
 
 
 @user_api.errorhandler(AuthError)

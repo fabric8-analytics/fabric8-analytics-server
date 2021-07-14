@@ -1,6 +1,7 @@
 """Abstracts settings based on env variables."""
 
 
+import os
 import logging
 from pydantic import BaseSettings, Field
 
@@ -29,9 +30,14 @@ class ComponentAnalysesSettings(BaseSettings):
 
 GUNICORN_SETTINGS = GunicornSettings()
 COMPONENT_ANALYSES_SETTINGS = ComponentAnalysesSettings()
+ENABLE_USER_CACHING = os.environ.get('ENABLE_USER_CACHING', 'true') == 'true'
+DB_CACHE_DIR = os.environ.get("DB_CACHE_DIR")
+APP_SECRET_KEY = os.getenv('APP_SECRET_KEY')
 
 
 def log_all_settings():
     """Use for debugging."""
     logger.info("gunicorn: %s", str(GUNICORN_SETTINGS.dict()))
     logger.info("component analysis: %s", str(COMPONENT_ANALYSES_SETTINGS.dict()))
+    logger.info("ENABLE_USER_CACHING: %s", ENABLE_USER_CACHING)
+    logger.info("DB_CACHE_DIR: %s", DB_CACHE_DIR)
