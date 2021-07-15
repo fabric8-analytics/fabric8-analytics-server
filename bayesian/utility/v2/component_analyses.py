@@ -301,8 +301,6 @@ def clean_package_list(package_details_dict: Dict):
     """Clean package list before sending response."""
     packages_list = []
     for package_detail in package_details_dict.values():
-        if package_detail["vulnerabilities"] == []:
-            package_detail["vulnerabilities"] = "No vulnerabilities found for package"
         packages_list.append(package_detail)
     return packages_list
 
