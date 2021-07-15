@@ -23,8 +23,8 @@ from operator import itemgetter
 
 from werkzeug.exceptions import BadRequest
 
-from bayesian.utility.v2.component_analyses import get_known_pkgs, validate_input, validate_version, \
-    ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
+from bayesian.utility.v2.component_analyses import get_known_pkgs, validate_input, \
+    validate_version, ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
     get_batch_ca_data, add_unknown_pkg_info
 
 
@@ -324,6 +324,7 @@ class TestVAInputValidator(unittest.TestCase):
         ideal_result = [{"name": "com.thoughtworks.xstream:xstream", "version": "1.3"}]
         result = validate_input(input_json, input_json["ecosystem"])
         self.assertEqual(result, ideal_result)
+
 
 class TestGetBatchCAData(unittest.TestCase):
     """Test get CA batch data."""

@@ -98,7 +98,7 @@ class GraphAnalysesTest(unittest.TestCase):
         self.assertRaises(Exception, GraphAnalyses.get_batch_ca_data,
                           'eco', packages=[{'name': 'django', 'version': '1.1'}],
                           query_key='ca_batch')
-    
+
     @patch('bayesian.utility.db_gateway.post')
     def test_get_vulnerability_data(self, _mockpost):
         """Test get_vulnerability_data."""

@@ -307,7 +307,7 @@ def clean_package_list(package_details_dict: Dict):
 
 def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
     """Analyse Known Packages."""
-    package_details_dict = DefaultDict(dict)
+    package_details_dict = {}
     for temp in packages_list:
         temp["vulnerabilities"] = []
         package_details_dict[temp["name"]] = temp
