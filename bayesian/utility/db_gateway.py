@@ -119,7 +119,7 @@ class GraphAnalyses:
     @classmethod
     def get_vulnerabilities_for_clair_packages(cls, ecosystem: str, packages) -> dict:
         """Get vulnerabilities for given packages (clair/quay)."""
-        logger.debug('Executing get_vulnerability_data')
+        logger.debug('Executing get_vulnerabilities_for_clair_packages')
         bindings = {
             'ecosystem': ecosystem,
             'packages': packages

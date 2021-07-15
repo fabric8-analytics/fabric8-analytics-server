@@ -88,7 +88,7 @@ def get_token():
 
 @api_v2.route('/vulnerability-analysis', methods=['POST'])
 @login_required
-def component_vulnerability_analysis_post():
+def vulnerability_analysis_post():
     """Handle the POST REST API call.
 
     Component Analyses Batch is 3 Step Process:

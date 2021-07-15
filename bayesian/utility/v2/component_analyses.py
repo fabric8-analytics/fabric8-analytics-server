@@ -309,16 +309,16 @@ def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
     """Analyse Known and Unknown Packages."""
     for temp in packages_list:
         temp["vulnerabilities"] = []
-    for package in graph_response.get('result', {}).get('data'):
+    for vulnerability in graph_response.get('result', {}).get('data'):
         for response_package in packages_list:
-            if(response_package["name"] == package["package_name"][0] and
+            if(response_package["name"] == vulnerability["package_name"][0] and
                 check_vulnerable_package(response_package['version'],
-                                         package['vulnerable_versions'][0])):
-                response_package["vulnerabilities"].append({"id": package["snyk_vuln_id"][0],
-                                                            "severity": package["severity"][0],
-                                                            "title": package["title"][0],
-                                                            "url": package["snyk_url"][0],
-                                                            "fixed_in": package["fixed_in"]})
+                                         vulnerability['vulnerable_versions'][0])):
+                response_package["vulnerabilities"].append({"id": vulnerability["snyk_vuln_id"][0],
+                                                            "severity": vulnerability["severity"][0],
+                                                            "title": vulnerability["title"][0],
+                                                            "url": vulnerability["snyk_url"][0],
+                                                            "fixed_in": vulnerability["fixed_in"]})
                 break
     return clean_package_list(packages_list)
 
