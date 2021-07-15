@@ -10,10 +10,14 @@ from sqlalchemy.dialects.postgresql import insert
 
 from f8a_worker.models import (UserDetails)
 from f8a_utils.user_token_utils import UserStatus
-from bayesian.settings import ENABLE_USER_CACHING, DB_CACHE_DIR
+from bayesian.settings import ENABLE_USER_CACHING
 from bayesian import rdb
-import json
 import os
+import requests
+
+_JOB_API_URL = "http://{host}:{port}/internal/ingestions".format(
+    host=os.environ.get("JOB_SERVICE_HOST", "bayesian-jobs"),
+    port=os.environ.get("JOB_SERVICE_PORT", "34000"),)
 
 logger = logging.getLogger(__name__)
 
@@ -57,61 +61,28 @@ def create_or_update_user(user_id, snyk_api_token, user_source):
         raise UserException("Error updating user") from e
 
 
-def create_or_update_user_in_cache(user_id, snyk_api_token, user_source):
+def create_or_update_user_in_cache(user_id, snyk_api_token):
     """Create or Update User in cache."""
     if ENABLE_USER_CACHING:
-        db_cache_file_path = DB_CACHE_DIR + "/" + user_id + ".json"
         user_detail = {"user_id": user_id,
-                       "user_source": user_source,
                        "snyk_api_token": snyk_api_token,
-                       "status": UserStatus.REGISTERED.name,
-                       "created_date": datetime.datetime.now(),
-                       "registered_date": datetime.datetime.now()}
+                       "status": UserStatus.REGISTERED.name}
         try:
-            with open(db_cache_file_path, 'w', encoding='utf-8') as file:
-                json.dump(user_detail, file, ensure_ascii=False, indent=4, default=str)
-
-            logger.info("User added in cache with id %s", user_id)
+            url = _JOB_API_URL + "/create_or_update_user_in_cache"
+            response = requests.request("POST", url,
+                                        data=user_detail)
+            return response.json()
         except Exception as e:
             logger.exception("Error while caching user with id %s", user_id)
             raise UserException("Error caching user") from e
 
 
-@retry(reraise=True, stop=tenacity.stop_after_attempt(3), wait=tenacity.wait_fixed(1))
-def create_cache():
-    """Get all users and create Cache files for each user."""
-    if ENABLE_USER_CACHING:
-        logger.info("Creating user cache.")
-        try:
-            all_users = rdb.session.query(UserDetails).all()
-            for row in all_users:
-                # Create file for each user into PVC having details about user
-                with open(DB_CACHE_DIR + "/" + row.user_id + ".json", 'w',
-                          encoding='utf-8') as file:
-                    json.dump(vars(row), file, ensure_ascii=False, indent=4, default=str)
-
-            logger.info("Created cache of {} users".format(len(all_users)))
-            message = "User cache is created."
-        except Exception as e:
-            logger.error(e)
-            message = str(e)
-    else:
-        message = "User caching is disabled."
-        logger.info(message)
-    return message
-
-
 def get_user_from_cache(user_id):
     """Get User from cache."""
-    user = {}
     try:
-        db_cache_file_path = DB_CACHE_DIR + "/" + user_id + ".json"
-
-        if os.path.isfile(db_cache_file_path):
-            logger.info("Found user in cache with id %s", user_id)
-            file = open(db_cache_file_path, "r")
-            user = json.loads(file.read())
-        return user
+        url = _JOB_API_URL + "/get-user-details/" + user_id
+        response = requests.request("GET", url)
+        return response.json()
     except Exception as e:
         logger.info("User not found in cache with id %s", user_id)
         logger.error(e)
