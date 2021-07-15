@@ -125,7 +125,7 @@ objects:
           - name:  THREESCALE_PREMIUM_USER_KEY
             valueFrom:
               secretKeyRef:
-                name: premium-3scale-key
+                name: three_scale_premium_user_key
                 key: default
           - name: STACK_ANALYSIS_REQUEST_TIMEOUT
             value: ${STACK_ANALYSIS_REQUEST_TIMEOUT}
