@@ -1,0 +1,17 @@
+[
+    {
+        "name": "st",
+        "version": "0.2.5",
+        "vulnerability": [
+            {
+                "fixed_in": [
+                    "1.2.2"
+                ],
+                "id": "SNYK-JS-ST-10820",
+                "severity": "medium",
+                "title": "Open Redirect",
+                "url": "https://snyk.io/vuln/SNYK-JS-ST-10820"
+            }
+        ]
+    }
+]

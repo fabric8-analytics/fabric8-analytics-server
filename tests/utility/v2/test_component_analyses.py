@@ -76,7 +76,7 @@ class TestComponentAnalyses(unittest.TestCase):
                          'version': '2.3.2',
                          'vulnerabilities': []}]
         self.assertListEqual(stack_recommendation, ideal_output)
-    
+
     def test_get_known_pkgs_with_cve(self):
         """Test Known Pkgs with Cve."""
         input_pkgs = [{"name": "st", "version": "0.2.5"}]
@@ -89,8 +89,8 @@ class TestComponentAnalyses(unittest.TestCase):
                          'version': '0.2.5',
                          'vulnerabilities': [{
                              "fixed_in": [
-                             "1.2.2"
-                            ],
+                                "1.2.2"
+                             ],
                              "id": "SNYK-JS-ST-10820",
                              "severity": "medium",
                              "title": "Open Redirect",

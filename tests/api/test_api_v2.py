@@ -131,8 +131,8 @@ class TestVAPostApi(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         """Init Test class."""
-        gremlin_batch_data = os.path.join('tests/data/gremlin/gremlin_batch_data.json')
-        recommendation_data = os.path.join('tests/data/response/ca_batch_response.json')
+        gremlin_batch_data = os.path.join('tests/data/gremlin/va.json')
+        recommendation_data = os.path.join('tests/data/response/va_response.json')
 
         with open(gremlin_batch_data) as f:
             cls.gremlin_batch_data = json.load(f)
@@ -140,18 +140,27 @@ class TestVAPostApi(unittest.TestCase):
         with open(recommendation_data) as f:
             cls.recommendation_data = json.load(f)
 
-    @patch('bayesian.api.api_v2.get_batch_ca_data')
-    def test_get_vulnerability_analysis_post(self, _mock1, _mock2, _mock3, _mock4):
+    @patch('bayesian.api.api_v2.validate_input')
+    @patch('bayesian.api.api_v2.get_vulnerability_data')
+    @patch('bayesian.api.api_v2.get_known_pkgs')
+    def test_get_component_analyses_post(self, _mock1, _mock2, _mock3):
         """VA POST: Valid API."""
-        test = [{"package": "markdown2", "version": "2.3.2"}]
-        _mock1.return_value = self.gremlin_batch_data
-        _mock3.return_value = test
+        mock3 = {
+                "ecosystem": "npm",
+                "package_versions": [
+                    {"package": "st", "version": "1.2.2"}
+                ]
+        }
+        _mock1.return_value = self.recommendation_data
+        _mock2.return_value = self.gremlin_batch_data
+        _mock3.return_value = mock3
         payload = {
-            "ecosystem": 'pypi',
+            "ecosystem": "npm",
             "package_versions": [
-                {"package": "markdown2", "version": "2.3.2"}
+                {"package": "st", "version": "1.2.2"}
             ]
         }
+
         accept_json = [('Content-Type', 'application/json;')]
         response = self.client.post(
             api_route_for('/vulnerability-analysis'), data=json.dumps(payload), headers=accept_json)
@@ -174,6 +183,7 @@ class TestVAPostApi(unittest.TestCase):
             response.json,
             {'error': '400 Bad Request: Ecosystem None is not supported for this request'})
 
+
 @pytest.mark.usefixtures('client_class')
 class TestGetTokenApi(unittest.TestCase):
     """Get Token Unit Tests."""
@@ -192,6 +202,7 @@ class TestGetTokenApi(unittest.TestCase):
         """Test get token request data with return as 404 error for invalid url."""
         response = self.client.get(api_route_for('/get-token/'))
         self.assertEqual(response.status_code, 404)
+
 
 @pytest.mark.usefixtures('client_class')
 class TestStackAnalysesGetApi(unittest.TestCase):
