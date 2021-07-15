@@ -63,7 +63,6 @@ metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix
 
 @api_v2.route('/get-token', methods=['GET'])
 @login_required
-@validate_user
 def get_token():
     """Return 3Scale tokens based on organization."""
     try:
@@ -88,7 +87,6 @@ def get_token():
 
 
 @api_v2.route('/vulnerability-analysis', methods=['POST'])
-@validate_user
 @login_required
 def component_vulnerability_analysis_post():
     """Handle the POST REST API call.

@@ -8,7 +8,7 @@ servers:
 security:
 - tokenAuth: []
 paths:
-  /component-vulnerability-analysis/:
+  /vulnerability-analysis/:
     post:
       tags:
         - CA batch call
