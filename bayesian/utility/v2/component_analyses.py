@@ -297,30 +297,31 @@ def check_vulnerable_package(version, version_string):
     return False
 
 
-def clean_package_list(packages_list):
+def clean_package_list(package_details_dict: Dict):
     """Clean package list before sending response."""
-    for temp in packages_list:
-        if temp["vulnerabilities"] == []:
-            temp["vulnerabilities"] = "No vulnerabilities found for package"
+    packages_list = []
+    for package_detail in package_details_dict.values():
+        if package_detail["vulnerabilities"] == []:
+            package_detail["vulnerabilities"] = "No vulnerabilities found for package"
+        packages_list.append(package_detail)
     return packages_list
 
 
 def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
     """Analyse Known and Unknown Packages."""
+    package_details_dict = {}
     for temp in packages_list:
         temp["vulnerabilities"] = []
+        package_details_dict[temp["name"]] = temp
     for vulnerability in graph_response.get('result', {}).get('data'):
-        for response_package in packages_list:
-            if(response_package["name"] == vulnerability["package_name"][0] and
-                check_vulnerable_package(response_package['version'],
-                                         vulnerability['vulnerable_versions'][0])):
-                response_package["vulnerabilities"].append({"id": vulnerability["snyk_vuln_id"][0],
-                                                            "severity": vulnerability["severity"][0],
-                                                            "title": vulnerability["title"][0],
-                                                            "url": vulnerability["snyk_url"][0],
-                                                            "fixed_in": vulnerability["fixed_in"]})
-                break
-    return clean_package_list(packages_list)
+        package_details = package_details_dict.get(vulnerability["package_name"][0])
+        if(check_vulnerable_package(package_details["version"], vulnerability['vulnerable_versions'][0])):
+            package_details["vulnerabilities"].append({"id": vulnerability["snyk_vuln_id"][0],
+                                                        "severity": vulnerability["severity"][0],
+                                                        "title": vulnerability["title"][0],
+                                                        "url": vulnerability["snyk_url"][0],
+                                                        "fixed_in": vulnerability["fixed_in"]})
+    return clean_package_list(package_details_dict)
 
 
 def get_clean_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:
