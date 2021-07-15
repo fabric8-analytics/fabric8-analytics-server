@@ -22,7 +22,7 @@ import re
 import time
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
-from typing import DefaultDict, Dict, Set, List, Tuple, Callable
+from typing import Dict, Set, List, Tuple, Callable
 from f8a_utils.tree_generator import GolangDependencyTreeGenerator
 from f8a_utils.gh_utils import GithubUtils
 from bayesian.settings import COMPONENT_ANALYSES_SETTINGS
