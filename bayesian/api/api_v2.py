@@ -67,7 +67,7 @@ metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix
 def get_token():
     """Return 3Scale tokens based on organization"""
     try:
-        organization = request.args.get('org').lower()
+        organization = request.args.get('org')
         if organization and organization.lower() == "crda":
             # return org specific key
             THREESCALE_CRDA_PREMIUM_USER_KEY = os.getenv(
