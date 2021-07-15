@@ -76,6 +76,27 @@ class TestComponentAnalyses(unittest.TestCase):
                          'version': '2.3.2',
                          'vulnerabilities': []}]
         self.assertListEqual(stack_recommendation, ideal_output)
+    
+    def test_get_known_pkgs_with_cve(self):
+        """Test Known Pkgs with Cve."""
+        input_pkgs = [{"name": "st", "version": "0.2.5"}]
+        batch_data_no_cve = os.path.join('tests/data/gremlin/va.json')
+        with open(batch_data_no_cve) as f:
+            gremlin_batch_data_no_cve = json.load(f)
+
+        stack_recommendation = get_known_pkgs(gremlin_batch_data_no_cve, input_pkgs)
+        ideal_output = [{'name': 'st',
+                         'version': '0.2.5',
+                         'vulnerabilities': [{
+                             "fixed_in": [
+                             "1.2.2"
+                            ],
+                             "id": "SNYK-JS-ST-10820",
+                             "severity": "medium",
+                             "title": "Open Redirect",
+                             "url": "https://snyk.io/vuln/SNYK-JS-ST-10820"
+                         }]}]
+        self.assertListEqual(stack_recommendation, ideal_output)
 
     @patch('bayesian.utility.v2.ca_response_builder.g')
     def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1):
