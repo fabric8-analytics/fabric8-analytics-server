@@ -64,19 +64,11 @@ metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix
 @api_v2.route('/get-token', methods=['GET'])
 @login_required
 def get_token():
-    """Return 3Scale tokens based on organization."""
+    """Return 3Scale tokens with higher rate limit."""
     try:
-        organization = request.args.get('org')
-        if organization and organization.lower() == "crda":
-            # return org specific key
-            THREESCALE_CRDA_PREMIUM_USER_KEY = os.getenv(
-                                                        'THREESCALE_CRDA_PREMIUM_USER_KEY',
-                                                        "not-set")
-            logger.debug("[GET] /get-token/%s", organization)
-            return jsonify({"key": THREESCALE_CRDA_PREMIUM_USER_KEY}), 200
         # return default key
-        THREESCALE_DEFAULT_PREMIUM_USER_KEY = os.getenv('THREESCALE_DEFAULT_PREMIUM_USER_KEY')
-        return jsonify({"key": THREESCALE_DEFAULT_PREMIUM_USER_KEY}), 200
+        THREESCALE_PREMIUM_USER_KEY = os.getenv('THREESCALE_PREMIUM_USER_KEY')
+        return jsonify({"key": THREESCALE_PREMIUM_USER_KEY}), 200
     except BadRequest as br:
         logger.error(br)
         raise HTTPError(400, str(br)) from br

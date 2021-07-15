@@ -315,12 +315,14 @@ def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
         package_details_dict[temp["name"]] = temp
     for vulnerability in graph_response.get('result', {}).get('data'):
         package_details = package_details_dict.get(vulnerability["package_name"][0])
-        if(check_vulnerable_package(package_details["version"], vulnerability['vulnerable_versions'][0])):
-            package_details["vulnerabilities"].append({"id": vulnerability["snyk_vuln_id"][0],
-                                                        "severity": vulnerability["severity"][0],
-                                                        "title": vulnerability["title"][0],
-                                                        "url": vulnerability["snyk_url"][0],
-                                                        "fixed_in": vulnerability["fixed_in"]})
+        if(check_vulnerable_package(package_details["version"],
+                                    vulnerability['vulnerable_versions'][0])):
+            package_details["vulnerabilities"].append(
+                {"id": vulnerability["snyk_vuln_id"][0],
+                 "severity": vulnerability["severity"][0],
+                 "title": vulnerability["title"][0],
+                 "url": vulnerability["snyk_url"][0],
+                 "fixed_in": vulnerability["fixed_in"]})
     return clean_package_list(package_details_dict)
 
 
