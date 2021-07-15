@@ -68,7 +68,7 @@ class TestComponentAnalyses(unittest.TestCase):
 
     def test_get_known_pkgs_no_cve(self):
         """Test Known Pkgs, No Cve."""
-        input_pkgs = [{"package": "markdown2", "version": "2.3.2"}]
+        input_pkgs = [{"name": "markdown2", "version": "2.3.2"}]
         gremlin_batch_data_no_cve = {"result": {"data": []}}
 
         stack_recommendation = get_known_pkgs(gremlin_batch_data_no_cve, input_pkgs)
