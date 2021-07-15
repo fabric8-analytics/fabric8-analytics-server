@@ -98,6 +98,27 @@ class GraphAnalysesTest(unittest.TestCase):
         self.assertRaises(Exception, GraphAnalyses.get_batch_ca_data,
                           'eco', packages=[{'name': 'django', 'version': '1.1'}],
                           query_key='ca_batch')
+    
+    @patch('bayesian.utility.db_gateway.post')
+    def test_get_vulnerability_data(self, _mockpost):
+        """Test get_vulnerability_data."""
+        _mockpost().json.return_value = self.gremlin_batch
+        ga = GraphAnalyses.get_vulnerabilities_for_clair_packages(
+            ecosystem='eco', packages=[{'name': 'django', 'version': '1.1'}])
+        self.assertIsInstance(ga, dict)
+        self.assertIn('result', ga)
+        self.assertIsInstance(ga.get('result'), dict)
+        self.assertIn('requestId', ga)
+        self.assertIsInstance(ga.get('requestId'), str)
+        self.assertIn('status', ga)
+        self.assertIsInstance(ga.get('status'), dict)
+
+    @patch('bayesian.utility.db_gateway.post', return_value=Exception)
+    def test_get_vulnerability_data_exception(self, _mockpost):
+        """Test get_vulnerability_data_exception."""
+        self.assertRaises(Exception, GraphAnalyses.get_vulnerabilities_for_clair_packages,
+                          'eco', packages=[{'name': 'django', 'version': '1.1'}],
+                          query_key='ca_batch')
 
     @patch('bayesian.utility.db_gateway.post')
     def test_get_vulnerabilities_for_packages(self, _mockpost):

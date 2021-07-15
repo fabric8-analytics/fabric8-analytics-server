@@ -23,7 +23,7 @@ from operator import itemgetter
 
 from werkzeug.exceptions import BadRequest
 
-from bayesian.utility.v2.component_analyses import validate_version, \
+from bayesian.utility.v2.component_analyses import get_known_pkgs, validate_input, validate_version, \
     ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
     get_batch_ca_data, add_unknown_pkg_info
 
@@ -65,6 +65,28 @@ class TestComponentAnalyses(unittest.TestCase):
                          'recommendation': {}}]
         self.assertListEqual(stack_recommendation, ideal_output)
         self.assertSetEqual(unknown_pkgs, set())
+
+    def test_get_known_pkgs_no_cve(self):
+        """Test Known Pkgs, No Cve."""
+        input_pkgs = [{"package": "markdown2", "version": "2.3.2"}]
+        gremlin_batch_data_no_cve = {
+            "requestId": "1c955a6f-2f43-48fc-af06-84f4ad91b4c9",
+            "status": {
+                "message": "",
+                "code": 200,
+                "attributes": {}
+                },
+                "result": {
+                    "data": [],
+                    "meta": {}
+                    }
+        }
+
+        stack_recommendation = get_known_pkgs(gremlin_batch_data_no_cve, input_pkgs)
+        ideal_output = [{'name': 'markdown2',
+                         'version': '2.3.2',
+                         'vulnerabilities': []}]
+        self.assertListEqual(stack_recommendation, ideal_output)
 
     @patch('bayesian.utility.v2.ca_response_builder.g')
     def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1):
@@ -251,6 +273,68 @@ class TestCAInputValidator(unittest.TestCase):
         result, _ = ca_validate_input(input_json, input_json["ecosystem"])
         self.assertEqual(result, ideal_result)
 
+
+class TestVAInputValidator(unittest.TestCase):
+    """Test Input Validator."""
+
+    def test_validate_input_exception(self):
+        """Test Va Validate input: Missing Input."""
+        self.assertRaises(BadRequest, validate_input, None, "pypi")
+
+    def test_validate_input_invalid_type(self):
+        """Test Va Validate input: Invalid Input type."""
+        self.assertRaises(BadRequest, validate_input, [""], "pypi")
+
+    def test_validate_input_invalid_ecosystem(self):
+        """Test Va Validate input: Invalid Input type."""
+        self.assertRaises(BadRequest, validate_input, {"test": "test"}, "madam")
+
+    def test_validate_input_no_pkg_version(self):
+        """Test Va Validate input: Invalid Input."""
+        self.assertRaises(BadRequest, validate_input, {"test": "test"}, "pypi")
+
+    def test_validate_input_pkg_missing_details(self):
+        """Test Va Validate input: Package Version Missing Details."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"no_package": "markdown2", "no_version": "2"},
+            ]
+        }
+        self.assertRaises(BadRequest, validate_input, input_json, "pypi")
+
+    def test_validate_input_pkg_invalid_type(self):
+        """Test Va Validate input: Package Type."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"package": {"Test": "Test"}, "version": "2.3.2"},
+            ]
+        }
+        self.assertRaises(BadRequest, validate_input, input_json, "pypi")
+
+    def test_validate_input_pkg_version_invalid_version(self):
+        """Test Va Validate input: Version Invalid version."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"package": "markdown2", "version": "2.*"},
+            ]
+        }
+        ecosystem = "pypi"
+        self.assertRaises(BadRequest, validate_input, input_json, ecosystem)
+
+    def test_validate_input_maven(self):
+        """Test Va Validate input: Ecosystem maven."""
+        input_json = {
+            "ecosystem": "maven",
+            "package_versions": [
+                {"package": "com.thoughtworks.xstream:xstream", "version": "1.3"},
+            ]
+        }
+        ideal_result = [{"name": "com.thoughtworks.xstream:xstream", "version": "1.3"}]
+        result = validate_input(input_json, input_json["ecosystem"])
+        self.assertEqual(result, ideal_result)
 
 class TestGetBatchCAData(unittest.TestCase):
     """Test get CA batch data."""
