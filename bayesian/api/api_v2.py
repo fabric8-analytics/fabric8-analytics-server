@@ -32,7 +32,7 @@ from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
     get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data, \
-    get_vulnerability_data
+    get_vulnerability_data, get_known_pkgs, validate_input
 from bayesian.utils import create_component_bookkeeping
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
@@ -61,9 +61,26 @@ api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix=NO_PREFIX)
 
 
-@api_v2.route('/component-vulnerability-analysis', methods=['POST'])
+@api_v2.route('/get-token', methods=['GET'])
 @login_required
-def component_vulnerability_analysis_post():
+def get_token():
+    """Return 3Scale tokens with higher rate limit."""
+    try:
+        # return default key
+        THREESCALE_PREMIUM_USER_KEY = os.getenv('THREESCALE_PREMIUM_USER_KEY')
+        return jsonify({"key": THREESCALE_PREMIUM_USER_KEY}), 200
+    except BadRequest as br:
+        logger.error(br)
+        raise HTTPError(400, str(br)) from br
+    except Exception as e:
+        msg = "Internal Server Exception. Please contact us if problem persists."
+        logger.error(e)
+        raise HTTPError(500, msg) from e
+
+
+@api_v2.route('/vulnerability-analysis', methods=['POST'])
+@login_required
+def vulnerability_analysis_post():
     """Handle the POST REST API call.
 
     Component Analyses Batch is 3 Step Process:
@@ -76,24 +93,18 @@ def component_vulnerability_analysis_post():
 
     try:
         # Step1: Gather and clean Request
-        packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
+        packages_list = validate_input(input_json, ecosystem)
         # Step2: Get aggregated CA data from Query GraphDB,
         graph_response = get_vulnerability_data(ecosystem, packages_list)
         # Step3: Build Unknown packages and Generates Stack Recommendation.
-        stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
-            ecosystem, graph_response, normalised_input_pkgs)
+        stack_recommendation = get_known_pkgs(graph_response, packages_list)
     except BadRequest as br:
         logger.error(br)
         raise HTTPError(400, str(br)) from br
     except Exception as e:
         msg = "Internal Server Exception. Please contact us if problem persists."
         logger.error(e)
-        raise HTTPError(400, msg) from e
-
-    # Step4: Handle Unknown Packages
-    if unknown_pkgs:
-        stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
-        return jsonify(stack_recommendation), 200
+        raise HTTPError(500, msg) from e
 
     return jsonify(stack_recommendation), 200
 

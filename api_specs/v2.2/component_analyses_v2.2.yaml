@@ -8,7 +8,33 @@ servers:
 security:
 - tokenAuth: []
 paths:
-  /component-vulnerability-analysis/:
+  /get-token/:
+    get:
+      tags:
+        - 3-Scale token
+      summary: Get 3-scale token with higher rate limit.
+      responses:
+        200:
+          description: Hihger rate 3-scale key
+          content:
+            application/json:
+              schema:
+                type: string
+                items:
+                  anyOf:
+                    - $ref: '#/components/schemas/Higher-rate-3scale'
+              examples:
+                default:
+                  $ref: '#/components/examples/higher-rate-3scale'
+
+        401:
+          description: Request unauthorized
+          content: {}
+        404:
+          description: Endpoint not found
+          content: {}
+
+  /vulnerability-analysis/:
     post:
       tags:
         - CA batch call
@@ -134,6 +160,10 @@ paths:
 
 components:
   examples:
+    higher-rate-3scale:
+      value:
+        - key: "7e42fa66f65124e6b1266a23431e3d07"
+          
     free-user-batch:
       value:
         - package: "django"
@@ -195,6 +225,14 @@ components:
         version: "2.1"
         recommendation: "No vulnerabilities found for package"
   schemas:
+    Higher-rate-3scale:
+      title: Get higher rate 3-scale token
+      type: object
+      properties :
+        key:
+          type: string
+          example: "7e42fa66f65124e6b1266a23431e3d07"
+        
     RequestPackageDetails:
       title: CA Batch Call Request Body
       type: object
@@ -328,7 +366,7 @@ components:
         recommendation:
           type: string
           example: "No vulnerabilities found for package"
-
+    
   securitySchemes:
     tokenAuth:
       type: apiKey

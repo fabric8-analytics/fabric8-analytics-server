@@ -122,6 +122,11 @@ objects:
               secretKeyRef:
                 name: 3scale
                 key: three_scale_user_key
+          - name:  THREESCALE_PREMIUM_USER_KEY
+            valueFrom:
+              secretKeyRef:
+                name: three_scale_premium_user_key
+                key: default
           - name: STACK_ANALYSIS_REQUEST_TIMEOUT
             value: ${STACK_ANALYSIS_REQUEST_TIMEOUT}
           - name: FLASK_LOGGING_LEVEL

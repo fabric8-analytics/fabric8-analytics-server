@@ -59,6 +59,51 @@ def normlize_packages(name: str, given_name: str,
         is_pseudo_version=is_pseudo_version, package_unknown=True)
 
 
+def validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
+    """Validate Request Body."""
+    logger.debug('Validate Request Body.')
+    if not input_json:
+        error_msg = "Expected JSON request"
+        raise BadRequest(error_msg)
+
+    if not isinstance(input_json, dict):
+        error_msg = "Expected list of dependencies in JSON request"
+        raise BadRequest(error_msg)
+
+    if not check_for_accepted_ecosystem(ecosystem):
+        error_msg: str = f"Ecosystem {ecosystem} is not supported for this request"
+        raise BadRequest(error_msg)
+
+    if not input_json.get('package_versions'):
+        error_msg: str = "package_versions is missing"
+        raise BadRequest(error_msg)
+
+    packages_list = []
+    for pkg in input_json.get('package_versions'):
+        package = pkg.get("package")
+        clean_version = pkg.get("version")
+        if not all([package, clean_version]):
+            error_msg = "Invalid Input: Package, Version are required."
+            raise BadRequest(error_msg)
+
+        if (not isinstance(clean_version, str)) or (not isinstance(package, str)):
+            error_msg = "Package version should be string format only."
+            raise BadRequest(error_msg)
+
+        if not validate_version(clean_version):
+            error_msg = "Package version should not have special characters."
+            raise BadRequest(error_msg)
+
+        if ecosystem == 'maven':
+            package = MavenCoordinates.normalize_str(package)
+
+        if ecosystem == 'pypi':
+            package = package.lower()
+
+        packages_list.append({"name": package, "version": clean_version})
+    return packages_list
+
+
 def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], List[Package]]:
     """Validate CA Input."""
     logger.debug('Validating ca input data.')
@@ -179,10 +224,15 @@ def get_vulnerability_data(ecosystem: str, packages: List) -> dict:
         }
     }
 
+    package_list = []
+    for pack in packages:
+        package_list.append(pack["name"])
+
     graph_data_fetcher = []
-    if len(packages) > 0:
-        get_data = functools.partial(GraphAnalyses.get_vulnerability_data, ecosystem)
-        graph_data_fetcher = list(_fetcher_in_batches(get_data, packages))
+    if len(package_list) > 0:
+        get_data = functools.partial(
+            GraphAnalyses.get_vulnerabilities_for_clair_packages, ecosystem)
+        graph_data_fetcher = list(_fetcher_in_batches(get_data, package_list))
 
     result = EXECUTOR.map(lambda f: f(), graph_data_fetcher)
     for r in result:
@@ -238,6 +288,40 @@ def get_known_unknown_pkgs(
     input_dependencies = set(normalised_input_pkgs)
     unknown_pkgs: Set = input_dependencies.difference(db_known_packages)
     return stack_recommendation, unknown_pkgs
+
+
+def check_vulnerable_package(version, version_string):
+    """Check if the request version available in vulnerable_versions."""
+    if(version in version_string.split(",")):
+        return True
+    return False
+
+
+def clean_package_list(package_details_dict: Dict):
+    """Clean package list before sending response."""
+    packages_list = []
+    for package_detail in package_details_dict.values():
+        packages_list.append(package_detail)
+    return packages_list
+
+
+def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
+    """Analyse Known and Unknown Packages."""
+    package_details_dict = {}
+    for temp in packages_list:
+        temp["vulnerabilities"] = []
+        package_details_dict[temp["name"]] = temp
+    for vulnerability in graph_response.get('result', {}).get('data'):
+        package_details = package_details_dict.get(vulnerability["package_name"][0])
+        if(check_vulnerable_package(package_details["version"],
+                                    vulnerability['vulnerable_versions'][0])):
+            package_details["vulnerabilities"].append(
+                {"id": vulnerability["snyk_vuln_id"][0],
+                 "severity": vulnerability["severity"][0],
+                 "title": vulnerability["title"][0],
+                 "url": vulnerability["snyk_url"][0],
+                 "fixed_in": vulnerability["fixed_in"]})
+    return clean_package_list(package_details_dict)
 
 
 def get_clean_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:

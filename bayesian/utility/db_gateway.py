@@ -117,9 +117,9 @@ class GraphAnalyses:
         return GraphAnalyses.post_gremlin(cls.ca_batch_query, bindings)
 
     @classmethod
-    def get_vulnerability_data(cls, ecosystem: str, packages) -> dict:
-        """Component Analyses v2.2 vulnerability Batch Call."""
-        logger.debug('Executing get_batch_ca_vulnerability_data')
+    def get_vulnerabilities_for_clair_packages(cls, ecosystem: str, packages) -> dict:
+        """Get vulnerabilities for given packages (clair/quay)."""
+        logger.debug('Executing get_vulnerabilities_for_clair_packages')
         bindings = {
             'ecosystem': ecosystem,
             'packages': packages
