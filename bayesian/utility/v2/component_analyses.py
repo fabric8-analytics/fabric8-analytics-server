@@ -22,7 +22,7 @@ import re
 import time
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, Set, List, Tuple, Callable
+from typing import DefaultDict, Dict, Set, List, Tuple, Callable
 from f8a_utils.tree_generator import GolangDependencyTreeGenerator
 from f8a_utils.gh_utils import GithubUtils
 from bayesian.settings import COMPONENT_ANALYSES_SETTINGS
@@ -307,7 +307,7 @@ def clean_package_list(package_details_dict: Dict):
 
 def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
     """Analyse Known Packages."""
-    package_details_dict = {}
+    package_details_dict = DefaultDict(dict)
     for temp in packages_list:
         temp["vulnerabilities"] = []
         package_details_dict[temp["name"]] = temp
