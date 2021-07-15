@@ -61,6 +61,32 @@ api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
 metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix=NO_PREFIX)
 
 
+@api_v2.route('/get-token', methods=['GET'])
+@login_required
+@validate_user
+def get_token():
+    """Return 3Scale tokens based on organization"""
+    try:
+        organization = request.args.get('org').lower()
+        if organization and organization.lower() == "crda":
+            # return org specific key
+            THREESCALE_CRDA_PREMIUM_USER_KEY = os.getenv(
+                                                        'THREESCALE_CRDA_PREMIUM_USER_KEY',
+                                                        "not-set")
+            logger.debug("[GET] /get-token/%s", organization)
+            return jsonify({"key": THREESCALE_CRDA_PREMIUM_USER_KEY}), 200
+        # return default key
+        THREESCALE_DEFAULT_PREMIUM_USER_KEY = os.getenv('THREESCALE_DEFAULT_PREMIUM_USER_KEY')
+        return jsonify({"key": THREESCALE_DEFAULT_PREMIUM_USER_KEY}), 200
+    except BadRequest as br:
+        logger.error(br)
+        raise HTTPError(400, str(br)) from br
+    except Exception as e:
+        msg = "Internal Server Exception. Please contact us if problem persists."
+        logger.error(e)
+        raise HTTPError(400, msg) from e
+
+
 @api_v2.route('/vulnerability-analysis', methods=['POST'])
 @validate_user
 @login_required
@@ -80,8 +106,6 @@ def component_vulnerability_analysis_post():
         packages_list = validate_input(input_json, ecosystem)
         # Step2: Get aggregated CA data from Query GraphDB,
         graph_response = get_vulnerability_data(ecosystem, packages_list)
-        print("graph_response")
-        print(graph_response)
         # Step3: Build Unknown packages and Generates Stack Recommendation.
         stack_recommendation = get_known_pkgs(graph_response, packages_list)
     except BadRequest as br:

@@ -231,7 +231,7 @@ def get_vulnerability_data(ecosystem: str, packages: List) -> dict:
     graph_data_fetcher = []
     if len(package_list) > 0:
         get_data = functools.partial(
-            GraphAnalyses.get_vulnerabilities_for_packages, ecosystem)
+            GraphAnalyses.get_vulnerabilities_for_clair_packages, ecosystem)
         graph_data_fetcher = list(_fetcher_in_batches(get_data, package_list))
 
     result = EXECUTOR.map(lambda f: f(), graph_data_fetcher)
