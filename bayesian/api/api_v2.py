@@ -75,7 +75,7 @@ def get_token():
     except Exception as e:
         msg = "Internal Server Exception. Please contact us if problem persists."
         logger.error(e)
-        raise HTTPError(400, msg) from e
+        raise HTTPError(500, msg) from e
 
 
 @api_v2.route('/vulnerability-analysis', methods=['POST'])
@@ -104,7 +104,7 @@ def vulnerability_analysis_post():
     except Exception as e:
         msg = "Internal Server Exception. Please contact us if problem persists."
         logger.error(e)
-        raise HTTPError(400, msg) from e
+        raise HTTPError(500, msg) from e
 
     return jsonify(stack_recommendation), 200
 
