@@ -367,7 +367,6 @@ components:
           type: string
           example: "No vulnerabilities found for package"
     
-    
   securitySchemes:
     tokenAuth:
       type: apiKey
