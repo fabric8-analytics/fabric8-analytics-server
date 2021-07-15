@@ -300,7 +300,7 @@ def check_vulnerable_package(version, version_string):
 def clean_package_list(packages_list):
     """Clean package list before sending response."""
     for temp in packages_list:
-        if  temp["vulnerabilities"] == []:
+        if temp["vulnerabilities"] == []:
             temp["vulnerabilities"] = "No vulnerabilities found for package"
     return packages_list
 
