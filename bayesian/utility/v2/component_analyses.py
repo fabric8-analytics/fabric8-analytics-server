@@ -297,6 +297,14 @@ def check_vulnerable_package(version, version_string):
     return False
 
 
+def clean_package_list(packages_list):
+    """Clean package list before sending response."""
+    for temp in packages_list:
+        if  temp["vulnerabilities"] == []:
+            temp["vulnerabilities"] = "No vulnerabilities found for package"
+    return packages_list
+
+
 def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
     """Analyse Known and Unknown Packages."""
     for temp in packages_list:
@@ -312,7 +320,7 @@ def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
                                                             "url": package["snyk_url"][0],
                                                             "fixed_in": package["fixed_in"]})
                 break
-    return packages_list
+    return clean_package_list(packages_list)
 
 
 def get_clean_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:
