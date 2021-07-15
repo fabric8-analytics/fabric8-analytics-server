@@ -174,6 +174,24 @@ class TestVAPostApi(unittest.TestCase):
             response.json,
             {'error': '400 Bad Request: Ecosystem None is not supported for this request'})
 
+@pytest.mark.usefixtures('client_class')
+class TestStackAnalysesGetApi(unittest.TestCase):
+    """Get Token Unit Tests."""
+
+    def test_sa_get_request_success(self):
+        """Test success get token request."""
+        response = self.client.get(api_route_for('/get-token'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_request_invalid_url(self):
+        """Test get token request data with return as 404 error."""
+        response = self.client.get(api_route_for('/get-token/mathur/07'))
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request_with_slash(self):
+        """Test get token request data with return as 404 error for invalid url."""
+        response = self.client.get(api_route_for('/get-token/'))
+        self.assertEqual(response.status_code, 404)
 
 @pytest.mark.usefixtures('client_class')
 class TestStackAnalysesGetApi(unittest.TestCase):

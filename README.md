@@ -33,7 +33,7 @@ is provided for the stack analysis endpoint as well.
 From the top-level git directory, run the tests in a container using the helper
 script:
 
-    $ ./runtests.sh
+    $ .qa/runtest.sh
 
 (The above command assumes you have passwordless docker invocation configured -
 if you don't, then `sudo` will be necessary to enable docker invocation).
