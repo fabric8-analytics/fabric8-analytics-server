@@ -110,7 +110,6 @@ class TestCAPostApi(unittest.TestCase):
     def test_get_component_analyses_bad_request(self):
         """CA POST: Bad Request."""
         payload = {
-            "ecosys": 'pypi',
             "package_versions": [
                 {"package": "markdown2", "version": "2.3.2"}
             ]
