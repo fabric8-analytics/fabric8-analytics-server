@@ -206,7 +206,7 @@ components:
       value:
         - package: "django"
           version: "1.1"
-          recommendation: {}
+          vulnerabilities: []
 
     free-user:
       value:
@@ -223,7 +223,7 @@ components:
       value:
         package: "mango"
         version: "2.1"
-        recommendation: "No vulnerabilities found for package"
+        vulnerabilities: []
   schemas:
     Higher-rate-3scale:
       title: Get higher rate 3-scale token
@@ -363,9 +363,11 @@ components:
         version:
           type: string
           example: "1.1"
-        recommendation:
-          type: string
-          example: "No vulnerabilities found for package"
+        vulnerabilities:
+          type: array
+          items:
+           type: object
+          example: []
     
   securitySchemes:
     tokenAuth:
