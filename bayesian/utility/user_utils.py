@@ -84,7 +84,7 @@ def get_user_from_cache(user_id):
         response = requests.request("GET", url)
         return response.json()
     except Exception as e:
-        logger.info("User not found in cache with id %s", user_id)
+        logger.info("Failed to find user in cache with id %s", user_id)
         logger.error(e)
         return None
 
