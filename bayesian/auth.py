@@ -37,7 +37,7 @@ def validate_user(view):
             if header_data.uuid:
                 g.uuid = str(header_data.uuid)
                 if ENABLE_USER_CACHING:
-                    logger.debug("Getting user details from cache.")
+                    logger.info("Getting user details from cache for user = %s", g.uuid)
                     user = get_user_from_cache(g.uuid)
                     if user:
                         g.user_status = UserStatus["REGISTERED"]
@@ -47,7 +47,7 @@ def validate_user(view):
                         logger.info('For UUID: %s, user not found type: %s final uuid: %s',
                                     header_data.uuid, g.user_status, g.uuid)
                 else:
-                    logger.debug("Getting user details from RDS.")
+                    logger.info("Getting user details from RDS.")
                     user = get_user(g.uuid)
                     if user:
                         g.user_status = UserStatus[user.status]
