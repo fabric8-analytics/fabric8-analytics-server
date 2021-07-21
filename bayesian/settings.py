@@ -1,7 +1,5 @@
 """Abstracts settings based on env variables."""
 
-
-import os
 import logging
 from pydantic import BaseSettings, Field
 
