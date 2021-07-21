@@ -1,7 +1,5 @@
 """Abstracts settings based on env variables."""
 
-
-import os
 import logging
 from pydantic import BaseSettings, Field
 
@@ -30,7 +28,7 @@ class ComponentAnalysesSettings(BaseSettings):
 
 GUNICORN_SETTINGS = GunicornSettings()
 COMPONENT_ANALYSES_SETTINGS = ComponentAnalysesSettings()
-ENABLE_USER_CACHING = os.environ.get('ENABLE_USER_CACHING', 'true') == 'true'
+ENABLE_USER_CACHING = False
 
 
 def log_all_settings():
