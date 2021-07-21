@@ -5,7 +5,9 @@
         "vulnerability": [
             {
                 "fixed_in": [
-                    "1.2.2"
+                    "1.2.2",
+                    "1.2.3",
+                    "1.2.4"
                 ],
                 "id": "SNYK-JS-ST-10820",
                 "severity": "medium",

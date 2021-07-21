@@ -78,18 +78,20 @@ class TestComponentAnalyses(unittest.TestCase):
         self.assertListEqual(stack_recommendation, ideal_output)
 
     def test_get_known_pkgs_with_cve(self):
-        """Test Known Pkgs with Cve."""
+        """Test Known Pkgs with Cve(VA)."""
         input_pkgs = [{"name": "st", "version": "0.2.5"}]
-        batch_data_no_cve = os.path.join('tests/data/gremlin/va.json')
-        with open(batch_data_no_cve) as f:
-            gremlin_batch_data_no_cve = json.load(f)
+        batch_data_cve = os.path.join('tests/data/gremlin/va.json')
+        with open(batch_data_cve) as f:
+            gremlin_batch_data_cve = json.load(f)
 
-        stack_recommendation = get_known_pkgs(gremlin_batch_data_no_cve, input_pkgs)
+        stack_recommendation = get_known_pkgs(gremlin_batch_data_cve, input_pkgs)
         ideal_output = [{'name': 'st',
                          'version': '0.2.5',
                          'vulnerabilities': [{
                              "fixed_in": [
-                                "1.2.2"
+                                "1.2.2",
+                                "1.2.3",
+                                "1.2.4"
                              ],
                              "id": "SNYK-JS-ST-10820",
                              "severity": "medium",

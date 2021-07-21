@@ -170,7 +170,6 @@ class TestVAPostApi(unittest.TestCase):
     def test_get_vulnerability_analysis_bad_request(self):
         """VA POST: Bad Request."""
         payload = {
-            "ecosys": 'pypi',
             "package_versions": [
                 {"package": "markdown2", "version": "2.3.2"}
             ]
