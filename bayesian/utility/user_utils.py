@@ -14,6 +14,7 @@ from bayesian.settings import ENABLE_USER_CACHING
 from bayesian import rdb
 import os
 import requests
+import json
 
 _JOB_API_URL = "http://{host}:{port}/internal/ingestions".format(
     host=os.environ.get("JOB_SERVICE_HOST", "bayesian-jobs"),
@@ -61,17 +62,14 @@ def create_or_update_user(user_id, snyk_api_token, user_source):
         raise UserException("Error updating user") from e
 
 
-def create_or_update_user_in_cache(user_id, snyk_api_token):
+def create_or_update_user_in_cache(user_id):
     """Create or Update User in cache."""
     if ENABLE_USER_CACHING:
-        user_detail = {"user_id": user_id,
-                       "snyk_api_token": snyk_api_token,
-                       "status": UserStatus.REGISTERED.name}
         try:
             url = _JOB_API_URL + "/create_or_update_user_in_cache"
-            response = requests.request("POST", url,
-                                        data=user_detail)
-            return response.json()
+            requests.request("POST", url,
+                             data=json.dumps({"user_id": user_id}),
+                             headers={"Content-Type": "application/json"})
         except Exception as e:
             logger.exception("Error while caching user with id %s", user_id)
             raise UserException("Error caching user") from e
