@@ -137,7 +137,7 @@ objects:
                 name: jobs
                 key: flask-app-secret-key
           - name: ENABLE_USER_CACHING
-            value: "false"
+            value: "true"
           - name: ENABLE_BOOK_KEEPING_FLOW
             value: "false"
           image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
