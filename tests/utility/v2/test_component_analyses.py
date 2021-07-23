@@ -23,8 +23,8 @@ from operator import itemgetter
 
 from werkzeug.exceptions import BadRequest
 
-from bayesian.utility.v2.component_analyses import validate_version, \
-    ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
+from bayesian.utility.v2.component_analyses import get_known_pkgs, validate_input, \
+    validate_version, ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
     get_batch_ca_data, add_unknown_pkg_info
 
 
@@ -65,6 +65,40 @@ class TestComponentAnalyses(unittest.TestCase):
                          'recommendation': {}}]
         self.assertListEqual(stack_recommendation, ideal_output)
         self.assertSetEqual(unknown_pkgs, set())
+
+    def test_get_known_pkgs_no_cve(self):
+        """Test Known Pkgs, No Cve."""
+        input_pkgs = [{"name": "markdown2", "version": "2.3.2"}]
+        gremlin_batch_data_no_cve = {"result": {"data": []}}
+
+        stack_recommendation = get_known_pkgs(gremlin_batch_data_no_cve, input_pkgs)
+        ideal_output = [{'name': 'markdown2',
+                         'version': '2.3.2',
+                         'vulnerabilities': []}]
+        self.assertListEqual(stack_recommendation, ideal_output)
+
+    def test_get_known_pkgs_with_cve(self):
+        """Test Known Pkgs with Cve(VA)."""
+        input_pkgs = [{"name": "st", "version": "0.2.5"}]
+        batch_data_cve = os.path.join('tests/data/gremlin/va.json')
+        with open(batch_data_cve) as f:
+            gremlin_batch_data_cve = json.load(f)
+
+        stack_recommendation = get_known_pkgs(gremlin_batch_data_cve, input_pkgs)
+        ideal_output = [{'name': 'st',
+                         'version': '0.2.5',
+                         'vulnerabilities': [{
+                             "fixed_in": [
+                                "1.2.2",
+                                "1.2.3",
+                                "1.2.4"
+                             ],
+                             "id": "SNYK-JS-ST-10820",
+                             "severity": "medium",
+                             "title": "Open Redirect",
+                             "url": "https://snyk.io/vuln/SNYK-JS-ST-10820"
+                         }]}]
+        self.assertListEqual(stack_recommendation, ideal_output)
 
     @patch('bayesian.utility.v2.ca_response_builder.g')
     def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1):
@@ -249,6 +283,69 @@ class TestCAInputValidator(unittest.TestCase):
              "given_version": "v3.4.5-alpha1.2+incompatible", "is_pseudo_version": False}
         ]
         result, _ = ca_validate_input(input_json, input_json["ecosystem"])
+        self.assertEqual(result, ideal_result)
+
+
+class TestVAInputValidator(unittest.TestCase):
+    """Test Input Validator."""
+
+    def test_validate_input_exception(self):
+        """Test Va Validate input: Missing Input."""
+        self.assertRaises(BadRequest, validate_input, None, "pypi")
+
+    def test_validate_input_invalid_type(self):
+        """Test Va Validate input: Invalid Input type."""
+        self.assertRaises(BadRequest, validate_input, [""], "pypi")
+
+    def test_validate_input_invalid_ecosystem(self):
+        """Test Va Validate input: Invalid Input type."""
+        self.assertRaises(BadRequest, validate_input, {"test": "test"}, "madam")
+
+    def test_validate_input_no_pkg_version(self):
+        """Test Va Validate input: Invalid Input."""
+        self.assertRaises(BadRequest, validate_input, {"test": "test"}, "pypi")
+
+    def test_validate_input_pkg_missing_details(self):
+        """Test Va Validate input: Package Version Missing Details."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"no_package": "markdown2", "no_version": "2"},
+            ]
+        }
+        self.assertRaises(BadRequest, validate_input, input_json, "pypi")
+
+    def test_validate_input_pkg_invalid_type(self):
+        """Test Va Validate input: Package Type."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"package": {"Test": "Test"}, "version": "2.3.2"},
+            ]
+        }
+        self.assertRaises(BadRequest, validate_input, input_json, "pypi")
+
+    def test_validate_input_pkg_version_invalid_version(self):
+        """Test Va Validate input: Version Invalid version."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"package": "markdown2", "version": "2.*"},
+            ]
+        }
+        ecosystem = "pypi"
+        self.assertRaises(BadRequest, validate_input, input_json, ecosystem)
+
+    def test_validate_input_maven(self):
+        """Test Va Validate input: Ecosystem maven."""
+        input_json = {
+            "ecosystem": "maven",
+            "package_versions": [
+                {"package": "com.thoughtworks.xstream:xstream", "version": "1.3"},
+            ]
+        }
+        ideal_result = [{"name": "com.thoughtworks.xstream:xstream", "version": "1.3"}]
+        result = validate_input(input_json, input_json["ecosystem"])
         self.assertEqual(result, ideal_result)
 
 
