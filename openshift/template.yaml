@@ -137,9 +137,9 @@ objects:
                 name: jobs
                 key: flask-app-secret-key
           - name: ENABLE_USER_CACHING
-            value: "true"
+            value: ${ENABLE_USER_CACHING}
           - name: ENABLE_BOOK_KEEPING_FLOW
-            value: "false"
+            value: ${ENABLE_BOOK_KEEPING_FLOW}
           image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
           name: bayesian-api
           ports:
@@ -305,3 +305,15 @@ parameters:
   required: true
   name: WORKER_COUNT
   value: "2"
+
+- description: "Enable User Caching"
+  displayName: Enable User Caching
+  required: false
+  name: ENABLE_USER_CACHING
+  value: "true"
+
+- description: "Enable Book Keeping Flow"
+  displayName: Enable Book Keeping Flow
+  required: false
+  name: ENABLE_BOOK_KEEPING_FLOW
+  value: "false"
