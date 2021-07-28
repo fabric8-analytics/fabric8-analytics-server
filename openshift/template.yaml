@@ -163,11 +163,11 @@ objects:
             timeoutSeconds: 10
           resources:
             requests:
-              memory: ${{CPU_REQUEST}}
-              cpu: ${{MEMORY_REQUEST}}
+              memory: ${{MEMORY_REQUEST}}
+              cpu: ${{CPU_REQUEST}}
             limits:
-              memory: ${{CPU_LIMIT}}
-              cpu: ${{MEMORY_LIMIT}}
+              memory: ${{MEMORY_LIMIT}}
+              cpu: ${CPU_LIMIT}
         restartPolicy: Always
     test: false
     triggers:
