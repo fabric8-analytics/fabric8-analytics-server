@@ -8,8 +8,6 @@ import logging
 from bayesian.settings import GUNICORN_SETTINGS, log_all_settings
 from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
 
-
-
 workers = GUNICORN_SETTINGS.workers
 worker_class = GUNICORN_SETTINGS.worker_class
 timeout = GUNICORN_SETTINGS.timeout
