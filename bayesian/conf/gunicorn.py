@@ -1,12 +1,11 @@
 """Gunicorn config."""
 # NOTE: Must be before we import or call anything that may be synchronous.
 from gevent import monkey
-
-monkey.patch_all()
-
 import logging
 from bayesian.settings import GUNICORN_SETTINGS, log_all_settings
 from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
+
+monkey.patch_all()
 
 workers = GUNICORN_SETTINGS.workers
 worker_class = GUNICORN_SETTINGS.worker_class
