@@ -8,10 +8,10 @@ amqp==2.6.1
     # via kombu
 aniso8601==8.1.0
     # via flask-restful
-anymarkup-core==0.8.1
-    # via anymarkup
 anymarkup==0.8.1
     # via f8a-worker
+anymarkup-core==0.8.1
+    # via anymarkup
 attrs==20.3.0
     # via jsonschema
 babel==2.9.0
@@ -60,8 +60,6 @@ cryptography==3.4.6
     # via
     #   f8a-utils
     #   fabric8a-auth
-dataclasses==0.8
-    # via pydantic
 deprecated==1.2.11
     # via pygithub
 git+https://github.com/fabric8-analytics/fabric8-analytics-utils.git@f4fef58#egg=f8a_utils
@@ -76,6 +74,22 @@ git+https://github.com/fabric8-analytics/fabric8-analytics-worker.git@c74145b#eg
     # via -r requirements.in
 git+https://github.com/fabric8-analytics/fabric8-analytics-auth.git@5ff9438#egg=fabric8a_auth
     # via -r requirements.in
+flask==0.12.5
+    # via
+    #   -r requirements.in
+    #   fabric8a-auth
+    #   flask-appconfig
+    #   flask-babelex
+    #   flask-cache
+    #   flask-cors
+    #   flask-login
+    #   flask-mail
+    #   flask-principal
+    #   flask-restful
+    #   flask-security
+    #   flask-sqlalchemy
+    #   flask-wtf
+    #   prometheus-flask-exporter
 flask-appconfig==0.11.1
     # via -r requirements.in
 flask-babelex==0.9.4
@@ -98,22 +112,6 @@ flask-sqlalchemy==2.4.4
     # via -r requirements.in
 flask-wtf==0.14.3
     # via flask-security
-flask==0.12.5
-    # via
-    #   -r requirements.in
-    #   fabric8a-auth
-    #   flask-appconfig
-    #   flask-babelex
-    #   flask-cache
-    #   flask-cors
-    #   flask-login
-    #   flask-mail
-    #   flask-principal
-    #   flask-restful
-    #   flask-security
-    #   flask-sqlalchemy
-    #   flask-wtf
-    #   prometheus-flask-exporter
 gevent==21.1.2
     # via -r requirements.in
 git2json==0.2.3
@@ -132,10 +130,6 @@ gunicorn==20.0.4
     # via -r requirements.in
 idna==2.10
     # via requests
-importlib-metadata==3.4.0
-    # via
-    #   jsonschema
-    #   kombu
 itsdangerous==1.1.0
     # via
     #   flask
@@ -182,7 +176,7 @@ py-lru-cache==0.1.4
     # via -r requirements.in
 pycparser==2.20
     # via cffi
-pydantic==1.7.3
+pydantic==1.7.4
     # via -r requirements.in
 pygithub==1.54.1
     # via -r requirements.in
@@ -210,11 +204,6 @@ raven==6.10.0
     # via
     #   -r requirements.in
     #   f8a-worker
-requests-futures==1.0.0
-    # via
-    #   -r requirements.in
-    #   f8a-utils
-    #   f8a-worker
 requests==2.25.1
     # via
     #   -r requirements.in
@@ -223,6 +212,11 @@ requests==2.25.1
     #   fabric8a-auth
     #   pygithub
     #   requests-futures
+requests-futures==1.0.0
+    # via
+    #   -r requirements.in
+    #   f8a-utils
+    #   f8a-worker
 s3transfer==0.3.4
     # via boto3
 selinon==1.0.0
@@ -265,8 +259,6 @@ toml==0.9.4
     # via
     #   anymarkup
     #   f8a-worker
-typing-extensions==3.7.4.3
-    # via importlib-metadata
 urllib3==1.26.4
     # via
     #   botocore
@@ -286,8 +278,6 @@ wtforms==2.3.3
     # via flask-wtf
 xmltodict==0.12.0
     # via anymarkup
-zipp==3.4.0
-    # via importlib-metadata
 zope.event==4.5.0
     # via gevent
 zope.interface==5.2.0
