@@ -163,11 +163,11 @@ objects:
             timeoutSeconds: 10
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: ${{CPU_REQUEST}}
+              cpu: ${{MEMORY_REQUEST}}
             limits:
-              memory: "1024Mi"
-              cpu: "1000m"
+              memory: ${{CPU_LIMIT}}
+              cpu: ${{MEMORY_LIMIT}}
         restartPolicy: Always
     test: false
     triggers:
@@ -245,6 +245,30 @@ parameters:
   required: true
   name: REPLICAS
   value: "1"
+
+- description: Request Number of CPU cores required by each replica
+  displayName: Request CPU cores
+  required: true
+  name: CPU_REQUEST
+  value: "500m"
+
+- description: Limit Number of CPU cores required by each replica
+  displayName: Limit CPU cores
+  required: true
+  name: CPU_LIMIT
+  value: "3"
+
+- description: Request Memory Required by each replica
+  displayName: Request Memory
+  required: true
+  name: MEMORY_REQUEST
+  value: "512Mi"
+
+- description: Limit Memory Required by each replica
+  displayName: Limit Memory
+  required: true
+  name: MEMORY_LIMIT
+  value: "5Gi"
 
 - description: Batch size for component analysis gremlin query
   displayName: Batch size for component analysis gremlin query
