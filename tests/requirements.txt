@@ -16,10 +16,6 @@ flask==0.12.5
     # via pytest-flask
 future==0.18.2
     # via radon
-importlib-metadata==3.1.0
-    # via
-    #   pluggy
-    #   pytest
 iniconfig==1.1.1
     # via pytest
 itsdangerous==1.1.0
@@ -34,19 +30,19 @@ packaging==20.4
     # via pytest
 pluggy==0.13.1
     # via pytest
-py==1.9.0
+py==1.10.0
     # via pytest
 pyparsing==2.4.7
     # via packaging
-pytest-cov==2.10.1
-    # via -r requirements.in
-pytest-flask==1.1.0
-    # via -r requirements.in
 pytest==6.1.2
     # via
     #   -r requirements.in
     #   pytest-cov
     #   pytest-flask
+pytest-cov==2.10.1
+    # via -r requirements.in
+pytest-flask==1.1.0
+    # via -r requirements.in
 radon==4.3.2
     # via -r requirements.in
 six==1.15.0
@@ -59,5 +55,3 @@ werkzeug==0.16.1
     # via
     #   flask
     #   pytest-flask
-zipp==3.4.0
-    # via importlib-metadata
