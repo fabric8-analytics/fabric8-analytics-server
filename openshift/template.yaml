@@ -256,7 +256,7 @@ parameters:
   displayName: Limit CPU cores
   required: true
   name: CPU_LIMIT
-  value: "3"
+  value: "1"
 
 - description: Request Memory Required by each replica
   displayName: Request Memory
@@ -268,7 +268,7 @@ parameters:
   displayName: Limit Memory
   required: true
   name: MEMORY_LIMIT
-  value: "5Gi"
+  value: "1Gi"
 
 - description: Batch size for component analysis gremlin query
   displayName: Batch size for component analysis gremlin query
