@@ -127,11 +127,8 @@ objects:
               secretKeyRef:
                 name: 3scale
                 key: three_scale_premium_user_key
-          - name: PREMIUM_URL
-            valueFrom:
-              secretKeyRef:
-                name: url
-                key: premium_url
+          - name:  PREMIUM_URL
+            value: ${PREMIUM_URL}
           - name: STACK_ANALYSIS_REQUEST_TIMEOUT
             value: ${STACK_ANALYSIS_REQUEST_TIMEOUT}
           - name: FLASK_LOGGING_LEVEL
@@ -346,3 +343,9 @@ parameters:
   required: false
   name: ENABLE_BOOK_KEEPING_FLOW
   value: "false"
+
+- description: "Get Premium url"
+  displayName: Premium url
+  required: false
+  name: PREMIUM_URL
+  value: "https://f8a-analytics-preview-2445582058137.production.gw.apicast.io/api/v2/"
