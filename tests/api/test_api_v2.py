@@ -191,6 +191,9 @@ class TestGetTokenApi(unittest.TestCase):
         """Test success get token request."""
         response = self.client.get(api_route_for('/get-token'))
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.body)
+        self.assertIn("key", response.body.keys())
+        self.assertIn("url", response.body.keys())
 
     def test_get_token_request_invalid_url(self):
         """Test get token request data with return as 404 error."""
