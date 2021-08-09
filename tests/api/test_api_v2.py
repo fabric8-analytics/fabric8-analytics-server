@@ -191,10 +191,8 @@ class TestGetTokenApi(unittest.TestCase):
         """Test success get token request."""
         response = self.client.get(api_route_for('/get-token'))
         self.assertEqual(response.status_code, 200)
-        if 'key' not in response.json():
-            self.assertTrue(False, "Mssing key in response")
-        if 'url' not in response.json():
-            self.assertTrue(False, "Mssing key in response")
+        assert "key" in response.json
+        assert "url" in response.json
 
     def test_get_token_request_invalid_url(self):
         """Test get token request data with return as 404 error."""
