@@ -12,14 +12,14 @@ paths:
     get:
       tags:
         - 3-Scale token
-      summary: Get 3-scale token with higher rate limit.
+      summary: Get 3-scale token and url with higher rate limit.
       responses:
         200:
-          description: Hihger rate 3-scale key
+          description: Hihger rate 3-scale key and url
           content:
             application/json:
               schema:
-                type: string
+                type: object
                 items:
                   anyOf:
                     - $ref: '#/components/schemas/Higher-rate-3scale'
@@ -162,6 +162,7 @@ components:
   examples:
     higher-rate-3scale:
       value:
+        - url: "https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2/"
         - key: "7e42fa66f65124e6b1266a23431e3d07"
           
     free-user-batch:
@@ -229,6 +230,9 @@ components:
       title: Get higher rate 3-scale token
       type: object
       properties :
+        url:
+          type: string
+          example: "https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2/"
         key:
           type: string
           example: "7e42fa66f65124e6b1266a23431e3d07"
