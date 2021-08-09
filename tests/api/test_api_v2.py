@@ -191,7 +191,6 @@ class TestGetTokenApi(unittest.TestCase):
         """Test success get token request."""
         response = self.client.get(api_route_for('/get-token'))
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json())
         self.assertIn("key", response.json().keys())
         self.assertIn("url", response.json().keys())
 
