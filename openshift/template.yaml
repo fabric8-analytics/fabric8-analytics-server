@@ -127,6 +127,11 @@ objects:
               secretKeyRef:
                 name: 3scale
                 key: three_scale_premium_user_key
+          - name: PREMIUM_URL
++              valueFrom:
++                secretKeyRef:
++                  name: url
++                  key: premium_url
           - name: STACK_ANALYSIS_REQUEST_TIMEOUT
             value: ${STACK_ANALYSIS_REQUEST_TIMEOUT}
           - name: FLASK_LOGGING_LEVEL

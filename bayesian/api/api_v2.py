@@ -68,7 +68,8 @@ def get_token():
     try:
         # return default key
         THREESCALE_PREMIUM_USER_KEY = os.getenv('THREESCALE_PREMIUM_USER_KEY')
-        return jsonify({"key": THREESCALE_PREMIUM_USER_KEY}), 200
+        PREMIUM_URL = os.getenv('PREMIUM_URL')
+        return jsonify({"url": PREMIUM_URL, "key": THREESCALE_PREMIUM_USER_KEY}), 200
     except BadRequest as br:
         logger.error(br)
         raise HTTPError(400, str(br)) from br
