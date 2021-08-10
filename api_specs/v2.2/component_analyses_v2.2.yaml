@@ -89,6 +89,9 @@ paths:
         401:
           description: Request unauthorized
           content: {}
+        403:
+          description: Authentication failed
+          content: {}
         404:
           description: Endpoint not found
           content: {}
