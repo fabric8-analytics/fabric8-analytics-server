@@ -21,4 +21,3 @@ BAYESIAN_API_HOSTNAME="recommender.api.example.com" ./deploy.sh
 ```
 
 If not provided, a random hostname will be assigned by OpenShift.
- 
