@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         scripts:
-        #  - run-linter
+          - run-linter
           - check-docstyle
           - detect-dead-code
           - detect-common-errors
