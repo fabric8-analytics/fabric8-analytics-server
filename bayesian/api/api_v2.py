@@ -212,7 +212,7 @@ def stack_analyses_with_request_id(external_request_id):
     start = time.time()
     logger.debug("[GET] /stack-analyses/%s", external_request_id)
     # Revert after RDS upgrade.
-    if True == True:
+    if 1 == 1:
         data = {
                 "uuid": "",
                 "registration_status": "",
@@ -239,8 +239,7 @@ def stack_analyses_with_request_id(external_request_id):
                 ]
                 },
                 "recommendation": {
-                "companion": [
-                    
+                "companion": [ 
                 ],
                 "manifest_file_path": "pom.xml",
                 "usage_outliers": [
@@ -289,7 +288,7 @@ def stack_analyses():
         raise HTTPError(400, error="Request id missing")
 
     # Revert after RDS upgrade.
-    if True == True:
+    if 1 == 1:
         return jsonify(message='We are under scheduled mantainence', status=400), 400
 
     sa_post_request = None
