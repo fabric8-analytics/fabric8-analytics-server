@@ -211,6 +211,12 @@ def stack_analyses_with_request_id(external_request_id):
     """Handle stack analyses report fetch api."""
     start = time.time()
     logger.debug("[GET] /stack-analyses/%s", external_request_id)
+    # Revert after RDS upgrade.
+    if True == True:
+        recommendation_data = os.path.join('tests/data/response/sa_response.json')
+        with open(recommendation_data) as f:
+                response_data = json.load(f)
+        return jsonify(response_data)
 
     # 1. Build response builder with id and RDB object.
     sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
@@ -247,6 +253,10 @@ def stack_analyses():
     start = time.time()
     if request.method == 'GET':
         raise HTTPError(400, error="Request id missing")
+
+    # Revert after RDS upgrade.
+    if True == True:
+        return jsonify(message='User ID should be present', status=400), 400
 
     sa_post_request = None
     try:
