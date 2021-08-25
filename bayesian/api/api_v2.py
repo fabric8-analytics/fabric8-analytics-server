@@ -213,10 +213,44 @@ def stack_analyses_with_request_id(external_request_id):
     logger.debug("[GET] /stack-analyses/%s", external_request_id)
     # Revert after RDS upgrade.
     if True == True:
-        recommendation_data = os.path.join('tests/data/response/sa_response.json')
-        with open(recommendation_data) as f:
-                response_data = json.load(f)
-        return jsonify(response_data)
+        data = {
+                "uuid": "",
+                "registration_status": "",
+                "manifest_file_path": "",
+                "manifest_name": "",
+                "ecosystem": "",
+                "unknown_dependencies": [],
+                "license_analysis": {
+                "reason": "",
+                "status": "We are under maintainence",
+                "recommended_licenses": [
+                    "string"
+                ],
+                "outlier_packages": [
+                    {}
+                ],
+                "conflict_packages": [
+                ],
+                "current_stack_license": {},
+                "unknown_licenses": {
+                },
+                "distinct_licenses": [
+                    "string"
+                ]
+                },
+                "recommendation": {
+                "companion": [
+                    
+                ],
+                "manifest_file_path": "pom.xml",
+                "usage_outliers": [
+                    {}
+                ]
+                },
+                "analyzed_dependencies": [
+                ]
+            }
+        return jsonify(data)
 
     # 1. Build response builder with id and RDB object.
     sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
@@ -256,7 +290,7 @@ def stack_analyses():
 
     # Revert after RDS upgrade.
     if True == True:
-        return jsonify(message='User ID should be present', status=400), 400
+        return jsonify(message='We are under scheduled mantainence', status=400), 400
 
     sa_post_request = None
     try:
