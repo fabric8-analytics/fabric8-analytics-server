@@ -215,8 +215,6 @@ def stack_analyses_with_request_id(external_request_id):
     if 1 == 1:
         data = {
                 "uuid": "",
-                "external_request_id": "6321fad0a7994740a036f04aa3c7ab82",
-                "ended_at": "2021-08-25T15:08:31.568370",
                 "registration_status": "",
                 "manifest_file_path": "",
                 "manifest_name": "",
