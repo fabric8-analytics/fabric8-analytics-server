@@ -49,11 +49,6 @@ def create_or_update_user():
 
     user_id = content.get('user_id')
 
-    # Needs to be reverted after rds upgrade
-    if 1 == 1:
-        return jsonify(
-            message='We are undergoing scheduled maintainenece.', status=400), 400
-
     if not user_id:
         return jsonify(message='User ID should be present', status=400), 400
 
