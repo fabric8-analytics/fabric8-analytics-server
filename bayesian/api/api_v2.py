@@ -211,47 +211,6 @@ def stack_analyses_with_request_id(external_request_id):
     """Handle stack analyses report fetch api."""
     start = time.time()
     logger.debug("[GET] /stack-analyses/%s", external_request_id)
-    # Revert after RDS upgrade.
-    if 1 == 1:
-        data = {
-                "uuid": "",
-                "external_request_id": "6321fad0a7994740a036f04aa3c7ab82",
-                "ended_at": "2021-08-25T15:08:31.568370",
-                "registration_status": "",
-                "manifest_file_path": "",
-                "manifest_name": "",
-                "ecosystem": "",
-                "unknown_dependencies": [],
-                "license_analysis": {
-                "reason": "",
-                "status": "We are under maintainence",
-                "recommended_licenses": [
-                    "string"
-                ],
-                "outlier_packages": [
-                    {}
-                ],
-                "conflict_packages": [
-                ],
-                "current_stack_license": {},
-                "unknown_licenses": {
-                },
-                "distinct_licenses": [
-                    "string"
-                ]
-                },
-                "recommendation": {
-                "companion": [ 
-                ],
-                "manifest_file_path": "pom.xml",
-                "usage_outliers": [
-                    {}
-                ]
-                },
-                "analyzed_dependencies": [
-                ]
-            }
-        return jsonify(data)
 
     # 1. Build response builder with id and RDB object.
     sa_response_builder = StackAnalysesResponseBuilder(external_request_id,
@@ -288,13 +247,6 @@ def stack_analyses():
     start = time.time()
     if request.method == 'GET':
         raise HTTPError(400, error="Request id missing")
-
-    # Revert after RDS upgrade.
-    if 1 == 1:
-        return jsonify({"id": "dcba16a411ab42a4861d2e1e14b4ebbc",
-                        "status": "success",
-                        "submitted_at": "2021-08-25 13:57:01.560070"
-        }), 200
 
     sa_post_request = None
     try:
