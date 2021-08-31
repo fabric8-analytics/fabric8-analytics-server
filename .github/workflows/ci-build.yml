@@ -24,8 +24,8 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.6'
-   # - name: ${{ matrix.scripts }}
-   #   run: bash qa/${{ matrix.scripts }}.sh;
+    - name: ${{ matrix.scripts }}
+      run: bash qa/${{ matrix.scripts }}.sh;
   Unit-Tests:
     runs-on: ubuntu-latest
     steps:
