@@ -348,4 +348,4 @@ parameters:
   displayName: Premium url
   required: false
   name: PREMIUM_URL
-  value: "https://gw.api.openshift.io/api/v2"
+  value: "https://gw.api.openshift.io/api/v2/"
