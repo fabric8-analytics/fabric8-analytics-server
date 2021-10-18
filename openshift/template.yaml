@@ -25,8 +25,10 @@ objects:
         - env:
           - name: BAYESIAN_COMPONENT_TAGGED_COUNT
             value: "2"
-          - name: COMPONENT_ANALYSES_LIMIT
-            value: ${COMPONENT_ANALYSES_LIMIT}
+          - name: COMPONENT_ANALYSES_CONCURRENCY_LIMIT
+            value: ${COMPONENT_ANALYSES_CONCURRENCY_LIMIT}
+          - name: COMPONENT_ANALYSES_BATCH_SIZE
+            value: ${COMPONENT_ANALYSES_BATCH_SIZE}
           - name: DEPLOYMENT_PREFIX
             valueFrom:
               configMapKeyRef:
@@ -36,14 +38,22 @@ objects:
             value: "api"
           - name: F8_API_BACKBONE_HOST
             value: "http://f8a-server-backbone:5000"
-          - name: METRICS_ACCUMULATOR_HOST
-            value: ${METRICS_ACCUMULATOR_HOST}
-          - name: METRICS_ACCUMULATOR_PORT
-            value: ${METRICS_ACCUMULATOR_PORT}
           - name: FUTURES_SESSION_WORKER_COUNT
             value: "100"
           - name: PGBOUNCER_SERVICE_HOST
             value: bayesian-pgbouncer
+          - name: WORKER_COUNT
+            value: ${WORKER_COUNT}
+          - name: WORKER_CLASS
+            value: ${WORKER_CLASS}
+          - name: WORKER_TIMEOUT
+            value: ${WORKER_TIMEOUT}
+          - name: WORKER_PRELOAD
+            value: "True"
+          - name: METRICS_PORT
+            value: ${METRICS_PORT}
+          - name: WORKER_CONNECTIONS
+            value: ${WORKER_CONNECTIONS}
           - name: OSIO_AUTH_URL
             valueFrom:
               configMapKeyRef:
@@ -66,12 +76,12 @@ objects:
               secretKeyRef:
                 name: worker
                 key: sentry_dsn
-          - name: INVOKE_API_WORKERS
-            value: "1"
-          - name: DISABLE_UNKNOWN_PACKAGE_FLOW
-            value: ${DISABLE_UNKNOWN_PACKAGE_FLOW}
           - name: SHOW_TRANSITIVE_REPORT
             value: ${SHOW_TRANSITIVE_REPORT}
+          - name: STACK_REPORT_UI_HOSTNAME
+            value: ${STACK_REPORT_UI_HOSTNAME}
+          - name: THREESCALE_API_URL
+            value: ${THREESCALE_API_URL}
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
@@ -107,10 +117,31 @@ objects:
               secretKeyRef:
                 name: 3scale
                 key: three_scale_account_secret
+          - name:  THREESCALE_USER_KEY
+            valueFrom:
+              secretKeyRef:
+                name: 3scale
+                key: three_scale_user_key
+          - name:  THREESCALE_PREMIUM_USER_KEY
+            valueFrom:
+              secretKeyRef:
+                name: 3scale
+                key: three_scale_premium_user_key
+          - name:  PREMIUM_URL
+            value: ${PREMIUM_URL}
           - name: STACK_ANALYSIS_REQUEST_TIMEOUT
             value: ${STACK_ANALYSIS_REQUEST_TIMEOUT}
           - name: FLASK_LOGGING_LEVEL
             value: ${FLASK_LOGGING_LEVEL}
+          - name: APP_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: jobs
+                key: flask-app-secret-key
+          - name: ENABLE_USER_CACHING
+            value: ${ENABLE_USER_CACHING}
+          - name: ENABLE_BOOK_KEEPING_FLOW
+            value: ${ENABLE_BOOK_KEEPING_FLOW}
           image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
           name: bayesian-api
           ports:
@@ -134,11 +165,11 @@ objects:
             timeoutSeconds: 10
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: ${{MEMORY_REQUEST}}
+              cpu: ${{CPU_REQUEST}}
             limits:
-              memory: "1024Mi"
-              cpu: "1000m"
+              memory: ${{MEMORY_LIMIT}}
+              cpu: ${CPU_LIMIT}
         restartPolicy: Always
     test: false
     triggers:
@@ -149,6 +180,7 @@ objects:
   metadata:
     labels:
       service: bayesian-api
+      monitoring: enabled
     name: bayesian-api
   spec:
     ports:
@@ -156,6 +188,10 @@ objects:
       port: 32000
       protocol: TCP
       targetPort: 5000
+    - name: metrics
+      port: 32500
+      protocol: TCP
+      targetPort: ${{METRICS_PORT}}
     selector:
       service: bayesian-api
 - apiVersion: v1
@@ -163,6 +199,8 @@ objects:
   metadata:
     name: bayesian-api
   spec:
+    port:
+      targetPort: "32000"
     host: ${BAYESIAN_API_HOSTNAME}
     to:
       kind: Service
@@ -173,6 +211,18 @@ parameters:
   displayName: Bayesian API hostname
   required: false
   name: BAYESIAN_API_HOSTNAME
+
+- description: A 3 scale routed API Host URL(will be of Prod if empty)
+  displayName: CRDA API Server URL
+  required: true
+  name: THREESCALE_API_URL
+  value: "https://f8a-analytics-2445582058137.production.gw.apicast.io/"
+
+- description: Stack Report UI (will be of Prod, if empty)
+  displayName: Stack Report UI
+  required: false
+  name: STACK_REPORT_UI_HOSTNAME
+  value: "https://stack-analytics-report.openshift.io"
 
 - description: Docker registry where the image is
   displayName: Docker registry
@@ -198,11 +248,41 @@ parameters:
   name: REPLICAS
   value: "1"
 
-- description: Number of dependencies allowed in one component analyses call
-  displayName: Number of dependencies allowed in one component analyses call
+- description: Request Number of CPU cores required by each replica
+  displayName: Request CPU cores
   required: true
-  name: COMPONENT_ANALYSES_LIMIT
+  name: CPU_REQUEST
+  value: "500m"
+
+- description: Limit Number of CPU cores required by each replica
+  displayName: Limit CPU cores
+  required: true
+  name: CPU_LIMIT
+  value: "1"
+
+- description: Request Memory Required by each replica
+  displayName: Request Memory
+  required: true
+  name: MEMORY_REQUEST
+  value: "512Mi"
+
+- description: Limit Memory Required by each replica
+  displayName: Limit Memory
+  required: true
+  name: MEMORY_LIMIT
+  value: "1Gi"
+
+- description: Batch size for component analysis gremlin query
+  displayName: Batch size for component analysis gremlin query
+  required: true
+  name: COMPONENT_ANALYSES_BATCH_SIZE
   value: "10"
+
+- description: Number of concurrent component analysis query to be executed
+  displayName: Number of concurrent component analysis query to be executed
+  required: true
+  name: COMPONENT_ANALYSES_CONCURRENCY_LIMIT
+  value: "2"
 
 - description: "Flask logging level (see: https://docs.python.org/3/library/logging.html#levels)"
   displayName: Flask logging level
@@ -210,32 +290,62 @@ parameters:
   name: FLASK_LOGGING_LEVEL
   value: "WARNING"
 
-- description: Flag to enable or disable the unknown package ingetion flow
-  displayName: DISABLE UNKNOWN PACKAGE FLOW
-  required: false
-  name: DISABLE_UNKNOWN_PACKAGE_FLOW
-  value: "0"
-
 - description: Flag to enable or disable the transitive report from stack report
   displayName: SHOW TRANSITIVE REPORT
   required: true
   name: SHOW_TRANSITIVE_REPORT
   value: "false"
 
-- description: Metrics accumulator service host
-  displayName: METRICS ACCUMULATOR HOST
+- description: Prometheus metrics endpoint port
+  displayName: Prometheus metrics endpoint port
   required: true
-  name: METRICS_ACCUMULATOR_HOST
-  value: "metrics-accumulator"
-
-- description: Metrics accumulator service port
-  displayName: METRICS ACCUMULATOR PORT
-  required: true
-  name: METRICS_ACCUMULATOR_PORT
-  value: "5200"
+  name: METRICS_PORT
+  value: "8000"
 
 - description: Stack analysis request timeout
   displayName: STACK_ANALYSIS_REQUEST_TIMEOUT
   required: true
   name: STACK_ANALYSIS_REQUEST_TIMEOUT
   value: "120"
+
+- description: Gevent Worker Timeout
+  displayName: Gevent Worker Timeout
+  required: true
+  name: WORKER_TIMEOUT
+  value: "120"
+
+- description: Gevent Worker connections
+  displayName: Gevent Worker connections
+  required: true
+  name: WORKER_CONNECTIONS
+  value: "1024"
+
+- description: Gevent Worker class
+  displayName: Gevent Worker class
+  required: true
+  name: WORKER_CLASS
+  value: "gevent"
+
+- description: Gevent Worker Count
+  displayName: Gevent Worker Count
+  required: true
+  name: WORKER_COUNT
+  value: "2"
+
+- description: "Enable User Caching"
+  displayName: Enable User Caching
+  required: false
+  name: ENABLE_USER_CACHING
+  value: "true"
+
+- description: "Enable Book Keeping Flow"
+  displayName: Enable Book Keeping Flow
+  required: false
+  name: ENABLE_BOOK_KEEPING_FLOW
+  value: "false"
+
+- description: "Get Premium url"
+  displayName: Premium url
+  required: false
+  name: PREMIUM_URL
+  value: "https://gw.api.openshift.io/api/v2/"

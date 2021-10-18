@@ -26,7 +26,9 @@ def get_user(user_id):
     user = user_utils.get_user(user_id)
     if user:
         user_status = user.status if user.status else UserStatus.FREETIER.name
-    return jsonify(user_id=user_id, status=user_status)
+        return jsonify(user_id=user_id, status=user_status)
+    else:
+        return jsonify(message='User not found', status=404), 404
 
 
 @user_api.route('', methods=['POST'])
@@ -59,6 +61,8 @@ def create_or_update_user():
 
     encrypted_api_token = encrypt_api_token(snyk_api_token)
     user_utils.create_or_update_user(user_id, encrypted_api_token.decode(), "SNYK")
+    # Update user in Cache to avoid RDS calls
+    user_utils.create_or_update_user_in_cache(user_id)
     return jsonify(user_id=user_id)
 
 

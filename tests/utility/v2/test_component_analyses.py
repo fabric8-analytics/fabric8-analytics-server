@@ -23,8 +23,8 @@ from operator import itemgetter
 
 from werkzeug.exceptions import BadRequest
 
-from bayesian.utility.v2.component_analyses import validate_version, \
-    known_package_flow, ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
+from bayesian.utility.v2.component_analyses import get_known_pkgs, validate_input, \
+    validate_version, ca_validate_input, get_known_unknown_pkgs, normlize_packages, \
     get_batch_ca_data, add_unknown_pkg_info
 
 
@@ -34,7 +34,7 @@ class TestComponentAnalyses(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         """Init Test class."""
-        batch_data_no_cve = os.path.join('/bayesian/tests/data/gremlin/batch_data_no_cve.json')
+        batch_data_no_cve = os.path.join('tests/data/gremlin/batch_data_no_cve.json')
 
         with open(batch_data_no_cve) as f:
             cls.gremlin_batch_data_no_cve = json.load(f)
@@ -49,21 +49,11 @@ class TestComponentAnalyses(unittest.TestCase):
         result = validate_version("1.*")
         self.assertFalse(result)
 
-    @patch('bayesian.utility.v2.component_analyses.g')
-    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
-    def test_known_package_flow(self, _mock1, _mock2):
-        """Test get package version."""
-        _mock1.return_value = True
-        result = known_package_flow('pypi', "django", "1.1")
-        self.assertTrue(result)
-
-    @patch('bayesian.utility.v2.component_analyses.g')
-    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
-    def test_get_known_unknown_pkgs_no_cve(self, _mock1, _mock2):
+    def test_get_known_unknown_pkgs_no_cve(self):
         """Test Known Unknown Pkgs, No Cve."""
         normalised_input_pkgs = [normlize_packages("markdown2", "markdown2",
                                                    "2.3.2", "2.3.2", False)]
-        batch_data_no_cve = os.path.join('/bayesian/tests/data/gremlin/batch_data_no_cve.json')
+        batch_data_no_cve = os.path.join('tests/data/gremlin/batch_data_no_cve.json')
         with open(batch_data_no_cve) as f:
             gremlin_batch_data_no_cve = json.load(f)
 
@@ -76,21 +66,53 @@ class TestComponentAnalyses(unittest.TestCase):
         self.assertListEqual(stack_recommendation, ideal_output)
         self.assertSetEqual(unknown_pkgs, set())
 
+    def test_get_known_pkgs_no_cve(self):
+        """Test Known Pkgs, No Cve."""
+        input_pkgs = [{"name": "markdown2", "version": "2.3.2"}]
+        gremlin_batch_data_no_cve = {"result": {"data": []}}
+
+        stack_recommendation = get_known_pkgs(gremlin_batch_data_no_cve, input_pkgs)
+        ideal_output = [{'name': 'markdown2',
+                         'version': '2.3.2',
+                         'vulnerabilities': []}]
+        self.assertListEqual(stack_recommendation, ideal_output)
+
+    def test_get_known_pkgs_with_cve(self):
+        """Test Known Pkgs with Cve(VA)."""
+        input_pkgs = [{"name": "st", "version": "0.2.5"}]
+        batch_data_cve = os.path.join('tests/data/gremlin/va.json')
+        with open(batch_data_cve) as f:
+            gremlin_batch_data_cve = json.load(f)
+
+        stack_recommendation = get_known_pkgs(gremlin_batch_data_cve, input_pkgs)
+        ideal_output = [{'name': 'st',
+                         'version': '0.2.5',
+                         'vulnerabilities': [{
+                             "fixed_in": [
+                                "1.2.2",
+                                "1.2.3",
+                                "1.2.4"
+                             ],
+                             "id": "SNYK-JS-ST-10820",
+                             "severity": "medium",
+                             "title": "Open Redirect",
+                             "url": "https://snyk.io/vuln/SNYK-JS-ST-10820"
+                         }]}]
+        self.assertListEqual(stack_recommendation, ideal_output)
+
     @patch('bayesian.utility.v2.ca_response_builder.g')
-    @patch('bayesian.utility.v2.component_analyses.g')
-    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
-    def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1, _mock2, _mock3):
+    def test_get_known_unknown_pkgs_with_and_without_cve(self, _mock1):
         """Test Known Unknown Pkgs, with and Without CVE."""
         input_pkgs = [("flask", "flask", "1.1.1", "1.1.1"), ("django", "django", "1.1.1", "1.1.1")]
         normalised_input_pkgs = [normlize_packages(pkg, gvn_pkg, vr, gvn_vr, False)
                                  for pkg, gvn_pkg, vr, gvn_vr in input_pkgs]
         batch_data_no_cve = os.path.join(
-            '/bayesian/tests/data/gremlin/batch_data_with_n_without_cve.json')
+            'tests/data/gremlin/batch_data_with_n_without_cve.json')
         with open(batch_data_no_cve) as f:
             data_with_n_without_cve = json.load(f)
 
         ideal_resp = os.path.join(
-            '/bayesian/tests/data/response/ca_batch_with_n_without_vul.json')
+            'tests/data/response/ca_batch_with_n_without_vul.json')
         with open(ideal_resp) as f:
             ideal_output = json.load(f)
 
@@ -101,9 +123,7 @@ class TestComponentAnalyses(unittest.TestCase):
         self.assertSetEqual(unknown_pkgs, set())
 
     @patch('bayesian.utility.v2.ca_response_builder.g')
-    @patch('bayesian.utility.v2.component_analyses.g')
-    @patch('bayesian.utility.v2.component_analyses.server_create_component_bookkeeping')
-    def test_get_known_unknown_pkgs_with_and_without_cve_golang(self, _mock1, _mock2, _mock3):
+    def test_get_known_unknown_pkgs_with_and_without_cve_golang(self, _mock1):
         """Test Known Unknown Pkgs, with and Without CVE for golang."""
         input_pkgs = [('github.com/hashicorp/nomad', 'github.com/hashicorp/nomad',
                        '0.7.1', 'v0.7.1', False),
@@ -114,12 +134,12 @@ class TestComponentAnalyses(unittest.TestCase):
         normalised_input_pkgs = [normlize_packages(pkg, gvn_pkg, vr, gvn_vr, isp)
                                  for pkg, gvn_pkg, vr, gvn_vr, isp in input_pkgs]
         batch_data_no_cve = os.path.join(
-            '/bayesian/tests/data/gremlin/batch_data_with_n_without_cve_golang.json')
+            'tests/data/gremlin/batch_data_with_n_without_cve_golang.json')
         with open(batch_data_no_cve) as f:
             data_with_n_without_cve = json.load(f)
 
         ideal_resp = os.path.join(
-            '/bayesian/tests/data/response/ca_batch_with_n_without_vul_golang.json')
+            'tests/data/response/ca_batch_with_n_without_vul_golang.json')
         with open(ideal_resp) as f:
             ideal_output = json.load(f)
 
@@ -142,29 +162,29 @@ class TestComponentAnalyses(unittest.TestCase):
 
         stack_recommendation = [
             {
-                "name": "github.com/existing/package",
+                "package": "github.com/existing/package",
                 "version": "v3.4.0",
                 "package_unknown": False
             }
         ]
         ideal_output = [
             {
-                "name": "github.com/existing/package",
+                "package": "github.com/existing/package",
                 "version": "v3.4.0",
                 "package_unknown": False
             }, {
-                "name": "github.com/hashicorp/nomad",
+                "package": "github.com/hashicorp/nomad",
                 "version": "v0.7.1",
                 "package_unknown": True
             }, {
-                "name": "code.cloudfoundry.org/gorouter/route@code.cloudfoundry.org/gorouter",
+                "package": "code.cloudfoundry.org/gorouter/route@code.cloudfoundry.org/gorouter",
                 "version": "v0.0.0-20170410000936-a663fba25f7a",
                 "package_unknown": True
             }
         ]
         stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
-        self.assertListEqual(sorted(stack_recommendation, key=itemgetter('name')),
-                             sorted(ideal_output, key=itemgetter('name')))
+        self.assertListEqual(sorted(stack_recommendation, key=itemgetter('package')),
+                             sorted(ideal_output, key=itemgetter('package')))
 
 
 class TestCAInputValidator(unittest.TestCase):
@@ -266,13 +286,76 @@ class TestCAInputValidator(unittest.TestCase):
         self.assertEqual(result, ideal_result)
 
 
+class TestVAInputValidator(unittest.TestCase):
+    """Test Input Validator."""
+
+    def test_validate_input_exception(self):
+        """Test Va Validate input: Missing Input."""
+        self.assertRaises(BadRequest, validate_input, None, "pypi")
+
+    def test_validate_input_invalid_type(self):
+        """Test Va Validate input: Invalid Input type."""
+        self.assertRaises(BadRequest, validate_input, [""], "pypi")
+
+    def test_validate_input_invalid_ecosystem(self):
+        """Test Va Validate input: Invalid Input type."""
+        self.assertRaises(BadRequest, validate_input, {"test": "test"}, "madam")
+
+    def test_validate_input_no_pkg_version(self):
+        """Test Va Validate input: Invalid Input."""
+        self.assertRaises(BadRequest, validate_input, {"test": "test"}, "pypi")
+
+    def test_validate_input_pkg_missing_details(self):
+        """Test Va Validate input: Package Version Missing Details."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"no_package": "markdown2", "no_version": "2"},
+            ]
+        }
+        self.assertRaises(BadRequest, validate_input, input_json, "pypi")
+
+    def test_validate_input_pkg_invalid_type(self):
+        """Test Va Validate input: Package Type."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"package": {"Test": "Test"}, "version": "2.3.2"},
+            ]
+        }
+        self.assertRaises(BadRequest, validate_input, input_json, "pypi")
+
+    def test_validate_input_pkg_version_invalid_version(self):
+        """Test Va Validate input: Version Invalid version."""
+        input_json = {
+            "ecosystem": "pypi",
+            "package_versions": [
+                {"package": "markdown2", "version": "2.*"},
+            ]
+        }
+        ecosystem = "pypi"
+        self.assertRaises(BadRequest, validate_input, input_json, ecosystem)
+
+    def test_validate_input_maven(self):
+        """Test Va Validate input: Ecosystem maven."""
+        input_json = {
+            "ecosystem": "maven",
+            "package_versions": [
+                {"package": "com.thoughtworks.xstream:xstream", "version": "1.3"},
+            ]
+        }
+        ideal_result = [{"name": "com.thoughtworks.xstream:xstream", "version": "1.3"}]
+        result = validate_input(input_json, input_json["ecosystem"])
+        self.assertEqual(result, ideal_result)
+
+
 class TestGetBatchCAData(unittest.TestCase):
     """Test get CA batch data."""
 
     @classmethod
     def setUpClass(cls):
         """Intialize data."""
-        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
+        gremlin_batch_data = os.path.join('tests/data/gremlin/gremlin_batch_data.json')
 
         with open(gremlin_batch_data) as f:
             cls.gremlin_batch = json.load(f)
@@ -281,7 +364,7 @@ class TestGetBatchCAData(unittest.TestCase):
         """Test Ca batch data."""
         result = get_batch_ca_data('golang', [])
         self.assertIsInstance(result, dict)
-        self.assertEqual(result, {})
+        self.assertEqual(result, {"result": {"data": []}})
 
     @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.get_batch_ca_data')
     def test_get_batch_ca_data_semver(self, _mockca):
@@ -297,10 +380,6 @@ class TestGetBatchCAData(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertIn('result', result)
         self.assertIsInstance(result.get('result'), dict)
-        self.assertIn('requestId', result)
-        self.assertIsInstance(result.get('requestId'), str)
-        self.assertIn('status', result)
-        self.assertIsInstance(result.get('status'), dict)
 
     @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.'
            'get_batch_ca_data_for_pseudo_version')
@@ -317,10 +396,6 @@ class TestGetBatchCAData(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertIn('result', result)
         self.assertIsInstance(result.get('result'), dict)
-        self.assertIn('requestId', result)
-        self.assertIsInstance(result.get('requestId'), str)
-        self.assertIn('status', result)
-        self.assertIsInstance(result.get('status'), dict)
 
     @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.get_batch_ca_data')
     @patch('bayesian.utility.v2.component_analyses.GraphAnalyses.'
@@ -347,7 +422,3 @@ class TestGetBatchCAData(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertIn('result', result)
         self.assertIsInstance(result.get('result'), dict)
-        self.assertIn('requestId', result)
-        self.assertIsInstance(result.get('requestId'), str)
-        self.assertIn('status', result)
-        self.assertIsInstance(result.get('status'), dict)

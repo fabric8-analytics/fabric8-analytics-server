@@ -1,34 +1,18 @@
 #!/usr/bin/bash
 
 # test coverage threshold
-COVERAGE_THRESHOLD=40
+COVERAGE_THRESHOLD=70
 
 check_python_version() {
-    python3 /bayesian/tools/check_python_version.py 3 6
+    python3 /coreapi/tools/check_python_version.py 3 6
 }
 
 check_python_version
 
-set -e
-
-echo "*****************************************"
-echo "*** Cyclomatic complexity measurement ***"
-echo "*****************************************"
-radon cc -s -a -i venv /bayesian/bayesian/
-
-echo "*****************************************"
-echo "*** Maintainability Index measurement ***"
-echo "*****************************************"
-radon mi -s -i venv /bayesian/bayesian/
-
-echo "*****************************************"
-echo "*** Unit tests ***"
-echo "*****************************************"
+export PROMETHEUS_MULTIPROC_DIR=/tmp
+pip3 install -r /coreapi/tests/requirements.txt
+cd /coreapi
 
 # we need no:cacheprovider, otherwise pytest will try to write to directory .cache which is in /usr under unprivileged
 # user and will cause exception
-py.test -p no:cacheprovider --cov=/bayesian/bayesian/ --cov-report term-missing --cov-fail-under=$COVERAGE_THRESHOLD -vv $@
-
-# this is necessary - codecov expect proper git repo
-cp -r /bayesian/.git ./
-
+py.test -p no:cacheprovider --cov=/coreapi/bayesian/ --cov-report=xml --cov-fail-under=$COVERAGE_THRESHOLD -vv $@

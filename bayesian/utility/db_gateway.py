@@ -20,6 +20,7 @@ import os
 import json
 import time
 import logging
+import tenacity
 from datetime import datetime
 from requests import post
 from bayesian import rdb
@@ -90,6 +91,8 @@ class GraphAnalyses:
         return query_result.json()
 
     @classmethod
+    @tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(3),
+                    wait=tenacity.wait_exponential(multiplier=1, min=4, max=10))
     def post_gremlin(cls, query: str, bindings: dict = None) -> dict:
         """Post the given query and bindings to gremlin endpoint."""
         payload = {
@@ -100,7 +103,7 @@ class GraphAnalyses:
         response = post(url=gremlin_url, data=json.dumps(payload))
         response.raise_for_status()
         elapsed_time = time.time() - started_at
-        logger.info("It took %s to fetch results from Gremlin.", elapsed_time)
+        logger.info("gremlin call took %s sec", elapsed_time)
         return response.json()
 
     @classmethod
@@ -114,10 +117,19 @@ class GraphAnalyses:
         return GraphAnalyses.post_gremlin(cls.ca_batch_query, bindings)
 
     @classmethod
+    def get_vulnerabilities_for_clair_packages(cls, ecosystem: str, packages) -> dict:
+        """Get vulnerabilities for given packages (clair/quay)."""
+        logger.debug('Executing get_vulnerabilities_for_clair_packages')
+        bindings = {
+            'ecosystem': ecosystem,
+            'packages': packages
+        }
+        return GraphAnalyses.post_gremlin(cls.get_vuln_query, bindings)
+
+    @classmethod
     def get_vulnerabilities_for_packages(cls, ecosystem: str, packages) -> dict:
         """Get vulnerabilities for given packages."""
         logger.debug('Executing get_vulnerabilities_for_packages')
-
         bindings = {
             'ecosystem': ecosystem,
             'packages': packages
@@ -144,12 +156,17 @@ class GraphAnalyses:
         gh = GithubUtils()
         for vuln in vulnerabilities:
             package_name = vuln['package_name'][0]
-            if gh._is_commit_date_in_vuln_range(
-               gh.extract_timestamp(
-                   package_version_map[package_name]), vuln['vuln_commit_date_rules'][0]):
-                if package_name not in filter_vulnerabilities:
-                    filter_vulnerabilities[package_name] = []
-                filter_vulnerabilities[package_name].append(vuln)
+            for package_version, _ in package_version_map[package_name].items():
+                if gh._is_commit_date_in_vuln_range(gh.extract_timestamp(
+                                                    package_version),
+                                                    vuln['vuln_commit_date_rules'][0]):
+                    if package_name not in filter_vulnerabilities:
+                        filter_vulnerabilities[package_name] = {}
+                    if package_version not in filter_vulnerabilities[package_name]:
+                        filter_vulnerabilities[package_name][package_version] = {
+                            'cve': []
+                        }
+                    filter_vulnerabilities[package_name][package_version]['cve'].append(vuln)
 
         return filter_vulnerabilities
 
@@ -165,7 +182,9 @@ class GraphAnalyses:
         for pckg in packages:
             package_name = pckg['name'].split('@')[0]
             filter_packages.add(package_name)
-            package_version_map[package_name] = pckg['version']
+            if not package_version_map.get(package_name, None):
+                package_version_map[package_name] = {}
+            package_version_map[package_name][pckg['version']] = {}
 
         vuln_response = GraphAnalyses.get_vulnerabilities_for_packages(
             ecosystem, list(filter_packages))
@@ -177,11 +196,25 @@ class GraphAnalyses:
         # Merge the package and vunlerability data into response.
         data = []
         for pckg in pckg_response.get('result', {}).get('data', []):
-            data.append({
-                'package': pckg,
-                'version': {},
-                'cve': vulnerabilities.get(pckg['name'][0], [])
-            })
+            for pckg_version, vuln in vulnerabilities.get(pckg['name'][0]).items():
+                data.append({
+                    'package': pckg,
+                    'version': {
+                        "pecosystem": [
+                            ecosystem
+                        ],
+                        "pname": [
+                            pckg['name'][0]
+                        ],
+                        "vertex_label": [
+                            "Version"
+                        ],
+                        "version": [
+                            pckg_version
+                        ]
+                    },
+                    'cve': vuln['cve']
+                })
         pckg_response['result']['data'] = data
 
         elapsed_time = time.time() - started_at
@@ -196,12 +229,9 @@ class RdbAnalyses:
     Provides interfaces to save and read request post data for stack analyses v2.
     """
 
-    def __init__(self, request_id, submit_time=None, manifest=None, deps=None):
+    def __init__(self, request_id):
         """Set request id."""
         self.request_id = request_id
-        self.submit_time = submit_time
-        self.manifest = manifest
-        self.deps = deps
 
     def get_request_data(self):
         """Read request data for given request id from RDS."""
@@ -230,19 +260,20 @@ class RdbAnalyses:
         """Read and return recommendation data from RDS."""
         return retrieve_worker_result(rdb, self.request_id, 'recommendation_v2')
 
-    def save_post_request(self):
+    def save_post_request(self, date_str, uuid_data, deps, manifest):
         """Save the post request data into RDS."""
         try:
             start = time.time()
             insert_stmt = insert(StackAnalysisRequest).values(
                 id=self.request_id,
-                submitTime=self.submit_time,
-                requestJson={'manifest': self.manifest},
-                dep_snapshot=self.deps
+                submitTime=date_str,
+                requestJson={'manifest': manifest},
+                dep_snapshot=deps,
+                user_id=uuid_data
             )
             do_update_stmt = insert_stmt.on_conflict_do_update(
                 index_elements=['id'],
-                set_=dict(dep_snapshot=self.deps)
+                set_=dict(dep_snapshot=deps)
             )
             rdb.session.execute(do_update_stmt)
             rdb.session.commit()

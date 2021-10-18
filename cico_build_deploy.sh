@@ -9,6 +9,4 @@ docker_login
 
 build_image
 
-./qa/runtest.sh
-
 push_image

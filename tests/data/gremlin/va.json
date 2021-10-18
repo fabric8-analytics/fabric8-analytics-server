@@ -1,0 +1,148 @@
+{
+    "requestId": "abcde0fe-5f03-4137-b566-72fed8391265",
+    "status": {
+        "message": "",
+        "code": 200,
+        "attributes": {}
+    },
+    "result": {
+        "data": [
+            {
+                "severity": [
+                    "medium"
+                ],
+                "snyk_url": [
+                    "https://snyk.io/vuln/SNYK-JS-ST-10820"
+                ],
+                "vulnerable_versions": [
+                    "0.0.10,0.2.2,0.5.1,1.1.0,0.2.1,0.0.11,0.3.0,0.1.1,0.0.2,0.4.1,0.0.7,0.1.4,0.5.4,0.3.1,1.2.1,0.5.2,0.2.3,0.0.8,0.5.5,1.2.0,1.0.0,0.2.5,0.1.0,0.0.6,0.3.2,0.0.4,0.2.6,0.2.0,0.4.0,0.1.2,0.0.9,0.5.0,0.0.12,0.0.3,0.5.3,0.1.3,0.0.5,0.0.1,0.2.4"
+                ],
+                "references": [
+                    "GitHub Commit:https://github.com/isaacs/st/commit/579960c629f12a27428e2da84c54f517e37b0a16"
+                ],
+                "snyk_cwes": [
+                    "CWE-601"
+                ],
+                "vertex_label": [
+                    "SCVE"
+                ],
+                "description": [
+                    "## Overview\n[`st`](https://www.npmjs.com/package/st) is a module for serving static files.\n\nAffected versions of this package are vulnerable to Open Redirect. A malicious user could send a specially crafted request, which would automatically redirect the request to another domain, controlled by the attacker.\n\n**Note:**  `st` will only redirect if requests are served from the root(`/`) and not from a subdirectory\n\n## References\n- [GitHub Commit](https://github.com/isaacs/st/commit/579960c629f12a27428e2da84c54f517e37b0a16)\n"
+                ],
+                "cvss_scores": [
+                    4.3
+                ],
+                "snyk_cve_ids": [
+                    "CVE-2017-16224"
+                ],
+                "modified_date": [
+                    "20200519"
+                ],
+                "title": [
+                    "Open Redirect"
+                ],
+                "snyk_ecosystem": [
+                    "npm"
+                ],
+                "malicious": [
+                    false
+                ],
+                "snyk_cvss_v3": [
+                    "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N/E:H/RL:O/RC:C"
+                ],
+                "package_name": [
+                    "st"
+                ],
+                "fixed_in": [
+                    "1.2.2",
+                    "1.2.3",
+                    "1.2.4"
+                ],
+                "snyk_vuln_id": [
+                    "SNYK-JS-ST-10820"
+                ],
+                "snyk_pvt_vulnerability": [
+                    false
+                ],
+                "exploit": [
+                    "High"
+                ],
+                "patch_exists": [
+                    ""
+                ],
+                "fixable": [
+                    true
+                ]
+            },
+            {
+                "severity": [
+                    "medium"
+                ],
+                "snyk_url": [
+                    "https://snyk.io/vuln/SNYK-JS-ST-10012"
+                ],
+                "vulnerable_versions": [
+                    "0.0.10,0.2.2,0.2.1,0.0.11,0.1.1,0.0.2,0.0.7,0.1.4,0.2.3,0.0.8,0.1.0,0.0.6,0.0.4,0.2.0,0.1.2,0.0.9,0.0.12,0.0.3,0.1.3,0.0.5,0.0.1,0.2.4"
+                ],
+                "references": [
+                    "BLOG.NPMJS.ORG:http://blog.npmjs.org/post/80277229932/newly-paranoid-maintainers",
+                    "GITHUB.COM:https://github.com/isaacs/st#security-status",
+                    "GITHUB.COM:https://github.com/isaacs/st%23security-status",
+                    "GitHub Commit:https://github.com/isaacs/st/commit/6b54ce2d2fb912eadd31e2c25c65456d2c8666e1"
+                ],
+                "snyk_cwes": [
+                    "CWE-22"
+                ],
+                "vertex_label": [
+                    "SCVE"
+                ],
+                "description": [
+                    "## Overview\r\nVersions prior to 0.2.5 did not properly prevent path traversal. Literal dots in a path were resolved out, but url encoded dots were not. Thus, a request like ``` /%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd ``` would leak sensitive files and data from the server.\r\n\r\nAs of version 0.2.5, any ```/../``` in the request path, urlencoded or not, will be replaced with ```/```. If your application depends on url traversal, then you are encouraged to please refactor so that you do not depend on having ```..``` in url paths, as this tends to expose data that you may be surprised to be exposing.\r\n\r\n## Details\r\nA Directory Traversal attack (also known as path traversal) aims to access files and directories that are stored outside the intended folder. By manipulating files with dot-dot-slash (../) sequences and its variations, or by using absolute file paths, it may be possible to access arbitrary files and directories stored on file system, including application source code, configuration, and other critical system files.\r\n\r\nDirectory Traversal vulnerabilities can be generally divided into two types:\r\n\r\n- **Information Disclosure**: Allows the attacker to gain information about the folder structure or read the contents of sensitive files on the system.\r\n\r\n`st` is a module for serving static files on web pages, and contains a [vulnerability of this type](https://snyk.io/vuln/npm:st:20140206). In our example, we will serve files from the `public` route.\r\n\r\nIf an attacker requests the following URL from our server, it will in turn leak the sensitive private key of the root user.\r\n\r\n```\r\ncurl http://localhost:8080/public/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/root/.ssh/id_rsa\r\n```\r\n**Note** `%2e` is the URL encoded version of `.` (dot).\r\n\r\n- **Writing arbitrary files**: Allows the attacker to create or replace existing files. This type of vulnerability is also known as `Zip-Slip`. \r\n\r\nOne way to achieve this is by using a malicious `zip` archive that holds path traversal filenames. When each filename in the zip archive gets concatenated to the target extraction folder, without validation, the final path ends up outside of the target folder. If an executable or a configuration file is overwritten with a file containing malicious code, the problem can turn into an arbitrary code execution issue quite easily.\r\n\r\nThe following is an example of a `zip` archive with one benign file and one malicious file. Extracting the malicious file will result in traversing out of the target folder, ending up in `/root/.ssh/` overwriting the `authorized_keys` file:\r\n\r\n```\r\n2018-04-15 22:04:29 .....           19           19  good.txt\r\n2018-04-15 22:04:42 .....           20           20  ../../../../../../root/.ssh/authorized_keys\r\n```\r\n\r\n\r\n## Remediation\r\nUpgrade to version 0.2.5 or greater.\r\n\r\n## References\r\n- https://github.com/isaacs/st#security-status\r\n- http://blog.npmjs.org/post/80277229932/newly-paranoid-maintainers"
+                ],
+                "cvss_scores": [
+                    5.3
+                ],
+                "snyk_cve_ids": [
+                    "CVE-2014-3744"
+                ],
+                "modified_date": [
+                    "20200519"
+                ],
+                "title": [
+                    "Directory Traversal"
+                ],
+                "snyk_ecosystem": [
+                    "npm"
+                ],
+                "malicious": [
+                    false
+                ],
+                "snyk_cvss_v3": [
+                    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N/E:P/RL:O/RC:C"
+                ],
+                "package_name": [
+                    "st"
+                ],
+                "fixed_in": [
+                    "0.2.5"
+                ],
+                "snyk_vuln_id": [
+                    "SNYK-JS-ST-10012"
+                ],
+                "snyk_pvt_vulnerability": [
+                    false
+                ],
+                "exploit": [
+                    "Proof of Concept"
+                ],
+                "patch_exists": [
+                    true
+                ],
+                "fixable": [
+                    true
+                ]
+            }
+        ],
+        "meta": {}
+    }
+}

@@ -6,14 +6,13 @@ import json
 import pytest
 import unittest
 from pathlib import Path
-from unittest.mock import patch, Mock
-from bayesian.exceptions import HTTPError
-from bayesian.api.api_v2 import _session, ApiEndpoints, ComponentAnalysesApi
+from unittest.mock import patch
 from bayesian.utility.db_gateway import RDBSaveException, RDBInvalidRequestException
 from bayesian.utility.v2.backbone_server import BackboneServerException
 from bayesian.utility.v2.sa_response_builder import (SARBRequestInvalidException,
                                                      SARBRequestInprogressException,
                                                      SARBRequestTimeoutException)
+from bayesian.utility.v2.component_analyses import Package
 
 
 def api_route_for(route):
@@ -21,39 +20,9 @@ def api_route_for(route):
     return '/api/v2' + route
 
 
-class TestApiEndpoints(unittest.TestCase):
-    """Test APIEnpoints Register Class."""
-
-    @classmethod
-    def setUp(cls):
-        """Initialise class with required params."""
-        cls._resource_paths = ['a', 'b']
-
-    def test_get(self):
-        """Test Get method of API Endpoints."""
-        result = ApiEndpoints().get()
-        self.assertIsInstance(result, dict)
-        self.assertIn('paths', result)
-
-
 @pytest.mark.usefixtures('client_class')
 class TestCommonEndpoints():
     """Basic tests for several endpoints."""
-
-    def test_readiness(self, accept_json):
-        """Test the /readiness endpoint."""
-        response = self.client.get(api_route_for('/readiness'), headers=accept_json)
-        assert response.status_code == 200
-
-    def test_liveness(self, accept_json):
-        """Test the /liveness endpoint."""
-        response = self.client.get(api_route_for('/liveness'), headers=accept_json)
-        assert response.status_code == 200
-
-    def test_system_version(self, accept_json):
-        """Test the /system/version endpoint."""
-        response = self.client.get(api_route_for('/system/version'), headers=accept_json)
-        assert response.status_code == 200
 
     def test_error_exception(self, accept_json):
         """Test the /error endpoint. Direct Access."""
@@ -72,95 +41,6 @@ class TestCommonEndpoints():
         response = self.client.get(api_route_for('/_error'), headers=accept_json)
         assert response.status_code == 405
 
-    def test_get_component_analyses_invalid_package(self, accept_json, monkeypatch):
-        """Test Component Analyses get. Invalid Package."""
-        monkeypatch.setattr(_session, 'post', Mock)
-        response = self.client.get(
-            api_route_for('/component-analyses/maven/package/2.7.5'), headers=accept_json)
-        monkeypatch.delattr(_session, 'post')
-        assert response.json == {'error': 'Invalid maven format - package'}
-
-    def test_get_component_analyses_invalid_version(self, accept_json, monkeypatch):
-        """Test Component Analyses get. Invalid Version."""
-        monkeypatch.setattr(_session, 'post', Mock)
-        response = self.client.get(
-            api_route_for('/component-analyses/maven/package/2.7.*'), headers=accept_json)
-        monkeypatch.delattr(_session, 'post')
-        assert response.json == {'error': "Package version should not have special characters."}
-
-    def test_get_component_analyses_unknown_ecosystem(self, accept_json):
-        """CA GET: Invalid Ecosystem."""
-        response = self.client.get(
-            api_route_for('/component-analyses/unknown/package/version'), headers=accept_json)
-        assert response.json == {'error': 'Ecosystem unknown is not supported for this request'}
-
-
-class TestComponentAnalysesApi(unittest.TestCase):
-    """Component Analyses Unit Tests."""
-
-    @patch('bayesian.api.api_v2.g')
-    @patch('bayesian.api.api_v2._session')
-    @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
-    @patch('bayesian.api.api_v2.request')
-    @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    def test_get_component_analyses_with_disable_unknown_package_flow(self, _sensitive, _request,
-                                                                      _analyses, _bookkeeping,
-                                                                      _session, _g):
-        """No Analyses Data found, with DISABLE_UNKNOWN_PACKAGE_FLOW flag, returns 202."""
-        with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
-            ca = ComponentAnalysesApi()
-            response = ca.get('npm', 'pkg', 'ver')
-            self.assertEqual(response.status, 202)
-            self.assertIsInstance(response, tuple)
-
-    @patch('bayesian.api.api_v2.g')
-    @patch('bayesian.api.api_v2._session')
-    @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
-    @patch('bayesian.api.api_v2.request')
-    @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    def test_get_component_analyses(self, _sensitive, _request,
-                                    _analyses, _bookkeeping, _session, _g):
-        """CA GET: No Analyses Data found, without INVOKE_API_WORKERS flag, Raises HTTP Error."""
-        ca = ComponentAnalysesApi()
-        self.assertRaises(HTTPError, ca.get, 'npm', 'pkg', 'ver')
-
-    @patch('bayesian.api.api_v2.g')
-    @patch('bayesian.api.api_v2._session')
-    @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
-    @patch('bayesian.api.api_v2.request')
-    @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    @patch('bayesian.utility.v2.ca_response_builder.'
-           'ComponentAnalyses.get_component_analyses_response', return_value=None)
-    def test_get_component_analyses_with_invoke_api_workers(
-            self, _vendor, _sensitive, _request, _analyses, _bookkeeping, _session, _g):
-        """CA GET: No Analyses Data found with API worker flag."""
-        ca = ComponentAnalysesApi()
-        with patch.dict('os.environ', {'INVOKE_API_WORKERS': '1'}):
-            response = ca.get('npm', 'pkg', 'ver')
-            self.assertEqual(response.status, 202)
-            self.assertIsInstance(response, tuple)
-        self.assertNotIn('INVOKE_API_WORKERS', os.environ)
-
-    @patch('bayesian.api.api_v2.g')
-    @patch('bayesian.api.api_v2._session')
-    @patch('bayesian.api.api_v2.server_create_component_bookkeeping')
-    @patch('bayesian.api.api_v2.server_create_analysis')
-    @patch('bayesian.api.api_v2.request')
-    @patch('bayesian.api.api_v2.case_sensitivity_transform')
-    @patch('bayesian.utility.v2.ca_response_builder.'
-           'ComponentAnalyses.get_component_analyses_response')
-    def test_get_component_analyses_with_result_not_none(
-            self, _vendor_analyses, _sensitive, _request, _analyses, _bookkeeping, _session, _g):
-        """CA GET: with VALID result."""
-        result = 'my_package_analyses_result'
-        _vendor_analyses.return_value = result
-        ca = ComponentAnalysesApi()
-        analyses_result = ca.get('npm', 'pkg', 'ver')
-        self.assertEqual(analyses_result, result)
-
 
 @pytest.mark.usefixtures('client_class')
 class TestCAPostApi(unittest.TestCase):
@@ -169,8 +49,8 @@ class TestCAPostApi(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         """Init Test class."""
-        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
-        recommendation_data = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
+        gremlin_batch_data = os.path.join('tests/data/gremlin/gremlin_batch_data.json')
+        recommendation_data = os.path.join('tests/data/response/ca_batch_response.json')
 
         with open(gremlin_batch_data) as f:
             cls.gremlin_batch_data = json.load(f)
@@ -178,15 +58,15 @@ class TestCAPostApi(unittest.TestCase):
         with open(recommendation_data) as f:
             cls.recommendation_data = json.load(f)
 
+    @patch('bayesian.api.api_v2.create_component_bookkeeping')
     @patch('bayesian.api.api_v2.add_unknown_pkg_info')
-    @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.api.api_v2.get_batch_ca_data')
     def test_get_component_analyses_post(self, _mock1, _mock2, _mock3, _mock4):
         """CA POST: Valid API."""
         test = [{"package": "markdown2", "version": "2.3.2", "package_unknown": False}]
         _mock1.return_value = self.gremlin_batch_data
-        _mock4.return_value = test
+        _mock3.return_value = test
         payload = {
             "ecosystem": 'pypi',
             "package_versions": [
@@ -199,17 +79,22 @@ class TestCAPostApi(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, self.recommendation_data)
 
+    @patch('bayesian.api.api_v2.create_component_bookkeeping')
     @patch('bayesian.api.api_v2.add_unknown_pkg_info')
     @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
-    @patch('bayesian.utility.v2.component_analyses.known_package_flow')
     @patch('bayesian.api.api_v2.unknown_package_flow')
     @patch('bayesian.api.api_v2.get_batch_ca_data')
-    def test_get_component_analyses_unknown_flow(self, _mock1, _mock2, _mock3, _mock4, _mock5):
+    def test_get_component_analyses_unknown_flow(self, _mock1, _mock2,
+                                                 _mock3, _mock4, _mock5):
         """CA POST: Unknown Flow."""
         test = [{"package": "django", "version": "1.1", "package_unknown": True}]
         _mock1.return_value = self.gremlin_batch_data
-        _mock4.return_value = self.recommendation_data, {"unknown_pkg"}
-        _mock5.return_value = test
+        unknown_pkgs = set()
+        unknown_pkgs.add(Package(package='django', given_name='django', version='1.1',
+                                 given_version='1.1', is_pseudo_version=False,
+                                 package_unknown=True))
+        _mock3.return_value = self.recommendation_data, unknown_pkgs
+        _mock4.return_value = test
         payload = {
             "ecosystem": 'pypi',
             "package_versions": [
@@ -221,31 +106,6 @@ class TestCAPostApi(unittest.TestCase):
             api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
         self.assertEqual(response.status_code, 202)
         self.assertEqual(response.json, test)
-
-    @patch('bayesian.api.api_v2.unknown_package_flow')
-    @patch('bayesian.api.api_v2.add_unknown_pkg_info')
-    @patch('bayesian.api.api_v2.get_known_unknown_pkgs')
-    @patch('bayesian.api.api_v2.get_batch_ca_data')
-    def test_get_component_analyses_unknown_flow_ingestion_disabled(
-            self, _mock1, _mock2, _mock3, _mock4):
-        """CA POST: Unknown flow, Ingestion Disabled."""
-        _mock1.return_value = self.gremlin_batch_data
-        _mock2.return_value = {}, {"unknown_pkg"}
-        test = [{"package": "django", "version": "1.1", "package_unknown": True}]
-        _mock3.return_value = test
-
-        with patch.dict('os.environ', {'DISABLE_UNKNOWN_PACKAGE_FLOW': '1'}):
-            payload = {
-                "ecosystem": 'pypi',
-                "package_versions": [
-                    {"package": "markdown2", "version": "2.3.2"}
-                ]
-            }
-            accept_json = [('Content-Type', 'application/json;')]
-            response = self.client.post(
-                api_route_for('/component-analyses'), data=json.dumps(payload), headers=accept_json)
-            self.assertEqual(response.status_code, 202)
-            self.assertListEqual(response.json, test)
 
     def test_get_component_analyses_bad_request(self):
         """CA POST: Bad Request."""
@@ -262,6 +122,87 @@ class TestCAPostApi(unittest.TestCase):
         self.assertDictEqual(
             response.json,
             {'error': '400 Bad Request: Ecosystem None is not supported for this request'})
+
+
+@pytest.mark.usefixtures('client_class')
+class TestVAPostApi(unittest.TestCase):
+    """Vulnerability Analysis Unit Tests."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Init Test class."""
+        gremlin_batch_data = os.path.join('tests/data/gremlin/va.json')
+        recommendation_data = os.path.join('tests/data/response/va_response.json')
+
+        with open(gremlin_batch_data) as f:
+            cls.gremlin_batch_data = json.load(f)
+
+        with open(recommendation_data) as f:
+            cls.recommendation_data = json.load(f)
+
+    @patch('bayesian.api.api_v2.validate_input')
+    @patch('bayesian.api.api_v2.get_vulnerability_data')
+    @patch('bayesian.api.api_v2.get_known_pkgs')
+    def test_get_component_analyses_post(self, _mock1, _mock2, _mock3):
+        """VA POST: Valid API."""
+        mock3 = {
+                "ecosystem": "npm",
+                "package_versions": [
+                    {"package": "st", "version": "1.2.2"}
+                ]
+        }
+        _mock1.return_value = self.recommendation_data
+        _mock2.return_value = self.gremlin_batch_data
+        _mock3.return_value = mock3
+        payload = {
+            "ecosystem": "npm",
+            "package_versions": [
+                {"package": "st", "version": "1.2.2"}
+            ]
+        }
+
+        accept_json = [('Content-Type', 'application/json;')]
+        response = self.client.post(
+            api_route_for('/vulnerability-analysis'), data=json.dumps(payload), headers=accept_json)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json, self.recommendation_data)
+
+    def test_get_vulnerability_analysis_bad_request(self):
+        """VA POST: Bad Request."""
+        payload = {
+            "package_versions": [
+                {"package": "markdown2", "version": "2.3.2"}
+            ]
+        }
+        accept_json = [('Content-Type', 'application/json;')]
+        response = self.client.post(
+            api_route_for('/vulnerability-analysis'), data=json.dumps(payload), headers=accept_json)
+        self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(
+            response.json,
+            {'error': '400 Bad Request: Ecosystem None is not supported for this request'})
+
+
+@pytest.mark.usefixtures('client_class')
+class TestGetTokenApi(unittest.TestCase):
+    """Get Token Unit Tests."""
+
+    def test_get_token_request_success(self):
+        """Test success get token request."""
+        response = self.client.get(api_route_for('/get-token'))
+        self.assertEqual(response.status_code, 200)
+        assert "key" in response.json
+        assert "url" in response.json
+
+    def test_get_token_request_invalid_url(self):
+        """Test get token request data with return as 404 error."""
+        response = self.client.get(api_route_for('/get-token/mathur/07'))
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_token_request_with_slash(self):
+        """Test get token request data with return as 404 error for invalid url."""
+        response = self.client.get(api_route_for('/get-token/'))
+        self.assertEqual(response.status_code, 404)
 
 
 @pytest.mark.usefixtures('client_class')

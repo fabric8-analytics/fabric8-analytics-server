@@ -15,32 +15,25 @@
 # Author: Deepak Sharma <deepshar@redhat.com>
 #
 """Definition of all v2 REST API endpoints of the server module."""
-
+import html
 import os
 import time
-import urllib
 import logging
-import re
-from typing import Dict, Tuple
-
-from requests_futures.sessions import FuturesSession
-from collections import namedtuple
+from typing import Dict
+import json
+import hashlib
 from pydantic.error_wrappers import ValidationError
 
-from flask import Blueprint, request, g
+from flask import Blueprint, request, redirect
 from flask.json import jsonify
-from flask_restful import Api, Resource
 
-from f8a_worker.utils import MavenCoordinates, case_sensitivity_transform
 from fabric8a_auth.auth import login_required, AuthError
 from bayesian.auth import validate_user
 from bayesian.exceptions import HTTPError
 from bayesian.utility.v2.component_analyses import ca_validate_input, \
-    unknown_package_flow, get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data
-from bayesian.utils import (get_system_version,
-                            server_create_component_bookkeeping,
-                            server_create_analysis,
-                            check_for_accepted_ecosystem)
+    get_known_unknown_pkgs, add_unknown_pkg_info, get_batch_ca_data, \
+    get_vulnerability_data, get_known_pkgs, validate_input
+from bayesian.utils import create_component_bookkeeping
 from bayesian.utility.v2.ca_response_builder import ComponentAnalyses
 from bayesian.utility.v2.sa_response_builder import (StackAnalysesResponseBuilder,
                                                      SARBRequestInvalidException,
@@ -53,201 +46,162 @@ from bayesian.utility.db_gateway import (RdbAnalyses, RDBSaveException,
                                          RDBInvalidRequestException,
                                          RDBServerException)
 from werkzeug.exceptions import BadRequest
-
+from f8a_utils.ingestion_utils import unknown_package_flow
+from f8a_utils import ingestion_utils
+from bayesian.default_config import (THREESCALE_USER_KEY, THREESCALE_API_URL,
+                                     STACK_REPORT_UI_HOSTNAME)
+from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
+from prometheus_flask_exporter import NO_PREFIX
 
 logger = logging.getLogger(__name__)
 
-errors = {
-    'AuthError': {
-        'status': 401,
-        'error': 'Authentication failed'
-    }
-}
-
 api_v2 = Blueprint('api_v2', __name__, url_prefix='/api/v2')
-rest_api_v2 = Api(api_v2, errors=errors)
 
-ANALYSIS_ACCESS_COUNT_KEY = 'access_count'
-TOTAL_COUNT_KEY = 'total_count'
-
-ANALYTICS_API_VERSION = "v2.0"
-HOSTNAME = os.environ.get('HOSTNAME', 'bayesian-api')
-METRICS_SERVICE_URL = "http://{}:{}".format(
-    os.environ.get('METRICS_ACCUMULATOR_HOST', 'metrics-accumulator'),
-    os.environ.get('METRICS_ACCUMULATOR_PORT', '5200')
-)
-
-worker_count = int(os.getenv('FUTURES_SESSION_WORKER_COUNT', '100'))
-_session = FuturesSession(max_workers=worker_count)
-_resource_paths = []
+# metrics obj to be used to track endpoints
+metrics = GunicornPrometheusMetrics(api_v2, group_by="endpoint", defaults_prefix=NO_PREFIX)
 
 
-@api_v2.route('/readiness')
-def readiness():
-    """Handle the /readiness REST API call."""
-    return jsonify({}), 200
+@api_v2.route('/get-token', methods=['GET'])
+@login_required
+def get_token():
+    """Return 3Scale tokens with higher rate limit."""
+    try:
+        # return default key
+        THREESCALE_PREMIUM_USER_KEY = os.getenv('THREESCALE_PREMIUM_USER_KEY')
+        PREMIUM_URL = os.getenv('PREMIUM_URL')
+        return jsonify({"url": PREMIUM_URL, "key": THREESCALE_PREMIUM_USER_KEY}), 200
+    except BadRequest as br:
+        logger.error(br)
+        raise HTTPError(400, str(br)) from br
+    except Exception as e:
+        msg = "Internal Server Exception. Please contact us if problem persists."
+        logger.error(e)
+        raise HTTPError(500, msg) from e
 
 
-@api_v2.route('/liveness')
-def liveness():
-    """Handle the /liveness REST API call."""
-    return jsonify({}), 200
+@api_v2.route('/vulnerability-analysis', methods=['POST'])
+@login_required
+def vulnerability_analysis_post():
+    """Handle the POST REST API call.
+
+    Component Analyses Batch is 3 Step Process:
+    1. Gather and clean Request.
+    2. Query GraphDB.
+    3. Build Stack Recommendation
+    """
+    input_json: Dict = request.get_json()
+    ecosystem: str = input_json.get('ecosystem')
+
+    try:
+        # Step1: Gather and clean Request
+        packages_list = validate_input(input_json, ecosystem)
+        # Step2: Get aggregated CA data from Query GraphDB,
+        graph_response = get_vulnerability_data(ecosystem, packages_list)
+        # Step3: Build Unknown packages and Generates Stack Recommendation.
+        stack_recommendation = get_known_pkgs(graph_response, packages_list)
+    except BadRequest as br:
+        logger.error(br)
+        raise HTTPError(400, str(br)) from br
+    except Exception as e:
+        msg = "Internal Server Exception. Please contact us if problem persists."
+        logger.error(e)
+        raise HTTPError(500, msg) from e
+
+    return jsonify(stack_recommendation), 200
 
 
-class ApiEndpoints(Resource):
-    """Implementation of / REST API call."""
+@api_v2.route('/component-analyses/<ecosystem>/<package>/<version>', methods=['GET'])
+@validate_user
+@login_required
+def component_analyses_get(ecosystem, package, version):
+    """Handle the GET REST API call.
 
-    @staticmethod
-    def get():
-        """Handle the GET REST API call."""
-        return {'paths': sorted(_resource_paths)}
+    Component Analyses:
+        - If package is Known (exists in GraphDB (Snyk Edge) returns Json formatted response.
+        - If package is not Known: Call Util's function to trigger ingestion flow.
 
-
-class SystemVersion(Resource):
-    """Implementation of /system/version REST API call."""
-
-    @staticmethod
-    def get():
-        """Handle the GET REST API call."""
-        return get_system_version()
-
-
-class ComponentAnalysesApi(Resource):
-    """Implementation of all /component-analyses REST API calls."""
-
-    method_decorators = [login_required]
-
-    @staticmethod
-    def get(ecosystem, package, version):
-        """Handle the GET REST API call.
-
-        Component Analyses:
-            - If package is Known (exists in GraphDB (Snyk Edge) returns Json formatted response.
-            - If package is not Known:
-                - DISABLE_UNKNOWN_PACKAGE_FLOW flag is 1: Skips the unknown package and returns 202
-                - DISABLE_UNKONWN_PACKAGE_FLOW flag is 0: Than checks below condition.
-                    - INVOKE_API_WORKERS flag is 1: Trigger bayesianApiFlow to fetch
-                                                    Package details
-                    - INVOKE_API_WORKERS flag is 0: Trigger bayesianFlow to fetch
-                                                    Package details
-
-        :return:
-            JSON Response
-        """
-        st = time.time()
-        # Analytics Data
-        metrics_payload = {
-            "pid": os.getpid(),
-            "hostname": HOSTNAME,
-            "endpoint": request.endpoint,
-            "request_method": "GET",
-            "ecosystem": ecosystem,
+    :return:
+        JSON Response
+    """
+    input_json = {
+        "package_versions": [{
             "package": package,
-            "version": version
-        }
-        response_template = namedtuple("response_template", ["message", "status"])
-        logger.info("Executed v2 API")
-        package = urllib.parse.unquote(package)
-
-        if re.findall('[!@#$%^&*()]', version):
-            # Version should not contain special Characters.
-            return response_template(
-                {'error': "Package version should not have special characters."}, 400)
-
-        if not check_for_accepted_ecosystem(ecosystem):
-            msg = f"Ecosystem {ecosystem} is not supported for this request"
-            raise HTTPError(400, msg)
-        if ecosystem == 'maven':
-            try:
-                package = MavenCoordinates.normalize_str(package)
-            except ValueError:
-                msg = f"Invalid maven format - {package}"
-                metrics_payload.update({"status_code": 400, "value": time.time() - st})
-                _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
-                raise HTTPError(400, msg)
-        package = case_sensitivity_transform(ecosystem, package)
-
+            "version": version,
+         }]
+    }
+    try:
+        ca_validate_input(input_json, ecosystem)
         # Perform Component Analyses on Vendor specific Graph Edge.
         analyses_result = ComponentAnalyses(
             ecosystem, package, version).get_component_analyses_response()
+    except BadRequest as br:
+        logger.error(br)
+        raise HTTPError(400, str(br)) from br
 
-        if analyses_result is not None:
-            # Known component for Fabric8 Analytics
-            server_create_component_bookkeeping(ecosystem, package, version, g.decoded_token)
+    if analyses_result is not None:
+        return jsonify(analyses_result)
 
-            metrics_payload.update({"status_code": 200, "value": time.time() - st})
-            _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
-            return analyses_result
-        elif os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW", "") == "1":
-            msg = f"No data found for {ecosystem} package {package}/{version} " \
-                  "ingetion flow skipped as DISABLE_UNKNOWN_PACKAGE_FLOW is enabled"
+    # No data has been found
+    unknown_pkgs = set()
+    unknown_pkgs.add(ingestion_utils.Package(package=package, version=version))
+    unknown_package_flow(ecosystem, unknown_pkgs)
 
-            return response_template({'error': msg}, 202)
+    msg = {"message": f"No data found for {ecosystem} package {package}/{version}"}
+    return jsonify(msg), 404
 
-        if os.environ.get("INVOKE_API_WORKERS", "") == "1":
-            # Trigger the unknown component ingestion.
-            server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
-                                   api_flow=True, force=False, force_graph_sync=True)
-            msg = f"Package {ecosystem}/{package}/{version} is unavailable. " \
-                  "The package will be available shortly," \
-                  " please retry after some time."
 
-            metrics_payload.update({"status_code": 202, "value": time.time() - st})
-            _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
+@api_v2.route('/component-analyses/', methods=['POST'])
+@api_v2.route('/component-analyses', methods=['POST'])
+@validate_user
+@login_required
+def component_analyses_post():
+    """Handle the POST REST API call.
 
-            return response_template({'error': msg}, 202)
-
-        # No data has been found and INVOKE_API_WORKERS flag is down.
-        server_create_analysis(ecosystem, package, version, user_profile=g.decoded_token,
-                               api_flow=False, force=False, force_graph_sync=True)
-        msg = f"No data found for {ecosystem} package {package}/{version}"
-
-        metrics_payload.update({"status_code": 404, "value": time.time() - st})
-        _session.post(url=METRICS_SERVICE_URL + "/api/v1/prometheus", json=metrics_payload)
-
-        raise HTTPError(404, msg)
-
-    @staticmethod
-    @validate_user
-    def post():
-        """Handle the POST REST API call.
-
-        Component Analyses Batch is 4 Step Process:
-        1. Gather and clean Request.
-        2. Query GraphDB.
-        3. Build Stack Recommendation and Build Unknown Packages and Trigger componentApiFlow.
-        4. Handle Unknown Packages and Trigger bayesianApiFlow.
-        """
-        response_template: Tuple = namedtuple("response_template", ["message", "status", "headers"])
-        input_json: Dict = request.get_json()
-        ecosystem: str = input_json.get('ecosystem')
-        headers = {"uuid": request.headers.get('uuid', None)}
+    Component Analyses Batch is 4 Step Process:
+    1. Gather and clean Request.
+    2. Query GraphDB.
+    3. Build Stack Recommendation and Build Unknown Packages and Trigger componentApiFlow.
+    4. Handle Unknown Packages and Trigger bayesianApiFlow.
+    """
+    input_json: Dict = request.get_json()
+    ecosystem: str = input_json.get('ecosystem')
+    if request.user_agent.string == "claircore/crda/RemoteMatcher":
         try:
-            # Step1: Gather and clean Request
-            packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
-            # Step2: Get aggregated CA data from Query GraphDB,
-            graph_response = get_batch_ca_data(ecosystem, packages_list)
-            # Step3: Build Unknown packages and Generates Stack Recommendation.
-            stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
-                ecosystem, graph_response, normalised_input_pkgs)
-        except BadRequest as br:
-            logger.error(br)
-            raise HTTPError(400, str(br)) from br
+            md5_hash = hashlib.md5(json.dumps(input_json, sort_keys=True).
+                                   encode('utf-8')).hexdigest()
+            logger.info("Ecosystem: %s => body md5 hash: %s", ecosystem, md5_hash)
         except Exception as e:
-            msg = "Internal Server Exception. Please contact us if problem persists."
-            logger.error(e)
-            raise HTTPError(400, msg) from e
+            logger.error("Exception %s", e)
+        return jsonify({"message": "disabled"}), 404
+    try:
+        # Step1: Gather and clean Request
+        packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
+        # Step2: Get aggregated CA data from Query GraphDB,
+        graph_response = get_batch_ca_data(ecosystem, packages_list)
+        # Step3: Build Unknown packages and Generates Stack Recommendation.
+        stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
+            ecosystem, graph_response, normalised_input_pkgs)
+    except BadRequest as br:
+        logger.error(br)
+        raise HTTPError(400, str(br)) from br
+    except Exception as e:
+        msg = "Internal Server Exception. Please contact us if problem persists."
+        logger.error(e)
+        raise HTTPError(400, msg) from e
 
-        # Step4: Handle Unknown Packages
-        if unknown_pkgs:
-            stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
-            if os.environ.get("DISABLE_UNKNOWN_PACKAGE_FLOW") != "1" and ecosystem != "golang":
-                # Unknown Packages is Present and INGESTION is Enabled
-                logger.debug(unknown_pkgs)
-                unknown_package_flow(ecosystem, unknown_pkgs)
+    create_component_bookkeeping(ecosystem, packages_list, request.args, request.headers)
 
-            return response_template(stack_recommendation, 202, headers)
-        return response_template(stack_recommendation, 200, headers)
+    # Step4: Handle Unknown Packages
+    if unknown_pkgs:
+        stack_recommendation = add_unknown_pkg_info(stack_recommendation, unknown_pkgs)
+        pkgs_to_ingest = set(map(lambda pkg: ingestion_utils.Package(package=pkg.package,
+                                                                     version=pkg.version),
+                                 unknown_pkgs))
+        logger.debug("Unknown ingestion triggered for %s", pkgs_to_ingest)
+        unknown_package_flow(ecosystem, pkgs_to_ingest)
+        return jsonify(stack_recommendation), 202
+
+    return jsonify(stack_recommendation), 200
 
 
 @api_v2.route('/stack-analyses/<external_request_id>', methods=['GET'])
@@ -324,6 +278,34 @@ def stack_analyses():
         raise HTTPError(500, e.args[0])
 
 
+@api_v2.route('/stack-report/<stack_id>', methods=['GET'])
+def stack_report_url(stack_id: str):
+    """URL redirect for Stack Report UI."""
+    stack_id: str = html.escape(stack_id)
+    try:
+        stack_request = RdbAnalyses(stack_id).get_request_data()
+        crda_key = stack_request.user_id
+    except (RDBServerException, RDBInvalidRequestException):
+        logger.exception("Invalid Stack ID %s", stack_id)
+        return jsonify({"error": f"Invalid Stack ID {stack_id}"}), 400
+    if not crda_key:
+        return jsonify({"error": "User corresponding to given Stack Id doesn't exists. "
+                       "Please authenticate yourself and try again."}), 400
+    path = f"{STACK_REPORT_UI_HOSTNAME}/#/analyze/{stack_id}"
+    query_params = "?interframe=true&api_data=" + json.dumps({
+        "access_token": "undefined",
+        "route_config": {
+            "api_url": THREESCALE_API_URL,
+            "ver": "v3",
+            "uuid": str(crda_key)
+        },
+        "user_key": THREESCALE_USER_KEY
+    })
+    final_path = path + query_params
+    logger.info("Redirected to URL: %s ", final_path)
+    return redirect(final_path, code=302)
+
+
 @api_v2.route('/_error')
 def error():
     """Implement the endpoint used by httpd, which redirects its errors to it."""
@@ -339,42 +321,6 @@ def error():
     elif status == 405:
         msg = 'Method not allowed for this endpoint'
     raise HTTPError(status, msg)
-
-
-# flask-restful doesn't actually store a list of endpoints, so we register them as they
-#  pass through add_resource_no_matter_slashes
-
-
-def add_resource_no_matter_slashes(resource, route, endpoint=None, defaults=None):
-    """Add a resource for both trailing slash and no trailing slash to prevent redirects."""
-    slashless = route.rstrip('/')
-    _resource_paths.append(api_v2.url_prefix + slashless)
-    slashful = route + '/'
-    endpoint = endpoint or resource.__name__.lower()
-    defaults = defaults or {}
-
-    # resources with and without slashes
-    rest_api_v2.add_resource(resource,
-                             slashless,
-                             endpoint=endpoint + '__slashless',
-                             defaults=defaults)
-    rest_api_v2.add_resource(resource,
-                             slashful,
-                             endpoint=endpoint + '__slashful',
-                             defaults=defaults)
-
-
-add_resource_no_matter_slashes(ApiEndpoints, '')
-add_resource_no_matter_slashes(SystemVersion, '/system/version')
-
-# Component analyses routes
-add_resource_no_matter_slashes(ComponentAnalysesApi,
-                               '/component-analyses/<ecosystem>/<package>/<version>',
-                               endpoint='get_component_analysis')
-
-add_resource_no_matter_slashes(ComponentAnalysesApi,
-                               '/component-analyses/',
-                               endpoint='post_component_analysis')
 
 
 # ERROR HANDLING

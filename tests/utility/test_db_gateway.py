@@ -37,11 +37,11 @@ class GraphAnalysesTest(unittest.TestCase):
         cls.ver = '1'
         cls.pkg = 'pkg'
         # Read Vendor Data from JSON.
-        gremlin_batch_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_batch_data.json')
+        gremlin_batch_data = os.path.join('tests/data/gremlin/gremlin_batch_data.json')
         gremlin_vulnerabilities_data = os.path.join(
-            '/bayesian/tests/data/gremlin/gremlin_vulnerabilities.json')
-        gremlin_package_data = os.path.join('/bayesian/tests/data/gremlin/gremlin_packages.json')
-        ca_batch_response = os.path.join('/bayesian/tests/data/response/ca_batch_response.json')
+            'tests/data/gremlin/gremlin_vulnerabilities.json')
+        gremlin_package_data = os.path.join('tests/data/gremlin/gremlin_packages.json')
+        ca_batch_response = os.path.join('tests/data/response/ca_batch_response.json')
 
         with open(ca_batch_response) as f:
             cls.batch_response = json.load(f)
@@ -98,6 +98,27 @@ class GraphAnalysesTest(unittest.TestCase):
         self.assertRaises(Exception, GraphAnalyses.get_batch_ca_data,
                           'eco', packages=[{'name': 'django', 'version': '1.1'}],
                           query_key='ca_batch')
+
+    @patch('bayesian.utility.db_gateway.post')
+    def test_get_vulnerability_data(self, _mockpost):
+        """Test get_vulnerability_data."""
+        _mockpost().json.return_value = self.gremlin_batch
+        ga = GraphAnalyses.get_vulnerabilities_for_clair_packages(
+            ecosystem='eco', packages=[{'name': 'django', 'version': '1.1'}])
+        self.assertIsInstance(ga, dict)
+        self.assertIn('result', ga)
+        self.assertIsInstance(ga.get('result'), dict)
+        self.assertIn('requestId', ga)
+        self.assertIsInstance(ga.get('requestId'), str)
+        self.assertIn('status', ga)
+        self.assertIsInstance(ga.get('status'), dict)
+
+    @patch('bayesian.utility.db_gateway.post', return_value=Exception)
+    def test_get_vulnerability_data_exception(self, _mockpost):
+        """Test get_vulnerability_data_exception."""
+        self.assertRaises(Exception, GraphAnalyses.get_vulnerabilities_for_clair_packages,
+                          'eco', packages=[{'name': 'django', 'version': '1.1'}],
+                          query_key='va_batch')
 
     @patch('bayesian.utility.db_gateway.post')
     def test_get_vulnerabilities_for_packages(self, _mockpost):
@@ -171,18 +192,41 @@ class GraphAnalysesTest(unittest.TestCase):
         """Test vuln filtering for module/packages."""
         vulnerabilities = self.gremlin_vulnerabilities.get('result', {}).get('data', [])
         package_version_map = {
-            'github.com/crda/test': 'v0.0.0-20160902000632-abcd4321dcba',
-            'github.com/crda/test/package1': 'v0.0.0-20180902000632-abcd4321dcba',
-            'github.com/crda/test/package2': 'v0.0.0-20181002000632-abcd4321dcba',
-            'github.com/crda/test2': 'v0.0.0-20161002000632-abcd4321dcba'
+            'github.com/crda/test': {'v0.0.0-20160902000632-abcd4321dcba': {}},
+            'github.com/crda/test/package1': {'v0.0.0-20180902000632-abcd4321dcba': {}},
+            'github.com/crda/test/package2': {'v0.0.0-20181002000632-abcd4321dcba': {}},
+            'github.com/crda/test2': {'v0.0.0-20161002000632-abcd4321dcba': {}}
         }
         vuln = GraphAnalyses.filter_vulnerable_packages(vulnerabilities, package_version_map)
         self.assertIsInstance(vuln, dict)
         self.assertEqual(len(vuln), 2)
         self.assertIn('github.com/crda/test', vuln)
         self.assertIn('github.com/crda/test/package1', vuln)
-        self.assertIsInstance(vuln.get('github.com/crda/test/package1'), list)
-        self.assertEqual(len(vuln.get('github.com/crda/test/package1')), 1)
+        self.assertIsInstance(vuln.get('github.com/crda/test/package1', {}).get(
+            'v0.0.0-20180902000632-abcd4321dcba', {}).get('cve'), list)
+        self.assertEqual(len(vuln.get('github.com/crda/test/package1', {}).get(
+            'v0.0.0-20180902000632-abcd4321dcba', {}).get('cve')), 1)
+
+    def test_filter_vulnerable_packages_different_version(self):
+        """Test vuln filtering for module/packages with different version."""
+        vulnerabilities = self.gremlin_vulnerabilities.get('result', {}).get('data', [])
+        package_version_map = {
+            'github.com/crda/test': {'v0.0.0-20160902000632-abcd4321dcba': {}},
+            'github.com/crda/test/package1': {
+                'v0.0.0-20180902000632-abcd4321dcba': {},
+                'v0.0.0-20201002000632-dcbaabcd4321': {}}
+        }
+        vuln = GraphAnalyses.filter_vulnerable_packages(vulnerabilities, package_version_map)
+        self.assertIsInstance(vuln, dict)
+        self.assertEqual(len(vuln), 2)
+        self.assertIn('github.com/crda/test', vuln)
+        self.assertIn('github.com/crda/test/package1', vuln)
+        self.assertIsInstance(vuln.get('github.com/crda/test/package1', {}).get(
+            'v0.0.0-20180902000632-abcd4321dcba', {}).get('cve'), list)
+        self.assertEqual(len(vuln.get('github.com/crda/test/package1', {}).get(
+            'v0.0.0-20180902000632-abcd4321dcba', {}).get('cve')), 1)
+        self.assertEqual(vuln.get('github.com/crda/test/package1', {}).get(
+            'v0.0.0-20181002000632-dcbaabcd4321', None), None)
 
     @patch('bayesian.utility.db_gateway.GraphAnalyses.get_vulnerabilities_for_packages')
     @patch('bayesian.utility.db_gateway.GraphAnalyses.get_package_details')
@@ -240,14 +284,14 @@ class TestRdbAnalyses(unittest.TestCase):
            side_effect=SQLAlchemyError('Mock exception'))
     def test_save_post_request_error(self, _execute):
         """Test error save request that raises exception."""
-        rdbAnalyses = RdbAnalyses('dummy_request_id', '', {}, {})
+        rdbAnalyses = RdbAnalyses('dummy_request_id')
         with pytest.raises(Exception) as exception:
-            rdbAnalyses.save_post_request()
+            rdbAnalyses.save_post_request('', '', {}, {})
         self.assertIs(exception.type, RDBSaveException)
 
     @patch('bayesian.utility.db_gateway.rdb.session.execute', return_value=0)
     @patch('bayesian.utility.db_gateway.rdb.session.commit', return_value=0)
     def test_save_post_request_success(self, _commit, _execute):
         """Test success save request."""
-        rdbAnalyses = RdbAnalyses('dummy_request_id', '', {}, {})
-        self.assertEqual(rdbAnalyses.save_post_request(), None)
+        rdbAnalyses = RdbAnalyses('dummy_request_id')
+        self.assertEqual(rdbAnalyses.save_post_request('', '', {}, {}), None)

@@ -1,16 +1,16 @@
-
 [![Build Status](https://ci.centos.org/view/Devtools/job/devtools-fabric8-analytics-server-f8a-build-master/badge/icon)](https://ci.centos.org/view/Devtools/job/devtools-fabric8-analytics-server-f8a-build-master/)
+[![codecov](https://codecov.io/gh/fabric8-analytics/fabric8-analytics-server/branch/master/graph/badge.svg?token=ZevyNvTwCj)](https://codecov.io/gh/fabric8-analytics/fabric8-analytics-server)
 
 # Fabric8-Analytics Core API Documentation
 
 The Fabric8-Analytics API is a microservice that is responsible for:
 
-* Serving generated analysis results to clients through API
+* Serving generated analysis results to clients
 * Scheduling new analyses based on client requests
 
 ## API information
 
-See our [API details](API.md) for more info.
+See our  [API details](api_specs/v2) for more info.
 
 ## Contributing
 
@@ -28,28 +28,12 @@ Additionally [JSON schema definition](tests/data/schemas/stack_analyses-v2-2-0.s
 is provided for the stack analysis endpoint as well.
 --->
 
-## Core API Access Logs
-
-Core API access logs have following format:
-
-```
-{remote hostname} {remote logname, default '-'} {username, default '-'} {access time} "{first line of request}" {response status} {response length} {referer, default '-'} "{user agent}"
-```
-
-In terms of httpd LogFormat option, this is `%h %l %u %t \"%r\" %>s %b %{Referer}i \"%{User-agent}i\"`. See [httpd documentation](http://httpd.apache.org/docs/current/mod/mod_log_config.html#formats) for details.
-
-For example:
-
-```
-172.19.0.1 - - [18/Mar/2016:07:59:17 +0000] "GET /static/patternfly/css/patternfly.min.css HTTP/1.1" 304 - http://localhost:32000/ "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0"
-```
-
 ## Docker based API testing
 
 From the top-level git directory, run the tests in a container using the helper
 script:
 
-    $ ./runtests.sh
+    $ .qa/runtest.sh
 
 (The above command assumes you have passwordless docker invocation configured -
 if you don't, then `sudo` will be necessary to enable docker invocation).
@@ -91,14 +75,6 @@ If the Docker container based tests have been run, then this might complain
 about mismatched locations in compiled files. Those can be deleted using:
 
     (bayesian) $ sudo find -name *.pyc -delete
-
-# Accessing operational data for stack analyses
-
-It's possible to access operational data related to a particular stack analysis request:
-
-`/api/v1/stack-analyses/<request-id>/_debug`
-
-Note this endpoint is not part of the public API.
 
 ### Footnotes
 
@@ -222,12 +198,6 @@ The script named `check-bashscripts.sh` can be used to check all BASH scripts (i
 
 Please see [the following link](https://github.com/koalaman/shellcheck) for further explanation, how the ShellCheck works and which issues can be detected.
 
-#### Code coverage report
-
-Code coverage is reported via the codecov.io. The results can be seen on the following address:
-
-[code coverage report](https://codecov.io/gh/fabric8-analytics/fabric8-analytics-server)
-
 #### Commands to generate the dependency files for stack analysis call
 
 ##### Maven
@@ -257,3 +227,4 @@ python -m pip install -r requirements.txt; python -c 'exec("""
         json.dump(res,op)
         """)'  requirements.txt  pylist.json
 ```
+***

@@ -16,25 +16,28 @@
 #
 """Component Analyses Utility Stand."""
 
+import functools
 import logging
-import os
 import re
 import time
 from collections import namedtuple
-from typing import Dict, Set, List, Tuple
+from concurrent.futures import ThreadPoolExecutor
+from typing import Dict, Set, List, Tuple, Callable
 from f8a_utils.tree_generator import GolangDependencyTreeGenerator
 from f8a_utils.gh_utils import GithubUtils
-from flask import g
+from bayesian.settings import COMPONENT_ANALYSES_SETTINGS
 from bayesian.utility.v2.ca_response_builder import CABatchResponseBuilder
-from bayesian.utils import check_for_accepted_ecosystem, \
-    server_create_analysis, server_create_component_bookkeeping
+from bayesian.utils import check_for_accepted_ecosystem
 from f8a_worker.utils import MavenCoordinates
 from werkzeug.exceptions import BadRequest
 from bayesian.utility.db_gateway import GraphAnalyses
 
 logger = logging.getLogger(__name__)
-Package = namedtuple("Package", ["name", "given_name", "version", "package_unknown",
+Package = namedtuple("Package", ["package", "given_name", "version", "package_unknown",
                                  "given_version", "is_pseudo_version"])
+# global executor helps to avoid chocking of gremlin http by blocking calls
+# beyound the configured concurrency limit.
+EXECUTOR = ThreadPoolExecutor(max_workers=COMPONENT_ANALYSES_SETTINGS.concurrency_limit)
 
 
 def validate_version(version: str) -> bool:
@@ -51,30 +54,54 @@ def normlize_packages(name: str, given_name: str,
     """Normalise Packages into hashable."""
     logger.debug('Normalizing Packages.')
     return Package(
-        name=name, given_name=given_name,
+        package=name, given_name=given_name,
         version=version, given_version=given_version,
         is_pseudo_version=is_pseudo_version, package_unknown=True)
 
 
-def unknown_package_flow(ecosystem: str, unknown_pkgs: Set[namedtuple]) -> bool:
-    """Unknown Package flow. Trigger bayesianApiFlow."""
-    logger.debug('Triggered Unknown Package Flow.')
-    api_flow: bool = os.environ.get("INVOKE_API_WORKERS", "") == "1"
-    started_at = time.time()
-    for pkg in unknown_pkgs:
-        server_create_analysis(ecosystem, pkg.name, pkg.version, user_profile=g.decoded_token,
-                               api_flow=api_flow, force=False, force_graph_sync=True)
-    elapsed_time = time.time() - started_at
-    logger.info('Unknown flow for %f packages took %f seconds', len(unknown_pkgs), elapsed_time)
-    return True
+def validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
+    """Validate Request Body."""
+    logger.debug('Validate Request Body.')
+    if not input_json:
+        error_msg = "Expected JSON request"
+        raise BadRequest(error_msg)
 
+    if not isinstance(input_json, dict):
+        error_msg = "Expected list of dependencies in JSON request"
+        raise BadRequest(error_msg)
 
-def known_package_flow(ecosystem: str, package: str, version: str) -> bool:
-    """Known Package flow.Trigger componentApiFlow."""
-    logger.debug('Triggered Known Package Flow.')
-    server_create_component_bookkeeping(
-        ecosystem, package, version, g.decoded_token)
-    return True
+    if not check_for_accepted_ecosystem(ecosystem):
+        error_msg: str = f"Ecosystem {ecosystem} is not supported for this request"
+        raise BadRequest(error_msg)
+
+    if not input_json.get('package_versions'):
+        error_msg: str = "package_versions is missing"
+        raise BadRequest(error_msg)
+
+    packages_list = []
+    for pkg in input_json.get('package_versions'):
+        package = pkg.get("package")
+        clean_version = pkg.get("version")
+        if not all([package, clean_version]):
+            error_msg = "Invalid Input: Package, Version are required."
+            raise BadRequest(error_msg)
+
+        if (not isinstance(clean_version, str)) or (not isinstance(package, str)):
+            error_msg = "Package version should be string format only."
+            raise BadRequest(error_msg)
+
+        if not validate_version(clean_version):
+            error_msg = "Package version should not have special characters."
+            raise BadRequest(error_msg)
+
+        if ecosystem == 'maven':
+            package = MavenCoordinates.normalize_str(package)
+
+        if ecosystem == 'pypi':
+            package = package.lower()
+
+        packages_list.append({"name": package, "version": clean_version})
+    return packages_list
 
 
 def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], List[Package]]:
@@ -136,7 +163,14 @@ def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], Lis
     return packages_list, normalised_input_pkgs
 
 
-def get_batch_ca_data(ecosystem: str, packages) -> dict:
+def _fetcher_in_batches(func: Callable, packages: List,
+                        batch_size: int = COMPONENT_ANALYSES_SETTINGS.batch_size) -> Callable:
+    """Create partial function with batch package association."""
+    for i in range(0, len(packages), batch_size):
+        yield functools.partial(func, packages[i:i + batch_size])
+
+
+def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
     """Fetch package details for component analyses."""
     logger.debug('Executing get_batch_ca_data')
     started_at = time.time()
@@ -155,22 +189,63 @@ def get_batch_ca_data(ecosystem: str, packages) -> dict:
     else:
         semver_packages = packages
 
+    graph_data_fetcher = []
     if len(semver_packages) > 0:
-        response = GraphAnalyses.get_batch_ca_data(ecosystem, semver_packages)
+        get_semver_data = functools.partial(GraphAnalyses.get_batch_ca_data, ecosystem)
+        graph_data_fetcher = list(_fetcher_in_batches(get_semver_data, semver_packages))
 
     if len(pseudo_version_packages) > 0:
-        pseudo_response = GraphAnalyses.get_batch_ca_data_for_pseudo_version(
-            ecosystem, pseudo_version_packages)
-        # Merge both data into one.
-        if response:
-            response['result']['data'] += pseudo_response['result']['data']
-        else:
-            response = pseudo_response
+        get_pseudo_data = functools.partial(GraphAnalyses.get_batch_ca_data_for_pseudo_version,
+                                            ecosystem)
+        graph_data_fetcher += list(_fetcher_in_batches(get_pseudo_data, pseudo_version_packages))
+
+    response = {
+        "result": {
+            "data": []
+        }
+    }
+    result = EXECUTOR.map(lambda f: f(), graph_data_fetcher)
+    for r in result:
+        response["result"]["data"] += r["result"]["data"]
 
     elapsed_time = time.time() - started_at
-    logger.info("It took %s to fetch results from Gremlin.", elapsed_time)
+    logger.info("concurrent batch exec took %s sec", elapsed_time)
+    return response
 
-    return response if response else {}
+
+def get_vulnerability_data(ecosystem: str, packages: List) -> dict:
+    """Fetch package details for component analyses."""
+    logger.debug('Executing get_vulnerability_data')
+    started_at = time.time()
+
+    response = {
+        "result": {
+            "data": []
+        }
+    }
+
+    package_list = []
+    for pack in packages:
+        package_list.append(pack["name"])
+
+    graph_data_fetcher = []
+    if len(package_list) > 0:
+        get_data = functools.partial(
+            GraphAnalyses.get_vulnerabilities_for_clair_packages, ecosystem)
+        graph_data_fetcher = list(_fetcher_in_batches(get_data, package_list))
+
+    result = EXECUTOR.map(lambda f: f(), graph_data_fetcher)
+    for r in result:
+        response["result"]["data"] += r["result"]["data"]
+
+    elapsed_time = time.time() - started_at
+    logger.info("concurrent batch exec took %s sec", elapsed_time)
+    return response
+
+
+def get_package_version_key(pkg_name, pkg_version):
+    """Return unique key combining package name and version."""
+    return pkg_name + '@' + pkg_version
 
 
 def get_known_unknown_pkgs(
@@ -186,7 +261,7 @@ def get_known_unknown_pkgs(
     normalised_input_pkg_map = None  # Mapping is required only for Golang.
     if ecosystem == 'golang':
         normalised_input_pkg_map = {
-            input_pkg.name: {
+            get_package_version_key(input_pkg.package, input_pkg.version): {
                 'given_name': input_pkg.given_name,
                 'version': input_pkg.version,
                 'given_version': input_pkg.given_version
@@ -205,7 +280,6 @@ def get_known_unknown_pkgs(
         pkg_recomendation = CABatchResponseBuilder(ecosystem). \
             generate_recommendation(package, given_pkg_name, given_pkg_version)
         stack_recommendation.append(pkg_recomendation)
-        known_package_flow(ecosystem, pkg_name, clean_version)
         db_known_packages.add(normlize_packages(name=pkg_name, given_name=given_pkg_name,
                                                 version=clean_version,
                                                 given_version=given_pkg_version,
@@ -214,6 +288,40 @@ def get_known_unknown_pkgs(
     input_dependencies = set(normalised_input_pkgs)
     unknown_pkgs: Set = input_dependencies.difference(db_known_packages)
     return stack_recommendation, unknown_pkgs
+
+
+def check_vulnerable_package(version, version_string):
+    """Check if the request version available in vulnerable_versions."""
+    if(version in version_string.split(",")):
+        return True
+    return False
+
+
+def clean_package_list(package_details_dict: Dict):
+    """Clean package list before sending response."""
+    packages_list = []
+    for package_detail in package_details_dict.values():
+        packages_list.append(package_detail)
+    return packages_list
+
+
+def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
+    """Analyse Known Packages."""
+    package_details_dict = {}
+    for temp in packages_list:
+        temp["vulnerabilities"] = []
+        package_details_dict[temp["name"]] = temp
+    for vulnerability in graph_response.get('result', {}).get('data'):
+        package_details = package_details_dict.get(vulnerability["package_name"][0])
+        if(check_vulnerable_package(package_details["version"],
+                                    vulnerability['vulnerable_versions'][0])):
+            package_details["vulnerabilities"].append(
+                {"id": vulnerability["snyk_vuln_id"][0],
+                 "severity": vulnerability["severity"][0],
+                 "title": vulnerability["title"][0],
+                 "url": vulnerability["snyk_url"][0],
+                 "fixed_in": vulnerability["fixed_in"]})
+    return clean_package_list(package_details_dict)
 
 
 def get_clean_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=None) -> str:
@@ -225,7 +333,8 @@ def get_clean_version(pkg_name: str, pkg_version: str, normalised_input_pkg_map=
     """
     logger.debug('Fetch input clean package version.')
     if isinstance(normalised_input_pkg_map, dict):
-        return normalised_input_pkg_map[pkg_name]['version']
+        return normalised_input_pkg_map[get_package_version_key(
+            pkg_name, pkg_version)]['version']
     return pkg_version
 
 
@@ -240,7 +349,8 @@ def get_given_name_and_version(pkg_name: str, pkg_version: str,
     """
     logger.debug('Fetch Input Package version.')
     if isinstance(normalised_input_pkg_map, dict):
-        normalised_input_pkg = normalised_input_pkg_map.get(pkg_name, None)
+        normalised_input_pkg = normalised_input_pkg_map.get(
+            get_package_version_key(pkg_name, pkg_version), None)
         if normalised_input_pkg:
             return normalised_input_pkg['given_name'], normalised_input_pkg['given_version']
     return pkg_name, pkg_version
@@ -257,7 +367,7 @@ def add_unknown_pkg_info(stack_recommendation: List, unknown_pkgs: Set[Package])
         unknowns = unknown_pkg._asdict()
         unknowns['version'] = unknowns.get('given_version')
         unknowns.pop('given_version', None)
-        unknowns['name'] = unknowns.get('given_name')
+        unknowns['package'] = unknowns.get('given_name')
         unknowns.pop('given_name', None)
         unknowns.pop('is_pseudo_version', None)
         stack_recommendation.append(dict(unknowns))
