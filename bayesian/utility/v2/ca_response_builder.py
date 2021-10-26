@@ -382,7 +382,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
 
     def generate_recommendation(
             self, package_graph_response: Dict,
-            given_name: str = None, given_version: str = None) -> Dict:
+            given_name: str = None, given_version: str = None, ignore: Dict = []) -> Dict:
         """Generate recommendation for the package+version.
 
         Main function to generate recommendation response.
@@ -390,6 +390,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
         :param package_graph_response: Individual Package Object from Gremlin
         :param given_name: Full package name as given in the request
         :param given_version: Version from User Input
+        :param ignore: Packages to be ignored while showing vulnerabilities.
         :return: Json Response
         """
         logger.debug("Generating Recommendation")
@@ -419,11 +420,12 @@ class CABatchResponseBuilder(ComponentResponseBase):
 
         if g.user_status == UserStatus.REGISTERED:
             return self.get_premium_response()
-        return self.generate_response()
+        return self.generate_response(ignore)
 
-    def get_cve_maps(self) -> List[Dict]:
+    def get_cve_maps(self, ignore_vulnerability) -> List[Dict]:
         """Get all Vulnerabilities Meta Data.
 
+        :param ignore_vulnerability: List of vulnerabilities to be ignored.
         :return: List
             - Empty: if no Vulnerability is there.
             - Dict: if Vulnerability is present.
@@ -440,7 +442,8 @@ class CABatchResponseBuilder(ComponentResponseBase):
                 url=cve.get('snyk_url', [None])[0],
                 cve_ids=cve.get('snyk_cve_ids', []),
                 fixed_in=cve.get('fixed_in', [])
-            ) for cve in self._cves]
+            ) for cve in self._cves
+            if cve.get('snyk_vuln_id', [None])[0] not in ignore_vulnerability]
         return cve_list
 
     def get_premium_response(self) -> Dict:
@@ -504,7 +507,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
             return f"{exploitable_vuls} exploitable vulnerability and "
         return ""
 
-    def generate_response(self) -> Dict:
+    def generate_response(self, ignore) -> Dict:
         """Build a JSON Response from all calculated values.
 
         :return: json formatted response to requester.
@@ -516,10 +519,17 @@ class CABatchResponseBuilder(ComponentResponseBase):
             version=self.version,
             recommended_versions=self.nocve_version,
             registration_link=self.get_registration_link(),
-            vulnerability=self.get_cve_maps(),
             message=self.get_message(),
             highest_severity=self.severity[0],
             known_security_vulnerability_count=self.public_vul,
             security_advisory_count=self.pvt_vul,
         )
+        package_to_ignore = ignore.get("packages", {})
+        if self.package in package_to_ignore:
+            if package_to_ignore[self.package]:
+                response["vulnerability"] = self.get_cve_maps(package_to_ignore[self.package])
+            else:
+                response["vulnerability"] = []
+        else:
+            response["vulnerability"] = self.get_cve_maps([])
         return response

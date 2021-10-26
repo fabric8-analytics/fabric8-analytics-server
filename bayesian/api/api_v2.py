@@ -180,7 +180,7 @@ def component_analyses_post():
         graph_response = get_batch_ca_data(ecosystem, packages_list)
         # Step3: Build Unknown packages and Generates Stack Recommendation.
         stack_recommendation, unknown_pkgs = get_known_unknown_pkgs(
-            ecosystem, graph_response, normalised_input_pkgs)
+            ecosystem, graph_response, normalised_input_pkgs, input_json.get("ignore", {}))
     except BadRequest as br:
         logger.error(br)
         raise HTTPError(400, str(br)) from br

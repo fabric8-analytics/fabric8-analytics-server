@@ -250,12 +250,13 @@ def get_package_version_key(pkg_name, pkg_version):
 
 def get_known_unknown_pkgs(
         ecosystem: str, graph_response: Dict,
-        normalised_input_pkgs: List) -> Tuple[List[Dict], Set[Package]]:
+        normalised_input_pkgs: List, ignore: Dict) -> Tuple[List[Dict], Set[Package]]:
     """Analyse Known and Unknown Packages.
 
     :param ecosystem: Ecosystem
     :param graph_response: Graph Response
     :param normalised_input_pkgs: Normalised Input Packages
+    :param ignore: Packages to be ignored while showing vulnerabilities.
     :return: Stack Recommendations, Unknown Pkgs
     """
     normalised_input_pkg_map = None  # Mapping is required only for Golang.
@@ -278,7 +279,7 @@ def get_known_unknown_pkgs(
         given_pkg_name, given_pkg_version = get_given_name_and_version(pkg_name, clean_version,
                                                                        normalised_input_pkg_map)
         pkg_recomendation = CABatchResponseBuilder(ecosystem). \
-            generate_recommendation(package, given_pkg_name, given_pkg_version)
+            generate_recommendation(package, given_pkg_name, given_pkg_version, ignore)
         stack_recommendation.append(pkg_recomendation)
         db_known_packages.add(normlize_packages(name=pkg_name, given_name=given_pkg_name,
                                                 version=clean_version,
