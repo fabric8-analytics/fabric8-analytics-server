@@ -422,7 +422,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
             return self.get_premium_response()
         return self.generate_response(ignore)
 
-    def get_cve_maps(self, ignore_vulnerability) -> List[Dict]:
+    def get_cve_maps(self, ignore_vulnerability=[]) -> List[Dict]:
         """Get all Vulnerabilities Meta Data.
 
         :param ignore_vulnerability: List of vulnerabilities to be ignored.
