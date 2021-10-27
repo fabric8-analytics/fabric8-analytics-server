@@ -462,7 +462,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
             count = len(self._cves)
         return count
 
-    def get_premium_response(self, ignore) -> Dict:
+    def get_premium_response(self, ignore:Dict = {}) -> Dict:
         """Get Premium Response.
 
         :return: Dict of Registered User Response.
@@ -532,7 +532,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
             return f"{exploitable_vuls} exploitable vulnerability and "
         return ""
 
-    def generate_response(self, ignore) -> Dict:
+    def generate_response(self, ignore: Dict) -> Dict:
         """Build a JSON Response from all calculated values.
 
         :return: json formatted response to requester.
