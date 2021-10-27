@@ -250,7 +250,7 @@ def get_package_version_key(pkg_name, pkg_version):
 
 def get_known_unknown_pkgs(
         ecosystem: str, graph_response: Dict,
-        normalised_input_pkgs: List, ignore: Dict) -> Tuple[List[Dict], Set[Package]]:
+        normalised_input_pkgs: List, ignore: Dict = {}) -> Tuple[List[Dict], Set[Package]]:
     """Analyse Known and Unknown Packages.
 
     :param ecosystem: Ecosystem
