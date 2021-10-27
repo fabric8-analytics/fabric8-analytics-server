@@ -462,7 +462,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
             count = len(self._cves)
         return count
 
-    def get_premium_response(self, ignore:Dict = {}) -> Dict:
+    def get_premium_response(self, ignore: Dict = {}) -> Dict:
         """Get Premium Response.
 
         :return: Dict of Registered User Response.
