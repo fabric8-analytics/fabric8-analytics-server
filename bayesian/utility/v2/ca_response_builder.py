@@ -446,6 +446,22 @@ class CABatchResponseBuilder(ComponentResponseBase):
             if cve.get('snyk_vuln_id', [None])[0] not in ignore_vulnerability]
         return cve_list
 
+    def get_ignored_vulnerability_count(self, ignore_vulnerability) -> int:
+        """Get Ignored Vulnerabilities count.
+
+        :param ignore_vulnerability: List of vulnerabilities to be ignored.
+        :return: int
+        """
+        logger.debug("Get Ignored Vulnerability count.")
+        count = 0
+        if ignore_vulnerability:
+            for cve in self._cves:
+                if cve.get('snyk_vuln_id', [None])[0] in ignore_vulnerability:
+                    count += 1
+        else:
+            count = len(self._cves)
+        return count
+
     def get_premium_response(self) -> Dict:
         """Get Premium Response.
 
@@ -530,6 +546,8 @@ class CABatchResponseBuilder(ComponentResponseBase):
                 response["vulnerability"] = self.get_cve_maps(package_to_ignore[self.package])
             else:
                 response["vulnerability"] = []
+            response["ignored_vulnerability_count"] = \
+                self.get_ignored_vulnerability_count(package_to_ignore[self.package])
         else:
             response["vulnerability"] = self.get_cve_maps([])
         return response
