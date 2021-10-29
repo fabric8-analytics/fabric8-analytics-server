@@ -177,7 +177,6 @@ def _fetcher_in_batches(func: Callable, packages: List,
 
 
 def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
-
     """Fetch package details for component analyses."""
     logger.debug('Executing get_batch_ca_data')
     started_at = time.time()
