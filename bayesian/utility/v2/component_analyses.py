@@ -78,6 +78,12 @@ def validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
         error_msg: str = "package_versions is missing"
         raise BadRequest(error_msg)
 
+    ignore_package_vulns = input_json.get('ignore', {})
+    if not isinstance(ignore_package_vulns, dict):
+        error_msg = "Expected a dictionary 'ignore' consisting of package names as key" \
+                    ", and list of vulnerabilities to ignore for that package as value"
+        raise BadRequest(error_msg)
+
     packages_list = []
     for pkg in input_json.get('package_versions'):
         package = pkg.get("package")
@@ -171,7 +177,9 @@ def _fetcher_in_batches(func: Callable, packages: List,
 
 
 def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
+
     """Fetch package details for component analyses."""
+    print("Ex get_batch_ca_data")
     logger.debug('Executing get_batch_ca_data')
     started_at = time.time()
 
@@ -188,16 +196,19 @@ def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
                 semver_packages.append(p)
     else:
         semver_packages = packages
+        print("semver packages", packages)
 
     graph_data_fetcher = []
     if len(semver_packages) > 0:
         get_semver_data = functools.partial(GraphAnalyses.get_batch_ca_data, ecosystem)
         graph_data_fetcher = list(_fetcher_in_batches(get_semver_data, semver_packages))
+        print("graph_data_fetcher", graph_data_fetcher)
 
     if len(pseudo_version_packages) > 0:
         get_pseudo_data = functools.partial(GraphAnalyses.get_batch_ca_data_for_pseudo_version,
                                             ecosystem)
         graph_data_fetcher += list(_fetcher_in_batches(get_pseudo_data, pseudo_version_packages))
+        print("graph_data_fetcher", graph_data_fetcher)
 
     response = {
         "result": {
@@ -210,6 +221,7 @@ def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
 
     elapsed_time = time.time() - started_at
     logger.info("concurrent batch exec took %s sec", elapsed_time)
+    print("response is", response)
     return response
 
 
@@ -305,14 +317,28 @@ def clean_package_list(package_details_dict: Dict):
     return packages_list
 
 
-def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
+def get_known_pkgs(graph_response: Dict, packages_list: Dict, ignore_vulnerabilities: Dict) -> List[Dict]:
     """Analyse Known Packages."""
     package_details_dict = {}
+    print("package list", packages_list)
+    print("graph_response", graph_response)
+
     for temp in packages_list:
         temp["vulnerabilities"] = []
         package_details_dict[temp["name"]] = temp
     for vulnerability in graph_response.get('result', {}).get('data'):
         package_details = package_details_dict.get(vulnerability["package_name"][0])
+        vulns_to_ignore = ignore_vulnerabilities.get(vulnerability["package_name"][0], [])
+        if not isinstance(vulns_to_ignore, list):
+            error_msg = "Expected list of vulnerabilities to ignore in the 'ignore' dictionary as values, where the package name is the key"
+            raise BadRequest(error_msg)
+        # if package is in the 'ignore' dict and list of vulnerabilities to ignore is empty, ignore the vulnerability
+        if vulnerability["package_name"][0] in ignore_vulnerabilities and len(vulns_to_ignore) == 0:
+            continue
+        # if package is in the 'ignore' dict and list of vulnerabilities to ignore is not empty, ignore vulnerability
+        # if the vulnerability is in the list of vulnerabilities to ignore for that package
+        if vulnerability["package_name"][0] in ignore_vulnerabilities and vulnerability["snyk_vuln_id"][0] in vulns_to_ignore:
+            continue
         if(check_vulnerable_package(package_details["version"],
                                     vulnerability['vulnerable_versions'][0])):
             package_details["vulnerabilities"].append(
