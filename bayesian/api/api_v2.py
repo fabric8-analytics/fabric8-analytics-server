@@ -176,9 +176,7 @@ def component_analyses_post():
         return jsonify({"message": "disabled"}), 404
     try:
         # Step1: Gather and clean Request
-        print("Result Coming")
         packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
-        print(packages_list, normalised_input_pkgs)
         # Step2: Get aggregated CA data from Query GraphDB,
         graph_response = get_batch_ca_data(ecosystem, packages_list)
         # Step3: Build Unknown packages and Generates Stack Recommendation.

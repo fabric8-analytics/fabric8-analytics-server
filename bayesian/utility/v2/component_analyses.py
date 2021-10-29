@@ -179,7 +179,6 @@ def _fetcher_in_batches(func: Callable, packages: List,
 def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
 
     """Fetch package details for component analyses."""
-    print("Ex get_batch_ca_data")
     logger.debug('Executing get_batch_ca_data')
     started_at = time.time()
 
@@ -196,19 +195,16 @@ def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
                 semver_packages.append(p)
     else:
         semver_packages = packages
-        print("semver packages", packages)
 
     graph_data_fetcher = []
     if len(semver_packages) > 0:
         get_semver_data = functools.partial(GraphAnalyses.get_batch_ca_data, ecosystem)
         graph_data_fetcher = list(_fetcher_in_batches(get_semver_data, semver_packages))
-        print("graph_data_fetcher", graph_data_fetcher)
 
     if len(pseudo_version_packages) > 0:
         get_pseudo_data = functools.partial(GraphAnalyses.get_batch_ca_data_for_pseudo_version,
                                             ecosystem)
         graph_data_fetcher += list(_fetcher_in_batches(get_pseudo_data, pseudo_version_packages))
-        print("graph_data_fetcher", graph_data_fetcher)
 
     response = {
         "result": {
@@ -221,7 +217,6 @@ def get_batch_ca_data(ecosystem: str, packages: List) -> dict:
 
     elapsed_time = time.time() - started_at
     logger.info("concurrent batch exec took %s sec", elapsed_time)
-    print("response is", response)
     return response
 
 
@@ -320,8 +315,6 @@ def clean_package_list(package_details_dict: Dict):
 def get_known_pkgs(graph_response: Dict, packages_list: Dict, ignore_vulnerabilities: Dict) -> List[Dict]:
     """Analyse Known Packages."""
     package_details_dict = {}
-    print("package list", packages_list)
-    print("graph_response", graph_response)
 
     for temp in packages_list:
         temp["vulnerabilities"] = []
