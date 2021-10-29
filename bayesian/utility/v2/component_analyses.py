@@ -312,7 +312,8 @@ def clean_package_list(package_details_dict: Dict):
     return packages_list
 
 
-def get_known_pkgs(graph_response: Dict, packages_list: Dict, ignore_vulnerabilities: Dict) -> List[Dict]:
+def get_known_pkgs(graph_response: Dict, packages_list: Dict, ignore_vulnerabilities: Dict) \
+        -> List[Dict]:
     """Analyse Known Packages."""
     package_details_dict = {}
 
@@ -323,14 +324,18 @@ def get_known_pkgs(graph_response: Dict, packages_list: Dict, ignore_vulnerabili
         package_details = package_details_dict.get(vulnerability["package_name"][0])
         vulns_to_ignore = ignore_vulnerabilities.get(vulnerability["package_name"][0], [])
         if not isinstance(vulns_to_ignore, list):
-            error_msg = "Expected list of vulnerabilities to ignore in the 'ignore' dictionary as values, where the package name is the key"
+            error_msg = "Expected list of vulnerabilities to ignore in the 'ignore' " \
+                        "dictionary as values, where the package name is the key"
             raise BadRequest(error_msg)
-        # if package is in the 'ignore' dict and list of vulnerabilities to ignore is empty, ignore the vulnerability
+        # if package is in the 'ignore' dict and list of vulnerabilities to
+        # ignore is empty, ignore the vulnerability
         if vulnerability["package_name"][0] in ignore_vulnerabilities and len(vulns_to_ignore) == 0:
             continue
-        # if package is in the 'ignore' dict and list of vulnerabilities to ignore is not empty, ignore vulnerability
+        # if package is in the 'ignore' dict and list of vulnerabilities
+        # to ignore is not empty, ignore vulnerability
         # if the vulnerability is in the list of vulnerabilities to ignore for that package
-        if vulnerability["package_name"][0] in ignore_vulnerabilities and vulnerability["snyk_vuln_id"][0] in vulns_to_ignore:
+        if vulnerability["package_name"][0] in ignore_vulnerabilities \
+                and vulnerability["snyk_vuln_id"][0] in vulns_to_ignore:
             continue
         if(check_vulnerable_package(package_details["version"],
                                     vulnerability['vulnerable_versions'][0])):

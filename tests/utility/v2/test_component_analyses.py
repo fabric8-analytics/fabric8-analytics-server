@@ -100,18 +100,18 @@ class TestComponentAnalyses(unittest.TestCase):
         ignore = {}
         stack_recommendation = get_known_pkgs(gremlin_batch_data_cve, input_pkgs, ignore)
         ideal_output = [{'name': 'st',
-                             'version': '0.2.5',
-                             'vulnerabilities': [{
-                                 "fixed_in": [
-                                     "1.2.2",
-                                     "1.2.3",
-                                     "1.2.4"
-                                 ],
-                                 "id": "SNYK-JS-ST-10820",
-                                 "severity": "medium",
-                                 "title": "Open Redirect",
-                                 "url": "https://snyk.io/vuln/SNYK-JS-ST-10820"
-                             }]}]
+                         'version': '0.2.5',
+                         'vulnerabilities': [{
+                             "fixed_in": [
+                                 "1.2.2",
+                                 "1.2.3",
+                                 "1.2.4"
+                             ],
+                             "id": "SNYK-JS-ST-10820",
+                             "severity": "medium",
+                             "title": "Open Redirect",
+                             "url": "https://snyk.io/vuln/SNYK-JS-ST-10820"
+                         }]}]
         self.assertListEqual(stack_recommendation, ideal_output)
 
     @patch('bayesian.utility.v2.ca_response_builder.g')
