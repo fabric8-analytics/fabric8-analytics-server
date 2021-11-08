@@ -70,11 +70,25 @@ class TestComponentAnalyses(unittest.TestCase):
         """Test Known Pkgs, No Cve."""
         input_pkgs = [{"name": "markdown2", "version": "2.3.2"}]
         gremlin_batch_data_no_cve = {"result": {"data": []}}
-
-        stack_recommendation = get_known_pkgs(gremlin_batch_data_no_cve, input_pkgs)
+        ignore = {}
+        stack_recommendation = get_known_pkgs(gremlin_batch_data_no_cve, input_pkgs, ignore)
         ideal_output = [{'name': 'markdown2',
                          'version': '2.3.2',
                          'vulnerabilities': []}]
+        self.assertListEqual(stack_recommendation, ideal_output)
+
+    def test_get_known_pkgs_with_cve_with_ignore(self):
+        """Test Known Pkgs with Cve(VA)."""
+        input_pkgs = [{"name": "st", "version": "0.2.5"}]
+        batch_data_cve = os.path.join('tests/data/gremlin/va.json')
+        with open(batch_data_cve) as f:
+            gremlin_batch_data_cve = json.load(f)
+        ignore = {"st": ["SNYK-JS-ST-10820"]}
+        stack_recommendation = get_known_pkgs(gremlin_batch_data_cve, input_pkgs, ignore)
+        ideal_output = [{'name': 'st',
+                         'version': '0.2.5',
+                         'vulnerabilities': []
+                         }]
         self.assertListEqual(stack_recommendation, ideal_output)
 
     def test_get_known_pkgs_with_cve(self):
@@ -83,15 +97,15 @@ class TestComponentAnalyses(unittest.TestCase):
         batch_data_cve = os.path.join('tests/data/gremlin/va.json')
         with open(batch_data_cve) as f:
             gremlin_batch_data_cve = json.load(f)
-
-        stack_recommendation = get_known_pkgs(gremlin_batch_data_cve, input_pkgs)
+        ignore = {}
+        stack_recommendation = get_known_pkgs(gremlin_batch_data_cve, input_pkgs, ignore)
         ideal_output = [{'name': 'st',
                          'version': '0.2.5',
                          'vulnerabilities': [{
                              "fixed_in": [
-                                "1.2.2",
-                                "1.2.3",
-                                "1.2.4"
+                                 "1.2.2",
+                                 "1.2.3",
+                                 "1.2.4"
                              ],
                              "id": "SNYK-JS-ST-10820",
                              "severity": "medium",
