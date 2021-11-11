@@ -48,6 +48,7 @@ class StackAnalysesPostRequest(BaseModel):
         True,
         description='This is required to enable or disable the transitive support',
     )
+    ignore: Optional[Dict[str, List[str]]]
 
     class Config:
         """Validation configuration for model."""
