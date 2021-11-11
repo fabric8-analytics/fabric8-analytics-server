@@ -91,7 +91,6 @@ def vulnerability_analysis_post():
     """
     input_json: Dict = request.get_json()
     ecosystem: str = input_json.get('ecosystem')
-    ignore_vulnerabilities: Dict = input_json.get('ignore', {})
 
     try:
         # Step1: Gather and clean Request
@@ -99,7 +98,7 @@ def vulnerability_analysis_post():
         # Step2: Get aggregated CA data from Query GraphDB,
         graph_response = get_vulnerability_data(ecosystem, packages_list)
         # Step3: Build Unknown packages and Generates Stack Recommendation.
-        stack_recommendation = get_known_pkgs(graph_response, packages_list, ignore_vulnerabilities)
+        stack_recommendation = get_known_pkgs(graph_response, packages_list)
     except BadRequest as br:
         logger.error(br)
         raise HTTPError(400, str(br)) from br
@@ -176,9 +175,7 @@ def component_analyses_post():
         return jsonify({"message": "disabled"}), 404
     try:
         # Step1: Gather and clean Request
-        print("Result Coming")
         packages_list, normalised_input_pkgs = ca_validate_input(input_json, ecosystem)
-        print(packages_list, normalised_input_pkgs)
         # Step2: Get aggregated CA data from Query GraphDB,
         graph_response = get_batch_ca_data(ecosystem, packages_list)
         # Step3: Build Unknown packages and Generates Stack Recommendation.
