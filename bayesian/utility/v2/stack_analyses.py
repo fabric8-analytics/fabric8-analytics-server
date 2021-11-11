@@ -45,7 +45,7 @@ class StackAnalyses():
         logger.info('SA Post request with ecosystem: %s manifest: %s path: %s '
                     'show_transitive: %s', self.params.ecosystem,
                     self.params.manifest.filename, self.params.file_path,
-                    self.params.show_transitive)
+                    self.params.show_transitive, self.params.ignore)
         # Build manifest file info.
         self._manifest_file_info = {
             'filename': self.params.manifest.filename,
@@ -147,7 +147,8 @@ class StackAnalyses():
             'packages': data['packages'],
             'manifest_name': self._manifest_file_info['filename'],
             'manifest_file_path': self._manifest_file_info['filepath'],
-            'show_transitive': self.params.show_transitive
+            'show_transitive': self.params.show_transitive,
+            'ignore': self.params.ignore
         }
         request_params = {
             'persist': 'true',
