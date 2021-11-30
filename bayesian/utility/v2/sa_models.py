@@ -48,6 +48,7 @@ class StackAnalysesPostRequest(BaseModel):
         True,
         description='This is required to enable or disable the transitive support',
     )
+    ignore: Optional[str]
 
     class Config:
         """Validation configuration for model."""
@@ -217,6 +218,8 @@ class PackageDetailsForRegisteredUser(PackageDetails):  # noqa: D101
     vulnerable_dependencies: Optional[List['PackageDetailsForRegisteredUser']] = Field(
         None, description='List of dependencies which are vulnerable.\n'
     )
+    ignored_vulnerability_count: Optional[int] = None
+    ignored_trans_vulnerability_count: Optional[int] = None
 
 
 class PackageDetailsForFreeTier(PackageDetails):  # noqa: D101
@@ -233,6 +236,8 @@ class PackageDetailsForFreeTier(PackageDetails):  # noqa: D101
     vulnerable_dependencies: Optional[List['PackageDetailsForFreeTier']] = Field(
         None, description='List of dependencies which are vulnerable.\n'
     )
+    ignored_vulnerability_count: Optional[int] = None
+    ignored_trans_vulnerability_count: Optional[int] = None
 
 
 class StackAnalysesResult(BaseModel):  # noqa: D101

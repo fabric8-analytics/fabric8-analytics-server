@@ -147,7 +147,8 @@ class StackAnalyses():
             'packages': data['packages'],
             'manifest_name': self._manifest_file_info['filename'],
             'manifest_file_path': self._manifest_file_info['filepath'],
-            'show_transitive': self.params.show_transitive
+            'show_transitive': self.params.show_transitive,
+            'ignore': self.params.ignore
         }
         request_params = {
             'persist': 'true',
