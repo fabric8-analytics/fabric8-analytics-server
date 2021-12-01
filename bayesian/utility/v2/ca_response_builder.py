@@ -102,7 +102,7 @@ class ComponentResponseBase(ABC):
         """Abstract generate_recommendation func."""
         pass
 
-    def get_message(self) -> str:
+    def get_message(self, ignored_vul_count: int = None) -> str:
         """Build Message.
 
         Message to be shown in Component Analyses Tooltip.
@@ -117,6 +117,8 @@ class ComponentResponseBase(ABC):
                        f"having {self.severity[0]} severity. "
 
             message += self.get_recommendation()
+            if ignored_vul_count:
+                message += f" Ignored {ignored_vul_count} vulnerabilities."
             return message
 
         elif self.public_vul:
@@ -128,6 +130,9 @@ class ComponentResponseBase(ABC):
             message += f" having {self.severity[0]} severity. "
 
             message += self.get_recommendation()
+            if ignored_vul_count:
+                message += f" Ignored {ignored_vul_count} vulnerabilities."
+
             return message
 
         elif self.pvt_vul:
@@ -137,6 +142,8 @@ class ComponentResponseBase(ABC):
             message += self.append_with_severity_count(self.pvt_vul)
 
             message += f" having {self.severity[0]} severity. "
+            if ignored_vul_count:
+                message += f"Ignored {ignored_vul_count} vulnerabilities."
         return message
 
     def append_with_severity_count(self, vul_count) -> str:
@@ -398,7 +405,8 @@ class CABatchResponseBuilder(ComponentResponseBase):
         self.package = given_name
         latest_non_cve_versions: List[str] = package_graph_response.get('package', {}).get(
             'latest_non_cve_version', [])
-        self._cves = package_graph_response.get('cve')
+        cves = package_graph_response.get('cve')
+        ignored_vul_count = self.ignore_vulnerabilities(cves, ignore, given_name)
 
         if (not self.has_cves()) or not bool(latest_non_cve_versions):
             # If Package has No cves or No Latest Non CVE Versions.
@@ -419,13 +427,12 @@ class CABatchResponseBuilder(ComponentResponseBase):
         self.severity: List[str] = self.get_severity()
 
         if g.user_status == UserStatus.REGISTERED:
-            return self.get_premium_response(ignore)
-        return self.generate_response(ignore)
+            return self.get_premium_response(ignore, ignored_vul_count)
+        return self.generate_response(ignore, ignored_vul_count)
 
-    def get_cve_maps(self, ignore_vulnerability=[]) -> List[Dict]:
+    def get_cve_maps(self) -> List[Dict]:
         """Get all Vulnerabilities Meta Data.
 
-        :param ignore_vulnerability: List of vulnerabilities to be ignored.
         :return: List
             - Empty: if no Vulnerability is there.
             - Dict: if Vulnerability is present.
@@ -442,27 +449,41 @@ class CABatchResponseBuilder(ComponentResponseBase):
                 url=cve.get('snyk_url', [None])[0],
                 cve_ids=cve.get('snyk_cve_ids', []),
                 fixed_in=cve.get('fixed_in', [])
-            ) for cve in self._cves
-            if cve.get('snyk_vuln_id', [None])[0] not in ignore_vulnerability]
+            ) for cve in self._cves]
         return cve_list
 
-    def get_ignored_vulnerability_count(self, ignore_vulnerability) -> int:
-        """Get Ignored Vulnerabilities count.
+    def ignore_vulnerabilities(self, cves, ignore, pkg_name) -> int:
+        """Ignore Vulnerabilities.
 
-        :param ignore_vulnerability: List of vulnerabilities to be ignored.
+        :param cves: List of vulnerabilities.
+        :param ignore: List of vulnerabilities to be ignored.
+        :param pkg_name: Name of package.
         :return: int
         """
-        logger.debug("Get Ignored Vulnerability count.")
-        count = 0
-        if ignore_vulnerability:
-            for cve in self._cves:
-                if cve.get('snyk_vuln_id', [None])[0] in ignore_vulnerability:
-                    count += 1
-        else:
-            count = len(self._cves)
-        return count
+        logger.debug("Ignore Vulnerability.")
+        ignored_vul_count = 0
 
-    def get_premium_response(self, ignore: Dict = {}) -> Dict:
+        package_to_ignore = ignore.get("packages", {})
+        # Check if current package needs to be ignored.
+        if pkg_name in package_to_ignore:
+            # Check if list of specific vulnerabilities to be ignored is given,
+            # then ignore only those.
+            if package_to_ignore[pkg_name]:
+                for cve in cves:
+                    # Don't add if vulnerabilities ID is present in ignore list
+                    if cve.get('snyk_vuln_id', [None])[0] in package_to_ignore[pkg_name]:
+                        ignored_vul_count += 1
+                    else:
+                        self._cves.append(cve)
+            else:
+                # If list is empty then ignore all vulnerabilities.
+                self._cves = []
+        else:
+            # Add all vulnerabilities, don't ignore any.
+            self._cves = cves
+        return ignored_vul_count
+
+    def get_premium_response(self, ignore: Dict = {}, ignored_vul_count: int = 0) -> Dict:
         """Get Premium Response.
 
         :return: Dict of Registered User Response.
@@ -475,25 +496,21 @@ class CABatchResponseBuilder(ComponentResponseBase):
             version=self.version,
             recommended_versions=self.nocve_version,
             vendor_package_link=self.get_link(),
-            message=self.get_premium_message(exploitable_vuls),
+            vulnerability=self.get_cve_maps(),
+            message=self.get_premium_message(exploitable_vuls, ignored_vul_count),
             highest_severity=self.severity[0],
             known_security_vulnerability_count=self.public_vul,
             security_advisory_count=self.pvt_vul,
             exploitable_vulnerabilities_count=exploitable_vuls
         )
+
+        # If vulnerabilities are ignored for current package add their count
         package_to_ignore = ignore.get("packages", {})
         if self.package in package_to_ignore:
-            if package_to_ignore[self.package]:
-                response["vulnerability"] = self.get_cve_maps(package_to_ignore[self.package])
-            else:
-                response["vulnerability"] = []
-            response["ignored_vulnerability_count"] = \
-                self.get_ignored_vulnerability_count(package_to_ignore[self.package])
-        else:
-            response["vulnerability"] = self.get_cve_maps([])
+            response["ignored_vulnerability_count"] = ignored_vul_count
         return response
 
-    def get_premium_message(self, exploitable_vuls: int) -> str:
+    def get_premium_message(self, exploitable_vuls: int, ignored_vul_count: int = None) -> str:
         """Build Message for Registered User.
 
         Message to be shown in Component Analyses Tooltip.
@@ -508,6 +525,8 @@ class CABatchResponseBuilder(ComponentResponseBase):
             message += self.append_with_exploit_details(exploitable_vuls)
             message += f"{self.severity[0]} severity. "
             message += self.get_recommendation()
+            if ignored_vul_count:
+                message += f" Ignored {ignored_vul_count} vulnerabilities."
             return message
 
         if self.public_vul:
@@ -516,6 +535,8 @@ class CABatchResponseBuilder(ComponentResponseBase):
             message += self.append_with_exploit_details(exploitable_vuls)
             message += f"{self.severity[0]} severity. "
             message += self.get_recommendation()
+            if ignored_vul_count:
+                message += f" Ignored {ignored_vul_count} vulnerabilities."
             return message
 
         if self.pvt_vul:
@@ -524,6 +545,8 @@ class CABatchResponseBuilder(ComponentResponseBase):
             message += self.append_with_exploit_details(exploitable_vuls)
             message += f"{self.severity[0]} severity. "
             message += self.get_recommendation()
+            if ignored_vul_count:
+                message += f" Ignored {ignored_vul_count} vulnerabilities."
         return message
 
     def append_with_exploit_details(self, exploitable_vuls) -> str:
@@ -532,7 +555,7 @@ class CABatchResponseBuilder(ComponentResponseBase):
             return f"{exploitable_vuls} exploitable vulnerability and "
         return ""
 
-    def generate_response(self, ignore: Dict) -> Dict:
+    def generate_response(self, ignore: Dict, ignored_vul_count: int = 0) -> Dict:
         """Build a JSON Response from all calculated values.
 
         :return: json formatted response to requester.
@@ -544,19 +567,14 @@ class CABatchResponseBuilder(ComponentResponseBase):
             version=self.version,
             recommended_versions=self.nocve_version,
             registration_link=self.get_registration_link(),
-            message=self.get_message(),
+            message=self.get_message(ignored_vul_count),
             highest_severity=self.severity[0],
             known_security_vulnerability_count=self.public_vul,
             security_advisory_count=self.pvt_vul,
+            vulnerability=self.get_cve_maps()
         )
+        # If vulnerabilities are ignored for current package add their count
         package_to_ignore = ignore.get("packages", {})
         if self.package in package_to_ignore:
-            if package_to_ignore[self.package]:
-                response["vulnerability"] = self.get_cve_maps(package_to_ignore[self.package])
-            else:
-                response["vulnerability"] = []
-            response["ignored_vulnerability_count"] = \
-                self.get_ignored_vulnerability_count(package_to_ignore[self.package])
-        else:
-            response["vulnerability"] = self.get_cve_maps([])
+            response["ignored_vulnerability_count"] = ignored_vul_count
         return response
