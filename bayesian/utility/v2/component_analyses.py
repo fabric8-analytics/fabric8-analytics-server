@@ -322,7 +322,7 @@ def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
                  "severity": vulnerability["severity"][0],
                  "title": vulnerability["title"][0],
                  "url": vulnerability["snyk_url"][0],
-                 "fixed_in": vulnerability.get("fixed_in", {})})
+                 "fixed_in": vulnerability.get("fixed_in", [])})
     return clean_package_list(package_details_dict)
 
 
