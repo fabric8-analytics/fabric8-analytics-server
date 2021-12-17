@@ -81,6 +81,9 @@ def validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
     packages_list = []
     for pkg in input_json.get('package_versions'):
         package = pkg.get("package")
+        if ecosystem == "maven":
+            validate_artifact_id(package)
+
         clean_version = pkg.get("version")
         if not all([package, clean_version]):
             error_msg = "Invalid Input: Package, Version are required."
@@ -102,6 +105,16 @@ def validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
 
         packages_list.append({"name": package, "version": clean_version})
     return packages_list
+
+
+def validate_artifact_id(package: str):
+    """Maven package should contain a group id and an artifact id."""
+    package_artifact = package.split(":")
+    # if len(package_artifact) is 1, it implies that the package doesn't contain an artifact id
+    if len(package_artifact) == 1:
+        err_msg = "invalid package " + package + "please enter " \
+                            "valid maven packages with group ids and artifact ids"
+        raise BadRequest(err_msg)
 
 
 def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], List[Package]]:
@@ -293,7 +306,7 @@ def get_known_unknown_pkgs(
 
 def check_vulnerable_package(version, version_string):
     """Check if the request version available in vulnerable_versions."""
-    if(version in version_string.split(",")):
+    if (version in version_string.split(",")):
         return True
     return False
 
@@ -314,9 +327,8 @@ def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
         package_details_dict[temp["name"]] = temp
     for vulnerability in graph_response.get('result', {}).get('data'):
         package_details = package_details_dict.get(vulnerability["package_name"][0])
-        if(check_vulnerable_package(package_details["version"],
-                                    vulnerability['vulnerable_versions'][0])):
-
+        if (check_vulnerable_package(package_details["version"],
+                                     vulnerability['vulnerable_versions'][0])):
             package_details["vulnerabilities"].append(
                 {"id": vulnerability["snyk_vuln_id"][0],
                  "severity": vulnerability["severity"][0],
