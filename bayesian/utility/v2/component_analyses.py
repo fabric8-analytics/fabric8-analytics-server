@@ -108,10 +108,12 @@ def validate_input(input_json: Dict, ecosystem: str) -> List[Dict]:
 
 
 def validate_artifact_id(package: str):
+    """Maven package should contain a group id and an artifact id"""
     package_artifact = package.split(":")
     # if len(package_artifact) is 1, it implies that the package doesn't contain an artifact id
     if len(package_artifact) == 1:
-        err_msg = "invalid package " + package + "please enter valid maven packages with group ids and artifact ids"
+        err_msg = "invalid package " + package + "please enter " \
+                                                 "valid maven packages with group ids and artifact ids"
         raise BadRequest(err_msg)
 
 
