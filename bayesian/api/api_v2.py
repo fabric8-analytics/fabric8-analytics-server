@@ -94,11 +94,14 @@ def vulnerability_analysis_post():
 
     try:
         # Step1: Gather and clean Request
-        packages_list = validate_input(input_json, ecosystem)
+        packages_list, invalid_packages = validate_input(input_json, ecosystem)
         # Step2: Get aggregated CA data from Query GraphDB,
         graph_response = get_vulnerability_data(ecosystem, packages_list)
         # Step3: Build Unknown packages and Generates Stack Recommendation.
         stack_recommendation = get_known_pkgs(graph_response, packages_list)
+        invalid_package_list = {"invalid packages", invalid_packages}
+        stack_recommendation.append(invalid_package_list)
+
     except BadRequest as br:
         logger.error(br)
         raise HTTPError(400, str(br)) from br
@@ -106,6 +109,7 @@ def vulnerability_analysis_post():
         msg = "Internal Server Exception. Please contact us if problem persists."
         logger.error(e)
         raise HTTPError(500, msg) from e
+    stack_recommendation = jsonify(stack_recommendation)
 
     return jsonify(stack_recommendation), 200
 
