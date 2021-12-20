@@ -101,7 +101,8 @@ def validate_input(input_json: Dict, ecosystem: str) -> (List[Dict], List[Dict])
                 package = MavenCoordinates.normalize_str(package)
             # if package is invalid, add it to list of invalid packages
             except Exception as e:
-                invalid_packages.append({"name": package, "version": clean_version, "vulnerabilities": []})
+                invalid_packages.append({"name": package, "version": clean_version,
+                                         "vulnerabilities": []})
                 continue
 
         if ecosystem == 'pypi':
