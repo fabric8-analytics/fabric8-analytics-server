@@ -291,23 +291,19 @@ class TestVAInputValidator(unittest.TestCase):
 
     def test_validate_input_exception(self):
         """Test Va Validate input: Missing Input."""
-        invalid_packages = []
-        self.assertRaises(BadRequest, validate_input, None, "pypi", invalid_packages)
+        self.assertRaises(BadRequest, validate_input, None, "pypi")
 
     def test_validate_input_invalid_type(self):
         """Test Va Validate input: Invalid Input type."""
-        invalid_packages = []
-        self.assertRaises(BadRequest, validate_input, [""], "pypi", invalid_packages)
+        self.assertRaises(BadRequest, validate_input, [""], "pypi")
 
     def test_validate_input_invalid_ecosystem(self):
         """Test Va Validate input: Invalid Input type."""
-        invalid_packages = []
-        self.assertRaises(BadRequest, validate_input, {"test": "test"}, "madam", invalid_packages)
+        self.assertRaises(BadRequest, validate_input, {"test": "test"}, "madam")
 
     def test_validate_input_no_pkg_version(self):
         """Test Va Validate input: Invalid Input."""
-        invalid_packages = []
-        self.assertRaises(BadRequest, validate_input, {"test": "test"}, "pypi", invalid_packages)
+        self.assertRaises(BadRequest, validate_input, {"test": "test"}, "pypi")
 
     def test_validate_input_pkg_missing_details(self):
         """Test Va Validate input: Package Version Missing Details."""
@@ -317,8 +313,7 @@ class TestVAInputValidator(unittest.TestCase):
                 {"no_package": "markdown2", "no_version": "2"},
             ]
         }
-        invalid_packages = []
-        self.assertRaises(BadRequest, validate_input, input_json, "pypi", invalid_packages)
+        self.assertRaises(BadRequest, validate_input, input_json, "pypi")
 
     def test_validate_input_pkg_invalid_type(self):
         """Test Va Validate input: Package Type."""
@@ -328,8 +323,7 @@ class TestVAInputValidator(unittest.TestCase):
                 {"package": {"Test": "Test"}, "version": "2.3.2"},
             ]
         }
-        invalid_packages = []
-        self.assertRaises(BadRequest, validate_input, input_json, "pypi", invalid_packages)
+        self.assertRaises(BadRequest, validate_input, input_json, "pypi")
 
     def test_validate_input_pkg_version_invalid_version(self):
         """Test Va Validate input: Version Invalid version."""
@@ -340,8 +334,7 @@ class TestVAInputValidator(unittest.TestCase):
             ]
         }
         ecosystem = "pypi"
-        invalid_packages = []
-        self.assertRaises(BadRequest, validate_input, input_json, ecosystem, invalid_packages)
+        self.assertRaises(BadRequest, validate_input, input_json, ecosystem)
 
     def test_validate_input_maven(self):
         """Test Va Validate input: Ecosystem maven."""
@@ -352,8 +345,25 @@ class TestVAInputValidator(unittest.TestCase):
             ]
         }
         ideal_result = [{"name": "com.thoughtworks.xstream:xstream", "version": "1.3"}]
-        result = validate_input(input_json, input_json["ecosystem"], [])
+        result, invalid_packages = validate_input(input_json, input_json["ecosystem"])
         self.assertEqual(result, ideal_result)
+        self.assertEqual(invalid_packages, [])
+
+    def test_validate_invalid_input_maven(self):
+        """Test Va invalid input: Ecosystem maven."""
+        input_json = {
+            "ecosystem": "maven",
+            "package_versions": [
+                {"package": "com.thoughtworks.xstream", "version": "1.3"},
+            ]
+        }
+        ideal_result = []
+        ideal_invalid_package = [{"name": "com.thoughtworks.xstream",
+                                  "version": "1.3",
+                                  "vulnerabilities": []}]
+        result, invalid_packages = validate_input(input_json, input_json["ecosystem"])
+        self.assertEqual(result, ideal_result)
+        self.assertEqual(invalid_packages, ideal_invalid_package)
 
 
 class TestGetBatchCAData(unittest.TestCase):

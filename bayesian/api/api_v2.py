@@ -95,8 +95,7 @@ def vulnerability_analysis_post():
 
     try:
         # Step1: Gather and clean Request
-        invalid_packages = []
-        packages_list = validate_input(input_json, ecosystem, invalid_packages)
+        packages_list, invalid_packages = validate_input(input_json, ecosystem)
         # Step2: Get aggregated CA data from Query GraphDB,
         graph_response = get_vulnerability_data(ecosystem, packages_list)
         # Step3: Build Unknown packages and Generates Stack Recommendation.

@@ -59,7 +59,7 @@ def normlize_packages(name: str, given_name: str,
         is_pseudo_version=is_pseudo_version, package_unknown=True)
 
 
-def validate_input(input_json: Dict, ecosystem: str, invalid_packages: List[dict]) -> List[Dict]:
+def validate_input(input_json: Dict, ecosystem: str) -> (List[Dict], List[Dict]):
     """Validate Request Body."""
     logger.debug('Validate Request Body.')
     if not input_json:
@@ -79,6 +79,7 @@ def validate_input(input_json: Dict, ecosystem: str, invalid_packages: List[dict
         raise BadRequest(error_msg)
 
     packages_list = []
+    invalid_packages = []
     for pkg in input_json.get('package_versions'):
         package = pkg.get("package")
         clean_version = pkg.get("version")
@@ -96,26 +97,18 @@ def validate_input(input_json: Dict, ecosystem: str, invalid_packages: List[dict
             raise BadRequest(error_msg)
 
         if ecosystem == 'maven':
-            package = MavenCoordinates.normalize_str(package)
-            invalid_package = validate_artifact_id(package, clean_version, invalid_packages)
-            if invalid_package:
+            try:
+                package = MavenCoordinates.normalize_str(package)
+            # if package is invalid, add it to list of invalid packages
+            except Exception:
+                invalid_packages.append({"name": package, "version": clean_version,
+                                         "vulnerabilities": []})
                 continue
 
         if ecosystem == 'pypi':
             package = package.lower()
         packages_list.append({"name": package, "version": clean_version})
-
-    return packages_list
-
-
-def validate_artifact_id(package: str, version: str, invalid_packages: List[dict]) -> bool:
-    """Maven package should contain a group id and an artifact id."""
-    package_artifact = package.split(":")
-    # if len(package_artifact) is 1, it implies that the package doesn't contain an artifact id
-    if len(package_artifact) == 1:
-        invalid_packages.append({"name": package, "version": version})
-        return True
-    return False
+    return packages_list, invalid_packages
 
 
 def ca_validate_input(input_json: Dict, ecosystem: str) -> Tuple[List[Dict], List[Package]]:
@@ -323,7 +316,6 @@ def clean_package_list(package_details_dict: Dict):
 def process_invalid_packages(invalid_packages: List[Dict], stack_recommendation: List[Dict]):
     """Process invalid packages."""
     for invalid_package in invalid_packages:
-        invalid_package["vulnerabilities"] = []
         stack_recommendation.append(invalid_package)
 
 

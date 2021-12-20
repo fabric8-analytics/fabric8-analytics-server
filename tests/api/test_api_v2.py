@@ -153,7 +153,7 @@ class TestVAPostApi(unittest.TestCase):
         }
         _mock1.return_value = self.recommendation_data
         _mock2.return_value = self.gremlin_batch_data
-        _mock3.return_value = mock3
+        _mock3.return_value = mock3, []
         payload = {
             "ecosystem": "npm",
             "package_versions": [
