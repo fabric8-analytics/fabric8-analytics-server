@@ -95,7 +95,8 @@ def vulnerability_analysis_post():
 
     try:
         # Step1: Gather and clean Request
-        packages_list, invalid_packages = validate_input(input_json, ecosystem)
+        invalid_packages = []
+        packages_list = validate_input(input_json, ecosystem, invalid_packages)
         # Step2: Get aggregated CA data from Query GraphDB,
         graph_response = get_vulnerability_data(ecosystem, packages_list)
         # Step3: Build Unknown packages and Generates Stack Recommendation.
@@ -109,8 +110,6 @@ def vulnerability_analysis_post():
         msg = "Internal Server Exception. Please contact us if problem persists."
         logger.error(e)
         raise HTTPError(500, msg) from e
-    stack_recommendation = jsonify(stack_recommendation)
-
     return jsonify(stack_recommendation), 200
 
 

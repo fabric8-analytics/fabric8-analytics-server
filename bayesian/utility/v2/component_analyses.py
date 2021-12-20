@@ -59,7 +59,7 @@ def normlize_packages(name: str, given_name: str,
         is_pseudo_version=is_pseudo_version, package_unknown=True)
 
 
-def validate_input(input_json: Dict, ecosystem: str) -> (List[Dict], List[Dict]):
+def validate_input(input_json: Dict, ecosystem: str, invalid_packages: List[dict]) -> List[Dict]:
     """Validate Request Body."""
     logger.debug('Validate Request Body.')
     if not input_json:
@@ -79,7 +79,6 @@ def validate_input(input_json: Dict, ecosystem: str) -> (List[Dict], List[Dict])
         raise BadRequest(error_msg)
 
     packages_list = []
-    invalid_packages = []
     for pkg in input_json.get('package_versions'):
         package = pkg.get("package")
         clean_version = pkg.get("version")
@@ -105,7 +104,8 @@ def validate_input(input_json: Dict, ecosystem: str) -> (List[Dict], List[Dict])
         if ecosystem == 'pypi':
             package = package.lower()
         packages_list.append({"name": package, "version": clean_version})
-    return packages_list, invalid_packages
+
+    return packages_list
 
 
 def validate_artifact_id(package: str, version: str, invalid_packages: List[dict]) -> bool:
@@ -321,6 +321,7 @@ def clean_package_list(package_details_dict: Dict):
 
 
 def process_invalid_packages(invalid_packages: List[Dict], stack_recommendation: List[Dict]):
+    """Process invalid packages."""
     for invalid_package in invalid_packages:
         invalid_package["vulnerabilities"] = []
         stack_recommendation.append(invalid_package)
