@@ -320,6 +320,12 @@ def clean_package_list(package_details_dict: Dict):
     return packages_list
 
 
+def process_invalid_packages(invalid_packages: List[Dict], stack_recommendation: List[Dict]):
+    for invalid_package in invalid_packages:
+        invalid_package["vulnerabilities"] = []
+        stack_recommendation.append(invalid_package)
+
+
 def get_known_pkgs(graph_response: Dict, packages_list: Dict) -> List[Dict]:
     """Analyse Known Packages."""
     package_details_dict = {}
