@@ -167,8 +167,6 @@ class TestVAPostApi(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, self.recommendation_data)
 
-
-
     def test_get_vulnerability_analysis_bad_request(self):
         """VA POST: Bad Request."""
         payload = {
