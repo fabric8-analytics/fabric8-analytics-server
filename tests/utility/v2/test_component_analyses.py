@@ -358,7 +358,9 @@ class TestVAInputValidator(unittest.TestCase):
             ]
         }
         ideal_result = []
-        ideal_invalid_package = [{"name": "com.thoughtworks.xstream", "version": "1.3", "vulnerabilities": []}]
+        ideal_invalid_package = [{"name": "com.thoughtworks.xstream",
+                                  "version": "1.3",
+                                  "vulnerabilities": []}]
         result, invalid_packages = validate_input(input_json, input_json["ecosystem"])
         self.assertEqual(result, ideal_result)
         self.assertEqual(invalid_packages, ideal_invalid_package)

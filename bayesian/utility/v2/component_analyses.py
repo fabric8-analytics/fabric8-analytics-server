@@ -100,7 +100,7 @@ def validate_input(input_json: Dict, ecosystem: str) -> (List[Dict], List[Dict])
             try:
                 package = MavenCoordinates.normalize_str(package)
             # if package is invalid, add it to list of invalid packages
-            except Exception as e:
+            except Exception:
                 invalid_packages.append({"name": package, "version": clean_version,
                                          "vulnerabilities": []})
                 continue
