@@ -19,16 +19,16 @@ babel==2.9.0
 beautifulsoup4==4.9.3
     # via
     #   bs4
-    #   f8a-worker
+    #   f8a-worker  
 billiard==3.6.3.0
     # via celery
 blinker==1.4
     # via
     #   flask-mail
     #   flask-principal
-boto3==1.26.0
+boto3==1.23.1
     # via f8a-worker
-botocore==1.29.53
+botocore==1.26.1
     # via
     #   -r requirements.in
     #   boto3
@@ -223,7 +223,7 @@ requests==2.25.1
     #   fabric8a-auth
     #   pygithub
     #   requests-futures
-s3transfer==0.6.0
+s3transfer==0.5.0
     # via boto3
 selinon==1.0.0
     # via
