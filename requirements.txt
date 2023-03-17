@@ -19,16 +19,16 @@ babel==2.9.0
 beautifulsoup4==4.9.3
     # via
     #   bs4
-    #   f8a-worker
+    #   f8a-worker  
 billiard==3.6.3.0
     # via celery
 blinker==1.4
     # via
     #   flask-mail
     #   flask-principal
-boto3==1.16.62
+boto3==1.23.1
     # via f8a-worker
-botocore==1.19.62
+botocore==1.26.1
     # via
     #   -r requirements.in
     #   boto3
@@ -38,13 +38,13 @@ bs4==0.0.1
     # via f8a-utils
 celery==4.4.7
     # via f8a-worker
-certifi==2020.12.5
+certifi==2020.11.8
     # via requests
-cffi==1.14.4
+cffi==1.15.1
     # via cryptography
 chardet==4.0.0
     # via requests
-click==7.1.2
+click==8
     # via
     #   anymarkup
     #   flask
@@ -56,11 +56,11 @@ colorama==0.4.4
     # via rainbow-logging-handler
 configobj==5.0.6
     # via anymarkup
-cryptography==3.4.6
+cryptography==3.4.7
     # via
     #   f8a-utils
     #   fabric8a-auth
-dataclasses==0.8
+dataclasses==0.6
     # via pydantic
 deprecated==1.2.11
     # via pygithub
@@ -114,7 +114,7 @@ flask==0.12.5
     #   flask-sqlalchemy
     #   flask-wtf
     #   prometheus-flask-exporter
-gevent==21.1.2
+gevent==22.10.2
     # via -r requirements.in
 git2json==0.2.3
     # via f8a-worker
@@ -126,7 +126,7 @@ gitpython==3.1.12
     #   f8a-worker
 graphviz==0.16
     # via selinon
-greenlet==1.0.0
+greenlet==2.0.2
     # via gevent
 gunicorn==20.0.4
     # via -r requirements.in
@@ -141,7 +141,7 @@ itsdangerous==1.1.0
     #   flask
     #   flask-security
     #   flask-wtf
-jinja2==2.11.3
+jinja2==3.0
     # via
     #   flask
     #   flask-babelex
@@ -161,12 +161,12 @@ kombu==4.6.11
     # via celery
 logutils==0.3.5
     # via rainbow-logging-handler
-lxml==4.6.2
+lxml==4.9.2
     # via
     #   -r requirements.in
     #   f8a-utils
     #   f8a-worker
-markupsafe==1.1.1
+markupsafe==2.0
     # via
     #   jinja2
     #   wtforms
@@ -176,7 +176,7 @@ prometheus-client==0.10.1
     # via prometheus-flask-exporter
 prometheus-flask-exporter==0.18.2
     # via -r requirements.in
-psycopg2-binary==2.8.6
+psycopg2-binary==2.9.5
     # via -r requirements.in
 py-lru-cache==0.1.4
     # via -r requirements.in
@@ -192,7 +192,7 @@ pyjwt==1.7.1
     #   pygithub
 pyrsistent==0.17.3
     # via jsonschema
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via botocore
 pytz==2020.5
     # via
@@ -223,7 +223,7 @@ requests==2.25.1
     #   fabric8a-auth
     #   pygithub
     #   requests-futures
-s3transfer==0.3.4
+s3transfer==0.5.0
     # via boto3
 selinon==1.0.0
     # via
